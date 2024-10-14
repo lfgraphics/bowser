@@ -146,8 +146,6 @@ app.post("/imageprocessing", async (req, res) => {
 });
 
 app.post('/formsubmit', async (req, res) => {
-    console.log('request received');
-    console.log('Request body:', req.body); // Add this line
     const { vehicleNumberPlateImage, vehicleNumber, driverName, driverId, driverMobile, fuelMeterImage, fuelQuantity, gpsLocation, fuelingDateTime } = req.body;
     try {
         res.send('Details Submitted Successfully');
