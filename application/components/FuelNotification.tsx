@@ -1,19 +1,30 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Linking, Alert, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
+type RootStackParamList = {
+  NotificationFueling: {
+    vehicleNumber: string;
+    driverId: string;
+    driverMobile: string;
+    driverName: string;
+    quantityType: "Part" | "Full";
+    fuelQuantity: string;
+  };
+};
 
 interface RequestDetailsProps {
   vehicleNumber: string;
   driverId: string;
   driverMobile: string[];
   driverName: string;
+  quantityType: "Part" | "Full";
   fuelQuantity: string;
 }
 
-const FuelNotification = ({ vehicleNumber, driverId, driverMobile, driverName, fuelQuantity }: RequestDetailsProps) => {
-  const [selectedDriverMobile, setSelectedDriverMobile] = useState('');
-  const navigation = useNavigation();
+const FuelNotification = ({ vehicleNumber, driverId, driverMobile, driverName, fuelQuantity, quantityType }: RequestDetailsProps) => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleGiveFuel = () => {
     if (driverMobile.length > 1) {
@@ -24,17 +35,17 @@ const FuelNotification = ({ vehicleNumber, driverId, driverMobile, driverName, f
         [...driverMobile.map((number: string, index: number) => ({
           text: number,
           onPress: () => {
-            setSelectedDriverMobile(number);
             navigation.navigate('NotificationFueling', {
               vehicleNumber,
               driverId,
               driverMobile: number,
               driverName,
+              quantityType,
               fuelQuantity,
-            })
+            });
           }
         })),
-          { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         ],
       );
     } else {
@@ -43,6 +54,7 @@ const FuelNotification = ({ vehicleNumber, driverId, driverMobile, driverName, f
         driverId,
         driverMobile: driverMobile[0],
         driverName,
+        quantityType,
         fuelQuantity,
       });
     }
@@ -59,7 +71,6 @@ const FuelNotification = ({ vehicleNumber, driverId, driverMobile, driverName, f
           ...driverMobile.map((number: string, index: number) => ({
             text: number,
             onPress: () => {
-              setSelectedDriverMobile(number);
               Linking.openURL(`tel:${number}`);
             },
           })),
@@ -78,7 +89,8 @@ const FuelNotification = ({ vehicleNumber, driverId, driverMobile, driverName, f
       <Text style={styles.detail}>Driver ID: {driverId}</Text>
       <Text style={styles.detail}>Driver Phone No.: {driverMobile.join(', ')}</Text>
       <Text style={styles.detail}>Driver Name: {driverName}</Text>
-      <Text style={styles.detail}>Fueling Quantity: {fuelQuantity}</Text>
+      <Text style={styles.detail}>Quantity Type: {quantityType}</Text>
+      {fuelQuantity && <Text style={styles.detail}>Fueling Quantity: {fuelQuantity}</Text>}
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={[styles.button, styles.disabledButton]}>
           <Text style={styles.buttonText}>Track</Text>

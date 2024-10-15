@@ -20,7 +20,7 @@ const App = () => {
       <Link  style={styles.button} href={'/fueling'}>
         Fueling
       </Link>
-      <Link  style={styles.button} href={'/notificaions'}>
+      <Link disabled style={styles.disabledButton} href={'/notificaions'}>
         Notifications
       </Link>
   </View>
@@ -57,7 +57,9 @@ const styles = StyleSheet.create({
       backgroundColor: 'gray',
       borderRadius: 5,
       alignItems: 'center',
+      textAlign:'center',
       paddingHorizontal: 20,
+      color:'white'
   },
 });
 

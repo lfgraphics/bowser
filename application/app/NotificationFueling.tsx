@@ -13,6 +13,7 @@ interface RouteParams {
     driverId: string;
     driverMobile: string;
     driverName: string;
+    quantityType: "Part" | "Full";
     fuelQuantity: string;
 }
 
@@ -23,7 +24,8 @@ export default function NotificationFuelingScreen() {
         driverId = 'N/A',
         driverMobile = 'N/A',
         driverName = 'N/A',
-        fuelQuantity = 'N/A'
+        quantityType = 'N/A',
+        fuelQuantity: initialFuelQuantity = 'N/A'
     } = route.params as RouteParams;
 
 
@@ -35,7 +37,7 @@ export default function NotificationFuelingScreen() {
     // const [driverName, setDriverName] = useState('');
     // const [driverId, setDriverId] = useState('');
     // const [driverMobile, setDriverMobile] = useState('');
-    // const [fuelQuantity, setFuelQuantity] = useState('');
+    const [fuelQuantity, setFuelQuantity] = useState(initialFuelQuantity);
     const [gpsLocation, setGpsLocation] = useState('');
     const [fuelingDateTime, setFuelingDateTime] = useState('');
     const [formSubmitting, setFormSubmitting] = useState(false);
@@ -103,6 +105,7 @@ export default function NotificationFuelingScreen() {
                 driverMobile,
                 fuelMeterImage,
                 fuelQuantity,
+                quantityType,
                 gpsLocation,
                 fuelingDateTime
             });
@@ -130,11 +133,6 @@ export default function NotificationFuelingScreen() {
     const resetForm = () => {
         setVehicleNumberPlateImage(null);
         setFuelMeterImage(null);
-        // setVehicleNumber('');
-        // setDriverName('');
-        // setDriverId('');
-        // setDriverMobile('');
-        // setFuelQuantity('');
         setGpsLocation('');
         setFuelingDateTime('');
     }
@@ -337,18 +335,32 @@ export default function NotificationFuelingScreen() {
                         >
                             <ThemedText>Take Fuel Meter Photo</ThemedText>
                         </TouchableOpacity>
-                        <TextInput
-                            ref={fuelQuantityInputRef}
-                            readOnly
-                            style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                            placeholder="Enter fuel quantity"
-                            placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                            keyboardType="numeric"
-                            value={fuelQuantity}
-                            returnKeyType="next"
-                            onSubmitEditing={() => gpsLocationInputRef.current?.focus()}
-                            blurOnSubmit={false}
-                        />
+                        <View style={styles.rowContainer}>
+                            <TextInput
+                                ref={fuelQuantityInputRef}
+                                readOnly
+                                style={[styles.input, styles.quarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                                placeholder="Quantity type"
+                                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                                value={quantityType}
+                                returnKeyType="next"
+                                onSubmitEditing={() => fuelQuantityInputRef.current?.focus()}
+                                blurOnSubmit={false}
+                            />
+                            <TextInput
+                                ref={fuelQuantityInputRef}
+                                style={[styles.input, styles.threeQuarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                                placeholder="Fuel quantity"
+                                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                                keyboardType="numeric"
+                                value={fuelQuantity}
+                                returnKeyType="next"
+                                onChangeText={setFuelQuantity}
+                                readOnly={false}
+                                onSubmitEditing={() => gpsLocationInputRef.current?.focus()}
+                                blurOnSubmit={false}
+                            />
+                        </View>
                     </ThemedView>
                 </ThemedView>
 
@@ -401,6 +413,19 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         padding: 8,
         marginTop: 4,
+    },
+    rowContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    quarterInput: {
+        flex: 0.25,
+        marginRight: 4,
+    },
+    threeQuarterInput: {
+        flex: 0.75,
+        marginLeft: 4,
     },
     uploadedImage: {
         borderBlockColor: 'white',

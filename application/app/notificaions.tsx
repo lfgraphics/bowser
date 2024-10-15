@@ -3,10 +3,10 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import FuelNotification from '@/components/FuelNotification';
 
 const notificationsData = [
-    { vehicleNumber: 'ABC123', driverId: '123', driverMobile: ['1234567890','6393440986'], driverName: 'John Doe', fuelQuantity: '10' },
-    { vehicleNumber: 'DEF456', driverId: '456', driverMobile: ['9876543210'], driverName: 'Jane Doe', fuelQuantity: '20' },
-    { vehicleNumber: 'DEF456', driverId: '456', driverMobile: ['9876543210'], driverName: 'Jane Doe', fuelQuantity: '20' },
-    { vehicleNumber: 'DEF456', driverId: '456', driverMobile: ['9876543210'], driverName: 'Jane Doe', fuelQuantity: '20' },
+    { vehicleNumber: 'ABC123', driverId: '123', driverMobile: ['1234567890'], driverName: 'John Doe', quantityType: 'Full' as const, fuelQuantity: '0' },
+    { vehicleNumber: 'DEF456', driverId: '456', driverMobile: ['9876543210'], driverName: 'Jane Doe', quantityType: 'Part' as const, fuelQuantity: '20' },
+    { vehicleNumber: 'DEF456', driverId: '456', driverMobile: ['9876543210'], driverName: 'Jane Doe', quantityType: 'Full' as const, fuelQuantity: '0' },
+    { vehicleNumber: 'DEF456', driverId: '456', driverMobile: ['9876543210'], driverName: 'Jane Doe', quantityType: 'Part' as const, fuelQuantity: '20' },
     // Add more data as needed
 ];
 
