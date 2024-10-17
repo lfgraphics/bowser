@@ -20,8 +20,8 @@ const App = () => {
       <Link  style={styles.button} href={'/fueling'}>
         Fueling
       </Link>
-      <Link disabled style={styles.disabledButton} href={'/notificaions'}>
-        Notifications
+      <Link style={styles.disabledButton} href={'/notificaions'}>
+        Pending Orders
       </Link>
   </View>
     );

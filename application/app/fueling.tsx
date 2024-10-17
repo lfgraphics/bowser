@@ -1,16 +1,29 @@
-import { Image, StyleSheet, Platform, Text, TextInput, TouchableOpacity, useColorScheme, ScrollView, View, ActivityIndicator, Button } from 'react-native';
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, ScrollView, View, ActivityIndicator, Button, Alert, Modal, FlatList } from 'react-native';
 import React, { useState, useRef } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import * as FileSystem from 'expo-file-system';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-// import VisionCameraOcr from 'vision-camera-ocr'; // Import the OCR library
-// import { scanOCR } from 'vision-camera-ocr';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { useTheme } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
+
+interface Driver {
+  Name: string;
+  ITPLId: string | null;
+  MobileNo?: Array<{
+    MobileNo: string;
+    IsDefaultNumber: boolean;
+    LastUsed: boolean;
+  }>;
+}
 
 export default function FuelingScreen() {
   // declare state variables---->
   const colorScheme = useColorScheme();
+  const { colors } = useTheme();
   const [vehicleNumberPlateImage, setVehicleNumberPlateImage] = useState<string | null>(null);
   const [fuelMeterImage, setFuelMeterImage] = useState<string | null>(null);
   const [vehicleNumber, setVehicleNumber] = useState('');
@@ -21,7 +34,14 @@ export default function FuelingScreen() {
   const [gpsLocation, setGpsLocation] = useState('');
   const [fuelingDateTime, setFuelingDateTime] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
-  const [imageProcessing, setImageprocessing] = useState(false);
+  const [foundDrivers, setFoundDrivers] = useState<Driver[]>([]);
+  const [selectedDriver, setSelectedDriver] = useState<string>('');
+  const [noDriverFound, setNoDriverFound] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [quantityType, setQuantityType] = useState<'Full' | 'Part'>('Part');
+  const [vehicleNumberPlateImageSize, setVehicleNumberPlateImageSize] = useState<string>('');
+  const [fuelMeterImageSize, setFuelMeterImageSize] = useState<string>('');
 
   // declare refs for input fields---->
   const vehicleNumberInputRef = React.useRef<TextInput>(null);
@@ -31,6 +51,12 @@ export default function FuelingScreen() {
   const fuelQuantityInputRef = React.useRef<TextInput>(null);
   const gpsLocationInputRef = React.useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null); // Ref for ScrollView
+
+
+  const driversData: (Driver | { Name: string, ITPLId: string })[] = [
+    { Name: "Select a driver", ITPLId: "placeholder" },
+    ...foundDrivers
+  ];
 
   // function declarations---->
   // startup function
@@ -55,64 +81,51 @@ export default function FuelingScreen() {
     return currentDateTime;
   }
 
+  const calculateBase64Size = (base64String: string): string => {
+    const stringLength = base64String.length;
+    const sizeInBytes = (stringLength * (3 / 4)) - (base64String.endsWith('==') ? 2 : base64String.endsWith('=') ? 1 : 0);
+    const sizeInKB = sizeInBytes / 1024;
+    const sizeInMB = sizeInKB / 1024;
+    return `${sizeInKB.toFixed(2)} KB (${sizeInMB.toFixed(2)} MB)`;
+  };
+  const compressImage = async (uri: string): Promise<string> => {
+    const manipulatedImage = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: 500 } }],
+      { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
+    );
+    const base64Image = await imageToBase64(manipulatedImage.uri);
+    return base64Image;
+  };
+
   // form submit reset
   const submitDetails = async () => {
-
-    // if (!validateInputs()) {
-    //   return;
-    // }
+    setFormSubmitting(true);
+    if (!validateInputs()) {
+      setFormSubmitting(false);
+      return;
+    }
 
     let currentFuelingDateTime = fuelingDateTime;
     let currentGpsLocation = gpsLocation;
-
-    // if (!currentFuelingDateTime) {
     currentFuelingDateTime = await fulingTime();
-    // console.log('Time', currentFuelingDateTime);
-    // }
-    // if (!currentGpsLocation) {
     const locationResult = await location();
     if (locationResult) {
       currentGpsLocation = locationResult;
-      // console.log('Coordinates are - ', currentGpsLocation);
     }
-    // }
+
     if (currentFuelingDateTime && currentGpsLocation) {
-      // console.log({
-      //   vehicleNumberPlateImage,
-      //   vehicleNumber,
-      //   driverName,
-      //   driverId,
-      //   driverMobile,
-      //   fuelMeterImage,
-      //   fuelQuantity,
-      //   gpsLocation: currentGpsLocation,
-      //   fuelingDateTime: currentFuelingDateTime
-      // });
       const formData = JSON.stringify({
         vehicleNumberPlateImage,
-        vehicleNumber,
+        vehicleNumber: vehicleNumber.toUpperCase(),
         driverName,
-        driverId,
+        driverId: driverId.toUpperCase(),
         driverMobile,
         fuelMeterImage,
         fuelQuantity,
-        gpsLocation,
-        fuelingDateTime
+        gpsLocation: gpsLocation || await location(),
+        fuelingDateTime: fuelingDateTime || fulingTime(),
       });
-
-      // if (vehicleNumberPlateImage) {
-      //   formData.append('vehicleNumberPlateImage', vehicleNumberPlateImage);
-      // }
-      // formData.append('vehicleNumber', vehicleNumber);
-      // formData.append('driverName', driverName);
-      // formData.append('driverId', driverId);
-      // formData.append('driverMobile', driverMobile);
-      // if (fuelMeterImage) {
-      //   formData.append('fuelMeterImage', fuelMeterImage);
-      // }
-      // formData.append('fuelQuantity', fuelQuantity);
-      // formData.append('gpsLocaion', currentGpsLocation);
-      // formData.append('fuelingDate&Time', currentFuelingDateTime);
 
       try {
         const response = await fetch('http://192.168.137.1:5000/formsubmit', {
@@ -125,12 +138,49 @@ export default function FuelingScreen() {
         if (!response.ok) { // Check if response status is OK (status 200-299)
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-
-        const responseText = await response.text(); // or response.json() if the response is JSON
-        console.log('Response:', responseText); // Log the response 
-        alert(responseText)
+        const responseData = await response.json();
+        console.log('Response:', responseData);
+        Alert.alert(
+          "Success",
+          responseData.message,
+          [
+            {
+              text: "OK", onPress: () => {
+                console.log("OK Pressed");
+              }
+            }
+          ],
+          { cancelable: false }
+        );
       } catch (err) {
         console.error('Fetch error:', err); // Log any fetch errors
+        let errorMessage = 'An unknown error occurred';
+
+        if (err instanceof Response) {
+          try {
+            const errorData = await err.json();
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch (jsonError) {
+            console.error('Error parsing JSON:', jsonError);
+          }
+        } else if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+
+        Alert.alert(
+          "Error",
+          errorMessage,
+          [
+            {
+              text: "OK", onPress: () => {
+                console.log("OK Pressed");
+              }
+            }
+          ],
+          { cancelable: false }
+        );
+      } finally {
+        setFormSubmitting(false);
       }
     }
   }
@@ -171,67 +221,9 @@ export default function FuelingScreen() {
     });
 
     if (!result.canceled && result.assets[0].uri) {
-      const base64Image = await imageToBase64(result.assets[0].uri);
-      setVehicleNumberPlateImage(base64Image)
-
-      // Convert the image to a base64 string
-      // const base64Image = await imageToBase64(imageUri);
-
-      // // Send the base64 image to the server for processing
-      // try {
-      //   const response = await fetch('http://192.168.137.1:5000/imageprocessing', {
-      //     method: 'POST',
-      //     headers: {
-      //       'Content-Type': 'application/json',
-      //     },
-      //     body: JSON.stringify({ image: base64Image }), // Wrap in an object
-      //   });
-
-      //   if (!response.ok) {
-      //     throw new Error(`HTTP error! status: ${response.status}`);
-      //   }
-
-      //   // if (response.body) {
-      //   //   const reader = response.body.getReader();
-      //   //   const decoder = new TextDecoder("utf-8");
-      //   //   let result = '';
-
-      //   //   while (true) {
-      //   //     const { done, value } = await reader.read();
-      //   //     if (done) break;
-
-      //   //     result += decoder.decode(value, { stream: true });
-      //   //     const messages = result.split('\n').filter(Boolean); // Split messages by new line
-
-      //   //     messages.forEach(message => {
-      //   //       const data = JSON.parse(message);
-      //   //       if (data.progress) {
-      //   //         console.log('Progress:', data.progress);
-      //   //       }
-      //   //       if (data.text) {
-      //   //         console.log('Processed Text:', data.text);
-      //   //       }
-      //   //     });
-      //   //   }
-      //   // } else {
-      //   //   // Handle the case where response.body is null
-      //   //   console.error("Response body is null");
-      //   // }
-
-
-      //   const text = response.text.toString();
-      //   console.log('Server response:', text);
-
-      //   console.log('Image processing result:', text);
-      //   setVehicleNumber(text)
-      // } catch (error) {
-      //   console.error('Error processing image:', error);
-      //   if (error instanceof Error) {
-      //     alert(`Error processing image: ${error.message}`);
-      //   } else {
-      //     alert('An unknown error occurred while processing the image');
-      //   }
-      // }
+      const compressedImage = await compressImage(result.assets[0].uri);
+      setVehicleNumberPlateImage(compressedImage);
+      setVehicleNumberPlateImageSize(calculateBase64Size(compressedImage));
     }
   };
   const openFuelMeterCamera = async () => {
@@ -252,40 +244,96 @@ export default function FuelingScreen() {
     });
 
     if (!result.canceled && result.assets[0].uri) {
-      const base64Image = await imageToBase64(result.assets[0].uri);
-      setFuelMeterImage(base64Image);
-
-      // Send the image to the server for processing
-      // try {
-      //   const response = await fetch('http://192.168.137.1:5000/imageprocessing', {
-      //     method: 'POST',
-      //     headers: {
-      //       'Content-Type': 'application/json',
-      //     },
-      //     body: JSON.stringify({ image: base64Image }), // Wrap in an object
-      //   });
-
-      //   if (!response.ok) {
-      //     throw new Error(`HTTP error! status: ${response.status}`);
-      //   }
-
-      //   const text = response.text.toString();
-      //   console.log('Server response:', text);
-
-      //   // Only try to parse as JSON if it's actually JSON
-      //   console.log('Image processing result:', text);
-      //   setFuelQuantity(text)
-      // } catch (error) {
-      //   console.error('Error processing image:', error);
-      //   if (error instanceof Error) {
-      //     alert(`Error processing image: ${error.message}`);
-      //   } else {
-      //     alert('An unknown error occurred while processing the image');
-      //   }
-      // }
+      const compressedImage = await compressImage(result.assets[0].uri);
+      setFuelMeterImage(compressedImage);
+      setFuelMeterImageSize(calculateBase64Size(compressedImage));
     }
   };
-  // Input validation
+  const searchDriverById = async (idNumber: string) => {
+    setIsSearching(true);
+    try {
+      const response = await fetch(`http://192.168.137.1:5000/searchDriver/${idNumber}`);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log('No driver found with the given ID');
+          setFoundDrivers([]);
+          setNoDriverFound(true);
+          return;
+        }
+        throw new Error('Server error');
+      }
+
+      const drivers: Driver[] = await response.json();
+      setFoundDrivers(drivers);
+      setNoDriverFound(false);
+
+      // Automatically open the selection modal if drivers are found
+      if (drivers.length > 0) {
+        setModalVisible(true);
+      }
+    } catch (error) {
+      console.error('Error searching for driver:', error);
+      setFoundDrivers([]);
+      setNoDriverFound(true);
+    } finally {
+      setIsSearching(false);
+    }
+  }
+  const renderDriverItem = ({ item }: { item: Driver | { Name: string, ITPLId: string } }) => (
+    <TouchableOpacity
+      style={[styles.driverItem, { backgroundColor: colors.card }]}
+      onPress={() => handleDriverSelection(item.Name)}
+    >
+      <Text style={{ color: colors.text }}>{item.Name}</Text>
+    </TouchableOpacity>
+  );
+  const handleDriverSelection = (driverName: string) => {
+    setSelectedDriver(driverName);
+    setModalVisible(false);
+    const selectedDriverData = foundDrivers.find(driver => driver.Name === driverName);
+    if (selectedDriverData) {
+      if (selectedDriverData.MobileNo && selectedDriverData.MobileNo.length > 0) {
+        const lastUsedNumber = selectedDriverData.MobileNo.find(num => num.LastUsed);
+        const defaultNumber = selectedDriverData.MobileNo.find(num => num.IsDefaultNumber);
+        const firstNumber = selectedDriverData.MobileNo[0];
+
+        setDriverMobile((lastUsedNumber || defaultNumber || firstNumber)?.MobileNo || '');
+      } else {
+        setDriverMobile('');
+      }
+
+      // Extract ID from name
+      const idMatch = selectedDriverData.Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
+      let cleanName = selectedDriverData.Name.trim();
+      let recognizedId = '';
+      if (idMatch) {
+        recognizedId = idMatch[0].replace(/[()]/g, '').toUpperCase();
+        cleanName = cleanName.replace(/(?:\s*[-\s]\s*|\s*\(|\)\s*)(?:ITPL-?\d+|\(ITPL-?\d+\))/i, '').trim();
+      }
+
+      setDriverName(cleanName);
+
+      if (recognizedId) {
+        setDriverId(recognizedId);
+      } else if (selectedDriverData.ITPLId) {
+        setDriverId(selectedDriverData.ITPLId);
+      } else {
+        setDriverId(cleanName);
+        Alert.alert(
+          "Error",
+          'Id unrecognised',
+          [
+            {
+              text: "OK", onPress: () => {
+              }
+            }
+          ],
+          { cancelable: false }
+        );
+      }
+    }
+  }
   const validateInputs = () => {
     if (!vehicleNumber) {
       alert("Vehicle Number is required.");
@@ -346,26 +394,35 @@ export default function FuelingScreen() {
         <ThemedView style={styles.formContainer}>
           <View style={{ height: 60 }} />
           <ThemedText type="title">Fuel Dispensing Form</ThemedText>
-
           <ThemedView style={styles.section}>
             <ThemedText style={{ textAlign: 'center' }}>{Date().toLocaleString()}</ThemedText>
           </ThemedView>
 
           <ThemedView style={styles.section}>
-
             {vehicleNumberPlateImage && (
-              <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
+              <>
+                <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
+                <ThemedText style={styles.imageSizeText}>Size: {vehicleNumberPlateImageSize}</ThemedText>
+              </>
             )}
+            {!vehicleNumberPlateImage && <TouchableOpacity
+              onPress={() => fuelMeterImage === null ? openNumberPlateCamera() : null}
+              style={[styles.photoButton,]}
+            >
+              <ThemedText>Take Fuel Meter Photo</ThemedText>
+            </TouchableOpacity>}
             <ThemedView style={styles.inputContainer}>
               <ThemedText>Vehicle Number:</ThemedText>
               <TextInput
                 ref={vehicleNumberInputRef}
-                onPress={() => vehicleNumber === '' ? openNumberPlateCamera() : null}
+                onPress={() => !vehicleNumberPlateImage && openNumberPlateCamera()}
                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
                 placeholder="Enter vehicle number"
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                 value={vehicleNumber}
-                onChangeText={setVehicleNumber}
+                onChangeText={(text) => {
+                  setVehicleNumber(text.toUpperCase());
+                }}
                 returnKeyType="next"
                 onSubmitEditing={() => driverNameInputRef.current?.focus()}
                 blurOnSubmit={false}
@@ -374,22 +431,62 @@ export default function FuelingScreen() {
           </ThemedView>
 
           <ThemedView style={styles.section}>
-
             <ThemedView style={styles.inputContainer}>
               <ThemedText>Driver ID:</ThemedText>
               <TextInput
+                // onKeyUp={(event) => {
+                //   if (driverId.length >= 3) {
+                //     searchDriverById(driverId + event.nativeEvent.key);
+                //   }
+                // }}
                 ref={driverIdInputRef}
                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
                 placeholder="Enter driver ID"
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                 value={driverId}
-                onChangeText={setDriverId}
-                keyboardType="phone-pad"
-                // returnKeyType="next"
-                onSubmitEditing={() => driverMobileInputRef.current?.focus()}
+                onChangeText={(text) => {
+                  setDriverId(text);
+                  if (text.length > 3 && !(text == "")) {
+                    setFoundDrivers([]);
+                    setNoDriverFound(false);
+                    searchDriverById(text);
+                  }
+                }}
+                keyboardType="default"
+                onSubmitEditing={() => driverNameInputRef.current?.focus()}
                 blurOnSubmit={false}
               />
             </ThemedView>
+            {noDriverFound && (
+              <ThemedText style={styles.errorText}>No driver found with the given ID</ThemedText>
+            )}
+            {!noDriverFound && !(driverId == "") && <TouchableOpacity
+              style={[styles.pickerContainer,]}
+              onPress={() => setModalVisible(true)}
+            >
+              <Text style={{ color: colors.text }}>{selectedDriver || "Select a driver"}</Text>
+            </TouchableOpacity>}
+            <Modal
+              visible={modalVisible}
+              transparent={true}
+              animationType="slide"
+              onRequestClose={() => setModalVisible(false)}
+            >
+              <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={{ color: colors.text }}>Close</Text>
+                </TouchableOpacity>
+                <FlatList
+                  data={driversData}
+                  renderItem={renderDriverItem}
+                  keyExtractor={(item, index) => item.ITPLId || item.Name + index}
+                />
+              </View>
+            </Modal>
+
             <ThemedView style={styles.inputContainer}>
               <ThemedText>Driver Name:</ThemedText>
               <TextInput
@@ -400,10 +497,11 @@ export default function FuelingScreen() {
                 value={driverName}
                 onChangeText={setDriverName}
                 returnKeyType="next"
-                onSubmitEditing={() => driverIdInputRef.current?.focus()}
+                onSubmitEditing={() => driverMobileInputRef.current?.focus()}
                 blurOnSubmit={false}
               />
             </ThemedView>
+
             <ThemedView style={styles.inputContainer}>
               <ThemedText>Driver Mobile Number:</ThemedText>
               <TextInput
@@ -422,25 +520,58 @@ export default function FuelingScreen() {
           </ThemedView>
 
           <ThemedView style={styles.section}>
-
             {fuelMeterImage && (
-              <Image source={{ uri: fuelMeterImage }} style={styles.uploadedImage} />
+              <>
+                <Image source={{ uri: fuelMeterImage }} style={styles.uploadedImage} />
+                <ThemedText style={styles.imageSizeText}>Size: {fuelMeterImageSize}</ThemedText>
+              </>
             )}
+            {!fuelMeterImage && <TouchableOpacity
+              onPress={() => fuelMeterImage === null ? openFuelMeterCamera() : null}
+              style={[styles.photoButton,]}
+            >
+              <ThemedText>Take Fuel Meter Photo</ThemedText>
+            </TouchableOpacity>}
             <ThemedView style={styles.inputContainer}>
               <ThemedText>Fuel Quantity Dispensed:</ThemedText>
-              <TextInput
-                onPress={() => fuelQuantity === '' ? openFuelMeterCamera() : null}
-                ref={fuelQuantityInputRef}
-                style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                placeholder="Enter fuel quantity"
-                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                keyboardType="numeric"
-                value={fuelQuantity}
-                onChangeText={setFuelQuantity}
-                returnKeyType="next"
-                onSubmitEditing={() => gpsLocationInputRef.current?.focus()}
-                blurOnSubmit={false}
-              />
+              <View style={styles.rowContainer}>
+                <Picker
+                  style={[
+                    styles.input,
+                    styles.quarterInput,
+                    {
+                      color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C',
+                    }
+                  ]}
+                  selectedValue={quantityType}
+                  onValueChange={(itemValue) => {
+                    setQuantityType(itemValue);
+                    fuelQuantityInputRef.current?.focus();
+                  }}
+                  dropdownIconColor={colorScheme === 'dark' ? '#ECEDEE' : '#11181C'}
+                >
+                  <Picker.Item label="Full" value="Full" />
+                  <Picker.Item label="Part" value="Part" />
+                </Picker>
+                <TextInput
+                  onFocus={() => {
+                    if (!fuelMeterImage) {
+                      openFuelMeterCamera();
+                    }
+                  }}
+                  onPress={() => !fuelMeterImage && openFuelMeterCamera()}
+                  ref={fuelQuantityInputRef}
+                  style={[styles.input, styles.threeQuarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                  placeholder="Enter fuel quantity"
+                  placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                  keyboardType="numeric"
+                  value={fuelQuantity}
+                  onChangeText={setFuelQuantity}
+                  returnKeyType="next"
+                  onSubmitEditing={() => gpsLocationInputRef.current?.focus()}
+                  blurOnSubmit={false}
+                />
+              </View>
             </ThemedView>
           </ThemedView>
 
@@ -458,6 +589,16 @@ export default function FuelingScreen() {
           </TouchableOpacity>
         </ThemedView>
       </ScrollView>
+      {formSubmitting && (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#0a7ea4" />
+        </View>
+      )}
+      {isSearching && (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#0a7ea4" />
+        </View>
+      )}
     </View>
   );
 }
@@ -516,7 +657,8 @@ const styles = StyleSheet.create({
     borderBlockColor: 'white',
     borderWidth: 1,
     width: 350,
-    height: 250,
+    minHeight: 150,
+    maxHeight: 250,
     resizeMode: 'contain',
     alignSelf: 'center',
     borderRadius: 4,
@@ -530,5 +672,69 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  photoButton: {
+    backgroundColor: '#0a7ea4',
+    padding: 12,
+    borderRadius: 4,
+    marginVertical: 20,
+    alignItems: 'center'
+  },
+  loaderContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickerContainer: {
+    marginBottom: 8,
+    textAlign: 'center',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 8,
+  },
+  modalContainer: {
+    flex: 1,
+    marginTop: 50,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  driverItem: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  closeButton: {
+    padding: 10,
+    alignItems: 'center',
+  },
+  rowContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  quarterInput: {
+    flex: 0.30,
+    marginRight: 4,
+  },
+  threeQuarterInput: {
+    flex: 0.70,
+    marginLeft: 4,
+  },
+  imageSizeText: {
+    textAlign: 'center',
+    marginTop: 4,
+    fontSize: 12,
   },
 });

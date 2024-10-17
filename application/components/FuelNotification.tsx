@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Linking, Alert, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 type RootStackParamList = {
   NotificationFueling: {
@@ -86,20 +87,18 @@ const FuelNotification = ({ vehicleNumber, driverId, driverMobile, driverName, f
   return (
     <View style={styles.container}>
       <Text style={styles.vehicleNumber}>{vehicleNumber}</Text>
-      <Text style={styles.detail}>Driver ID: {driverId}</Text>
-      <Text style={styles.detail}>Driver Phone No.: {driverMobile.join(', ')}</Text>
-      <Text style={styles.detail}>Driver Name: {driverName}</Text>
-      <Text style={styles.detail}>Quantity Type: {quantityType}</Text>
-      {fuelQuantity && <Text style={styles.detail}>Fueling Quantity: {fuelQuantity}</Text>}
+      <Text style={styles.detail}>Mobile No.: {driverMobile.join(', ')}</Text>
+      <Text style={styles.detail}>Fueling: {quantityType}</Text>
+      {fuelQuantity && <Text style={styles.detail}>Quantity: {fuelQuantity}</Text>}
       <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={handleCallDriver}>
+          <Ionicons name="call" size={32} color="#fff" />
+        </TouchableOpacity>
         <TouchableOpacity style={[styles.button, styles.disabledButton]}>
-          <Text style={styles.buttonText}>Track</Text>
+          <Ionicons name="location" size={32} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.button} onPress={handleGiveFuel}>
-          <Text style={styles.buttonText}>Give Fuel</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={handleCallDriver}>
-          <Text style={styles.buttonText}>Call Driver</Text>
+        <MaterialIcons name="local-gas-station" size={24} color="white" />
         </TouchableOpacity>
       </View>
     </View>
@@ -138,8 +137,11 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 8,
     backgroundColor: '#0a7ea4',
-    padding: 10,
+    padding: 7,
     borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 26,
   },
   disabledButton: {
     backgroundColor: 'gray',
@@ -147,6 +149,10 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     textAlign: 'center',
+  },
+  fuelNozzle: {
+    width: 32,
+    height: 32,
   },
 });
 

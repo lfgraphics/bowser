@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import * as FileSystem from 'expo-file-system';
 import { ThemedText } from '@/components/ThemedText';
+import { Ionicons } from '@expo/vector-icons';
 
 interface RouteParams {
     vehicleNumber: string;
@@ -122,9 +123,9 @@ export default function NotificationFuelingScreen() {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const responseText = await response.text(); // or response.json() if the response is JSON
-                console.log('Response:', responseText); // Log the response 
-                alert(responseText)
+                const responseData = await response.json();
+                console.log('Response:', responseData);
+                alert(`Success: ${responseData.message}`);
             } catch (err) {
                 console.error('Fetch error:', err); // Log any fetch errors
             }
@@ -245,149 +246,153 @@ export default function NotificationFuelingScreen() {
     }
 
     return (
-        <View style={styles.container}>
-            <ThemedView style={styles.section}>
-                <ThemedText style={{ textAlign: 'center' }}>{Date().toLocaleString()}</ThemedText>
-
-                {vehicleNumberPlateImage && (
-                    <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
-                )}
-                <ThemedView style={styles.inputContainer}>
-                    <ThemedText>Vehicle Number:</ThemedText>
-                    <TouchableOpacity
-                        onPress={() => fuelMeterImage === null ? openNumberPlateCamera() : null}
-                        style={[styles.photoButton, { display: fuelMeterImage ? 'none' : 'flex' }]}
-                    >
-                        <ThemedText>Take Fuel Meter Photo</ThemedText>
-                    </TouchableOpacity>
-                    <TextInput
-                        readOnly
-                        ref={vehicleNumberInputRef}
-                        // onPress={() => vehicleNumber === '' ? openNumberPlateCamera() : null}
-                        style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                        placeholder="Enter vehicle number"
-                        placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                        value={vehicleNumber}
-                        returnKeyType="next"
-                        onSubmitEditing={() => driverNameInputRef.current?.focus()}
-                        blurOnSubmit={false}
-                    />
-                </ThemedView>
-
+        <View style={[styles.container, styles.main]}>
+            <ScrollView>
                 <ThemedView style={styles.section}>
+                    <ThemedText style={{ textAlign: 'center' }}>{Date().toLocaleString()}</ThemedText>
 
-                    <ThemedView style={styles.inputContainer}>
-                        <ThemedText>Driver ID:</ThemedText>
-                        <TextInput
-                            ref={driverIdInputRef}
-                            readOnly
-                            style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                            placeholder="Enter driver ID"
-                            placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                            value={driverId}
-                            keyboardType="phone-pad"
-                            returnKeyType="next"
-                            onSubmitEditing={() => driverMobileInputRef.current?.focus()}
-                            blurOnSubmit={false}
-                        />
-                    </ThemedView>
-                    <ThemedView style={styles.inputContainer}>
-                        <ThemedText>Driver Name:</ThemedText>
-                        <TextInput
-                            ref={driverNameInputRef}
-                            readOnly
-                            style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                            placeholder="Enter driver name"
-                            placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                            value={driverName}
-                            returnKeyType="next"
-                            onSubmitEditing={() => driverIdInputRef.current?.focus()}
-                            blurOnSubmit={false}
-                        />
-                    </ThemedView>
-                    <ThemedView style={styles.inputContainer}>
-                        <ThemedText>Driver Mobile Number:</ThemedText>
-                        <TextInput
-                            ref={driverMobileInputRef}
-                            readOnly
-                            style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                            placeholder="Enter mobile number"
-                            placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                            keyboardType="phone-pad"
-                            value={driverMobile}
-                            returnKeyType="next"
-                            onSubmitEditing={() => fuelQuantityInputRef.current?.focus()}
-                            blurOnSubmit={false}
-                        />
-                    </ThemedView>
-                </ThemedView>
-
-                <ThemedView style={styles.section}>
-
-                    {fuelMeterImage && (
-                        <Image source={{ uri: fuelMeterImage }} style={styles.uploadedImage} />
+                    {vehicleNumberPlateImage && (
+                        <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
                     )}
                     <ThemedView style={styles.inputContainer}>
-                        <ThemedText>Fuel Quantity Dispensed:</ThemedText>
-                        <TouchableOpacity
-                            onPress={() => fuelMeterImage === null ? openFuelMeterCamera() : null}
+                        <ThemedText>Vehicle Number:</ThemedText>
+                        {!vehicleNumberPlateImage && <TouchableOpacity
+                            onPress={() => fuelMeterImage === null ? openNumberPlateCamera() : null}
                             style={[styles.photoButton, { display: fuelMeterImage ? 'none' : 'flex' }]}
                         >
-                            <ThemedText>Take Fuel Meter Photo</ThemedText>
-                        </TouchableOpacity>
-                        <View style={styles.rowContainer}>
+                            <ThemedText>Take Vehicle Number Plate Photo</ThemedText>
+                        </TouchableOpacity>}
+                        <TextInput
+                            readOnly
+                            ref={vehicleNumberInputRef}
+                            // onPress={() => vehicleNumber === '' ? openNumberPlateCamera() : null}
+                            style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                            placeholder="Enter vehicle number"
+                            placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                            value={vehicleNumber}
+                            returnKeyType="next"
+                            onSubmitEditing={() => driverNameInputRef.current?.focus()}
+                            blurOnSubmit={false}
+                        />
+                    </ThemedView>
+
+                    <ThemedView style={styles.section}>
+
+                        <ThemedView style={styles.inputContainer}>
+                            <ThemedText>Driver ID:</ThemedText>
                             <TextInput
-                                ref={fuelQuantityInputRef}
+                                ref={driverIdInputRef}
                                 readOnly
-                                style={[styles.input, styles.quarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                                placeholder="Quantity type"
+                                style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                                placeholder="Enter driver ID"
                                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                                value={quantityType}
+                                value={driverId}
+                                keyboardType="phone-pad"
+                                returnKeyType="next"
+                                onSubmitEditing={() => driverMobileInputRef.current?.focus()}
+                                blurOnSubmit={false}
+                            />
+                        </ThemedView>
+                        <ThemedView style={styles.inputContainer}>
+                            <ThemedText>Driver Name:</ThemedText>
+                            <TextInput
+                                ref={driverNameInputRef}
+                                readOnly
+                                style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                                placeholder="Enter driver name"
+                                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                                value={driverName}
+                                returnKeyType="next"
+                                onSubmitEditing={() => driverIdInputRef.current?.focus()}
+                                blurOnSubmit={false}
+                            />
+                        </ThemedView>
+                        <ThemedView style={styles.inputContainer}>
+                            <ThemedText>Driver Mobile Number:</ThemedText>
+                            <TextInput
+                                ref={driverMobileInputRef}
+                                readOnly
+                                style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                                placeholder="Enter mobile number"
+                                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                                keyboardType="phone-pad"
+                                value={driverMobile}
                                 returnKeyType="next"
                                 onSubmitEditing={() => fuelQuantityInputRef.current?.focus()}
                                 blurOnSubmit={false}
                             />
-                            <TextInput
-                                ref={fuelQuantityInputRef}
-                                style={[styles.input, styles.threeQuarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                                placeholder="Fuel quantity"
-                                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                                keyboardType="numeric"
-                                value={fuelQuantity}
-                                returnKeyType="next"
-                                onChangeText={setFuelQuantity}
-                                readOnly={false}
-                                onSubmitEditing={() => gpsLocationInputRef.current?.focus()}
-                                blurOnSubmit={false}
-                            />
-                        </View>
+                        </ThemedView>
                     </ThemedView>
-                </ThemedView>
 
-                <TouchableOpacity
-                    style={styles.submitButton}
-                    onPress={submitDetails}
-                >
-                    <ThemedText style={styles.submitButtonText}>Submit</ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.resetButton}
-                    onPress={resetForm}
-                >
-                    <ThemedText style={styles.resetButtonText}>Reset</ThemedText>
-                </TouchableOpacity>
-            </ThemedView>
+                    <ThemedView style={styles.section}>
+
+                        {fuelMeterImage && (
+                            <Image source={{ uri: fuelMeterImage }} style={styles.uploadedImage} />
+                        )}
+                        <ThemedView style={styles.inputContainer}>
+                            <ThemedText>Fuel Quantity Dispensed:</ThemedText>
+                            {!fuelMeterImage && <TouchableOpacity
+                                onPress={() => fuelMeterImage === null ? openFuelMeterCamera() : null}
+                                style={[styles.photoButton, { display: fuelMeterImage ? 'none' : 'flex' }]}
+                            >
+                                <ThemedText>Take Fuel Meter Photo</ThemedText>
+                            </TouchableOpacity>}
+                            <View style={styles.rowContainer}>
+                                <TextInput
+                                    ref={fuelQuantityInputRef}
+                                    readOnly
+                                    style={[styles.input, styles.quarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                                    placeholder="Quantity type"
+                                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                                    value={quantityType}
+                                    returnKeyType="next"
+                                    onSubmitEditing={() => fuelQuantityInputRef.current?.focus()}
+                                    blurOnSubmit={false}
+                                />
+                                <TextInput
+                                    ref={fuelQuantityInputRef}
+                                    style={[styles.input, styles.threeQuarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                                    placeholder="Fuel quantity"
+                                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                                    keyboardType="numeric"
+                                    value={fuelQuantity}
+                                    returnKeyType="next"
+                                    onChangeText={setFuelQuantity}
+                                    readOnly={false}
+                                    onSubmitEditing={() => gpsLocationInputRef.current?.focus()}
+                                    blurOnSubmit={false}
+                                />
+                            </View>
+                        </ThemedView>
+                    </ThemedView>
+
+                    <TouchableOpacity
+                        style={styles.submitButton}
+                        onPress={submitDetails}
+                    >
+                        <ThemedText style={styles.submitButtonText}>Submit</ThemedText>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.resetButton}
+                        onPress={resetForm}
+                    >
+                        <ThemedText style={styles.resetButtonText}>Reset</ThemedText>
+                    </TouchableOpacity>
+                </ThemedView>
+            </ScrollView>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    main: {
+        backgroundColor: '#11181C',
+        paddingTop: 80,
+        paddingHorizontal: 20
+    },
     container: {
         flex: 1,
-        rowGap: 4,
         backgroundColor: '#11181C',
-        paddingHorizontal: 20,
-        paddingTop: 80
     },
     photoButton: {
         backgroundColor: '#0a7ea4',
@@ -395,17 +400,22 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         marginVertical: 20,
         alignItems: 'center',
+        justifyContent: 'center',
+        alignContent: 'center',
+        textAlign: 'center',
     },
     detail: {
         fontSize: 16,
         marginBottom: 4,
         color: '#ECEDEE',
+        backgroundColor: '#11181C',
     },
     section: {
-        marginBottom: 8,
+        backgroundColor: '#11181C',
     },
     inputContainer: {
         marginBottom: 8,
+        backgroundColor: '#11181C',
     },
     input: {
         borderWidth: 1,
