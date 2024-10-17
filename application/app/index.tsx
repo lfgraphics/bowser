@@ -1,65 +1,210 @@
-// App.js
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Link } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Modal, Alert, ScrollView } from 'react-native';
+import { Link, useRouter } from 'expo-router';
+import { checkUserLoggedIn } from './utils/authUtils';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
+interface UserData {
+  [key: string]: any;
+}
 
 const App = () => {
-    const handleFuelingRedirect = () => {
-        // Navigate to the /fueling page
-        // Use your navigation method here, e.g., navigation.navigate('Fueling')
-        console.log('Redirecting to /fueling');
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isProfileModalVisible, setProfileModalVisible] = useState(false);
+  const [userData, setUserData] = useState<{ name: string; userId: string } | null>(null);
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const isLoggedIn = await checkUserLoggedIn();
+        if (!isLoggedIn) {
+          router.replace('/auth' as any);
+        } else {
+          const userDataString = await AsyncStorage.getItem('userData');
+          if (userDataString) {
+            setUserData(JSON.parse(userDataString));
+          }
+        }
+      } catch (error) {
+        console.error('Error checking login status:', error);
+        setError('An error occurred while verifying your login status. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    const handleRequestsRedirect = () => {
-        // This button is disabled for now
-    };
+    checkLoginStatus();
+  }, []);
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('userToken');
+      await AsyncStorage.removeItem('userData');
+      router.replace('/auth' as any);
+    } catch (error) {
+      console.error('Error during logout:', error);
+      Alert.alert('Logout Error', 'An error occurred during logout. Please try again.');
+    }
+  };
+  const renderUserData = () => {
+    if (!userData) return null;
 
+    return Object.entries(userData).map(([key, value]) => (
+      <Text key={key} style={styles.modalText}>
+        {key.charAt(0).toUpperCase() + key.slice(1)}: {String(value)}
+      </Text>
+    ));
+  };
+
+  if (isLoading) {
+    return <View style={styles.container}>
+      <ActivityIndicator size="large" color="#0000ff" />
+    </View>;
+  }
+  if (error) {
     return (
-      <View style={styles.container}>
-      <Link  style={styles.button} href={'/fueling'}>
+      <View style={[styles.container, styles.errorContainer]}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <TouchableOpacity
+        style={styles.profileButton}
+        onPress={() => setProfileModalVisible(true)}
+      >
+        <Ionicons name="person-circle-outline" size={32} color="#0a7ea4" />
+      </TouchableOpacity>
+
+      <Link style={styles.button} href={'/fueling'}>
         Fueling
       </Link>
-      <Link style={styles.disabledButton} href={'/notificaions'}>
+      <Link style={styles.disabledButton} href={'/notifications'}>
         Pending Orders
       </Link>
-  </View>
-    );
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isProfileModalVisible}
+        onRequestClose={() => setProfileModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Profile</Text>
+            <ScrollView style={styles.scrollView}>
+              {renderUserData()}
+            </ScrollView>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={24} color="white" />
+              <Text style={styles.logoutButtonText}>Logout</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setProfileModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'dark', // Changed background color to grey
-        paddingHorizontal: 20,
-    },
-    button: {
-        width: '100%',
-        padding: 15,
-        marginVertical: 10,
-        backgroundColor: '#0a7ea4',
-        borderRadius: 5,
-        alignItems: 'center',
-        textAlign:'center',
-        paddingHorizontal: 20,
-        color:'white'
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 16,
-    },
-    disabledButton: {
-      width: '100%',
-      padding: 15,
-      marginVertical: 10,
-      backgroundColor: 'gray',
-      borderRadius: 5,
-      alignItems: 'center',
-      textAlign:'center',
-      paddingHorizontal: 20,
-      color:'white'
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'dark',
+    paddingHorizontal: 20,
+  },
+  button: {
+    width: '100%',
+    padding: 15,
+    marginVertical: 10,
+    backgroundColor: '#0a7ea4',
+    borderRadius: 5,
+    alignItems: 'center',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    color: 'white'
+  },
+  disabledButton: {
+    width: '100%',
+    padding: 15,
+    marginVertical: 10,
+    backgroundColor: 'gray',
+    borderRadius: 5,
+    alignItems: 'center',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    color: 'white'
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+  },
+  profileButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  scrollView: {
+    maxHeight: 200,
+    minWidth: 300,
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0a7ea4',
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 20,
+  },
+  logoutButtonText: {
+    color: 'white',
+    marginLeft: 10,
+  },
+  closeButton: {
+    marginTop: 20,
+  },
+  closeButtonText: {
+    color: '#0a7ea4',
   },
 });
 
