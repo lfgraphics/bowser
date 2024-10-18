@@ -17,6 +17,20 @@ export interface Driver {
     }>;
 }
 
+export interface PrePopulatedFuelingData {
+    vehicleNumber: string;
+    driverId: string;
+    driverName: string;
+    driverMobile: string;
+    quantityType: 'Full' | 'Part';
+    fuelQuantity: string;
+    bowserDriver: {
+        _id?: Types.ObjectId;
+        userName?: string;
+        userId: string;
+    };
+}
+
 export interface FormData {
     vehicleNumberPlateImage: string | null;
     vehicleNumber: string;

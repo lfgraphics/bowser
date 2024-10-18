@@ -12,6 +12,8 @@ import { Picker } from '@react-native-picker/picker';
 import { Driver, FormData } from '@/src/types/models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import NetInfo from '@react-native-community/netinfo';
+
 
 export default function FuelingScreen() {
   // declare state variables---->
@@ -36,6 +38,7 @@ export default function FuelingScreen() {
   const [quantityType, setQuantityType] = useState<'Full' | 'Part'>('Part');
   const [vehicleNumberPlateImageSize, setVehicleNumberPlateImageSize] = useState<string>('');
   const [fuelMeterImageSize, setFuelMeterImageSize] = useState<string>('');
+  const [isOnline, setIsOnline] = useState(true);
 
   // declare refs for input fields---->
   const vehicleNumberInputRef = React.useRef<TextInput>(null);
@@ -51,6 +54,14 @@ export default function FuelingScreen() {
     { Name: "Select a driver", ITPLId: "placeholder" },
     ...foundDrivers
   ];
+
+  React.useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsOnline(state.isConnected ?? false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // function declarations---->
   // startup function
@@ -128,65 +139,94 @@ export default function FuelingScreen() {
         gpsLocation: currentGpsLocation,
         fuelingDateTime: currentFuelingDateTime,
         bowserDriver: {
-          _id:  new mongoose.Types.ObjectId(userData._id),
+          _id: new mongoose.Types.ObjectId(userData._id),
           userName: userData.Name,
           userId: userData['User Id']
         },
       };
 
-      try {
-        const response = await fetch('http://192.168.137.1:5000/formsubmit', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const responseData = await response.json();
-        Alert.alert(
-          "Success",
-          responseData.message,
-          [
-            {
-              text: "OK", onPress: () => {
-              }
-            }
-          ],
-          { cancelable: false }
-        );
-        resetForm();
-        navigation.navigate('index' as never);
-      } catch (err) {
-        console.error('Fetch error:', err); // Log any fetch errors
-        let errorMessage = 'An unknown error occurred';
 
-        if (err instanceof Response) {
-          try {
-            const errorData = await err.json();
-            errorMessage = errorData.message || errorData.error || errorMessage;
-          } catch (jsonError) {
-            console.error('Error parsing JSON:', jsonError);
+
+      if (isOnline) {
+        try {
+          const response = await fetch('http://192.168.137.1:5000/formsubmit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData),
+          });
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
-        } else if (err instanceof Error) {
-          errorMessage = err.message;
-        }
-
-        Alert.alert(
-          "Error",
-          errorMessage,
-          [
-            {
-              text: "OK", onPress: () => {
+          const responseData = await response.json();
+          Alert.alert(
+            "Success",
+            responseData.message,
+            [
+              {
+                text: "OK", onPress: () => {
+                }
               }
+            ],
+            { cancelable: false }
+          );
+          resetForm();
+          navigation.navigate('index' as never);
+        } catch (err) {
+          console.error('Fetch error:', err); // Log any fetch errors
+          let errorMessage = 'An unknown error occurred';
+
+          if (err instanceof Response) {
+            try {
+              const errorData = await err.json();
+              errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch (jsonError) {
+              console.error('Error parsing JSON:', jsonError);
             }
-          ],
-          { cancelable: false }
-        );
-      } finally {
-        setFormSubmitting(false);
+          } else if (err instanceof Error) {
+            errorMessage = err.message;
+          }
+
+          Alert.alert(
+            "Error",
+            errorMessage,
+            [
+              {
+                text: "OK", onPress: () => {
+                }
+              }
+            ],
+            { cancelable: false }
+          );
+        } finally {
+          setFormSubmitting(false);
+        }
+      } else {
+        try {
+          const offlineData = await AsyncStorage.getItem('offlineFuelingData');
+          let offlineArray = offlineData ? JSON.parse(offlineData) : [];
+          offlineArray.push(formData);
+          await AsyncStorage.setItem('offlineFuelingData', JSON.stringify(offlineArray));
+          Alert.alert(
+            "Success",
+            "Data saved offline. It will be submitted when you're back online.",
+            [{ text: "OK", onPress: () => { } }],
+            { cancelable: false }
+          );
+          resetForm();
+          navigation.navigate('index' as never);
+        } catch (error) {
+          console.error('Error saving offline data:', error);
+          Alert.alert(
+            "Error",
+            "Failed to save data offline. Please try again.",
+            [{ text: "OK", onPress: () => { } }],
+            { cancelable: false }
+          );
+        } finally {
+          setFormSubmitting(false);
+        }
       }
     }
   }

@@ -18,7 +18,7 @@ type RootStackParamList = {
 interface RequestDetailsProps {
   vehicleNumber: string;
   driverId: string;
-  driverMobile: string[];
+  driverMobile: string;
   driverName: string;
   quantityType: "Part" | "Full";
   fuelQuantity: string;
@@ -28,66 +28,24 @@ const FuelNotification = ({ vehicleNumber, driverId, driverMobile, driverName, f
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleGiveFuel = () => {
-    if (driverMobile.length > 1) {
-      // If there are more than one numbers, give an option to select a number
-      Alert.alert(
-        'Select a number',
-        'Please select the number to call',
-        [...driverMobile.map((number: string, index: number) => ({
-          text: number,
-          onPress: () => {
-            navigation.navigate('NotificationFueling', {
-              vehicleNumber,
-              driverId,
-              driverMobile: number,
-              driverName,
-              quantityType,
-              fuelQuantity,
-            });
-          }
-        })),
-        { text: 'Cancel', style: 'cancel' },
-        ],
-      );
-    } else {
-      navigation.navigate('NotificationFueling', {
-        vehicleNumber,
-        driverId,
-        driverMobile: driverMobile[0],
-        driverName,
-        quantityType,
-        fuelQuantity,
-      });
-    }
+    navigation.navigate('NotificationFueling', {
+      vehicleNumber,
+      driverId,
+      driverMobile: driverMobile[0],
+      driverName,
+      quantityType,
+      fuelQuantity,
+    });
   };
 
   const handleCallDriver = () => {
-    // Make a call to the driver's phone number
-    if (driverMobile.length > 1) {
-      // If there are more than one numbers, give an option to select a number
-      Alert.alert(
-        'Select a number',
-        'Please select the number to call',
-        [
-          ...driverMobile.map((number: string, index: number) => ({
-            text: number,
-            onPress: () => {
-              Linking.openURL(`tel:${number}`);
-            },
-          })),
-          { text: 'Cancel', style: 'cancel' },
-        ],
-      );
-    } else {
-      // If there is only one number, make the call directly
-      Linking.openURL(`tel:${driverMobile[0]}`);
-    }
+    Linking.openURL(`tel:${driverMobile}`);
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.vehicleNumber}>{vehicleNumber}</Text>
-      <Text style={styles.detail}>Mobile No.: {driverMobile.join(', ')}</Text>
+      <Text style={styles.detail}>Mobile No.: {driverMobile}</Text>
       <Text style={styles.detail}>Fueling: {quantityType}</Text>
       {fuelQuantity && <Text style={styles.detail}>Quantity: {fuelQuantity}</Text>}
       <View style={styles.buttonContainer}>
@@ -98,7 +56,7 @@ const FuelNotification = ({ vehicleNumber, driverId, driverMobile, driverName, f
           <Ionicons name="location" size={32} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.button} onPress={handleGiveFuel}>
-        <MaterialIcons name="local-gas-station" size={24} color="white" />
+          <MaterialIcons name="local-gas-station" size={24} color="white" />
         </TouchableOpacity>
       </View>
     </View>

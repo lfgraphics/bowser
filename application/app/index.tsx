@@ -7,10 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { Camera } from 'expo-camera';
-
-interface UserData {
-  [key: string]: any;
-}
+import NetInfo from '@react-native-community/netinfo';
 
 const App = () => {
   const router = useRouter();
@@ -20,10 +17,12 @@ const App = () => {
   const [userData, setUserData] = useState<{ name: string; userId: string } | null>(null);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
   const [isGPSEnabled, setIsGPSEnabled] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
-    const checkLoginStatus = async () => {
+    const initializeApp = async () => {
       try {
+        await syncOfflineData();
         const isLoggedIn = await checkUserLoggedIn();
         if (!isLoggedIn) {
           router.replace('/auth' as any);
@@ -35,15 +34,72 @@ const App = () => {
           await requestPermissions();
         }
       } catch (error) {
-        console.error('Error checking login status:', error);
-        setError('An error occurred while verifying your login status. Please try again.');
+        console.error('Error initializing app:', error);
+        setError('An error occurred while initializing the app. Please try again.');
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkLoginStatus();
+    initializeApp();
   }, []);
+
+  React.useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsOnline(state.isConnected ?? false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const syncOfflineData = async () => {
+    if (isOnline) {
+      try {
+        const offlineData = await AsyncStorage.getItem('offlineFuelingData');
+        if (offlineData) {
+          const offlineArray = JSON.parse(offlineData);
+          for (const formData of offlineArray) {
+            try {
+              const response = await fetch('http://192.168.137.1:5000/formsubmit', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+              });
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+            } catch (err) {
+              console.error('Error syncing offline data:', err);
+            }
+          }
+          await AsyncStorage.removeItem('offlineFuelingData');
+          Alert.alert(
+            "Success",
+            "Offline data synced successfully.",
+            [{ text: "OK", onPress: () => { } }],
+            { cancelable: false }
+          );
+        }
+      } catch (error) {
+        console.error('Error during offline data sync:', error);
+        Alert.alert(
+          "Error",
+          `Failed to submit offline data.\n${error}`,
+          [{ text: "OK", onPress: () => { } }],
+          { cancelable: false }
+        );
+      }
+    } else {
+      Alert.alert(
+        "Error",
+        "Failed to submit offline data. Please connect to the internet.",
+        [{ text: "OK", onPress: () => { } }],
+        { cancelable: false }
+      );
+    }
+  };
 
   useEffect(() => {
     if (permissionsGranted) {

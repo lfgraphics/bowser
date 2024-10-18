@@ -6,35 +6,66 @@ export const checkUserLoggedIn = async () => {
   try {
     const userToken = await AsyncStorage.getItem('userToken');
     const deviceUUID = await AsyncStorage.getItem('deviceUUID');
-    const loginTime = await AsyncStorage.getItem('loginTime');
 
     if (!userToken || !deviceUUID) {
       return false;
     }
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    if (loginTime && new Date(loginTime) < sevenDaysAgo) {
+    const payload = JSON.parse(atob(userToken.split('.')[1]));
+    const expirationTime = payload.exp * 1000; // Convert to milliseconds
+
+    if (Date.now() >= expirationTime) {
       await logoutUser();
       return false;
     }
 
-    const response = await fetch('http://192.168.137.1:5000/auth/verify-token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ token: userToken, deviceUUID }),
-    });
+    // Check if the device is online
+    const isOnline = await checkInternetConnection();
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Server response error:', errorText);
-      return false;
+    // If login time is under 7 days and user is offline, rely on saved data
+    if (!isOnline) {
+      console.log('Offline mode: Using saved authentication data');
+      return true;
     }
 
-    const data = await response.json();
-    return data.valid;
+    if (isOnline) {
+      const response = await fetch('http://192.168.137.1:5000/auth/verify-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: userToken, deviceUUID }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server response error:', errorText);
+        return false;
+      }
+
+      const data = await response.json();
+      return data.valid;
+    }
+
+    return false;
   } catch (error) {
     console.error('Error checking user login status:', error);
+    return false;
+  }
+};
+
+const checkInternetConnection = async (): Promise<boolean> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch('https://www.google.com', {
+      method: 'HEAD',
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+    return response.ok;
+  } catch (error) {
     return false;
   }
 };
