@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Vhicle-Fueling-by-Bowser",
-    "slug": "Vhicle-Fueling-by-Bowser",
+    "name": "Bowsers Fueling",
+    "slug": "bowsers-fueling",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "bowsers-fueling",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/splash.png",

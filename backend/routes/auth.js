@@ -5,6 +5,13 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const Role = require('../models/role');
 
+function isTokenValid(decodedToken) {
+    const now = Date.now();
+    const tokenIssueTime = decodedToken.iat * 1000; // Convert to milliseconds
+    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+    return now - tokenIssueTime < sevenDaysInMs;
+}
+
 router.post('/signup', async (req, res) => {
     try {
         const { userId, password, phoneNumber, name, deviceUUID } = req.body;
@@ -42,7 +49,7 @@ router.post('/signup', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     try {
-        const { userId, password, deviceUUID } = req.body;
+        const { userId, password, deviceUUID, appName } = req.body;
 
         // Find user
         const user = await User.findOne({ userId });
@@ -51,20 +58,30 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'User not found' });
         }
 
-        // Check password
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (!isPasswordValid) {
             return res.status(400).json({ message: 'Invalid password' });
         }
         let roleNames = [];
+        let roles = [];
         if (user.roles && user.roles.length > 0) {
-            const roles = await Role.find({ _id: { $in: user.roles } });
+            roles = await Role.find({ _id: { $in: user.roles } });
             roleNames = roles.map(role => role.name);
         }
 
-        // Create and send JWT token
-        const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const hasAccess = roles.some(role => 
+            role.permissions.apps.some(app => 
+                app.name === appName && app.access !== null
+            )
+        );
+
+        if (!hasAccess) {
+            return res.status(403).json({ message: 'User does not have access to this application' });
+        }
+
+        const token = jwt.sign({ userId: user.userId, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        const loginTime = new Date().toISOString();
         const userData = {
             'User Id': user.userId,
             'Name': user.name,
@@ -76,6 +93,7 @@ router.post('/login', async (req, res) => {
         res.json({
             message: 'Login successful',
             token,
+            loginTime,
             verified: user.verified,
             user: userData
         });
@@ -96,6 +114,10 @@ router.post('/verify-token', async (req, res) => {
         jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
             if (err) {
                 return res.status(401).json({ valid: false, message: 'Invalid token' });
+            }
+
+            if (!isTokenValid(decoded)) {
+                return res.status(401).json({ valid: false, message: 'Token expired' });
             }
 
             // Fetch the user from the database to check the current deviceUUID

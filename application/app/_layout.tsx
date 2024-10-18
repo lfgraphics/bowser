@@ -31,7 +31,8 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="fueling" options={{ headerShown: false }} />
-        <Stack.Screen name="notificaions" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={{ headerShown: false }} />
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
         <Stack.Screen
           name="NotificationFueling"
           options={{ title: 'Fueling Notification', headerShown: false }}
