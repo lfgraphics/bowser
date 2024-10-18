@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -28,15 +29,15 @@ export default function AuthScreen() {
       setIsLoading(false);
       return;
     }
-  
+
     try {
       let deviceUUID = await AsyncStorage.getItem('deviceUUID');
-  
+
       if (!deviceUUID) {
         deviceUUID = await Crypto.randomUUID();
         await AsyncStorage.setItem('deviceUUID', deviceUUID);
       }
-  
+
       const endpoint = isLogin ? 'login' : 'signup';
       const response = await fetch(`http://192.168.137.1:5000/auth/${endpoint}`, {
         method: 'POST',
@@ -52,15 +53,15 @@ export default function AuthScreen() {
           appName: 'Bowsers Fueling',
         }),
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
         throw new Error(data.message || 'An error occurred');
       }
-  
+
       console.log('Response:', data);
-  
+
       if (data.token) {
         await AsyncStorage.setItem('userToken', data.token);
         await AsyncStorage.setItem('loginTime', data.loginTime);

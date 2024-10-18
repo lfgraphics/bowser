@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, ScrollView, View, ActivityIndicator, Button, Alert, Modal, FlatList } from 'react-native';
 import React, { useState, useRef } from 'react';
 import * as ImagePicker from 'expo-image-picker';
@@ -9,6 +10,8 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { useNavigation, useTheme } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import { Driver, FormData } from '@/src/types/models';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 
 export default function FuelingScreen() {
   // declare state variables---->
@@ -99,6 +102,13 @@ export default function FuelingScreen() {
 
     let currentFuelingDateTime = fuelingDateTime;
     let currentGpsLocation = gpsLocation;
+    const userDataString = await AsyncStorage.getItem('userData');
+    const userData = userDataString ? JSON.parse(userDataString) : null;
+    if (!userData) {
+      Alert.alert("Error", "User data not found. Please log in again.");
+      router.replace('/auth');
+      return;
+    }
     currentFuelingDateTime = await fulingTime();
     const locationResult = await location();
     if (locationResult) {
@@ -117,6 +127,11 @@ export default function FuelingScreen() {
         quantityType,
         gpsLocation: currentGpsLocation,
         fuelingDateTime: currentFuelingDateTime,
+        bowserDriver: {
+          _id:  new mongoose.Types.ObjectId(userData._id),
+          userName: userData.Name,
+          userId: userData['User Id']
+        },
       };
 
       try {
@@ -127,7 +142,7 @@ export default function FuelingScreen() {
           },
           body: JSON.stringify(formData),
         });
-        if (!response.ok) { // Check if response status is OK (status 200-299)
+        if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const responseData = await response.json();
@@ -143,11 +158,6 @@ export default function FuelingScreen() {
           { cancelable: false }
         );
         resetForm();
-        // Import navigation hook at the top of the file if not already imported
-        // import { useNavigation } from '@react-navigation/native';
-
-        // Get the navigation object
-        // Redirect to the index screen
         navigation.navigate('index' as never);
       } catch (err) {
         console.error('Fetch error:', err); // Log any fetch errors
@@ -420,7 +430,7 @@ export default function FuelingScreen() {
                   setVehicleNumber(text.toUpperCase());
                 }}
                 returnKeyType="next"
-                onSubmitEditing={() => driverNameInputRef.current?.focus()}
+                onSubmitEditing={() => driverIdInputRef.current?.focus()}
                 blurOnSubmit={false}
               />
             </ThemedView>
@@ -430,11 +440,6 @@ export default function FuelingScreen() {
             <ThemedView style={styles.inputContainer}>
               <ThemedText>Driver ID:</ThemedText>
               <TextInput
-                // onKeyUp={(event) => {
-                //   if (driverId.length >= 3) {
-                //     searchDriverById(driverId + event.nativeEvent.key);
-                //   }
-                // }}
                 ref={driverIdInputRef}
                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
                 placeholder="Enter driver ID"

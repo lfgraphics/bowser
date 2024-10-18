@@ -9,8 +9,14 @@ const formDataSchema = new mongoose.Schema({
     driverMobile: String,
     fuelMeterImage: String,
     fuelQuantity: String,
+    quantityType: String,
     gpsLocation: String,
-    fuelingDateTime: String
+    fuelingDateTime: String,
+    bowserDriver: {
+        _id:  mongoose.Schema.Types.ObjectId,
+        userName: String,
+        userId: String
+    },
 });
 
 module.exports = bowsersDatabaseConnection.model('FormData', formDataSchema, 'FuelingRecordsCollection');

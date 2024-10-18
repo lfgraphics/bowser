@@ -83,6 +83,7 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign({ userId: user.userId, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
         const loginTime = new Date().toISOString();
         const userData = {
+            _id: user._id,
             'User Id': user.userId,
             'Name': user.name,
             'Phone Number': user.phoneNumber,

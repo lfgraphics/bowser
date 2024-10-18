@@ -1,3 +1,5 @@
+import { Types } from 'mongoose';
+
 export interface Vehicle {
     vehicleNumber: string;
     type: string;
@@ -26,4 +28,33 @@ export interface FormData {
     quantityType: 'Full' | 'Part';
     gpsLocation: string;
     fuelingDateTime: string;
+    bowserDriver: {
+        _id: Types.ObjectId;
+        userName: string;
+        userId: string;
+    };
+}
+export interface UserData {
+    _id: string;
+    userId: string;
+    name: string;
+    phoneNumber: string;
+    verified: boolean;
+    roles: Array<{
+        name: string;
+        permissions: {
+            apps: Array<{
+                name: string;
+                access: 'read' | 'write' | 'admin' | null;
+            }>;
+            functions: Array<{
+                name: string;
+                allowed: boolean | null;
+            }>;
+            customPermissions: {
+                canAccessUI: boolean;
+                [key: string]: any;
+            };
+        };
+    }>;
 }
