@@ -6,22 +6,13 @@ import * as FileSystem from 'expo-file-system';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { useTheme } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useTheme } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
-
-interface Driver {
-  Name: string;
-  ITPLId: string | null;
-  MobileNo?: Array<{
-    MobileNo: string;
-    IsDefaultNumber: boolean;
-    LastUsed: boolean;
-  }>;
-}
+import { Driver, FormData } from '@/src/types/models';
 
 export default function FuelingScreen() {
   // declare state variables---->
+  const navigation = useNavigation();
   const colorScheme = useColorScheme();
   const { colors } = useTheme();
   const [vehicleNumberPlateImage, setVehicleNumberPlateImage] = useState<string | null>(null);
@@ -115,7 +106,7 @@ export default function FuelingScreen() {
     }
 
     if (currentFuelingDateTime && currentGpsLocation) {
-      const formData = JSON.stringify({
+      const formData: FormData = {
         vehicleNumberPlateImage,
         vehicleNumber: vehicleNumber.toUpperCase(),
         driverName,
@@ -123,9 +114,10 @@ export default function FuelingScreen() {
         driverMobile,
         fuelMeterImage,
         fuelQuantity,
-        gpsLocation: gpsLocation || await location(),
-        fuelingDateTime: fuelingDateTime || fulingTime(),
-      });
+        quantityType,
+        gpsLocation: currentGpsLocation,
+        fuelingDateTime: currentFuelingDateTime,
+      };
 
       try {
         const response = await fetch('http://192.168.137.1:5000/formsubmit', {
@@ -133,25 +125,30 @@ export default function FuelingScreen() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: formData,
+          body: JSON.stringify(formData),
         });
         if (!response.ok) { // Check if response status is OK (status 200-299)
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const responseData = await response.json();
-        console.log('Response:', responseData);
         Alert.alert(
           "Success",
           responseData.message,
           [
             {
               text: "OK", onPress: () => {
-                console.log("OK Pressed");
               }
             }
           ],
           { cancelable: false }
         );
+        resetForm();
+        // Import navigation hook at the top of the file if not already imported
+        // import { useNavigation } from '@react-navigation/native';
+
+        // Get the navigation object
+        // Redirect to the index screen
+        navigation.navigate('index' as never);
       } catch (err) {
         console.error('Fetch error:', err); // Log any fetch errors
         let errorMessage = 'An unknown error occurred';
@@ -173,7 +170,6 @@ export default function FuelingScreen() {
           [
             {
               text: "OK", onPress: () => {
-                console.log("OK Pressed");
               }
             }
           ],

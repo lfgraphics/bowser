@@ -1,19 +1,13 @@
 const mongoose = require('mongoose');
 
 const bowsersDatabaseConnection = mongoose.createConnection(process.env.BowsersDataConnectionString, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
     serverSelectionTimeoutMS: 35000
 });
 
 const transportDatabaseConnection = mongoose.createConnection(process.env.TransportDataConnectionString, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
     serverSelectionTimeoutMS: 35000
 });
 const UsersAndRolesDatabaseConnection = mongoose.createConnection(process.env.UsersAndRolesDataConnectionString, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
     serverSelectionTimeoutMS: 35000
 });
 

@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Modal, Alert, ScrollView } from 'react-native';
 import { Link, useRouter } from 'expo-router';
-import { checkUserLoggedIn } from './utils/authUtils';
+import { checkUserLoggedIn } from '../src/utils/authUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import { Camera } from 'expo-camera';
 
 interface UserData {
   [key: string]: any;
@@ -15,6 +17,8 @@ const App = () => {
   const [error, setError] = useState<string | null>(null);
   const [isProfileModalVisible, setProfileModalVisible] = useState(false);
   const [userData, setUserData] = useState<{ name: string; userId: string } | null>(null);
+  const [permissionsGranted, setPermissionsGranted] = useState(false);
+  const [isGPSEnabled, setIsGPSEnabled] = useState(false);
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -27,6 +31,7 @@ const App = () => {
           if (userDataString) {
             setUserData(JSON.parse(userDataString));
           }
+          await requestPermissions();
         }
       } catch (error) {
         console.error('Error checking login status:', error);
@@ -38,6 +43,56 @@ const App = () => {
 
     checkLoginStatus();
   }, []);
+
+  useEffect(() => {
+    if (permissionsGranted) {
+      checkGPSStatus();
+    }
+  }, [permissionsGranted]);
+
+  const requestPermissions = async () => {
+    try {
+      const [locationPermission, cameraPermission] = await Promise.all([
+        Location.requestForegroundPermissionsAsync(),
+        Camera.requestCameraPermissionsAsync()
+      ]);
+
+      if (locationPermission.status === 'granted' && cameraPermission.status === 'granted') {
+        setPermissionsGranted(true);
+        await checkGPSStatus();
+      } else {
+        Alert.alert(
+          'Permissions Required',
+          'This app requires location and camera permissions to function properly.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error requesting permissions:', error);
+      Alert.alert('Error', 'Failed to request permissions. Please try again.');
+    }
+  };
+
+  const checkGPSStatus = async () => {
+    try {
+      const enabled = await Location.hasServicesEnabledAsync();
+      setIsGPSEnabled(enabled);
+      if (!enabled) {
+        Alert.alert(
+          'GPS Required',
+          'Please enable GPS for this app to function properly.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Location.enableNetworkProviderAsync() }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error checking GPS status:', error);
+      Alert.alert('Error', 'Failed to check GPS status. Please ensure GPS is enabled.');
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('userToken');
@@ -67,6 +122,20 @@ const App = () => {
     return (
       <View style={[styles.container, styles.errorContainer]}>
         <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
+  if (!permissionsGranted || !isGPSEnabled) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Please grant necessary permissions and enable GPS to use this app.</Text>
+        <TouchableOpacity style={styles.button} onPress={requestPermissions}>
+          <Text style={styles.buttonText}>Grant Permissions</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={checkGPSStatus}>
+          <Text style={styles.buttonText}>Check GPS Status</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -205,6 +274,9 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     color: '#0a7ea4',
+  },
+  buttonText: {
+    color: 'white',
   },
 });
 
