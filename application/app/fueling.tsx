@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, ScrollView, View, ActivityIndicator, Button, Alert, Modal, FlatList } from 'react-native';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import * as FileSystem from 'expo-file-system';
@@ -22,6 +22,7 @@ export default function FuelingScreen() {
   const { colors } = useTheme();
   const [vehicleNumberPlateImage, setVehicleNumberPlateImage] = useState<string | null>(null);
   const [fuelMeterImage, setFuelMeterImage] = useState<string | null>(null);
+  const [slipImage, setSlipImage] = useState<string | null>(null);
   const [vehicleNumber, setVehicleNumber] = useState('');
   const [driverName, setDriverName] = useState('');
   const [driverId, setDriverId] = useState('');
@@ -38,6 +39,7 @@ export default function FuelingScreen() {
   const [quantityType, setQuantityType] = useState<'Full' | 'Part'>('Part');
   const [vehicleNumberPlateImageSize, setVehicleNumberPlateImageSize] = useState<string>('');
   const [fuelMeterImageSize, setFuelMeterImageSize] = useState<string>('');
+  const [slipImageSize, setSlipImageSize] = useState<string>('');
   const [isOnline, setIsOnline] = useState(true);
 
   // declare refs for input fields---->
@@ -48,23 +50,27 @@ export default function FuelingScreen() {
   const fuelQuantityInputRef = React.useRef<TextInput>(null);
   const gpsLocationInputRef = React.useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null); // Ref for ScrollView
-
-
   const driversData: (Driver | { Name: string, ITPLId: string })[] = [
     { Name: "Select a driver", ITPLId: "placeholder" },
     ...foundDrivers
   ];
 
-  React.useEffect(() => {
+  // function declarations---->
+  // startup function
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigation.navigate('index' as never);
+    }, 180000); // 180000 milliseconds = 3 minutes
+
+    return () => clearTimeout(timer); // Clean up the timer on component unmount
+  }, [navigation]);
+  useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       setIsOnline(state.isConnected ?? false);
     });
 
     return () => unsubscribe();
   }, []);
-
-  // function declarations---->
-  // startup function
   const location = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
@@ -134,6 +140,7 @@ export default function FuelingScreen() {
         driverId: driverId.toUpperCase(),
         driverMobile,
         fuelMeterImage,
+        slipImage,
         fuelQuantity,
         quantityType,
         gpsLocation: currentGpsLocation,
@@ -149,7 +156,7 @@ export default function FuelingScreen() {
 
       if (isOnline) {
         try {
-          const response = await fetch(`${process.env.SERVER_URL}/formsubmit`, {
+          const response = await fetch(`http://192.168.137.1:5000/formsubmit`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -270,6 +277,7 @@ export default function FuelingScreen() {
   const resetForm = () => {
     setVehicleNumberPlateImage(null);
     setFuelMeterImage(null);
+    setSlipImage(null);
     setVehicleNumber('');
     setDriverName('');
     setDriverId('');
@@ -332,10 +340,33 @@ export default function FuelingScreen() {
       setFuelMeterImageSize(calculateBase64Size(compressedImage));
     }
   };
+  const openSlipCamera = async () => {
+    if (slipImage) {
+      return;
+    }
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      alert("Camera permission is required!");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets[0].uri) {
+      const compressedImage = await compressImage(result.assets[0].uri);
+      setSlipImage(compressedImage);
+      setSlipImageSize(calculateBase64Size(compressedImage));
+    }
+  };
   const searchDriverById = async (idNumber: string) => {
     setIsSearching(true);
     try {
-      const response = await fetch(`${process.env.SERVER_URL}/searchDriver/${idNumber}`);
+      const response = await fetch(`http://192.168.137.1:5000/searchDriver/${idNumber}`);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -489,10 +520,10 @@ export default function FuelingScreen() {
               </>
             )}
             {!vehicleNumberPlateImage && <TouchableOpacity
-              onPress={() => fuelMeterImage === null ? openNumberPlateCamera() : null}
+              onPress={() => vehicleNumberPlateImage === null ? openNumberPlateCamera() : null}
               style={[styles.photoButton,]}
             >
-              <ThemedText>Take Fuel Meter Photo</ThemedText>
+              <ThemedText>Take Vehicle Number Plate Photo</ThemedText>
             </TouchableOpacity>}
             <ThemedView style={styles.inputContainer}>
               <ThemedText>Vehicle Number:</ThemedText>
@@ -610,6 +641,20 @@ export default function FuelingScreen() {
             >
               <ThemedText>Take Fuel Meter Photo</ThemedText>
             </TouchableOpacity>}
+
+            {slipImage && (
+              <>
+                <Image source={{ uri: slipImage }} style={styles.uploadedImage} />
+                <ThemedText style={styles.imageSizeText}>Size: {slipImageSize}</ThemedText>
+              </>
+            )}
+            {!slipImage && <TouchableOpacity
+              onPress={() => slipImage === null ? openSlipCamera() : null}
+              style={[styles.photoButton,]}
+            >
+              <ThemedText>Take Slip Photo</ThemedText>
+            </TouchableOpacity>}
+
             <ThemedView style={styles.inputContainer}>
               <ThemedText>Fuel Quantity Dispensed:</ThemedText>
               <View style={styles.rowContainer}>

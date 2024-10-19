@@ -8,6 +8,7 @@ const formDataSchema = new mongoose.Schema({
     driverId: String,
     driverMobile: String,
     fuelMeterImage: String,
+    slipImage: String,
     fuelQuantity: String,
     quantityType: String,
     gpsLocation: String,
