@@ -149,7 +149,7 @@ export default function FuelingScreen() {
 
       if (isOnline) {
         try {
-          const response = await fetch('http://192.168.137.1:5000/formsubmit', {
+          const response = await fetch(`${process.env.SERVER_URL}/formsubmit`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -204,23 +204,60 @@ export default function FuelingScreen() {
         }
       } else {
         try {
-          const offlineData = await AsyncStorage.getItem('offlineFuelingData');
-          let offlineArray = offlineData ? JSON.parse(offlineData) : [];
-          offlineArray.push(formData);
-          await AsyncStorage.setItem('offlineFuelingData', JSON.stringify(offlineArray));
           Alert.alert(
-            "Success",
-            "Data saved offline. It will be submitted when you're back online.",
-            [{ text: "OK", onPress: () => { } }],
-            { cancelable: false }
+            "No Internet Connection",
+            "Please connect to the internet. Waiting for 10 seconds...",
+            [{ text: "OK" }]
           );
-          resetForm();
-          navigation.navigate('index' as never);
+
+          // Wait for 10 seconds
+          await new Promise(resolve => setTimeout(resolve, 10000));
+
+          // Check internet connection again
+          const netInfo = await NetInfo.fetch();
+          if (netInfo.isConnected) {
+            // If now connected, try to submit the form again
+            setIsOnline(true);
+            submitDetails();
+            return;
+          }
+
+          // If still offline, ask to save data offline
+          Alert.alert(
+            "Still Offline",
+            "Do you want to save the data offline?",
+            [
+              {
+                text: "Yes",
+                onPress: async () => {
+                  const offlineData = await AsyncStorage.getItem('offlineFuelingData');
+                  let offlineArray = offlineData ? JSON.parse(offlineData) : [];
+                  offlineArray.push(formData);
+                  await AsyncStorage.setItem('offlineFuelingData', JSON.stringify(offlineArray));
+                  Alert.alert(
+                    "Success",
+                    "Data saved offline. It will be submitted when you're back online.",
+                    [{ text: "OK", onPress: () => { } }],
+                    { cancelable: false }
+                  );
+                  resetForm();
+                  navigation.navigate('index' as never);
+                }
+              },
+              {
+                text: "No",
+                onPress: () => {
+                  setFormSubmitting(false);
+                },
+                style: "cancel"
+              }
+            ]
+          );
         } catch (error) {
-          console.error('Error saving offline data:', error);
+          console.error('Error handling offline data:', error);
           Alert.alert(
             "Error",
-            "Failed to save data offline. Please try again.",
+            "Failed to handle offline data. Please try again.",
             [{ text: "OK", onPress: () => { } }],
             { cancelable: false }
           );
@@ -298,7 +335,7 @@ export default function FuelingScreen() {
   const searchDriverById = async (idNumber: string) => {
     setIsSearching(true);
     try {
-      const response = await fetch(`http://192.168.137.1:5000/searchDriver/${idNumber}`);
+      const response = await fetch(`${process.env.SERVER_URL}/searchDriver/${idNumber}`);
 
       if (!response.ok) {
         if (response.status === 404) {

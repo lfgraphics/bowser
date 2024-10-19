@@ -60,7 +60,7 @@ const App = () => {
           const offlineArray = JSON.parse(offlineData);
           for (const formData of offlineArray) {
             try {
-              const response = await fetch('http://192.168.137.1:5000/formsubmit', {
+              const response = await fetch(`${process.env.SERVER_URL}/formsubmit`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
