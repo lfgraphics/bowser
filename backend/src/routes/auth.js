@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const Role = require('../models/role');
 const UnAuthorizedLogin = require('../models/unauthorizedLogin');
+const argon2 = require('argon2');
 
 
 function isTokenValid(decodedToken) {
@@ -25,7 +25,7 @@ router.post('/signup', async (req, res) => {
         }
 
         // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await argon2.hash(password);
 
         // Create new user
         const newUser = new User({
@@ -60,7 +60,7 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'User not found' });
         }
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = await argon2.verify(user.password, password);
 
         if (!isPasswordValid) {
             return res.status(400).json({ message: 'Invalid password' });
