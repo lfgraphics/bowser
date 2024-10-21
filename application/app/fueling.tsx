@@ -149,7 +149,7 @@ export default function FuelingScreen() {
 
       if (isOnline) {
         try {
-          const response = await fetch(`http://192.168.137.1:5000/formsubmit`, {
+          const response = await fetch(`https://bowser-backend-2cdr.onrender.com/formsubmit`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -358,7 +358,7 @@ export default function FuelingScreen() {
   const searchDriverById = async (idNumber: string) => {
     setIsSearching(true);
     try {
-      const response = await fetch(`http://192.168.137.1:5000/searchDriver/${idNumber}`);
+      const response = await fetch(`https://bowser-backend-2cdr.onrender.com/searchDriver/${idNumber}`);
 
       if (!response.ok) {
         if (response.status === 404) {

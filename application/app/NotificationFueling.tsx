@@ -43,6 +43,7 @@ export default function NotificationFuelingScreen() {
     const [fuelMeterImage, setFuelMeterImage] = useState<string | null>(null);
     const [slipImage, setSlipImage] = useState<string | null>(null);
     const [fuelQuantity, setFuelQuantity] = useState(quantity);
+    const [driverMobileNo, setDriverMobileNo] = useState(driverMobile);
     const [gpsLocation, setGpsLocation] = useState('');
     const [fuelingDateTime, setFuelingDateTime] = useState('');
     const [formSubmitting, setFormSubmitting] = useState(false);
@@ -146,7 +147,7 @@ export default function NotificationFuelingScreen() {
 
             if (isOnline) {
                 try {
-                    const response = await fetch(`http://192.168.137.1:5000/formsubmit`, {
+                    const response = await fetch(`https://bowser-backend-2cdr.onrender.com/formsubmit`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -380,16 +381,6 @@ export default function NotificationFuelingScreen() {
             );
             return false;
         }
-        if (!driverMobile) {
-            alert("Driver Mobile Number is required.");
-            driverMobileInputRef.current?.measureLayout(
-                scrollViewRef.current?.getInnerViewNode(),
-                (x, y) => {
-                    scrollViewRef.current?.scrollTo({ y: y, animated: true });
-                }
-            );
-            return false;
-        }
         if (!fuelQuantity) {
             alert("Fuel Quantity is required.");
             fuelQuantityInputRef.current?.measureLayout(
@@ -450,7 +441,7 @@ export default function NotificationFuelingScreen() {
                                 value={driverId}
                                 keyboardType="phone-pad"
                                 returnKeyType="next"
-                                onSubmitEditing={() => driverMobileInputRef.current?.focus()}
+                                onSubmitEditing={() => driverNameInputRef.current?.focus()}
                                 blurOnSubmit={false}
                             />
                         </ThemedView>
@@ -464,7 +455,7 @@ export default function NotificationFuelingScreen() {
                                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                                 value={driverName}
                                 returnKeyType="next"
-                                onSubmitEditing={() => driverIdInputRef.current?.focus()}
+                                onSubmitEditing={() => driverMobileInputRef.current?.focus()}
                                 blurOnSubmit={false}
                             />
                         </ThemedView>
@@ -472,12 +463,12 @@ export default function NotificationFuelingScreen() {
                             <ThemedText>Driver Mobile Number:</ThemedText>
                             <TextInput
                                 ref={driverMobileInputRef}
-                                readOnly
                                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
                                 placeholder="Enter mobile number"
                                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                                 keyboardType="phone-pad"
-                                value={driverMobile}
+                                value={driverMobileNo}
+                                onChangeText={setDriverMobileNo}
                                 returnKeyType="next"
                                 onSubmitEditing={() => fuelQuantityInputRef.current?.focus()}
                                 blurOnSubmit={false}

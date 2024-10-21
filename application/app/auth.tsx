@@ -39,7 +39,7 @@ export default function AuthScreen() {
       }
 
       const endpoint = isLogin ? 'login' : 'signup';
-      const response = await fetch(`http://192.168.137.1:5000/auth/${endpoint}`, {
+      const response = await fetch(`https://bowser-backend-2cdr.onrender.com/auth/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

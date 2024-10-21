@@ -28,7 +28,7 @@ export const checkUserLoggedIn = async () => {
     }
 
     if (isOnline) {
-      const response = await fetch('http://192.168.137.1:5000/auth/verify-token', {
+      const response = await fetch('https://bowser-backend-2cdr.onrender.com/auth/verify-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ const checkInternetConnection = async (): Promise<boolean> => {
 export const loginUser = async (userId: string, password: string): Promise<void> => {
   try {
     const deviceUUID = await AsyncStorage.getItem('deviceUUID');
-    const response = await fetch('http://192.168.137.1:5000/auth/login', {
+    const response = await fetch('https://bowser-backend-2cdr.onrender.com/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

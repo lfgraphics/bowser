@@ -26,7 +26,7 @@ export default function NotificationsScreen() {
             setLoading(true);
             const userDataString = await AsyncStorage.getItem('userData');
             let userData = userDataString && JSON.parse(userDataString);
-            const response = await axios.get<ServerResponse>(`http://192.168.137.1:5000/fuelingOrders/${userData?.['User Id']}`);
+            const response = await axios.get<ServerResponse>(`https://bowser-backend-2cdr.onrender.com/fuelingOrders/${userData?.['User Id']}`);
             setNotificationsData(response.data.orders);
             setLoading(false);
         } catch (err) {

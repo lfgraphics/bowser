@@ -79,7 +79,7 @@ const App = () => {
             if (userConfirmed) {
               for (const formData of offlineArray) {
                 try {
-                  const response = await fetch(`http://192.168.137.1:5000/formsubmit`, {
+                  const response = await fetch(`https://bowser-backend-2cdr.onrender.com/formsubmit`, {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
@@ -250,7 +250,7 @@ const App = () => {
   const handleSubmitOfflineData = async (item: FormData, index: number) => {
     if (isOnline) {
       try {
-        const response = await fetch(`http://192.168.137.1:5000/formsubmit`, {
+        const response = await fetch(`https://bowser-backend-2cdr.onrender.com/formsubmit`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
