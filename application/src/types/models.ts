@@ -17,18 +17,32 @@ export interface Driver {
     }>;
 }
 
-export interface PrePopulatedFuelingData {
+export type BowserDriver = {
+    "User Id": string;
+    _id: string;
+    userName: string;
+};
+
+export type FuelingOrderData = {
+    _id: string;
+    bowserDriver: BowserDriver;
+    driverId: string;
+    driverMobile?: string;
+    driverName: string;
+    fuelQuantity: number;
+    quantityType: "Full" | "Part";
+    vehicleNumber: string;
+};
+
+export interface FuelNotificationProps {
     vehicleNumber: string;
     driverId: string;
-    driverName: string;
     driverMobile: string;
-    quantityType: 'Full' | 'Part';
+    driverName: string;
+    quantityType: "Part" | "Full";
     fuelQuantity: string;
-    bowserDriver: {
-        _id?: Types.ObjectId;
-        userName?: string;
-        userId: string;
-    };
+    bowserDriver: BowserDriver;
+
 }
 
 export interface FormData {

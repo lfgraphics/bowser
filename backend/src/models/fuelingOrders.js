@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { bowsersDatabaseConnection } = require('../../config/database');
 
 const fuelingOrdersSchema = new mongoose.Schema({
     vehicleNumber: { type: String, required: true },

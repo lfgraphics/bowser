@@ -1,24 +1,75 @@
-import React from 'react';
-import { ObjectId } from 'bson';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, ActivityIndicator, Text } from 'react-native';
 import FuelNotification from '@/components/FuelNotification';
-import { PrePopulatedFuelingData } from '@/src/types/models';
+import { FuelingOrderData, UserData } from '@/src/types/models';
+import axios from 'axios'; // Make sure axios is installed and imported
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const notificationsData: PrePopulatedFuelingData[] = [
-    { vehicleNumber: 'ABC123', driverId: '123', driverMobile: '1234567890', driverName: 'John Doe', quantityType: 'Full' as const, fuelQuantity: '0', bowserDriver: { _id: new ObjectId('666666666666666666666666'), userName: 'John Doe', userId: '123' } },
-    { vehicleNumber: 'DEF456', driverId: '456', driverMobile: '9876543210', driverName: 'Jane Doe', quantityType: 'Part' as const, fuelQuantity: '20', bowserDriver: { _id: new ObjectId('666666666666666666666666'), userName: 'John Doe', userId: '123' } },
-    { vehicleNumber: 'GHI789', driverId: '789', driverMobile: '1234567890', driverName: 'John Doe', quantityType: 'Full' as const, fuelQuantity: '0', bowserDriver: { _id: new ObjectId('666666666666666666666666'), userName: 'John Doe', userId: '123' } },
-    { vehicleNumber: 'JKL012', driverId: '012', driverMobile: '9876543210', driverName: 'Jane Doe', quantityType: 'Part' as const, fuelQuantity: '20', bowserDriver: { _id: new ObjectId('666666666666666666666666'), userName: 'John Doe', userId: '123' } },
-];
+interface ServerResponse {
+    orders: FuelingOrderData[];
+    totalPages: number;
+    currentPage: number;
+}
 
 export default function NotificationsScreen() {
+    const [notificationsData, setNotificationsData] = useState<FuelingOrderData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetchNotifications();
+    }, []);
+
+    const fetchNotifications = async () => {
+        try {
+            setLoading(true);
+            const userDataString = await AsyncStorage.getItem('userData');
+            let userData = userDataString && JSON.parse(userDataString);
+            const response = await axios.get<ServerResponse>(`http://192.168.137.1:5000/fuelingOrders/${userData?.['User Id']}`);
+            setNotificationsData(response.data.orders);
+            setLoading(false);
+        } catch (err) {
+            console.error('Error fetching notifications:', err);
+            setError('Failed to load notifications. Please try again later.');
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <View style={styles.centerContainer}>
+                <ActivityIndicator size="large" />
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.centerContainer}>
+                <Text>{error}</Text>
+            </View>
+        );
+    }
+
     return (
         <ScrollView style={styles.container}>
-            {notificationsData.map((data, index) => (
-                <View style={{ marginBottom: 10 }} key={index}>
-                    <FuelNotification {...data} />
-                </View>
-            ))}
+            {notificationsData.length > 0 ? (
+                notificationsData.map((data) => (
+                    <View style={{ marginBottom: 10 }} key={data._id}>
+                        <FuelNotification 
+                            vehicleNumber={data.vehicleNumber}
+                            driverId={data.driverId}
+                            driverMobile={data.driverMobile || ''}
+                            driverName={data.driverName}
+                            quantityType={data.quantityType}
+                            fuelQuantity={data.fuelQuantity.toString()}
+                            bowserDriver={data.bowserDriver}
+                        />
+                    </View>
+                ))
+            ) : (
+                <Text style={styles.noNotifications}>No notifications available</Text>
+            )}
             <View style={{ height: 40 }} />
         </ScrollView>
     );
@@ -26,8 +77,19 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
         padding: 10,
-        paddingBottom: 25,
-        marginTop: 40
+        paddingTop: 40,
+    },
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    noNotifications: {
+        textAlign: 'center',
+        marginTop: 20,
+        fontSize: 16,
+        color: '#666',
     },
 });

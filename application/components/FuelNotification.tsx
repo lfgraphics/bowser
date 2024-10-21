@@ -1,45 +1,43 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, Linking, Alert, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { FuelNotificationProps } from '../src/types/models';
 
 type RootStackParamList = {
-  NotificationFueling: {
-    vehicleNumber: string;
-    driverId: string;
-    driverMobile: string;
-    driverName: string;
-    quantityType: "Part" | "Full";
-    fuelQuantity: string;
-  };
+  NotificationFueling: FuelNotificationProps;
 };
 
-interface RequestDetailsProps {
-  vehicleNumber: string;
-  driverId: string;
-  driverMobile: string;
-  driverName: string;
-  quantityType: "Part" | "Full";
-  fuelQuantity: string;
-}
-
-const FuelNotification = ({ vehicleNumber, driverId, driverMobile, driverName, fuelQuantity, quantityType }: RequestDetailsProps) => {
+const FuelNotification: React.FC<FuelNotificationProps> = ({
+  vehicleNumber,
+  driverId,
+  driverMobile,
+  driverName,
+  fuelQuantity,
+  quantityType,
+  bowserDriver
+}) => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleGiveFuel = () => {
     navigation.navigate('NotificationFueling', {
       vehicleNumber,
       driverId,
-      driverMobile: driverMobile[0],
+      driverMobile,
       driverName,
       quantityType,
       fuelQuantity,
+      bowserDriver
     });
   };
 
   const handleCallDriver = () => {
-    Linking.openURL(`tel:${driverMobile}`);
+    if (driverMobile) {
+      Linking.openURL(`tel:${driverMobile}`);
+    } else {
+      Alert.alert("No mobile number", "There's no mobile number available for this driver.");
+    }
   };
 
   return (
@@ -115,5 +113,3 @@ const styles = StyleSheet.create({
 });
 
 export default FuelNotification;
-
-
