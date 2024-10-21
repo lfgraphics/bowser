@@ -1,48 +1,55 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useRoute } from '@react-navigation/native';
-import { ThemedView } from '@/components/ThemedView';
-import { Image, Platform, TextInput, TouchableOpacity, useColorScheme, ScrollView, ActivityIndicator, Button } from 'react-native';
+import mongoose from 'mongoose';
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, ScrollView, View, ActivityIndicator, Button, Alert, Modal, FlatList } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import * as FileSystem from 'expo-file-system';
 import { ThemedText } from '@/components/ThemedText';
-import { Ionicons } from '@expo/vector-icons';
+import { ThemedView } from '@/components/ThemedView';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { useNavigation, useRoute, useTheme } from '@react-navigation/native';
+import { FormData } from '@/src/types/models';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
+import NetInfo from '@react-native-community/netinfo';
 
 interface RouteParams {
+    orderId: string;
     vehicleNumber: string;
     driverId: string;
     driverMobile: string;
     driverName: string;
     quantityType: "Part" | "Full";
-    fuelQuantity: string;
+    quantity: string;
 }
 
 export default function NotificationFuelingScreen() {
     const route = useRoute();
     const {
+        orderId,
         vehicleNumber = 'N/A',
         driverId = 'N/A',
         driverMobile = 'N/A',
         driverName = 'N/A',
         quantityType = 'N/A',
-        fuelQuantity: initialFuelQuantity = 'N/A'
+        quantity = 'N/A'
     } = route.params as RouteParams;
 
 
     // declare state variables---->
     const colorScheme = useColorScheme();
+    const navigation = useNavigation();
     const [vehicleNumberPlateImage, setVehicleNumberPlateImage] = useState<string | null>(null);
     const [fuelMeterImage, setFuelMeterImage] = useState<string | null>(null);
-    // const [vehicleNumber, setVehicleNumber] = useState('');
-    // const [driverName, setDriverName] = useState('');
-    // const [driverId, setDriverId] = useState('');
-    // const [driverMobile, setDriverMobile] = useState('');
-    const [fuelQuantity, setFuelQuantity] = useState(initialFuelQuantity);
+    const [slipImage, setSlipImage] = useState<string | null>(null);
+    const [fuelQuantity, setFuelQuantity] = useState(quantity);
     const [gpsLocation, setGpsLocation] = useState('');
     const [fuelingDateTime, setFuelingDateTime] = useState('');
     const [formSubmitting, setFormSubmitting] = useState(false);
-    const [imageProcessing, setImageprocessing] = useState(false);
+    const [vehicleNumberPlateImageSize, setVehicleNumberPlateImageSize] = useState<string>('');
+    const [fuelMeterImageSize, setFuelMeterImageSize] = useState<string>('');
+    const [slipImageSize, setSlipImageSize] = useState<string>('');
+    const [isOnline, setIsOnline] = useState(true);
 
     // declare refs for input fields---->
     const vehicleNumberInputRef = React.useRef<TextInput>(null);
@@ -75,69 +82,196 @@ export default function NotificationFuelingScreen() {
         setFuelingDateTime(currentDateTime);
         return currentDateTime;
     }
-
+    const calculateBase64Size = (base64String: string): string => {
+        const stringLength = base64String.length;
+        const sizeInBytes = (stringLength * (3 / 4)) - (base64String.endsWith('==') ? 2 : base64String.endsWith('=') ? 1 : 0);
+        const sizeInKB = sizeInBytes / 1024;
+        const sizeInMB = sizeInKB / 1024;
+        return `${sizeInKB.toFixed(2)} KB (${sizeInMB.toFixed(2)} MB)`;
+    };
+    const compressImage = async (uri: string): Promise<string> => {
+        const manipulatedImage = await ImageManipulator.manipulateAsync(
+            uri,
+            [{ resize: { width: 500 } }],
+            { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
+        );
+        const base64Image = await imageToBase64(manipulatedImage.uri);
+        return base64Image;
+    };
     // form submit reset
     const submitDetails = async () => {
-
+        setFormSubmitting(true);
         if (!validateInputs()) {
+            setFormSubmitting(false);
             return;
         }
 
         let currentFuelingDateTime = fuelingDateTime;
         let currentGpsLocation = gpsLocation;
-
-        // if (!currentFuelingDateTime) {
+        const userDataString = await AsyncStorage.getItem('userData');
+        const userData = userDataString ? JSON.parse(userDataString) : null;
+        if (!userData) {
+            Alert.alert("Error", "User data not found. Please log in again.");
+            router.replace('/auth');
+            return;
+        }
         currentFuelingDateTime = await fulingTime();
-        // console.log('Time', currentFuelingDateTime);
-        // }
-        // if (!currentGpsLocation) {
         const locationResult = await location();
         if (locationResult) {
             currentGpsLocation = locationResult;
-            // console.log('Coordinates are - ', currentGpsLocation);
         }
-        // }
+
         if (currentFuelingDateTime && currentGpsLocation) {
-            const formData = JSON.stringify({
+            const formData: FormData = {
+                orderId: new mongoose.Types.ObjectId(orderId),
                 vehicleNumberPlateImage,
-                vehicleNumber,
+                vehicleNumber: vehicleNumber.toUpperCase(),
                 driverName,
-                driverId,
+                driverId: driverId.toUpperCase(),
                 driverMobile,
                 fuelMeterImage,
+                slipImage,
                 fuelQuantity,
                 quantityType,
-                gpsLocation,
-                fuelingDateTime
-            });
+                gpsLocation: currentGpsLocation,
+                fuelingDateTime: currentFuelingDateTime,
+                bowserDriver: {
+                    _id: new mongoose.Types.ObjectId(userData._id),
+                    userName: userData.Name,
+                    userId: userData['User Id']
+                },
+            };
 
-            try {
-                const response = await fetch('http://192.168.137.1:5000/formsubmit', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: formData,
-                });
-                if (!response.ok) { // Check if response status is OK (status 200-299)
-                    throw new Error(`HTTP error! status: ${response.status}`);
+
+
+            if (isOnline) {
+                try {
+                    const response = await fetch(`http://192.168.137.1:5000/formsubmit`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData),
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const responseData = await response.json();
+                    Alert.alert(
+                        "Success",
+                        responseData.message,
+                        [
+                            {
+                                text: "OK", onPress: () => {
+                                }
+                            }
+                        ],
+                        { cancelable: false }
+                    );
+                    resetForm();
+                    navigation.navigate('index' as never);
+                } catch (err) {
+                    console.error('Fetch error:', err); // Log any fetch errors
+                    let errorMessage = 'An unknown error occurred';
+
+                    if (err instanceof Response) {
+                        try {
+                            const errorData = await err.json();
+                            errorMessage = errorData.message || errorData.error || errorMessage;
+                        } catch (jsonError) {
+                            console.error('Error parsing JSON:', jsonError);
+                        }
+                    } else if (err instanceof Error) {
+                        errorMessage = err.message;
+                    }
+
+                    Alert.alert(
+                        "Error",
+                        errorMessage,
+                        [
+                            {
+                                text: "OK", onPress: () => {
+                                }
+                            }
+                        ],
+                        { cancelable: false }
+                    );
+                } finally {
+                    setFormSubmitting(false);
                 }
+            } else {
+                try {
+                    Alert.alert(
+                        "No Internet Connection",
+                        "Please connect to the internet. Waiting for 10 seconds...",
+                        [{ text: "OK" }]
+                    );
 
-                const responseData = await response.json();
-                console.log('Response:', responseData);
-                alert(`Success: ${responseData.message}`);
-            } catch (err) {
-                console.error('Fetch error:', err); // Log any fetch errors
+                    // Wait for 10 seconds
+                    await new Promise(resolve => setTimeout(resolve, 10000));
+
+                    // Check internet connection again
+                    const netInfo = await NetInfo.fetch();
+                    if (netInfo.isConnected) {
+                        // If now connected, try to submit the form again
+                        setIsOnline(true);
+                        submitDetails();
+                        return;
+                    }
+
+                    // If still offline, ask to save data offline
+                    Alert.alert(
+                        "Still Offline",
+                        "Do you want to save the data offline?",
+                        [
+                            {
+                                text: "Yes",
+                                onPress: async () => {
+                                    const offlineData = await AsyncStorage.getItem('offlineFuelingData');
+                                    let offlineArray = offlineData ? JSON.parse(offlineData) : [];
+                                    offlineArray.push(formData);
+                                    await AsyncStorage.setItem('offlineFuelingData', JSON.stringify(offlineArray));
+                                    Alert.alert(
+                                        "Success",
+                                        "Data saved offline. It will be submitted when you're back online.",
+                                        [{ text: "OK", onPress: () => { } }],
+                                        { cancelable: false }
+                                    );
+                                    resetForm();
+                                    navigation.navigate('index' as never);
+                                }
+                            },
+                            {
+                                text: "No",
+                                onPress: () => {
+                                    setFormSubmitting(false);
+                                },
+                                style: "cancel"
+                            }
+                        ]
+                    );
+                } catch (error) {
+                    console.error('Error handling offline data:', error);
+                    Alert.alert(
+                        "Error",
+                        "Failed to handle offline data. Please try again.",
+                        [{ text: "OK", onPress: () => { } }],
+                        { cancelable: false }
+                    );
+                } finally {
+                    setFormSubmitting(false);
+                }
             }
         }
     }
     const resetForm = () => {
         setVehicleNumberPlateImage(null);
         setFuelMeterImage(null);
+        setSlipImage(null);
+        setFuelQuantity('');
         setGpsLocation('');
         setFuelingDateTime('');
     }
-
     // form data handling
     const imageToBase64 = async (uri: string): Promise<string> => {
         const base64 = await FileSystem.readAsStringAsync(uri, {
@@ -163,8 +297,9 @@ export default function NotificationFuelingScreen() {
         });
 
         if (!result.canceled && result.assets[0].uri) {
-            const base64Image = await imageToBase64(result.assets[0].uri);
-            setVehicleNumberPlateImage(base64Image)
+            const compressedImage = await compressImage(result.assets[0].uri);
+            setVehicleNumberPlateImage(compressedImage);
+            setVehicleNumberPlateImageSize(calculateBase64Size(compressedImage));
         }
     };
     const openFuelMeterCamera = async () => {
@@ -185,9 +320,32 @@ export default function NotificationFuelingScreen() {
         });
 
         if (!result.canceled && result.assets[0].uri) {
-            const base64Image = await imageToBase64(result.assets[0].uri);
-            setFuelMeterImage(base64Image);
+            const compressedImage = await compressImage(result.assets[0].uri);
+            setFuelMeterImage(compressedImage);
+            setFuelMeterImageSize(calculateBase64Size(compressedImage));
+        }
+    };
+    const openSlipCamera = async () => {
+        if (slipImage) {
+            return;
+        }
+        const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
 
+        if (permissionResult.granted === false) {
+            alert("Camera permission is required!");
+            return;
+        }
+
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            quality: 1,
+        });
+
+        if (!result.canceled && result.assets[0].uri) {
+            const compressedImage = await compressImage(result.assets[0].uri);
+            setSlipImage(compressedImage);
+            setSlipImageSize(calculateBase64Size(compressedImage));
         }
     };
     // Input validation
@@ -248,17 +406,20 @@ export default function NotificationFuelingScreen() {
     return (
         <View style={[styles.container, styles.main]}>
             <ScrollView>
+                <ThemedText type="title">Fuel Dispensing Form</ThemedText>
                 <ThemedView style={styles.section}>
                     <ThemedText style={{ textAlign: 'center' }}>{Date().toLocaleString()}</ThemedText>
-
-                    {vehicleNumberPlateImage && (
-                        <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
-                    )}
                     <ThemedView style={styles.inputContainer}>
                         <ThemedText>Vehicle Number:</ThemedText>
+                        {vehicleNumberPlateImage && (
+                            <>
+                                <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
+                                <ThemedText style={styles.imageSizeText}>Size: {vehicleNumberPlateImageSize}</ThemedText>
+                            </>
+                        )}
                         {!vehicleNumberPlateImage && <TouchableOpacity
-                            onPress={() => fuelMeterImage === null ? openNumberPlateCamera() : null}
-                            style={[styles.photoButton, { display: fuelMeterImage ? 'none' : 'flex' }]}
+                            onPress={() => vehicleNumberPlateImage === null ? openNumberPlateCamera() : null}
+                            style={[styles.photoButton,]}
                         >
                             <ThemedText>Take Vehicle Number Plate Photo</ThemedText>
                         </TouchableOpacity>}
@@ -325,18 +486,34 @@ export default function NotificationFuelingScreen() {
                     </ThemedView>
 
                     <ThemedView style={styles.section}>
-
-                        {fuelMeterImage && (
-                            <Image source={{ uri: fuelMeterImage }} style={styles.uploadedImage} />
-                        )}
                         <ThemedView style={styles.inputContainer}>
-                            <ThemedText>Fuel Quantity Dispensed:</ThemedText>
+                            {fuelMeterImage && (
+                                <>
+                                    <Image source={{ uri: fuelMeterImage }} style={styles.uploadedImage} />
+                                    <ThemedText style={styles.imageSizeText}>Size: {fuelMeterImageSize}</ThemedText>
+                                </>
+                            )}
                             {!fuelMeterImage && <TouchableOpacity
                                 onPress={() => fuelMeterImage === null ? openFuelMeterCamera() : null}
-                                style={[styles.photoButton, { display: fuelMeterImage ? 'none' : 'flex' }]}
+                                style={[styles.photoButton,]}
                             >
                                 <ThemedText>Take Fuel Meter Photo</ThemedText>
                             </TouchableOpacity>}
+
+                            {slipImage && (
+                                <>
+                                    <Image source={{ uri: slipImage }} style={styles.uploadedImage} />
+                                    <ThemedText style={styles.imageSizeText}>Size: {slipImageSize}</ThemedText>
+                                </>
+                            )}
+                            {!slipImage && <TouchableOpacity
+                                onPress={() => slipImage === null ? openSlipCamera() : null}
+                                style={[styles.photoButton,]}
+                            >
+                                <ThemedText>Take Slip Photo</ThemedText>
+                            </TouchableOpacity>}
+                            <ThemedText>Fuel Quantity Dispensed:</ThemedText>
+
                             <View style={styles.rowContainer}>
                                 <TextInput
                                     ref={fuelQuantityInputRef}
@@ -380,42 +557,50 @@ export default function NotificationFuelingScreen() {
                     </TouchableOpacity>
                 </ThemedView>
             </ScrollView>
+            {formSubmitting && (
+                <View style={styles.loaderContainer}>
+                    <ActivityIndicator size="large" color="#0a7ea4" />
+                </View>
+            )}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     main: {
-        backgroundColor: '#11181C',
-        paddingTop: 80,
-        paddingHorizontal: 20
+        backgroundColor: 'dark',
+        paddingTop: 70,
+        paddingHorizontal: 10,
+    },
+    containerTitles: {
+        paddingTop: 4,
+        paddingBottom: 4,
+    },
+    resetButton: {
+        padding: 10,
+        backgroundColor: 'gray',
+        borderRadius: 5,
+        marginBottom: 10,
+    },
+    resetButtonText: {
+        fontWeight: 'bold',
+        textAlign: 'center'
     },
     container: {
         flex: 1,
-        backgroundColor: '#11181C',
     },
-    photoButton: {
-        backgroundColor: '#0a7ea4',
-        padding: 12,
-        borderRadius: 4,
-        marginVertical: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        alignContent: 'center',
-        textAlign: 'center',
+    scrollViewContent: {
+        flexGrow: 1,
     },
-    detail: {
-        fontSize: 16,
-        marginBottom: 4,
-        color: '#ECEDEE',
-        backgroundColor: '#11181C',
+    formContainer: {
+        padding: 16,
+        gap: 16,
     },
     section: {
-        backgroundColor: '#11181C',
+        marginBottom: 8,
     },
     inputContainer: {
         marginBottom: 8,
-        backgroundColor: '#11181C',
     },
     input: {
         borderWidth: 1,
@@ -424,46 +609,99 @@ const styles = StyleSheet.create({
         padding: 8,
         marginTop: 4,
     },
-    rowContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    imageUploadContainer: {
         alignItems: 'center',
+        marginTop: 8,
     },
-    quarterInput: {
-        flex: 0.25,
-        marginRight: 4,
-    },
-    threeQuarterInput: {
-        flex: 0.75,
-        marginLeft: 4,
+    uploadButton: {
+        backgroundColor: '#0a7ea4',
+        padding: 8,
+        borderRadius: 4,
+        marginBottom: 8,
     },
     uploadedImage: {
         borderBlockColor: 'white',
         borderWidth: 1,
         width: 350,
-        height: 250,
+        minHeight: 150,
+        maxHeight: 250,
         resizeMode: 'contain',
         alignSelf: 'center',
         borderRadius: 4,
     },
     submitButton: {
         backgroundColor: '#0a7ea4',
-        padding: 12,
+        padding: 16,
         borderRadius: 4,
-        marginBottom: 10,
         alignItems: 'center',
+        marginBottom: 10,
     },
     submitButtonText: {
         color: '#fff',
         fontWeight: 'bold',
     },
-    resetButton: {
-        padding: 10,
-        backgroundColor: 'gray',
-        borderRadius: 5,
+    photoButton: {
+        backgroundColor: '#0a7ea4',
+        padding: 12,
+        borderRadius: 4,
+        marginVertical: 20,
+        alignItems: 'center'
     },
-    resetButtonText: {
-        fontWeight: 'bold',
-        textAlign: 'center'
+    loaderContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    pickerContainer: {
+        marginBottom: 8,
+        textAlign: 'center',
+        alignItems: 'center',
+        marginVertical: 10,
+    },
+    picker: {
+        height: 50,
+        width: '100%',
+    },
+    errorText: {
+        color: 'red',
+        marginBottom: 8,
+    },
+    modalContainer: {
+        flex: 1,
+        marginTop: 50,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+    },
+    driverItem: {
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+    },
+    closeButton: {
+        padding: 10,
+        alignItems: 'center',
+    },
+    rowContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    quarterInput: {
+        flex: 0.30,
+        marginRight: 4,
+    },
+    threeQuarterInput: {
+        flex: 0.70,
+        marginLeft: 4,
+    },
+    imageSizeText: {
+        textAlign: 'center',
+        marginTop: 4,
+        fontSize: 12,
     },
 });

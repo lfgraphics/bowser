@@ -57,13 +57,7 @@ export default function FuelingScreen() {
 
   // function declarations---->
   // startup function
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      navigation.navigate('index' as never);
-    }, 180000); // 180000 milliseconds = 3 minutes
 
-    return () => clearTimeout(timer); // Clean up the timer on component unmount
-  }, [navigation]);
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       setIsOnline(state.isConnected ?? false);
@@ -91,7 +85,6 @@ export default function FuelingScreen() {
     setFuelingDateTime(currentDateTime);
     return currentDateTime;
   }
-
   const calculateBase64Size = (base64String: string): string => {
     const stringLength = base64String.length;
     const sizeInBytes = (stringLength * (3 / 4)) - (base64String.endsWith('==') ? 2 : base64String.endsWith('=') ? 1 : 0);
@@ -108,7 +101,6 @@ export default function FuelingScreen() {
     const base64Image = await imageToBase64(manipulatedImage.uri);
     return base64Image;
   };
-
   // form submit reset
   const submitDetails = async () => {
     setFormSubmitting(true);
@@ -134,6 +126,7 @@ export default function FuelingScreen() {
 
     if (currentFuelingDateTime && currentGpsLocation) {
       const formData: FormData = {
+        orderId: new mongoose.Types.ObjectId(''),
         vehicleNumberPlateImage,
         vehicleNumber: vehicleNumber.toUpperCase(),
         driverName,
@@ -286,7 +279,6 @@ export default function FuelingScreen() {
     setGpsLocation('');
     setFuelingDateTime('');
   }
-
   // form data handling
   const imageToBase64 = async (uri: string): Promise<string> => {
     const base64 = await FileSystem.readAsStringAsync(uri, {

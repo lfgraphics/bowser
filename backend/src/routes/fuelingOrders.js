@@ -1,39 +1,42 @@
 const express = require('express');
 const router = express.Router();
+const FormData = require('../models/formData');
 const FuelingOrder = require('../models/fuelingOrders');
 
-router.get('/:searchTerm', async (req, res) => {
-    const searchTerm = req.params.searchTerm;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-
+router.get('/:userId', async (req, res) => {
     try {
-        console.log('Attempting to search for orders with term:', searchTerm);
-        const orders = await FuelingOrder.find({
-            'bowserDriver.User Id': { $regex: searchTerm, $options: 'i' }
-        })
-            .skip((page - 1) * limit)
-            .limit(limit)
-            .exec();
+        const { userId } = req.params;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
 
-        const total = await FuelingOrder.countDocuments({
-            'bowserDriver.User Id': { $regex: searchTerm, $options: 'i' }
-        });
+        // Get all order IDs for the user
+        const userOrders = await FuelingOrder.find({'bowserDriver.User Id': userId}, '_id')
+        const userOrderIds = userOrders.map(order => order._id);
 
-        console.log('Search completed. Found', total, 'orders');
+        // Find completed orders
+        const completedOrders = await FormData.find({ orderId: { $in: userOrderIds } }, 'orderId');
+        const completedOrderIds = new Set(completedOrders.map(order => order.orderId.toString()));
 
-        if (total === 0) {
-            return res.status(404).json({ message: "You don't have any pending orders" });
-        }
+        // Filter out completed orders
+        const pendingOrderIds = userOrderIds.filter(id => !completedOrderIds.has(id.toString()));
 
-        res.status(200).json({
+        // Fetch pending orders with pagination
+        const orders = await FuelingOrder.find({ _id: { $in: pendingOrderIds } })
+            .skip(skip)
+            .limit(limit);
+
+        const total = pendingOrderIds.length;
+
+        res.json({
             orders,
+            currentPage: page,
             totalPages: Math.ceil(total / limit),
-            currentPage: page
+            totalOrders: total
         });
-    } catch (err) {
-        console.error('Error searching orders:', err);
-        res.status(500).json({ message: 'Server error', error: err.message });
+    } catch (error) {
+        console.error('Error fetching fueling orders:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
 });
 

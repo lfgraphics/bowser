@@ -415,7 +415,7 @@ const App = () => {
       <Link style={styles.button} href={'/fueling'}>
         Fueling
       </Link>
-      <Link style={styles.disabledButton} href={'/notifications'}>
+      <Link style={styles.button} href={'/notifications'}>
         Pending Orders
       </Link>
 

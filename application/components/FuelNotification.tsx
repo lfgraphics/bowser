@@ -10,11 +10,12 @@ type RootStackParamList = {
 };
 
 const FuelNotification: React.FC<FuelNotificationProps> = ({
+  orderId,
   vehicleNumber,
   driverId,
   driverMobile,
   driverName,
-  fuelQuantity,
+  quantity,
   quantityType,
   bowserDriver
 }) => {
@@ -22,12 +23,13 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
 
   const handleGiveFuel = () => {
     navigation.navigate('NotificationFueling', {
+      orderId,
       vehicleNumber,
       driverId,
       driverMobile,
       driverName,
       quantityType,
-      fuelQuantity,
+      quantity,
       bowserDriver
     });
   };
@@ -43,13 +45,14 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
   return (
     <View style={styles.container}>
       <Text style={styles.vehicleNumber}>{vehicleNumber}</Text>
-      <Text style={styles.detail}>Mobile No.: {driverMobile}</Text>
+      {driverMobile && <Text style={styles.detail}>Mobile No.: {driverMobile}</Text>}
+      {driverName && <Text style={styles.detail}>Driver Name: {driverName}</Text>}
       <Text style={styles.detail}>Fueling: {quantityType}</Text>
-      {fuelQuantity && <Text style={styles.detail}>Quantity: {fuelQuantity}</Text>}
+      {quantity && <Text style={styles.detail}>Quantity: {quantity}</Text>}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={handleCallDriver}>
+        {driverMobile && <TouchableOpacity style={styles.button} onPress={handleCallDriver}>
           <Ionicons name="call" size={32} color="#fff" />
-        </TouchableOpacity>
+        </TouchableOpacity>}
         <TouchableOpacity style={[styles.button, styles.disabledButton]}>
           <Ionicons name="location" size={32} color="#fff" />
         </TouchableOpacity>

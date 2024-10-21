@@ -4,6 +4,7 @@ import FuelNotification from '@/components/FuelNotification';
 import { FuelingOrderData, UserData } from '@/src/types/models';
 import axios from 'axios'; // Make sure axios is installed and imported
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import mongoose from 'mongoose';
 
 interface ServerResponse {
     orders: FuelingOrderData[];
@@ -56,14 +57,15 @@ export default function NotificationsScreen() {
             {notificationsData.length > 0 ? (
                 notificationsData.map((data) => (
                     <View style={{ marginBottom: 10 }} key={data._id}>
-                        <FuelNotification 
+                        <FuelNotification
                             vehicleNumber={data.vehicleNumber}
                             driverId={data.driverId}
                             driverMobile={data.driverMobile || ''}
                             driverName={data.driverName}
                             quantityType={data.quantityType}
-                            fuelQuantity={data.fuelQuantity.toString()}
+                            quantity={data.fuelQuantity.toString()}
                             bowserDriver={data.bowserDriver}
+                            orderId={data._id.toString()} // Convert ObjectId to string
                         />
                     </View>
                 ))

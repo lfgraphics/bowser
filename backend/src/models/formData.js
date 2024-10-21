@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const { bowsersDatabaseConnection } = require('../../config/database');
 
 const formDataSchema = new mongoose.Schema({
+    orderId: mongoose.Schema.Types.ObjectId,
     vehicleNumberPlateImage: String,
     vehicleNumber: String,
     driverName: String,
