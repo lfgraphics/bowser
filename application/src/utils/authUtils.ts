@@ -37,8 +37,15 @@ export const checkUserLoggedIn = async () => {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server response error:', errorText);
+        const errorData = await response.json();
+        console.error('Server response error:', errorData);
+
+        if (errorData.unauthorizedAttempt) {
+          // Handle unauthorized device attempt
+          console.warn('Unauthorized device attempt detected');
+          // You might want to show a specific message to the user or take other actions
+        }
+
         return false;
       }
 

@@ -4,6 +4,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const Role = require('../models/role');
+const UnAuthorizedLogin = require('../models/unauthorizedLogin');
+
 
 function isTokenValid(decodedToken) {
     const now = Date.now();
@@ -70,8 +72,8 @@ router.post('/login', async (req, res) => {
             roleNames = roles.map(role => role.name);
         }
 
-        const hasAccess = roles.some(role => 
-            role.permissions.apps.some(app => 
+        const hasAccess = roles.some(role =>
+            role.permissions.apps.some(app =>
                 app.name === appName && app.access !== null
             )
         );
@@ -120,8 +122,6 @@ router.post('/verify-token', async (req, res) => {
             if (!isTokenValid(decoded)) {
                 return res.status(401).json({ valid: false, message: 'Token expired' });
             }
-
-            // Fetch the user from the database to check the current deviceUUID
             const user = await User.findOne({ userId: decoded.userId });
 
             if (!user) {
@@ -129,7 +129,22 @@ router.post('/verify-token', async (req, res) => {
             }
 
             if (user.deviceUUID !== deviceUUID) {
-                return res.status(403).json({ valid: false, message: 'Unauthorized device' });
+                const unauthorizedLogin = new UnAuthorizedLogin({
+                    userId: user.userId,
+                    name: user.name,
+                    phoneNumber: user.phoneNumber,
+                    registeredDeviceUUID: user.deviceUUID,
+                    attemptedDeviceUUID: deviceUUID,
+                    timestamp: new Date()
+                });
+
+                await unauthorizedLogin.save();
+
+                return res.status(403).json({
+                    valid: false,
+                    message: `Unauthorized device\nLogin Details sent to Admin`,
+                    unauthorizedAttempt: true
+                });
             }
 
             res.json({ valid: true, userId: decoded.userId });
