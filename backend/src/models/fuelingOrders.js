@@ -1,8 +1,7 @@
 const mongoose = require('mongoose');
 const { bowsersDatabaseConnection } = require('../../config/database');
 
-const fuelingOrdersSchema = new mongoose.Schema({
-  orderId: mongoose.Schema.Types.ObjectId,
+const fuelingOrderSchema = new mongoose.Schema({
   vehicleNumber: { type: String, required: true },
   driverId: { type: String, required: true },
   driverName: { type: String, required: true },
@@ -17,11 +16,19 @@ const fuelingOrdersSchema = new mongoose.Schema({
     _id: mongoose.Schema.Types.ObjectId,
     userName: { type: String, },
     userId: { type: String, required: true }
-  }
+  },
+  allocationAdmin: {
+    _id: { type: mongoose.Schema.Types.ObjectId, required: true },
+    userName: { type: String, required: true },
+    userId: { type: String, required: true },
+    location: { type: String},
+  },
+  createdAt: { type: String, default: () => new Date().toLocaleString() }
 });
 
 // Validate the quantityType
-fuelingOrdersSchema.methods.validateQuantityType = function () {
+fuelingOrderSchema.methods.validateQuantityType = function () {
   return ['Full', 'Part'].includes(this.quantityType);
 };
-module.exports = bowsersDatabaseConnection.model('FuelingOrders', fuelingOrdersSchema, 'FuelingOrdersCollection');
+
+module.exports = bowsersDatabaseConnection.model('FuelingOrder', fuelingOrderSchema, 'FuelingOrdersCollection');

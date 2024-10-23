@@ -15,10 +15,15 @@ const formDataSchema = new mongoose.Schema({
     gpsLocation: String,
     fuelingDateTime: String,
     bowserDriver: {
-        _id:  mongoose.Schema.Types.ObjectId,
+        _id: mongoose.Schema.Types.ObjectId,
         userName: String,
         userId: String
     },
+    allocationAdmin: {
+        _id: { type: mongoose.Schema.Types.ObjectId, required: false },
+        userName: { type: String, required: false },
+        userId: { type: String, required: false }
+    }
 });
 
 module.exports = bowsersDatabaseConnection.model('FormData', formDataSchema, 'FuelingRecordsCollection');

@@ -6,7 +6,7 @@ require('dotenv').config();
 const { connectDatabases } = require('./config/database');
 const logger = require('./src/middleware/logger');
 const routes = require('./src/routes');
-
+const bowserAdminAuth = require('./src/routes/bowserAdminAuth');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -19,7 +19,7 @@ app.use(logger);
 
 // Routes
 app.use('/', routes);
-
+app.use('/auth/admin', bowserAdminAuth);
 // Start server after database connections are established
 connectDatabases()
   .then(() => {

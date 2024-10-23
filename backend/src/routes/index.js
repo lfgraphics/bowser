@@ -6,7 +6,7 @@ const searchDriverRoutes = require('./searchDriver');
 const imageProcessingRoutes = require('./imageProcessing');
 const authRoutes = require('./auth');
 const fuelingOrdersRoutes = require('./fuelingOrders');
-
+const allocateFuelingRoutes = require('./fuelingAllocation');
 router.get('/', (req, res) => {
     res.send('landing page');
 });
@@ -16,4 +16,5 @@ router.use('/searchDriver', searchDriverRoutes);
 router.use('/imageprocessing', imageProcessingRoutes);
 router.use('/auth', authRoutes);
 router.use('/fuelingOrders', fuelingOrdersRoutes);
+router.use('/allocateFueling', allocateFuelingRoutes);
 module.exports = router;
