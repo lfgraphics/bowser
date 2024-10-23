@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { Home, Users, FileText, Settings, LogOut, Menu, X, ListOrderedIcon, ClipboardList, Check, ListCheck, User } from 'lucide-react'
+import { Home, ClipboardList, ListCheck, User, LogOut, Menu, X } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'

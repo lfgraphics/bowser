@@ -69,7 +69,7 @@ export default function Login() {
           </CardFooter>
         </form>
         <div className="my-4 text-center">
-          <p>Don't have an account? <Link href="/signup" className="text-blue-500 hover:underline">Sign up</Link></p>
+          <p>Don&apos;t have an account? <Link href="/signup" className="text-blue-500 hover:underline">Sign up</Link></p>
         </div>
       </Card>
     </div>

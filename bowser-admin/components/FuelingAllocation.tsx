@@ -24,7 +24,6 @@ export default function FuelingAllocation() {
     const [isSearching, setIsSearching] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [foundDrivers, setFoundDrivers] = useState<Driver[]>([]);
-    const [noDriverFound, setNoDriverFound] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [vehicleNumber, setVehicleNumber] = useState("")
     const [driverId, setDriverId] = useState("")
@@ -40,7 +39,6 @@ export default function FuelingAllocation() {
     const [bowserDriverModalVisible, setBowserDriverModalVisible] = useState(false);
     const router = useRouter()
     const { toast } = useToast()
-    const [alertInfo, setAlertInfo] = useState<{ title: string; description: string; type: 'default' | 'destructive' } | null>(null);
     const [adminLocation, setAdminLocation] = useState('');
     const [alertDialogOpen, setAlertDialogOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
@@ -74,19 +72,12 @@ export default function FuelingAllocation() {
 
     const searchDriver = async (idNumber: string) => {
         setIsSearching(true);
-        setAlertInfo(null); // Clear any existing alerts
         try {
             const response = await fetch(`${process.env.API_URL}/searchDriver/${idNumber}`);
 
             if (!response.ok) {
                 if (response.status === 404) {
-                    setAlertInfo({
-                        title: "No Results",
-                        description: "No driver found with the given ID.",
-                        type: "default"
-                    });
                     setFoundDrivers([]);
-                    setNoDriverFound(true);
                     return;
                 }
                 throw new Error('Server error');
@@ -94,26 +85,14 @@ export default function FuelingAllocation() {
 
             const drivers: Driver[] = await response.json();
             setFoundDrivers(drivers);
-            setNoDriverFound(false);
 
             if (drivers.length === 0) {
-                setAlertInfo({
-                    title: "No Results",
-                    description: "No drivers found matching the search criteria.",
-                    type: "default"
-                });
             } else {
                 setModalVisible(true);
             }
         } catch (error) {
             console.error('Error searching for driver:', error);
-            setAlertInfo({
-                title: "Error",
-                description: error instanceof Error ? error.message : "An unexpected error occurred while searching for the driver.",
-                type: "destructive"
-            });
             setFoundDrivers([]);
-            setNoDriverFound(true);
         } finally {
             setIsSearching(false);
         }
@@ -146,7 +125,6 @@ export default function FuelingAllocation() {
 
     const searchBowserDriver = async (userId: string) => {
         setIsSearching(true);
-        setAlertInfo(null); // Clear any existing alerts
         try {
             const response = await fetch(`${process.env.API_URL}/searchDriver/bowser-drivers/${userId}`);
 
@@ -162,21 +140,11 @@ export default function FuelingAllocation() {
             setBowserDrivers(drivers);
 
             if (drivers.length === 0) {
-                setAlertInfo({
-                    title: "No Results",
-                    description: "No bowser drivers found matching the search criteria.",
-                    type: "default"
-                });
             } else {
                 setBowserDriverModalVisible(true);
             }
         } catch (error) {
             console.error('Error searching for bowser driver:', error);
-            setAlertInfo({
-                title: "Error",
-                description: error instanceof Error ? error.message : "An unexpected error occurred.",
-                type: "destructive"
-            });
             setBowserDrivers([]);
         } finally {
             setIsSearching(false);
@@ -196,7 +164,6 @@ export default function FuelingAllocation() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
-        setAlertInfo(null); // Clear any existing alerts
 
         if (!isAuthenticated()) {
             toast({
