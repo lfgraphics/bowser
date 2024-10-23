@@ -21,6 +21,12 @@ interface RouteParams {
     driverName: string;
     quantityType: "Part" | "Full";
     quantity: string;
+    allocationAdmin: {
+        _id: string;
+        userName: string;
+        userId: string;
+        location: string;
+    };
 }
 
 export default function NotificationFuelingScreen() {
@@ -32,7 +38,8 @@ export default function NotificationFuelingScreen() {
         driverMobile = 'N/A',
         driverName = 'N/A',
         quantityType = 'N/A',
-        quantity = 'N/A'
+        quantity = 'N/A',
+        allocationAdmin // Add this
     } = route.params as RouteParams;
 
 
@@ -140,6 +147,11 @@ export default function NotificationFuelingScreen() {
                     _id: new mongoose.Types.ObjectId(userData._id),
                     userName: userData.Name,
                     userId: userData['User Id']
+                },
+                allocationAdmin: {
+                    _id: new mongoose.Types.ObjectId(allocationAdmin._id),
+                    userName: allocationAdmin.userName,
+                    userId: allocationAdmin.userId
                 },
             };
 

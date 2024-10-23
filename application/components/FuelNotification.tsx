@@ -17,7 +17,8 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
   driverName,
   quantity,
   quantityType,
-  bowserDriver
+  bowserDriver,
+  allocationAdmin
 }) => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -30,7 +31,8 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
       driverName,
       quantityType,
       quantity,
-      bowserDriver
+      bowserDriver,
+      allocationAdmin
     });
   };
 
@@ -49,6 +51,7 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
       {driverName && <Text style={styles.detail}>Driver Name: {driverName}</Text>}
       <Text style={styles.detail}>Fueling: {quantityType}</Text>
       {quantity && <Text style={styles.detail}>Quantity: {quantity}</Text>}
+      {/* <Text style={styles.detail}>Allocated by: {allocationAdmin.userName}</Text> */}
       <View style={styles.buttonContainer}>
         {driverMobile && <TouchableOpacity style={styles.button} onPress={handleCallDriver}>
           <Ionicons name="call" size={32} color="#fff" />

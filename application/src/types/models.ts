@@ -32,6 +32,11 @@ export type FuelingOrderData = {
     fuelQuantity: number;
     quantityType: "Full" | "Part" | 'N/A';
     vehicleNumber: string;
+    allocationAdmin?: {
+        _id: string;
+        userName: string;
+        userId: string;
+    };
 };
 
 export interface FuelNotificationProps {
@@ -43,6 +48,11 @@ export interface FuelNotificationProps {
     quantityType: "Part" | "Full" | "N/A";
     quantity: string;
     bowserDriver: BowserDriver;
+    allocationAdmin: {
+        _id: string;
+        userName: string;
+        userId: string;
+    };
 
 }
 
@@ -60,6 +70,11 @@ export interface FormData {
     gpsLocation: string;
     fuelingDateTime: string;
     bowserDriver: {
+        _id: Types.ObjectId;
+        userName: string;
+        userId: string;
+    };
+    allocationAdmin?: {
         _id: Types.ObjectId;
         userName: string;
         userId: string;
