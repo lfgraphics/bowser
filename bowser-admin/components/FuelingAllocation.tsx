@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
 import { isAuthenticated, getCurrentUser } from "@/lib/auth"
 import { Driver, User } from "@/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -38,7 +37,6 @@ export default function FuelingAllocation() {
     const [selectedBowserDriver, setSelectedBowserDriver] = useState<User | null>(null);
     const [bowserDriverModalVisible, setBowserDriverModalVisible] = useState(false);
     const router = useRouter()
-    const { toast } = useToast()
     const [adminLocation, setAdminLocation] = useState('');
     const [alertDialogOpen, setAlertDialogOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
@@ -166,22 +164,14 @@ export default function FuelingAllocation() {
         setSubmitting(true);
 
         if (!isAuthenticated()) {
-            toast({
-                title: "Authentication Error",
-                description: "You must be logged in to allocate fueling.",
-                variant: "destructive",
-            });
+            alert("You must be logged in to allocate fueling.");
             setSubmitting(false);
             return;
         }
 
         const currentUser = getCurrentUser();
         if (!currentUser || !selectedDriver || !selectedBowserDriver) {
-            toast({
-                title: "Missing Information",
-                description: "User information, driver details, or bowser driver details are missing.",
-                variant: "destructive",
-            });
+            alert("User information, driver details, or bowser driver details are missing.");
             setSubmitting(false);
             return;
         }
@@ -221,19 +211,11 @@ export default function FuelingAllocation() {
             const result = await response.json();
             setAlertMessage(result.message);
             setAlertDialogOpen(true);
-            toast({
-                title: "Success",
-                description: "Fueling allocation created successfully.",
-                variant: "default",
-            });
+            alert("Fueling allocation created successfully.");
             // Don't reset the form immediately, we'll do it after closing the alert dialog
         } catch (error) {
             console.error('Error submitting form:', error);
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "An unexpected error occurred while allocating fueling.",
-                variant: "destructive",
-            });
+            alert(error instanceof Error ? error.message : "An unexpected error occurred while allocating fueling.");
         } finally {
             setSubmitting(false);
         }

@@ -8,16 +8,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { LogIn } from "lucide-react"
-// import { toast } from "@/components/ui/use-toast"
-// import { useToast } from "@/components/ui/use-toast"
-import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 
 export default function Login() {
   const [userId, setUserId] = useState("")
   const [password, setPassword] = useState("")
   const router = useRouter()
-  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,19 +22,11 @@ export default function Login() {
       if (response.user.verified) {
         router.push("/dashboard")
       } else {
-        toast({
-          title: "Account not verified",
-          description: "Please contact an administrator to verify your account.",
-          variant: "destructive",
-        })
+        alert("Account not verified. Please contact an administrator to verify your account.")
       }
     } catch (error) {
       console.error("Login failed:", error)
-      toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again.",
-        variant: "destructive",
-      })
+      alert("Login failed. Please check your credentials and try again.")
     }
   }
 

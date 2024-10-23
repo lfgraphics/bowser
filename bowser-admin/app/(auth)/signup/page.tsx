@@ -8,9 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { UserPlus } from "lucide-react"
-// import { toast } from "@/components/ui/use-toast"
-// import { useToast } from "@/components/ui/use-toast"
-import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 
 export default function Signup() {
@@ -19,24 +16,16 @@ export default function Signup() {
   const [name, setName] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
   const router = useRouter()
-  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
       await signup({ userId, password, name, phoneNumber })
-      toast({
-        title: "Signup successful",
-        description: "Your account has been created. Please wait for admin verification.",
-      })
+      alert("Signup successful. Your account has been created. Please wait for admin verification.")
       router.push("/login")
     } catch (error) {
       console.error("Signup failed:", error)
-      toast({
-        title: "Signup failed",
-        description: "An error occurred during signup. Please try again.",
-        variant: "destructive",
-      })
+      alert("Signup failed. An error occurred during signup. Please try again.")
     }
   }
 
