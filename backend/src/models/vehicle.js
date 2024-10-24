@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
-const { transportDatabaseConnection } = require('../config/database');
+const { transportDatabaseConnection } = require('../../config/database');
 
 const vehicleSchema = new mongoose.Schema({
-    vehicleNumber: {
+    VehicleNo: {
         type: String,
         required: true,
         unique: true

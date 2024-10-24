@@ -11,7 +11,8 @@ const userSchema = new mongoose.Schema({
     roles: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Role'
-    }]
+    }],
+    pushToken: String
 });
 
 module.exports = UsersAndRolesDatabaseConnection.model('User', userSchema, 'UsersCollection');

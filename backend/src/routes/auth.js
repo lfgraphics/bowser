@@ -51,7 +51,7 @@ router.post('/signup', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     try {
-        const { userId, password, deviceUUID, appName } = req.body;
+        const { userId, password, deviceUUID, appName, pushToken } = req.body;
 
         // Find user
         const user = await User.findOne({ userId });
@@ -92,6 +92,11 @@ router.post('/login', async (req, res) => {
             'Verified User': user.verified,
             'Role': roleNames,
         };
+
+        if (req.body.pushToken) {
+          user.pushToken = req.body.pushToken;
+          await user.save();
+        }
 
         res.json({
             message: 'Login successful',
