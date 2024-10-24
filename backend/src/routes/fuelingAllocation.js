@@ -99,7 +99,9 @@ router.post('/', async (req, res) => {
         if (Expo.isExpoPushToken(bowserDriverUser.pushToken)) {
             const chunks = expo.chunkPushNotifications([notificationPayload]);
             try {
+                // The 'ticketChunks' variable is unused, so we'll log it for potential future use or debugging
                 const ticketChunks = await Promise.all(chunks.map(chunk => expo.sendPushNotificationsAsync(chunk)));
+                console.log('Push notification tickets:', ticketChunks);
             } catch (error) {
                 throw new Error(`Failed to send push notification: ${error.message}`);
             }
@@ -107,7 +109,7 @@ router.post('/', async (req, res) => {
             throw new Error('Invalid push token');
         }
 
-        res.status(201).json({ message: 'Fueling allocation created and notification sent successfully', order: newFuelingOrder });
+        res.status(201).json({ message: 'Fueling allocation successful. Notification sent to bowser driver.', order: newFuelingOrder });
     } catch (error) {
         res.status(500).json({
             message: 'Internal server error',

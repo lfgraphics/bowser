@@ -203,11 +203,15 @@ export default function FuelingAllocation() {
             }
 
             const result = await response.json();
-            setAlertMessage("Fueling allocation successful. Notification sent to bowser driver.");
+            setAlertMessage(result.message);
             setAlertDialogOpen(true);
         } catch (error) {
             console.error('Error allocating fueling:', error);
-            setAlertMessage("Failed to allocate fueling. Please try again.");
+            if (error instanceof Error) {
+                setAlertMessage(error.message);
+            } else {
+                setAlertMessage('An unknown error occurred');
+            }
             setAlertDialogOpen(true);
         } finally {
             setSubmitting(false);
