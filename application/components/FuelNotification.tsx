@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Linking, Alert, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useTheme } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { FuelNotificationProps } from '../src/types/models';
@@ -21,6 +21,15 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
   allocationAdmin
 }) => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { colors } = useTheme();
+
+  const handleCallDriver = () => {
+    if (driverMobile) {
+      Linking.openURL(`tel:${driverMobile}`);
+    } else {
+      Alert.alert("No mobile number", "There's no mobile number available for this driver.");
+    }
+  };
 
   const handleGiveFuel = () => {
     navigation.navigate('NotificationFueling', {
@@ -36,31 +45,22 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
     });
   };
 
-  const handleCallDriver = () => {
-    if (driverMobile) {
-      Linking.openURL(`tel:${driverMobile}`);
-    } else {
-      Alert.alert("No mobile number", "There's no mobile number available for this driver.");
-    }
-  };
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.vehicleNumber}>{vehicleNumber}</Text>
-      {driverMobile && <Text style={styles.detail}>Mobile No.: {driverMobile}</Text>}
-      {driverName && <Text style={styles.detail}>Driver Name: {driverName}</Text>}
-      <Text style={styles.detail}>Fueling: {quantityType}</Text>
-      {quantity && <Text style={styles.detail}>Quantity: {quantity}</Text>}
-      {/* <Text style={styles.detail}>Allocated by: {allocationAdmin.userName}</Text> */}
+    <View style={[styles.container, { backgroundColor: colors.card }]}>
+      <Text style={[styles.vehicleNumber, { color: colors.text }]}>{vehicleNumber}</Text>
+      {driverMobile && <Text style={[styles.detail, { color: colors.text }]}>Mobile No.: {driverMobile}</Text>}
+      {driverName && <Text style={[styles.detail, { color: colors.text }]}>Driver Name: {driverName}</Text>}
+      <Text style={[styles.detail, { color: colors.text }]}>Fueling: {quantityType}</Text>
+      {quantity && <Text style={[styles.detail, { color: colors.text }]}>Quantity: {quantity}</Text>}
       <View style={styles.buttonContainer}>
         {driverMobile && <TouchableOpacity style={styles.button} onPress={handleCallDriver}>
-          <Ionicons name="call" size={32} color="#fff" />
+          <Ionicons name="call" size={32} color={'white'} />
         </TouchableOpacity>}
         <TouchableOpacity style={[styles.button, styles.disabledButton]}>
-          <Ionicons name="location" size={32} color="#fff" />
+          <Ionicons name="location" size={32} color={'white'} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.button} onPress={handleGiveFuel}>
-          <MaterialIcons name="local-gas-station" size={24} color="white" />
+          <MaterialIcons name="local-gas-station" size={24} color={'white'} />
         </TouchableOpacity>
       </View>
     </View>
@@ -71,7 +71,6 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     padding: 16,
-    backgroundColor: '#11181C',
     borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -83,12 +82,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 8,
-    color: '#ECEDEE',
   },
   detail: {
     fontSize: 16,
     marginBottom: 4,
-    color: '#ECEDEE',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -109,7 +106,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'gray',
   },
   buttonText: {
-    color: '#fff',
     textAlign: 'center',
   },
   fuelNozzle: {

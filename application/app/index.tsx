@@ -1,14 +1,17 @@
 import 'react-native-get-random-values';
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Modal, Alert, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Modal, Alert, ScrollView, Image, Linking } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { checkUserLoggedIn } from '../src/utils/authUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { Camera } from 'expo-camera';
 import NetInfo from '@react-native-community/netinfo';
 import { FormData } from '../src/types/models';
+import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync } from '@/app/utils/notifications';
 
 const App = () => {
   const router = useRouter();
@@ -376,6 +379,108 @@ const App = () => {
     }
   };
 
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+
+  const handleNotificationAction = (action: string, data: any) => {
+    switch (action) {
+      case 'call':
+        if (data.phoneNumber) {
+          Linking.openURL(`tel:${data.phoneNumber}`);
+        }
+        break;
+      case 'openScreen':
+        if (data.screenName === 'NotificationFueling') {
+          router.push({
+            pathname: '/NotificationFueling',
+            params: data.params
+          });
+        }
+        break;
+      default:
+        console.log('Unknown action:', action);
+    }
+  };
+
+  useEffect(() => {
+    const backgroundSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data;
+      if (data.buttons) {
+        // Assuming the user tapped the notification, we'll execute the first button action
+        const firstButton = data.buttons[0];
+        handleNotificationAction(firstButton.action, firstButton);
+      }
+    });
+
+    const foregroundSubscription = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notification received in foreground:', notification);
+      const { title, body } = notification.request.content;
+      const data = notification.request.content.data;
+
+      Alert.alert(
+        title || 'New Order',
+        body || 'You have received a new fueling order.',
+        data.buttons.map((button: any) => ({
+          text: button.text,
+          onPress: () => handleNotificationAction(button.action, button)
+        }))
+      );
+    });
+
+    return () => {
+      Notifications.removeNotificationSubscription(backgroundSubscription);
+      Notifications.removeNotificationSubscription(foregroundSubscription);
+    };
+  }, []);
+
+  useEffect(() => {
+    const setupPushNotifications = async () => {
+      try {
+        const token = await registerForPushNotificationsAsync();
+        if (token) {
+          console.log('Push token:', token);
+          await AsyncStorage.setItem('pushToken', token);
+
+          const userData = await AsyncStorage.getItem('userData');
+          if (userData) {
+            const parsedUserData = JSON.parse(userData);
+            const userId = parsedUserData["User Id"];
+            if (!userId) {
+              throw new Error('userId is undefined or null');
+            }
+
+            const API_BASE_URL = await AsyncStorage.getItem('API_BASE_URL') || 'https://bowser-backend-2cdr.onrender.com';
+            const response = await fetch(`${API_BASE_URL}/notifications/register-token`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ userId, pushToken: token }),
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Failed to register push token with server: ${errorText}`);
+            }
+
+            console.log('Push token registered successfully');
+          } else {
+            console.error('User data not found in AsyncStorage');
+          }
+        }
+      } catch (error) {
+        console.error('Error setting up push notifications:', error);
+      }
+    };
+
+    setupPushNotifications();
+  }, []);
+
   if (isLoading) {
     return <View style={styles.container}>
       <ActivityIndicator size="large" color="#0000ff" />
@@ -413,10 +518,20 @@ const App = () => {
       </TouchableOpacity>
 
       <Link style={styles.button} href={'/fueling'}>
-        Fueling
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: 'white' }}>
+            Fueling
+          </Text>
+          <MaterialIcons name="local-gas-station" size={24} color="white" style={{ marginRight: 5 }} />
+        </View>
       </Link>
       <Link style={styles.button} href={'/notifications'}>
-        Pending Orders
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: 'white' }}>
+            Pending Orders
+          </Text>
+          <Ionicons name="notifications" size={20} color="white" style={{ marginRight: 5 }} />
+        </View>
       </Link>
 
       <Modal

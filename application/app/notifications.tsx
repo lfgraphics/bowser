@@ -4,7 +4,7 @@ import FuelNotification from '@/components/FuelNotification';
 import { FuelingOrderData, UserData } from '@/src/types/models';
 import axios from 'axios'; // Make sure axios is installed and imported
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import mongoose from 'mongoose';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface ServerResponse {
     orders: FuelingOrderData[];
@@ -37,7 +37,7 @@ export default function NotificationsScreen() {
                 throw new Error('User data not found. Please log in again.');
             }
             const API_BASE_URL = await AsyncStorage.getItem('API_BASE_URL') || 'https://bowser-backend-2cdr.onrender.com';
-            const response = await axios.get<ServerResponse>(`http://192.168.88.55:5000/fuelingOrders/${userData['User Id']}`);
+            const response = await axios.get<ServerResponse>(`${API_BASE_URL}/fuelingOrders/${userData['User Id']}`);
             setNotificationsData(response.data.orders);
         } catch (err) {
             console.error('Error fetching notifications:', err);
@@ -46,6 +46,12 @@ export default function NotificationsScreen() {
             setLoading(false);
         }
     };
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchNotifications();
+        }, [])
+    );
 
     if (loading) {
         return (

@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Bowsers Fueling",
-    "slug": "bowsers-fueling",
+    "slug": "bowsers-dispensing",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -19,7 +19,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.itplfirebase.bowsersdispensing"
     },
     "web": {
       "bundler": "metro",
@@ -27,10 +28,31 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#ffffff",
+          "sounds": ["./assets/notification.mp3"]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ee680cf8-bd87-4639-b3fa-f0e023f3036b"
+      }
+    },
+    "owner": "itplfirebase",
+    "notification": {
+      "icon": "./assets/images/icon.png",
+      "color": "#ffffff",
+      "iosDisplayInForeground": true,
+      "androidMode": "default",
+      "androidCollapsedTitle": "New Order"
     }
   }
 }

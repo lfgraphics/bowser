@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { User, LoginResponse, SignupResponse } from '../types/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/auth';
+const API_URL = 'https://bowser-backend-2cdr.onrender.com/auth';
 
 export async function login(userId: string, password: string): Promise<LoginResponse> {
     try {
@@ -18,7 +18,6 @@ export async function login(userId: string, password: string): Promise<LoginResp
         }
         throw new Error('Login failed');
     } catch (error) {
-        console.error('Login error:', error);
         throw error;
     }
 }
@@ -54,7 +53,6 @@ export async function signup(userData: { userId: string; password: string; name:
         }
         throw new Error('Signup failed');
     } catch (error) {
-        console.error('Signup error:', error);
         throw error;
     }
 }

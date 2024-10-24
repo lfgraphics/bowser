@@ -47,10 +47,9 @@ router.post('/', async (req, res) => {
             throw new Error('Bowser driver not found or push token not registered');
         }
 
-        // Update the bowser driver's orders field
         const orderId = newFuelingOrder._id;
-        await User.findOneAndUpdate(
-            { userId: bowserDriver.userId },
+        await User.updateMany(
+            { userId: { $in: [bowserDriver.userId, allocationAdmin.userId] } },
             { $push: { orders: orderId } },
             { new: true, upsert: true }
         );
@@ -58,10 +57,43 @@ router.post('/', async (req, res) => {
         // Send notification to the bowser driver
         const notificationPayload = {
             to: bowserDriverUser.pushToken,
-            sound: 'default',
+            sound: './assets/notification.mp3',
             title: 'New Fueling Order',
-            body: `New order for vehicle ${vehicleNumber}`,
-            data: { orderId: newFuelingOrder._id.toString() }
+            body: `New order for you\nVehicle Number: ${vehicleNumber}\nDriver: ${driverName}\nAllocated by ${allocationAdmin.userName} (${allocationAdmin.userId})`,
+            data: {
+                orderId: newFuelingOrder._id.toString(),
+                vehicleNumber: vehicleNumber,
+                driverName: driverName,
+                driverId: driverId,
+                driverMobile: driverMobile,
+                quantityType: quantityType,
+                fuelQuantity: fuelQuantity,
+                allocationAdminName: allocationAdmin.userName,
+                allocationAdminId: allocationAdmin.userId,
+                buttons: [
+                    {
+                        text: "Call Driver",
+                        action: "call",
+                        phoneNumber: driverMobile
+                    },
+                    {
+                        text: "Fuel",
+                        action: "openScreen",
+                        screenName: "NotificationFueling",
+                        params: {
+                            orderId: newFuelingOrder._id.toString(),
+                            vehicleNumber: vehicleNumber,
+                            driverName: driverName,
+                            driverId: driverId,
+                            driverMobile: driverMobile,
+                            quantityType: quantityType,
+                            fuelQuantity: fuelQuantity,
+                            allocationAdminName: allocationAdmin.userName,
+                            allocationAdminId: allocationAdmin.userId
+                        }
+                    }
+                ]
+            }
         };
 
         if (Expo.isExpoPushToken(bowserDriverUser.pushToken)) {

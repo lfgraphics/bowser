@@ -9,10 +9,11 @@ import { ThemedView } from '@/components/ThemedView';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useNavigation, useTheme } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
-import { Driver, FormData } from '@/src/types/models';
+import { Driver, FormData, Vehicle } from '@/src/types/models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
+import { Ionicons } from '@expo/vector-icons';
 
 
 export default function FuelingScreen() {
@@ -27,7 +28,7 @@ export default function FuelingScreen() {
   const [driverName, setDriverName] = useState('');
   const [driverId, setDriverId] = useState('');
   const [driverMobile, setDriverMobile] = useState('');
-  const [fuelQuantity, setFuelQuantity] = useState('');
+  const [fuelQuantity, setFuelQuantity] = useState<string>('0');
   const [gpsLocation, setGpsLocation] = useState('');
   const [fuelingDateTime, setFuelingDateTime] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
@@ -41,6 +42,11 @@ export default function FuelingScreen() {
   const [fuelMeterImageSize, setFuelMeterImageSize] = useState<string>('');
   const [slipImageSize, setSlipImageSize] = useState<string>('');
   const [isOnline, setIsOnline] = useState(true);
+  const [foundVehicles, setFoundVehicles] = useState<Vehicle[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<string>('');
+  const [noVehicleFound, setNoVehicleFound] = useState(false);
+  const [isSearchingVehicle, setIsSearchingVehicle] = useState(false);
+  const [vehicleModalVisible, setVehicleModalVisible] = useState(false);
 
   // declare refs for input fields---->
   const vehicleNumberInputRef = React.useRef<TextInput>(null);
@@ -126,7 +132,7 @@ export default function FuelingScreen() {
 
     if (currentFuelingDateTime && currentGpsLocation) {
       const formData: FormData = {
-        orderId: new mongoose.Types.ObjectId(''),
+        // orderId: new mongoose.Types.ObjectId(''),
         vehicleNumberPlateImage,
         vehicleNumber: vehicleNumber.toUpperCase(),
         driverName,
@@ -275,7 +281,7 @@ export default function FuelingScreen() {
     setDriverName('');
     setDriverId('');
     setDriverMobile('');
-    setFuelQuantity('');
+    setFuelQuantity('0');
     setGpsLocation('');
     setFuelingDateTime('');
   }
@@ -493,6 +499,37 @@ export default function FuelingScreen() {
     }
     return true;
   }
+  const searchVehicleByNumber = async (vehicleNumber: string) => {
+    setIsSearchingVehicle(true);
+    try {
+      const response = await fetch(`https://bowser-backend-2cdr.onrender.com/searchVehicleNumber/${vehicleNumber}`);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log('No vehicle found with the given number');
+          setFoundVehicles([]);
+          setNoVehicleFound(true);
+          return;
+        }
+        throw new Error('Server error');
+      }
+
+      const vehicles: Vehicle[] = await response.json();
+      console.log('Vehicles found:', vehicles); // Add this line for debugging
+      setFoundVehicles(vehicles);
+      setNoVehicleFound(false);
+
+      if (vehicles.length > 0) {
+        setVehicleModalVisible(true);
+      }
+    } catch (error) {
+      console.error('Error searching for vehicle:', error);
+      setFoundVehicles([]);
+      setNoVehicleFound(true);
+    } finally {
+      setIsSearchingVehicle(false);
+    }
+  }
 
   return (
     <View style={[styles.container, styles.main]}>
@@ -511,12 +548,19 @@ export default function FuelingScreen() {
                 <ThemedText style={styles.imageSizeText}>Size: {vehicleNumberPlateImageSize}</ThemedText>
               </>
             )}
-            {!vehicleNumberPlateImage && <TouchableOpacity
-              onPress={() => vehicleNumberPlateImage === null ? openNumberPlateCamera() : null}
-              style={[styles.photoButton,]}
-            >
-              <ThemedText>Take Vehicle Number Plate Photo</ThemedText>
-            </TouchableOpacity>}
+            {!vehicleNumberPlateImage && (
+              <TouchableOpacity
+                onPress={() => vehicleNumberPlateImage === null ? openNumberPlateCamera() : null}
+                style={[styles.photoButton]}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="car-outline" size={20} color="white" style={{ marginRight: 5 }} />
+                  <ThemedText style={{ color: 'white' }}>
+                    Take Vehicle Number Plate Photo
+                  </ThemedText>
+                </View>
+              </TouchableOpacity>
+            )}
             <ThemedView style={styles.inputContainer}>
               <ThemedText>Vehicle Number:</ThemedText>
               <TextInput
@@ -528,12 +572,57 @@ export default function FuelingScreen() {
                 value={vehicleNumber}
                 onChangeText={(text) => {
                   setVehicleNumber(text.toUpperCase());
+                  if (text.length > 2) {
+                    setFoundVehicles([]);
+                    setNoVehicleFound(false);
+                    searchVehicleByNumber(text);
+                  }
                 }}
                 returnKeyType="next"
                 onSubmitEditing={() => driverIdInputRef.current?.focus()}
                 blurOnSubmit={false}
               />
             </ThemedView>
+            {noVehicleFound && (
+              <ThemedText style={styles.errorText}>No vehicle found with the given number</ThemedText>
+            )}
+            {!noVehicleFound && !(vehicleNumber == "") && <TouchableOpacity
+              style={[styles.pickerContainer,]}
+              onPress={() => setVehicleModalVisible(true)}
+            >
+              <Text style={{ color: colors.text }}>{selectedVehicle || "Select a vehicle"}</Text>
+            </TouchableOpacity>}
+            <Modal
+              visible={vehicleModalVisible}
+              transparent={true}
+              animationType="slide"
+              onRequestClose={() => setVehicleModalVisible(false)}
+            >
+              <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setVehicleModalVisible(false)}
+                >
+                  <Text style={{ color: colors.text }}>Close</Text>
+                </TouchableOpacity>
+                <FlatList
+                  data={foundVehicles}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={[styles.vehicleItem, { backgroundColor: colors.card }]}
+                      onPress={() => {
+                        setSelectedVehicle(item.VehicleNo);
+                        setVehicleNumber(item.VehicleNo);
+                        setVehicleModalVisible(false);
+                      }}
+                    >
+                      <Text style={{ color: colors.text }}>{item.VehicleNo}</Text>
+                    </TouchableOpacity>
+                  )}
+                  keyExtractor={(item) => item.VehicleNo}
+                />
+              </View>
+            </Modal>
           </ThemedView>
 
           <ThemedView style={styles.section}>
@@ -631,7 +720,12 @@ export default function FuelingScreen() {
               onPress={() => fuelMeterImage === null ? openFuelMeterCamera() : null}
               style={[styles.photoButton,]}
             >
-              <ThemedText>Take Fuel Meter Photo</ThemedText>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="speedometer-outline" size={20} color="white" style={{ marginRight: 5 }} />
+                <ThemedText style={{ color: 'white' }}>
+                  Take Fuel Meter Photo
+                </ThemedText>
+              </View>
             </TouchableOpacity>}
 
             {slipImage && (
@@ -644,7 +738,12 @@ export default function FuelingScreen() {
               onPress={() => slipImage === null ? openSlipCamera() : null}
               style={[styles.photoButton,]}
             >
-              <ThemedText>Take Slip Photo</ThemedText>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="receipt-outline" size={20} color="white" style={{ marginRight: 5 }} />
+                <ThemedText style={{ color: 'white' }}>
+                  Take Slip Photo
+                </ThemedText>
+              </View>
             </TouchableOpacity>}
 
             <ThemedView style={styles.inputContainer}>
@@ -680,8 +779,10 @@ export default function FuelingScreen() {
                   placeholder="Enter fuel quantity"
                   placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                   keyboardType="numeric"
-                  value={fuelQuantity}
-                  onChangeText={setFuelQuantity}
+                  value={fuelQuantity.toString()}
+                  onChangeText={(text) => {
+                    setFuelQuantity(text);
+                  }}
                   returnKeyType="next"
                   onSubmitEditing={() => gpsLocationInputRef.current?.focus()}
                   blurOnSubmit={false}
@@ -694,13 +795,19 @@ export default function FuelingScreen() {
             style={styles.submitButton}
             onPress={submitDetails}
           >
-            <ThemedText style={styles.submitButtonText}>Submit</ThemedText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+              <ThemedText style={styles.submitButtonText}>Submit</ThemedText>
+              <Ionicons name="send-outline" size={20} color="white" />
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.resetButton}
             onPress={resetForm}
           >
-            <ThemedText style={styles.resetButtonText}>Reset</ThemedText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+              <ThemedText style={styles.resetButtonText}>Reset</ThemedText>
+              <Ionicons name="refresh-outline" size={20} color="white" />
+            </View>
           </TouchableOpacity>
         </ThemedView>
       </ScrollView>
@@ -709,7 +816,7 @@ export default function FuelingScreen() {
           <ActivityIndicator size="large" color="#0a7ea4" />
         </View>
       )}
-      {isSearching && (
+      {(isSearching || isSearchingVehicle) && (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="#0a7ea4" />
         </View>
@@ -852,4 +959,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 12,
   },
+  vehicleItem: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
 });
+

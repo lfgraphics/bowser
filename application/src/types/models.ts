@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 
 export interface Vehicle {
-    vehicleNumber: string;
+    VehicleNo: string;
     type: string;
     capacity: number;
     lastMaintenanceDate: Date;
@@ -57,7 +57,7 @@ export interface FuelNotificationProps {
 }
 
 export interface FormData {
-    orderId: Types.ObjectId;
+    orderId?: Types.ObjectId;
     vehicleNumberPlateImage: string | null;
     vehicleNumber: string;
     driverName: string;

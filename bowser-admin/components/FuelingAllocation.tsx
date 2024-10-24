@@ -30,7 +30,6 @@ export default function FuelingAllocation() {
     const [driverMobile, setDriverMobile] = useState("")
     const [fuelQuantity, setFuelQuantity] = useState('0')
     const [quantityType, setQuantityType] = useState<'Full' | 'Part'>('Full')
-    const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
     const [bowserDriverName, setBowserDriverName] = useState("")
     const [bowserDriverId, setBowserDriverId] = useState("")
     const [bowserDrivers, setBowserDrivers] = useState<User[]>([]);
@@ -71,7 +70,7 @@ export default function FuelingAllocation() {
     const searchDriver = async (idNumber: string) => {
         setIsSearching(true);
         try {
-            const response = await fetch(`${process.env.API_URL}/searchDriver/${idNumber}`);
+            const response = await fetch(`https://bowser-backend-2cdr.onrender.com/searchDriver/${idNumber}`);
 
             if (!response.ok) {
                 if (response.status === 404) {
@@ -97,7 +96,6 @@ export default function FuelingAllocation() {
     }
 
     const handleDriverSelection = (driver: Driver) => {
-        setSelectedDriver(driver);
         setModalVisible(false);
 
         if (driver) {
@@ -124,7 +122,7 @@ export default function FuelingAllocation() {
     const searchBowserDriver = async (userId: string) => {
         setIsSearching(true);
         try {
-            const response = await fetch(`${process.env.API_URL}/searchDriver/bowser-drivers/${userId}`);
+            const response = await fetch(`https://bowser-backend-2cdr.onrender.com/searchDriver/bowser-drivers/${userId}`);
 
             if (!response.ok) {
                 let errorMessage = 'An error occurred while searching for the bowser driver.';
@@ -163,63 +161,58 @@ export default function FuelingAllocation() {
         e.preventDefault();
         setSubmitting(true);
 
-        if (!isAuthenticated()) {
-            alert("You must be logged in to allocate fueling.");
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+            setAlertMessage("User not authenticated. Please log in again.");
+            setAlertDialogOpen(true);
             setSubmitting(false);
             return;
         }
 
-        const currentUser = getCurrentUser();
-        if (!currentUser || !selectedDriver || !selectedBowserDriver) {
-            alert("User information, driver details, or bowser driver details are missing.");
-            setSubmitting(false);
-            return;
-        }
+        const allocationData = {
+            vehicleNumber,
+            driverId,
+            driverName,
+            driverMobile,
+            quantityType,
+            fuelQuantity: parseFloat(fuelQuantity),
+            bowserDriver: {
+                _id: selectedBowserDriver?._id || '',
+                userName: bowserDriverName,
+                userId: bowserDriverId
+            },
+            allocationAdmin: {
+                _id: currentUser._id,
+                userName: currentUser.name,
+                userId: currentUser.userId,
+                location: adminLocation
+            },
+        };
 
         try {
-            const response = await fetch(`${process.env.API_URL}/allocateFueling`, {
+            const response = await fetch('https://bowser-backend-2cdr.onrender.com/allocateFueling', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
                 },
-                body: JSON.stringify({
-                    vehicleNumber,
-                    driverId,
-                    driverName,
-                    driverMobile,
-                    quantityType,
-                    fuelQuantity: parseFloat(fuelQuantity),
-                    bowserDriver: {
-                        _id: selectedBowserDriver._id,
-                        userName: selectedBowserDriver.name,
-                        userId: selectedBowserDriver.userId
-                    },
-                    allocationAdmin: {
-                        _id: currentUser._id,
-                        userName: currentUser.name,
-                        userId: currentUser.userId,
-                        location: adminLocation,
-                    },
-                }),
+                body: JSON.stringify(allocationData),
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error('Failed to allocate fueling');
             }
 
             const result = await response.json();
-            setAlertMessage(result.message);
+            setAlertMessage("Fueling allocation successful. Notification sent to bowser driver.");
             setAlertDialogOpen(true);
-            alert("Fueling allocation created successfully.");
-            // Don't reset the form immediately, we'll do it after closing the alert dialog
         } catch (error) {
-            console.error('Error submitting form:', error);
-            alert(error instanceof Error ? error.message : "An unexpected error occurred while allocating fueling.");
+            console.error('Error allocating fueling:', error);
+            setAlertMessage("Failed to allocate fueling. Please try again.");
+            setAlertDialogOpen(true);
         } finally {
             setSubmitting(false);
         }
-    }
+    };
 
     const resetForm = () => {
         setVehicleNumber("")
@@ -241,7 +234,7 @@ export default function FuelingAllocation() {
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
-            {submitting || isSearching && (
+            {(submitting || isSearching) && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
                     <Loader2 className="h-10 w-10 animate-spin text-white" />
                 </div>

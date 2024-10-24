@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '@react-navigation/native';
 import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function AuthScreen() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const scrollViewRef = useRef<ScrollView>(null);
   const userIdInputRef = useRef<TextInput>(null);
@@ -145,18 +147,30 @@ export default function AuthScreen() {
 
             <View style={styles.inputContainer}>
               <Text style={{ color: colors.text }}>Password:</Text>
-              <TextInput
-                ref={passwordInputRef}
-                style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                placeholder="Enter password"
-                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                value={password}
-                onChangeText={setPassword}
-                // secureTextEntry
-                returnKeyType={isLogin ? "done" : "next"}
-                onSubmitEditing={() => isLogin ? handleAuth() : phoneNumberInputRef.current?.focus()}
-                blurOnSubmit={isLogin}
-              />
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  ref={passwordInputRef}
+                  style={[styles.input, styles.passwordInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                  placeholder="Enter password"
+                  placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  returnKeyType={isLogin ? "done" : "next"}
+                  onSubmitEditing={() => isLogin ? handleAuth() : phoneNumberInputRef.current?.focus()}
+                  blurOnSubmit={isLogin}
+                />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off' : 'eye'}
+                    size={24}
+                    color={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
             {!isLogin && (
@@ -280,5 +294,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordInput: {
+    flex: 1,
+  },
+  eyeButton: {
+    padding: 10,
+    position: 'absolute',
+    right: 0,
   },
 });
