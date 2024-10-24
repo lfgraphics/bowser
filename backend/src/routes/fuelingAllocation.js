@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const FuelingOrder = require('../models/fuelingOrders'); // Make sure this path is correct
+const FuelingOrder = require('../models/fuelingOrders');
 const mongoose = require('mongoose');
-const axios = require('axios');
 const User = require('../models/user');
 const { Expo } = require('expo-server-sdk');
 let expo = new Expo();
@@ -47,6 +46,14 @@ router.post('/', async (req, res) => {
         if (!bowserDriverUser || !bowserDriverUser.pushToken) {
             throw new Error('Bowser driver not found or push token not registered');
         }
+
+        // Update the bowser driver's orders field
+        const orderId = newFuelingOrder._id;
+        await User.findOneAndUpdate(
+            { userId: bowserDriver.userId },
+            { $push: { orders: orderId } },
+            { new: true, upsert: true }
+        );
 
         // Send notification to the bowser driver
         const notificationPayload = {

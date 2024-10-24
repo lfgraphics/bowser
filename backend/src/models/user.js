@@ -8,6 +8,10 @@ const userSchema = new mongoose.Schema({
     phoneNumber: String,
     name: String,
     verified: Boolean,
+    orders: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'FuelingOrder'
+    }],
     roles: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Role'

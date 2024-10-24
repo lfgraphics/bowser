@@ -23,7 +23,7 @@ const fuelingOrderSchema = new mongoose.Schema({
     userId: { type: String, required: true },
     location: { type: String},
   },
-  createdAt: { type: String, default: () => new Date().toLocaleString() }
+  createdAt: { type: String, default: () => new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) }
 });
 
 // Validate the quantityType
