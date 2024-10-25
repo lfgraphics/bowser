@@ -2,9 +2,10 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export async function registerForPushNotificationsAsync() {
-  let token;
+export async function registerForPushNotificationsAsync(): Promise<string | null> {
+  let token: string | null = null;
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
@@ -24,7 +25,7 @@ export async function registerForPushNotificationsAsync() {
     }
     if (finalStatus !== 'granted') {
       alert('Failed to get push token for push notification!');
-      return;
+      return null;  // Explicitly return null here
     }
     
     // Use a try-catch block to handle potential errors
@@ -46,4 +47,44 @@ export async function registerForPushNotificationsAsync() {
   }
 
   return token;
+}
+
+export async function registerPushTokenWithServer(userId: string, pushToken: string) {
+  try {
+    const apiUrl = 'https://bowser-backend-2cdr.onrender.com';
+    const response = await fetch(`${apiUrl}/notifications/register-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, pushToken }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to register push token with server: ${errorText}`);
+    }
+  } catch (error) {
+    console.error('Error registering push token with server:', error);
+    throw error;
+  }
+}
+
+export async function setNotificationCategories() {
+  await Notifications.setNotificationCategoryAsync('fueling', [
+    {
+      identifier: 'call',
+      buttonTitle: 'Call',
+      options: {
+        opensAppToForeground: false,
+      },
+    },
+    {
+      identifier: 'openScreen',
+      buttonTitle: 'Open',
+      options: {
+        opensAppToForeground: true,
+      },
+    },
+  ]);
 }

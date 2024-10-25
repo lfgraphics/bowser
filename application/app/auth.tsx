@@ -6,6 +6,7 @@ import { useTheme } from '@react-navigation/native';
 import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { registerForPushNotificationsAsync, registerPushTokenWithServer } from '@/app/utils/notifications';
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -34,11 +35,19 @@ export default function AuthScreen() {
 
     try {
       let deviceUUID = await AsyncStorage.getItem('deviceUUID');
-
       if (!deviceUUID) {
         deviceUUID = await Crypto.randomUUID();
         await AsyncStorage.setItem('deviceUUID', deviceUUID);
       }
+
+      const body = JSON.stringify({
+        userId,
+        password,
+        deviceUUID,
+        phoneNumber: isLogin ? undefined : phoneNumber,
+        name: isLogin ? undefined : name,
+        appName: 'Bowsers Fueling',
+      });
 
       const endpoint = isLogin ? 'login' : 'signup';
       const response = await fetch(`https://bowser-backend-2cdr.onrender.com/auth/${endpoint}`, {
@@ -46,37 +55,66 @@ export default function AuthScreen() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId,
-          password,
-          deviceUUID,
-          phoneNumber: isLogin ? undefined : phoneNumber,
-          name: isLogin ? undefined : name,
-          appName: 'Bowsers Fueling',
-        }),
+        body: body,
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        Alert.alert(
+          "Error",
+          data.message || 'An error occurred',
+          [{ text: "OK" }],
+          { cancelable: false }
+        );
         throw new Error(data.message || 'An error occurred');
       }
 
+      if (!isLogin) {
+        // Signup process
+        Alert.alert(
+          "Signup Successful",
+          "Your account has been created successfully. Please wait for admin verification.",
+          [{ text: "OK" }],
+          { cancelable: false }
+        );
+        setIsLogin(!isLogin); // Change to login state
+        setIsLoading(false);
+        return; // Return out of the function
+      }
+
+      // Login process
       if (data.token) {
         await AsyncStorage.setItem('userToken', data.token);
-        await AsyncStorage.setItem('loginTime', data.loginTime);
+        if (data.loginTime) {
+          await AsyncStorage.setItem('loginTime', data.loginTime);
+        }
         if (data.user) {
           await AsyncStorage.setItem('userData', JSON.stringify(data.user));
         }
+
+        // Set up push notifications after successful login
+        const pushToken = await registerForPushNotificationsAsync();
+        if (pushToken) {
+          await AsyncStorage.setItem('pushToken', pushToken);
+          // Register push token with the server
+          await registerPushTokenWithServer(data.user["User Id"], pushToken);
+        }
+
         if (data.verified) {
           router.replace('/');
         } else {
-          Alert.alert("Not Verified", "Your account is not yet verified. Please contact support.");
+          Alert.alert(
+            "Login Successful",
+            "Welcome back!",
+            [{ text: "OK" }],
+            { cancelable: false }
+          );
         }
       } else {
         Alert.alert(
-          "Success",
-          isLogin ? "Login successful!" : "Signup successful!",
+          "Error",
+          "Login failed. Please try again.",
           [{ text: "OK" }],
           { cancelable: false }
         );

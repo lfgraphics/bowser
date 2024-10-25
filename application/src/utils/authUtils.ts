@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // This is a placeholder implementation. Replace with your actual authentication logic.
 let isLoggedIn = false;
 
-export const checkUserLoggedIn = async () => {
+export const checkUserLoggedIn = async (isLoggingIn = false) => {
   try {
     const userToken = await AsyncStorage.getItem('userToken');
     const deviceUUID = await AsyncStorage.getItem('deviceUUID');
@@ -10,6 +10,11 @@ export const checkUserLoggedIn = async () => {
     if (!userToken || !deviceUUID) {
       return false;
     }
+
+    if (isLoggingIn) {
+      return true; // Skip token verification during login process
+    }
+
     const payload = JSON.parse(atob(userToken.split('.')[1]));
     const expirationTime = payload.exp * 1000; // Convert to milliseconds
 
@@ -18,10 +23,8 @@ export const checkUserLoggedIn = async () => {
       return false;
     }
 
-    // Check if the device is online
     const isOnline = await checkInternetConnection();
 
-    // If login time is under 7 days and user is offline, rely on saved data
     if (!isOnline) {
       console.log('Offline mode: Using saved authentication data');
       return true;
@@ -41,9 +44,7 @@ export const checkUserLoggedIn = async () => {
         console.error('Server response error:', errorData);
 
         if (errorData.unauthorizedAttempt) {
-          // Handle unauthorized device attempt
           console.warn('Unauthorized device attempt detected');
-          // You might want to show a specific message to the user or take other actions
         }
 
         return false;
