@@ -18,11 +18,15 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { SearchModal } from "@/components/SearchModal"
+import { searchItems } from '@/utils/searchUtils'
+import { Vehicle } from "@/types"
 
 export default function FuelingAllocation() {
     const [isSearching, setIsSearching] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [foundDrivers, setFoundDrivers] = useState<Driver[]>([]);
+    const [foundVehicles, setFoundVehicles] = useState<Vehicle[]>([]);
     const [modalVisible, setModalVisible] = useState(false);
     const [vehicleNumber, setVehicleNumber] = useState("")
     const [driverId, setDriverId] = useState("")
@@ -39,6 +43,21 @@ export default function FuelingAllocation() {
     const [adminLocation, setAdminLocation] = useState('');
     const [alertDialogOpen, setAlertDialogOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
+    const [searchModalConfig, setSearchModalConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        items: any[];
+        onSelect: (item: any) => void;
+        renderItem: (item: any) => React.ReactNode;
+        keyExtractor: (item: any) => string;
+    }>({
+        isOpen: false,
+        title: "",
+        items: [],
+        onSelect: () => { },
+        renderItem: () => null,
+        keyExtractor: () => "",
+    });
 
     useEffect(() => {
         if (!isAuthenticated()) {
@@ -70,33 +89,61 @@ export default function FuelingAllocation() {
     const searchDriver = async (idNumber: string) => {
         setIsSearching(true);
         try {
-            const response = await fetch(`https://bowser-backend-2cdr.onrender.com/searchDriver/${idNumber}`);
-
-            if (!response.ok) {
-                if (response.status === 404) {
-                    setFoundDrivers([]);
-                    return;
-                }
-                throw new Error('Server error');
-            }
-
-            const drivers: Driver[] = await response.json();
+            const drivers = await searchItems<Driver>(
+                'https://bowser-backend-2cdr.onrender.com/searchDriver',
+                idNumber,
+                'No driver found with the given ID'
+            );
             setFoundDrivers(drivers);
 
-            if (drivers.length === 0) {
-            } else {
-                setModalVisible(true);
+            if (drivers.length > 0) {
+                setSearchModalConfig({
+                    isOpen: true,
+                    title: "Select a Driver",
+                    items: drivers,
+                    onSelect: handleDriverSelection,
+                    renderItem: (driver) => `${driver.Name}`,
+                    keyExtractor: (driver) => driver.ITPLId || driver.Name,
+                });
             }
         } catch (error) {
-            console.error('Error searching for driver:', error);
             setFoundDrivers([]);
+            console.error('Error searching for driver:', error);
+        } finally {
+            setIsSearching(false);
+        }
+    }
+
+    const searchVehicle = async (vehicleNumber: string) => {
+        setIsSearching(true);
+        try {
+            const vehicles = await searchItems<Vehicle>(
+                'https://bowser-backend-2cdr.onrender.com/searchVehicleNumber',
+                vehicleNumber,
+                'No vehicle found with the given number'
+            );
+            setFoundVehicles(vehicles);
+
+            if (vehicles.length > 0) {
+                setSearchModalConfig({
+                    isOpen: true,
+                    title: "Select a Vehicle",
+                    items: vehicles,
+                    onSelect: handleVehicleSelection,
+                    renderItem: (vehicle) => vehicle.VehicleNo,
+                    keyExtractor: (vehicle) => vehicle.VehicleNo,
+                });
+            }
+        } catch (error) {
+            setFoundVehicles([]);
+            console.error('Error searching for vehicle:', error);
         } finally {
             setIsSearching(false);
         }
     }
 
     const handleDriverSelection = (driver: Driver) => {
-        setModalVisible(false);
+        setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
 
         if (driver) {
             const lastUsedNumber = driver.MobileNo?.find(num => num.LastUsed);
@@ -157,12 +204,18 @@ export default function FuelingAllocation() {
         }
     }
 
+    const handleVehicleSelection = (vehicle: Vehicle) => {
+        setVehicleNumber(vehicle.VehicleNo);
+        setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
 
         const currentUser = getCurrentUser();
         if (!currentUser) {
+            console.error("User authentication failed");
             setAlertMessage("User not authenticated. Please log in again.");
             setAlertDialogOpen(true);
             setSubmitting(false);
@@ -198,18 +251,23 @@ export default function FuelingAllocation() {
                 body: JSON.stringify(allocationData),
             });
 
+            const responseText = await response.text()
+
             if (!response.ok) {
-                throw new Error('Failed to allocate fueling');
+                throw new Error(`Failed to allocate fueling: ${response.status} ${response.statusText}`);
             }
 
-            const result = await response.json();
+            const result = JSON.parse(responseText)
+
             setAlertMessage(result.message);
             setAlertDialogOpen(true);
         } catch (error) {
             console.error('Error allocating fueling:', error);
             if (error instanceof Error) {
+                console.error('Error details:', error.message);
                 setAlertMessage(error.message);
             } else {
+                console.error('Unknown error:', error);
                 setAlertMessage('An unknown error occurred');
             }
             setAlertDialogOpen(true);
@@ -257,7 +315,13 @@ export default function FuelingAllocation() {
                                     id="vehicleNumber"
                                     placeholder="Enter vehicle number"
                                     value={vehicleNumber}
-                                    onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
+                                    onChange={(e) => {
+                                        setVehicleNumber(e.target.value.toUpperCase());
+                                        if (e.target.value.length > 5) {
+                                            setFoundVehicles([]);
+                                            searchVehicle(e.target.value.toUpperCase());
+                                        }
+                                    }}
                                     required
                                 />
                             </div>
@@ -375,25 +439,15 @@ export default function FuelingAllocation() {
                 </form>
             </Card>
 
-            <Dialog open={modalVisible} onOpenChange={setModalVisible}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Select a Driver</DialogTitle>
-                    </DialogHeader>
-                    <div className="mt-4 space-y-2">
-                        {foundDrivers.map((driver, index) => (
-                            <Button
-                                key={index}
-                                className="w-full justify-start"
-                                variant="outline"
-                                onClick={() => handleDriverSelection(driver)}
-                            >
-                                {driver.Name}
-                            </Button>
-                        ))}
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <SearchModal
+                isOpen={searchModalConfig.isOpen}
+                onClose={() => setSearchModalConfig((prev) => ({ ...prev, isOpen: false }))}
+                title={searchModalConfig.title}
+                items={searchModalConfig.items}
+                onSelect={searchModalConfig.onSelect}
+                renderItem={searchModalConfig.renderItem}
+                keyExtractor={searchModalConfig.keyExtractor}
+            />
 
             <Dialog open={bowserDriverModalVisible} onOpenChange={setBowserDriverModalVisible}>
                 <DialogContent>

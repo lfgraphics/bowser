@@ -62,8 +62,6 @@ export default function AuthScreen() {
         throw new Error(data.message || 'An error occurred');
       }
 
-      console.log('Response:', data);
-
       if (data.token) {
         await AsyncStorage.setItem('userToken', data.token);
         await AsyncStorage.setItem('loginTime', data.loginTime);
@@ -84,7 +82,6 @@ export default function AuthScreen() {
         );
       }
     } catch (error) {
-      console.error('Auth error:', error);
       Alert.alert(
         "Authentication Error",
         (error instanceof Error ? error.message : String(error)) || (isLogin ? "Login failed. Please try again." : "Signup failed. Please try again."),

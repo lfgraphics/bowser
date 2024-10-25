@@ -12,3 +12,6 @@ export interface User {
     userId: string;
     name: string;
 }
+export interface Vehicle {
+    VehicleNo: string;
+}

@@ -40,7 +40,6 @@ export default function NotificationsScreen() {
             const response = await axios.get<ServerResponse>(`${API_BASE_URL}/fuelingOrders/${userData['User Id']}`);
             setNotificationsData(response.data.orders);
         } catch (err) {
-            console.error('Error fetching notifications:', err);
             setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');
         } finally {
             setLoading(false);

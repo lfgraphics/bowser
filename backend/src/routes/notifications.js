@@ -42,25 +42,20 @@ router.post('/send', async (req, res) => {
 });
 
 router.post('/register-token', async (req, res) => {
-    console.log('Received request to register token:', req.body);
     try {
         const { userId, pushToken } = req.body;
         if (!userId) {
             console.error('UserId is missing in the request');
             return res.status(400).json({ error: 'UserId is required' });
         }
-        console.log('Searching for user with userId:', userId);
         const user = await User.findOneAndUpdate(
             { userId: userId },
             { $set: { pushToken: pushToken } },
             { new: true }
         );
-        console.log('User found:', user);
         if (!user) {
-            console.log('User not found for userId:', userId);
             return res.status(404).json({ error: 'User not found' });
         }
-        console.log('Push token registered successfully for user:', userId);
         res.json({ success: true, message: 'Push token registered successfully' });
     } catch (error) {
         console.error('Error registering push token:', error);

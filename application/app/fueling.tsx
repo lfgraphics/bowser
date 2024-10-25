@@ -368,7 +368,7 @@ export default function FuelingScreen() {
 
       if (!response.ok) {
         if (response.status === 404) {
-          console.log('No driver found with the given ID');
+          alert('No driver found with the given ID');
           setFoundDrivers([]);
           setNoDriverFound(true);
           return;
@@ -385,7 +385,6 @@ export default function FuelingScreen() {
         setModalVisible(true);
       }
     } catch (error) {
-      console.error('Error searching for driver:', error);
       setFoundDrivers([]);
       setNoDriverFound(true);
     } finally {
@@ -506,7 +505,7 @@ export default function FuelingScreen() {
 
       if (!response.ok) {
         if (response.status === 404) {
-          console.log('No vehicle found with the given number');
+          alert('No vehicle found with the given number');
           setFoundVehicles([]);
           setNoVehicleFound(true);
           return;
@@ -515,7 +514,6 @@ export default function FuelingScreen() {
       }
 
       const vehicles: Vehicle[] = await response.json();
-      console.log('Vehicles found:', vehicles); // Add this line for debugging
       setFoundVehicles(vehicles);
       setNoVehicleFound(false);
 
@@ -523,7 +521,6 @@ export default function FuelingScreen() {
         setVehicleModalVisible(true);
       }
     } catch (error) {
-      console.error('Error searching for vehicle:', error);
       setFoundVehicles([]);
       setNoVehicleFound(true);
     } finally {
@@ -572,7 +569,7 @@ export default function FuelingScreen() {
                 value={vehicleNumber}
                 onChangeText={(text) => {
                   setVehicleNumber(text.toUpperCase());
-                  if (text.length > 2) {
+                  if (text.length > 5) {
                     setFoundVehicles([]);
                     setNoVehicleFound(false);
                     searchVehicleByNumber(text);

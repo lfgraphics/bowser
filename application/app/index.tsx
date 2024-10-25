@@ -103,8 +103,6 @@ const App = () => {
                 [{ text: "OK" }],
                 { cancelable: false }
               );
-            } else {
-              console.log('User cancelled offline data sync');
             }
           }
         }
@@ -213,7 +211,6 @@ const App = () => {
             router.replace('/auth' as any);
           } else {
             // User chose not to submit offline data, cancel logout
-            console.log('Logout cancelled: User chose not to submit offline data');
             return;
           }
         } else {
@@ -229,7 +226,6 @@ const App = () => {
         router.replace('/auth' as any);
       }
     } catch (error) {
-      console.error('Error during logout:', error);
       Alert.alert('Logout Error', 'An error occurred during logout. Please try again.');
     }
   };
@@ -244,7 +240,6 @@ const App = () => {
         setOfflineData(offlineArray);
       }
     } catch (error) {
-      console.error('Error getting offline data length:', error);
     } finally {
       setIsOfflineDataLoading(false);
     }
@@ -270,7 +265,6 @@ const App = () => {
         setOfflineDataLength(updatedOfflineData.length);
         Alert.alert("Success", "Data submitted successfully.");
       } catch (error) {
-        console.error('Error submitting offline data:', error);
         Alert.alert("Error", `Failed to submit data. ${error}`);
       }
     } else {
@@ -403,7 +397,6 @@ const App = () => {
         }
         break;
       default:
-        console.log('Unknown action:', action);
     }
   };
 
@@ -418,7 +411,6 @@ const App = () => {
     });
 
     const foregroundSubscription = Notifications.addNotificationReceivedListener(notification => {
-      console.log('Notification received in foreground:', notification);
       const { title, body } = notification.request.content;
       const data = notification.request.content.data;
 
@@ -443,7 +435,6 @@ const App = () => {
       try {
         const token = await registerForPushNotificationsAsync();
         if (token) {
-          console.log('Push token:', token);
           await AsyncStorage.setItem('pushToken', token);
 
           const userData = await AsyncStorage.getItem('userData');
@@ -468,7 +459,6 @@ const App = () => {
               throw new Error(`Failed to register push token with server: ${errorText}`);
             }
 
-            console.log('Push token registered successfully');
           } else {
             console.error('User data not found in AsyncStorage');
           }

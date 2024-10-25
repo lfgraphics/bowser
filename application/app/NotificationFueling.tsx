@@ -77,7 +77,6 @@ export default function NotificationFuelingScreen() {
         if (status !== 'granted') {
             const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
             if (newStatus !== 'granted') {
-                console.warn('Location permission is still not granted.');
                 return;
             }
         }
@@ -264,7 +263,6 @@ export default function NotificationFuelingScreen() {
                         ]
                     );
                 } catch (error) {
-                    console.error('Error handling offline data:', error);
                     Alert.alert(
                         "Error",
                         "Failed to handle offline data. Please try again.",
