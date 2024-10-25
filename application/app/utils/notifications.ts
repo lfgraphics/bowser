@@ -24,26 +24,23 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
       finalStatus = status;
     }
     if (finalStatus !== 'granted') {
-      alert('Failed to get push token for push notification!');
-      return null;  // Explicitly return null here
+      console.warn('Failed to get push token for push notification!');
+      return null;
     }
     
-    // Use a try-catch block to handle potential errors
     try {
       const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-      if (projectId) {
-        token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-      } else {
-        // Fallback to getExpoPushTokenAsync without projectId
-        token = (await Notifications.getExpoPushTokenAsync()).data;
+      if (!projectId) {
+        console.warn('EAS Project ID is not defined. Push notifications may not work in production.');
       }
+      token = (await Notifications.getExpoPushTokenAsync({
+        projectId: projectId,
+      })).data;
     } catch (error) {
       console.error('Error getting push token:', error);
-      // Fallback to getExpoPushTokenAsync without projectId
-      token = (await Notifications.getExpoPushTokenAsync()).data;
     }
   } else {
-    alert('Must use physical device for Push Notifications');
+    console.warn('Must use physical device for Push Notifications');
   }
 
   return token;

@@ -456,27 +456,16 @@ const App = () => {
 
             if (!response.ok) {
               const errorText = await response.text();
-              throw new Error(`Failed to register push token with server: ${errorText}`);
+              console.warn(`Failed to register push token with server: ${errorText}`);
             }
-
           } else {
-            console.error('User data not found in AsyncStorage');
+            console.warn('User data not found in AsyncStorage');
           }
         } else {
           console.warn('Failed to get push token');
-          Alert.alert(
-            "Push Notification Warning",
-            "We couldn't set up push notifications. You may miss important updates. The app will continue to work, but with limited functionality.",
-            [{ text: "OK" }]
-          );
         }
       } catch (error) {
         console.error('Error setting up push notifications:', error);
-        Alert.alert(
-          "Push Notification Error",
-          "An error occurred while setting up push notifications. The app will continue to work, but with limited functionality.",
-          [{ text: "OK" }]
-        );
       }
     };
 
