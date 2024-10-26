@@ -1,4 +1,6 @@
+import { registerForPushNotificationsAsync } from '@/app/utils/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
 // This is a placeholder implementation. Replace with your actual authentication logic.
 let isLoggedIn = false;
 
@@ -26,7 +28,6 @@ export const checkUserLoggedIn = async (isLoggingIn = false) => {
     const isOnline = await checkInternetConnection();
 
     if (!isOnline) {
-      console.log('Offline mode: Using saved authentication data');
       return true;
     }
 
@@ -41,10 +42,10 @@ export const checkUserLoggedIn = async (isLoggingIn = false) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Server response error:', errorData);
+        Alert.alert('Server response error:', errorData);
 
         if (errorData.unauthorizedAttempt) {
-          console.warn('Unauthorized device attempt detected');
+          Alert.alert('Authentication Error', 'Unauthorized device attempt detected');
         }
 
         return false;
@@ -56,7 +57,7 @@ export const checkUserLoggedIn = async (isLoggingIn = false) => {
 
     return false;
   } catch (error) {
-    console.error('Error checking user login status:', error);
+    Alert.alert('Error checking user login status:', `${error}`);
     return false;
   }
 };
@@ -98,6 +99,16 @@ export const loginUser = async (userId: string, password: string): Promise<void>
     await AsyncStorage.setItem('userToken', data.token);
     await AsyncStorage.setItem('loginTime', data.loginTime);
     await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+    if (data.user.pushToken) {
+      await AsyncStorage.setItem('pushToken', data.user.pushToken);
+    } else {
+      const newPushToken = await registerForPushNotificationsAsync();
+      if (newPushToken) {
+        await AsyncStorage.setItem('pushToken', newPushToken);
+      } else {
+        throw new Error('Failed to get new push token');
+      }
+    }
   } catch (error) {
     console.error('Error during login:', error);
     throw error;

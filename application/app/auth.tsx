@@ -47,6 +47,7 @@ export default function AuthScreen() {
         phoneNumber: isLogin ? undefined : phoneNumber,
         name: isLogin ? undefined : name,
         appName: 'Bowsers Fueling',
+        ...(await AsyncStorage.getItem('pushToken')) ? { pushToken: await AsyncStorage.getItem('pushToken') } : {},
       });
 
       const endpoint = isLogin ? 'login' : 'signup';
@@ -98,9 +99,8 @@ export default function AuthScreen() {
           const localPushToken = await registerForPushNotificationsAsync();
           if (localPushToken) {
             await AsyncStorage.setItem('pushToken', localPushToken);
-            await registerPushTokenWithServer(data.user["User Id"], localPushToken);
+            await registerPushTokenWithServer(data.user['User Id'], localPushToken);
           }
-
           router.replace('/'); // Navigate to index page
         } catch (storageError) {
           console.error('Error saving to AsyncStorage:', storageError);
@@ -148,6 +148,41 @@ export default function AuthScreen() {
         nameInputRef.current?.focus();
         return false;
       }
+    }
+    // Check if User ID is alphanumeric (contains only letters and numbers)
+    const isValidUserId = /^[a-zA-Z0-9]+$/; // Example: "johnDoe123" is valid, "!@#$" is not
+    if (!isValidUserId.test(userId)) {
+      Alert.alert(
+        "Enter Correct Details",
+        "Invalid User ID format. User ID should only contain letters and numbers.",
+        [{ text: "Okay", onPress: () => userIdInputRef.current?.focus() }],
+        { cancelable: false }
+      );
+      return false;
+    }
+
+    // Check if Phone Number is in the format +1234567890 (optional + and 10-13 digits)
+    const isValidPhoneNumber = /^\+?\d{10,13}$/; // Example: "+1234567890" is valid, "123456789" is valid, "123456" is not
+    if (!isLogin && !isValidPhoneNumber.test(phoneNumber)) {
+      Alert.alert(
+        "Enter Correct Details",
+        "Invalid Phone Number format. Phone Number should be in the format +1234567890.",
+        [{ text: "Okay", onPress: () => phoneNumberInputRef.current?.focus() }],
+        { cancelable: false }
+      );
+      return false;
+    }
+
+    // Check if Name contains only letters and spaces
+    const isValidName = /^[a-zA-Z ]+$/; // Example: "John Doe" is valid, "John!Doe" is not
+    if (!isLogin && !isValidName.test(name)) {
+      Alert.alert(
+        "Enter Correct Details",
+        "Invalid Name format. Name should only contain letters and spaces.",
+        [{ text: "Okay", onPress: () => nameInputRef.current?.focus() }],
+        { cancelable: false }
+      );
+      return false;
     }
     return true;
   };

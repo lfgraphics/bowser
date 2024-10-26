@@ -82,6 +82,10 @@ router.post('/login', async (req, res) => {
             return res.status(403).json({ message: 'User does not have access to this application' });
         }
 
+        if (deviceUUID && (user.deviceUUID !== deviceUUID)) {
+            return res.status(403).json({ message: 'You are loggin in from diffrent device\nContact admin to approve this device' });
+        }
+
         const token = jwt.sign({ userId: user.userId, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
         const loginTime = new Date().toISOString();
         const userData = {
@@ -91,11 +95,12 @@ router.post('/login', async (req, res) => {
             'Phone Number': user.phoneNumber,
             'Verified User': user.verified,
             'Role': roleNames,
+            'Push Notification Token': pushToken,
         };
 
-        if (req.body.pushToken) {
-          user.pushToken = req.body.pushToken;
-          await user.save();
+        if (pushToken) {
+            user.pushToken = pushToken;
+            await user.save();
         }
 
         res.json({
