@@ -26,17 +26,13 @@ const App = () => {
   const [offlineData, setOfflineData] = useState<FormData[]>([]);
   const [isOfflineDataModalVisible, setOfflineDataModalVisible] = useState(false);
   const [isOfflineDataLoading, setIsOfflineDataLoading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
         await syncOfflineData();
         await getOfflineDataLength()
-        const isLoggedIn = await AsyncStorage.getItem('isLoggedIn') === 'true';
-        if (!isLoggedIn) {
-          router.replace('/auth' as any);
-          return;
-        }
 
         const userDataString = await AsyncStorage.getItem('userData');
         if (userDataString) {
@@ -435,7 +431,7 @@ const App = () => {
       Alert.alert(
         title || 'New Order',
         body || 'You have received a new fueling order.',
-        data.buttons.map((button: any) => ({
+        data.buttons?.map((button: any) => ({
           text: button.text,
           onPress: () => handleNotificationAction(button.action, button)
         }))
@@ -498,6 +494,23 @@ const App = () => {
     });
   }, []);
 
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const token = await AsyncStorage.getItem('userToken');
+      const userDataString = await AsyncStorage.getItem('userData');
+
+      if (token && userDataString) {
+        setIsLoggedIn(true);
+        setUserData(JSON.parse(userDataString));
+      } else {
+        setIsLoggedIn(false);
+      }
+      setIsLoading(false);
+    };
+
+    checkLoginStatus();
+  }, []);
+
   if (isLoading) {
     return <View style={styles.container}>
       <ActivityIndicator size="large" color="#0000ff" />
@@ -523,6 +536,11 @@ const App = () => {
         </TouchableOpacity>
       </View>
     );
+  }
+
+  if (!isLoggedIn) {
+    router.replace('/auth' as any);
+    return;
   }
 
   return (

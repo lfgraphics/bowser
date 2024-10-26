@@ -94,26 +94,11 @@ export default function AuthScreen() {
             await AsyncStorage.setItem('userData', JSON.stringify(data.user));
           }
 
-          // Set up push notifications after successful login
+          // Register push token every time after successful login
           const localPushToken = await registerForPushNotificationsAsync();
           if (localPushToken) {
             await AsyncStorage.setItem('pushToken', localPushToken);
-
-            // Fetch the stored token from the server
-            const storedTokenResponse = await fetch(`https://bowser-backend-2cdr.onrender.com/auth/get-push-token`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ userId: data.user["User Id"] }),
-            });
-
-            const storedTokenData = await storedTokenResponse.json();
-
-            if (!storedTokenResponse.ok || !storedTokenData.token || storedTokenData.token !== localPushToken) {
-              // Re-register the token if it doesn't match or is not found
-              await registerPushTokenWithServer(data.user["User Id"], localPushToken);
-            }
+            await registerPushTokenWithServer(data.user["User Id"], localPushToken);
           }
 
           router.replace('/'); // Navigate to index page
