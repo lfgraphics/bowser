@@ -71,45 +71,55 @@ export default function AuthScreen() {
       }
 
       if (!isLogin) {
-        // Signup process
         Alert.alert(
           "Signup Successful",
           "Your account has been created successfully. Please wait for admin verification.",
           [{ text: "OK" }],
           { cancelable: false }
         );
-        setIsLogin(!isLogin); // Change to login state
+        setIsLogin(true);
         setIsLoading(false);
-        return; // Return out of the function
+        return;
       }
 
       // Login process
       if (data.token) {
-        await AsyncStorage.setItem('userToken', data.token);
-        if (data.loginTime) {
-          await AsyncStorage.setItem('loginTime', data.loginTime);
-        }
-        if (data.user) {
-          await AsyncStorage.setItem('userData', JSON.stringify(data.user));
-        }
+        try {
+          await AsyncStorage.setItem('userToken', data.token);
+          await AsyncStorage.setItem('isLoggedIn', 'true'); // Set login flag
+          if (data.loginTime) {
+            await AsyncStorage.setItem('loginTime', data.loginTime);
+          }
+          if (data.user) {
+            await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+          }
 
-        // Set up push notifications after successful login
-        const pushToken = await registerForPushNotificationsAsync();
-        if (pushToken) {
-          await AsyncStorage.setItem('pushToken', pushToken);
-          // Register push token with the server
-          await registerPushTokenWithServer(data.user["User Id"], pushToken);
-        }
+          // Set up push notifications after successful login
+          const localPushToken = await registerForPushNotificationsAsync();
+          if (localPushToken) {
+            await AsyncStorage.setItem('pushToken', localPushToken);
 
-        if (data.verified) {
-          router.replace('/');
-        } else {
-          Alert.alert(
-            "Login Successful",
-            "Welcome back!",
-            [{ text: "OK" }],
-            { cancelable: false }
-          );
+            // Fetch the stored token from the server
+            const storedTokenResponse = await fetch(`https://bowser-backend-2cdr.onrender.com/auth/get-push-token`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ userId: data.user["User Id"] }),
+            });
+
+            const storedTokenData = await storedTokenResponse.json();
+
+            if (!storedTokenResponse.ok || !storedTokenData.token || storedTokenData.token !== localPushToken) {
+              // Re-register the token if it doesn't match or is not found
+              await registerPushTokenWithServer(data.user["User Id"], localPushToken);
+            }
+          }
+
+          router.replace('/'); // Navigate to index page
+        } catch (storageError) {
+          console.error('Error saving to AsyncStorage:', storageError);
+          Alert.alert("Storage Error", "Failed to save user data. Please try again.", [{ text: "OK" }]);
         }
       } else {
         Alert.alert(

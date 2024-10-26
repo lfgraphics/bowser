@@ -32,16 +32,18 @@ const App = () => {
       try {
         await syncOfflineData();
         await getOfflineDataLength()
-        const isLoggedIn = await checkUserLoggedIn();
+        const isLoggedIn = await AsyncStorage.getItem('isLoggedIn') === 'true';
         if (!isLoggedIn) {
           router.replace('/auth' as any);
-        } else {
-          const userDataString = await AsyncStorage.getItem('userData');
-          if (userDataString) {
-            setUserData(JSON.parse(userDataString));
-          }
-          await requestPermissions();
+          return;
         }
+
+        const userDataString = await AsyncStorage.getItem('userData');
+        if (userDataString) {
+          setUserData(JSON.parse(userDataString));
+        }
+
+        await requestPermissions(); // Request permissions
       } catch (error) {
         console.error('Error initializing app:', error);
         setError('An error occurred while initializing the app. Please try again.');
@@ -141,6 +143,22 @@ const App = () => {
           [{ text: 'OK' }]
         );
       }
+
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== 'granted') {
+        Alert.alert('Permissions Required', 'This app requires push notification permissions to function properly.', [{ text: 'OK' }]);
+        return;
+      }
+
+      // Update permissions flag in AsyncStorage
+      await AsyncStorage.setItem('permissionsGranted', 'true');
     } catch (error) {
       console.error('Error requesting permissions:', error);
       Alert.alert('Error', 'Failed to request permissions. Please try again.');
