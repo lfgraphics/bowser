@@ -61,5 +61,3 @@ expo-env.d.ts
 *.bak
 *.swp
 *.swo
-
-google-services.json
