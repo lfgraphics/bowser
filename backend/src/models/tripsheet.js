@@ -1,18 +1,62 @@
 const mongoose = require('mongoose');
 const { bowsersDatabaseConnection } = require('../../config/database');
 
-const bowserSchema = new mongoose.Schema({
-    VehicleNo: {
+const tripSheetSchema = new mongoose.Schema({
+    BowserTripSheetID: {
         type: String,
-        required: true,
+        required: false,
         unique: true
     },
-    chessisNo: {
-        type: String,
-        required: true,
-        unique: true
+    TripSheetGenerationDateTime: {
+        type: Date,
+        default: () => new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
     },
-    totalCapacity: number
+    BowserDriver: {
+        ID: {
+            type: String,
+            required: true
+        },
+        Name: {
+            type: String,
+            required: true
+        },
+        MobileNumber: {
+            type: String,
+            required: true
+        }
+    },
+    BowserOdometerStartReading: {
+        type: Number,
+        required: false
+    },
+    FuelingAreaDestination: {
+        type: String,
+        required: false
+    },
+    BowserPumpEndReading: {
+        type: Number,
+        required: false
+    },
+    ProposedDepartureDateTime: {
+        type: Date,
+        required: false
+    },
+    LoadQuantityByDipAndSlip: {
+        type: Number,
+        required: false
+    },
+    ChamberWiseDipList: {
+        type: [Number],
+        required: false
+    },
+    ChamberWiseSealList: {
+        type: [String],
+        required: false
+    },
+    ReferenceToBowserLoadingSheetID: {
+        type: String,
+        required: false
+    }
 });
 
-module.exports = bowsersDatabaseConnection.model('Bowser', bowserSchema, 'BowsersCollection');
+module.exports = bowsersDatabaseConnection.model('tripSheet', tripSheetSchema, 'BowsersCollection');
