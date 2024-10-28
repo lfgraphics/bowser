@@ -7,7 +7,7 @@ const { Expo } = require('expo-server-sdk');
 let expo = new Expo();
 
 router.post('/', async (req, res) => {
-    let newFuelingOrder, bowserDriverUser, notificationPayload;
+    let newFuelingOrder, bowserDriverUser, notificationPayload, pushTokenMissing = false;
 
     try {
         const {
@@ -53,7 +53,10 @@ router.post('/', async (req, res) => {
         try {
             bowserDriverUser = await User.findOne({ userId: bowserDriver.userId });
             if (!bowserDriverUser || !bowserDriverUser.pushToken) {
-                throw new Error('Bowser driver not found or push token not registered');
+                console.warn('Bowser driver not found or push token not registered');
+                // Instead of throwing an error, log and continue
+                // You can set a flag to indicate that the push token is missing
+                pushTokenMissing = true;
             }
         } catch (error) {
             console.error("Error fetching bowser driver:", error);
@@ -62,6 +65,13 @@ router.post('/', async (req, res) => {
 
         // Prepare notification payload
         try {
+            if (!bowserDriverUser.pushToken) {
+                console.warn('Bowser driver push token is missing');
+                // Instead of throwing an error, log and continue
+                // You can set a flag to indicate that the push token is missing
+                pushTokenMissing = true;
+            }
+
             notificationPayload = {
                 to: bowserDriverUser.pushToken,
                 sound: 'default',
@@ -111,13 +121,22 @@ router.post('/', async (req, res) => {
         try {
             if (Expo.isExpoPushToken(bowserDriverUser.pushToken)) {
                 const chunks = expo.chunkPushNotifications([notificationPayload]);
-                const ticketChunks = await Promise.all(chunks.map(chunk => expo.sendPushNotificationsAsync(chunk)));
+                await Promise.all(chunks.map(chunk => expo.sendPushNotificationsAsync(chunk)));
             } else {
-                throw new Error('Invalid push token');
+                console.error('Invalid push token');
+                // Instead of throwing an error, log and continue
+                return res.status(201).json({ 
+                    message: 'Fueling allocation successful. Notification could not be sent due to invalid push token.', 
+                    order: newFuelingOrder 
+                });
             }
         } catch (error) {
             console.error("Error sending push notification:", error);
-            throw new Error(`Failed to send push notification: ${error.message}`);
+            // Log the error but still return success for order allocation
+            return res.status(201).json({ 
+                message: 'Fueling allocation successful. Notification failed to send.', 
+                order: newFuelingOrder 
+            });
         }
 
         // Update User documents

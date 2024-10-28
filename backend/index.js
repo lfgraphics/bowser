@@ -22,7 +22,7 @@ app.use('/auth/admin', bowserAdminAuth);
 connectDatabases()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`Server running on https://bowser-backend-2cdr.onrender.com, restarted at ${new Date().toLocaleString()}`);
+      console.log(`Server running on the backend url, restarted at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
     });
   })
   .catch(error => {

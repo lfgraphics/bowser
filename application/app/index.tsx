@@ -1,6 +1,6 @@
 import 'react-native-get-random-values';
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Modal, Alert, ScrollView, Image, Linking } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Modal, Alert, ScrollView, Image, Linking, Platform } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { checkUserLoggedIn } from '../src/utils/authUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,8 +10,48 @@ import * as Location from 'expo-location';
 import { Camera } from 'expo-camera';
 import NetInfo from '@react-native-community/netinfo';
 import { FormData } from '../src/types/models';
+import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { registerForPushNotificationsAsync } from '@/app/utils/notifications';
+
+const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+const pushTokenString = async () => {
+  return (await Notifications.getDevicePushTokenAsync()).data;
+}
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
+async function sendPushNotification(expoPushToken: string) {
+  const message = {
+    to: expoPushToken,
+    sound: 'default',
+    title: 'Original Title',
+    body: 'And here is the body!',
+    data: { someData: 'goes here' },
+  };
+
+  await fetch('https://exp.host/--/api/v2/push/send', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Accept-encoding': 'gzip, deflate',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(message),
+  });
+}
+
+function handleRegistrationError(errorMessage: string) {
+  alert(errorMessage);
+  throw new Error(errorMessage);
+}
 
 const App = () => {
   const router = useRouter();
@@ -80,7 +120,7 @@ const App = () => {
             if (userConfirmed) {
               for (const formData of offlineArray) {
                 try {
-                  const response = await fetch(`https://bowser-backend-2cdr.onrender.com/formsubmit`, {
+                  const response = await fetch(`https://bowser-backend-2cdr.onrender.com/formsubmit`, { //https://bowser-backend-2cdr.onrender.com
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
@@ -292,7 +332,7 @@ const App = () => {
     return (
       <View style={styles.modalBody}>
         {Object.entries(userData)
-          .filter(([key]) => key !== '_id')
+          .filter(([key]) => key !== '_id') // && key !== 'Push Notification Token'
           .map(([key, value]) => (
             <View key={key} style={styles.dataRow}>
               <Text style={styles.dataKey}>{key.charAt(0).toUpperCase() + key.slice(1)}:</Text>
@@ -387,13 +427,6 @@ const App = () => {
     }
   };
 
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-    }),
-  });
 
   const handleNotificationAction = (action: string, data: any) => {
     switch (action) {
@@ -459,7 +492,7 @@ const App = () => {
               throw new Error('userId is undefined or null');
             }
 
-            const API_BASE_URL = await AsyncStorage.getItem('API_BASE_URL') || 'https://bowser-backend-2cdr.onrender.com';
+            const API_BASE_URL = 'https://bowser-backend-2cdr.onrender.com';
             const response = await fetch(`${API_BASE_URL}/notifications/register-token`, {
               method: 'POST',
               headers: {

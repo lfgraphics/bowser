@@ -32,7 +32,7 @@ export const checkUserLoggedIn = async (isLoggingIn = false) => {
     }
 
     if (isOnline) {
-      const response = await fetch('https://bowser-backend-2cdr.onrender.com/auth/verify-token', {
+      const response = await fetch('https://bowser-backend-2cdr.onrender.com/auth/verify-token', { //https://bowser-backend-2cdr.onrender.com
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

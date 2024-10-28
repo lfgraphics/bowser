@@ -63,7 +63,7 @@ export function Sidebar() {
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard/my-orders">
+                <Link href="/my-orders">
                   <Button variant="ghost" className="w-full justify-start">
                     <ClipboardList className="mr-2 h-4 w-4" />
                     My Orders
@@ -71,7 +71,7 @@ export function Sidebar() {
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard/vehicle-dispenses">
+                <Link href="/verify-dispenses">
                   <Button variant="ghost" className="w-full justify-start">
                     <ListCheck className="mr-2 h-4 w-4" />
                     Verify Dispenses
@@ -79,7 +79,7 @@ export function Sidebar() {
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard/profile">
+                <Link href="/profile">
                   <Button variant="ghost" className="w-full justify-start">
                     <User className="mr-2 h-4 w-4" />
                     Profile

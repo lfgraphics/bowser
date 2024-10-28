@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator, Text, RefreshControl } from 'react-native';
 import FuelNotification from '@/components/FuelNotification';
-import { FuelingOrderData, UserData } from '@/src/types/models';
-import axios from 'axios'; // Make sure axios is installed and imported
+import { FuelingOrderData } from '@/src/types/models';
+import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -36,7 +36,7 @@ export default function NotificationsScreen() {
             if (!userData || !userData['User Id']) {
                 throw new Error('User data not found. Please log in again.');
             }
-            const API_BASE_URL = await AsyncStorage.getItem('API_BASE_URL') || 'https://bowser-backend-2cdr.onrender.com';
+            const API_BASE_URL = 'https://bowser-backend-2cdr.onrender.com';
             const response = await axios.get<ServerResponse>(`${API_BASE_URL}/fuelingOrders/${userData['User Id']}`);
             setNotificationsData(response.data.orders);
         } catch (err) {

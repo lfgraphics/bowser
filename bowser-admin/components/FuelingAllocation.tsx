@@ -92,7 +92,7 @@ export default function FuelingAllocation() {
         setIsSearching(true);
         try {
             const drivers = await searchItems<Driver>(
-                'https://bowser-backend-2cdr.onrender.com/searchDriver',
+                'https://bowser-backend-2cdr.onrender.com/searchDriver', //https://bowser-backend-2cdr.onrender.com
                 idNumber,
                 'No driver found with the given ID'
             );
@@ -120,7 +120,7 @@ export default function FuelingAllocation() {
         setIsSearching(true);
         try {
             const vehicles = await searchItems<Vehicle>(
-                'https://bowser-backend-2cdr.onrender.com/searchVehicleNumber',
+                'https://bowser-backend-2cdr.onrender.com/searchVehicleNumber', //https://bowser-backend-2cdr.onrender.com
                 vehicleNumber,
                 'No vehicle found with the given number'
             );
@@ -171,7 +171,7 @@ export default function FuelingAllocation() {
     const searchBowserDriver = async (userId: string) => {
         setIsSearching(true);
         try {
-            const response = await fetch(`https://bowser-backend-2cdr.onrender.com/searchDriver/bowser-drivers/${userId}`);
+            const response = await fetch(`https://bowser-backend-2cdr.onrender.com/searchDriver/bowser-drivers/${userId}`); //https://bowser-backend-2cdr.onrender.com
 
             if (!response.ok) {
                 let errorMessage = 'An error occurred while searching for the bowser driver.';
@@ -245,7 +245,7 @@ export default function FuelingAllocation() {
         };
 
         try {
-            const response = await fetch('https://bowser-backend-2cdr.onrender.com/allocateFueling', {
+            const response = await fetch('https://bowser-backend-2cdr.onrender.com/allocateFueling', { //https://bowser-backend-2cdr.onrender.com
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
