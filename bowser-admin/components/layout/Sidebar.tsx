@@ -9,7 +9,7 @@ import ThemeChanger from '../ThemeChanger'
 
 export function Sidebar() {
   const router = useRouter()
-  const [isOpen, setIsOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -42,12 +42,12 @@ export function Sidebar() {
         {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
       </Button>
       <div
-        className={`fixed top-0 left-0 z-10 h-full w-60 shadow transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed top-0 left-0 z-10 h-full w-60 shadow transition-transform duration-300 ease-in-out bg-background ${isOpen ? 'translate-x-0' : '-translate-x-full'
           } md:translate-x-0`}
       >
         <div className="flex flex-col h-full p-3">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold">Dashboard</h2>
+            <h2 className="text-xl font-bold">{'Bowsers Admin'}</h2>
             <Button variant="ghost" className="md:hidden" onClick={toggleSidebar}>
               <X className="h-6 w-6" />
             </Button>
