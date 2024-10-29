@@ -16,7 +16,8 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Role'
     }],
-    pushToken: String
+    pushToken: String,
+    generationTime: { type: Date, default: Date.now, timezone: "Asia/Kolkata" },
 });
 
 module.exports = UsersAndRolesDatabaseConnection.model('User', userSchema, 'UsersCollection');

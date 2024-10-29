@@ -10,6 +10,7 @@ const allocateFuelingRoutes = require('./fuelingAllocation');
 const searchVehicleNumberRoutes = require('./searchVehicleNumber');
 const notificationsRoutes = require('./notifications');
 const verifyFormDataRoutes = require('./verifyFormData');
+const searchBowserRoutes = require('./searchBowserDetails');
 
 router.get('/', (req, res) => {
     res.send('landing page');
@@ -24,5 +25,6 @@ router.use('/allocateFueling', allocateFuelingRoutes);
 router.use('/searchVehicleNumber', searchVehicleNumberRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/verifyFormData', verifyFormDataRoutes);
+router.use('/searchBowserDetails', searchBowserRoutes);
 
 module.exports = router;

@@ -3,6 +3,10 @@ const { bowsersDatabaseConnection } = require('../../config/database');
 
 const bowserSchema = new mongoose.Schema({
     regNo: String,
+    currentTrip:{
+        type: mongoose.Schema.ObjectId,
+        ref:'TripSheet'
+    },
     odometerReading: String,
     fuelingMachineID: String,
     pumpReadingBeforeLoadingStart: String,

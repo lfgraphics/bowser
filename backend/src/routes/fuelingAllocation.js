@@ -17,45 +17,42 @@ router.post('/', async (req, res) => {
             driverMobile,
             quantityType,
             fuelQuantity,
+            bowser,
             bowserDriver,
             allocationAdmin,
         } = req.body;
 
-        // Create and save new FuelingOrder
-        try {
-            newFuelingOrder = new FuelingOrder({
-                vehicleNumber,
-                driverId,
-                driverName,
-                driverMobile,
-                quantityType,
-                fuelQuantity,
-                bowserDriver: {
-                    _id: new mongoose.Types.ObjectId(bowserDriver._id),
-                    userName: bowserDriver.userName,
-                    userId: bowserDriver.userId
-                },
-                allocationAdmin: {
-                    _id: new mongoose.Types.ObjectId(allocationAdmin._id),
-                    userName: allocationAdmin.userName,
-                    userId: allocationAdmin.userId,
-                    location: allocationAdmin.location
-                },
-            });
 
-            await newFuelingOrder.save();
-        } catch (error) {
-            console.error("Error creating/saving FuelingOrder:", error);
-            throw new Error("Failed to create/save FuelingOrder");
-        }
+        newFuelingOrder = new FuelingOrder({
+            vehicleNumber,
+            driverId,
+            driverName,
+            driverMobile,
+            quantityType,
+            fuelQuantity,
+            bowser: {
+                _id: bowser._id,
+                regNo: bowser.regNo,
+                ref: 'Bowser'
+            },
+            bowserDriver: {
+                _id: bowserDriver._id,
+                userName: bowserDriver.userName,
+                userId: bowserDriver.userId
+            },
+            allocationAdmin: {
+                _id: allocationAdmin._id,
+                userName: allocationAdmin.userName,
+                userId: allocationAdmin.userId,
+                location: allocationAdmin.location
+            },
+        });
 
         // Fetch bowser driver's push token
         try {
             bowserDriverUser = await User.findOne({ userId: bowserDriver.userId });
             if (!bowserDriverUser || !bowserDriverUser.pushToken) {
                 console.warn('Bowser driver not found or push token not registered');
-                // Instead of throwing an error, log and continue
-                // You can set a flag to indicate that the push token is missing
                 pushTokenMissing = true;
             }
         } catch (error) {
@@ -67,11 +64,8 @@ router.post('/', async (req, res) => {
         try {
             if (!bowserDriverUser.pushToken) {
                 console.warn('Bowser driver push token is missing');
-                // Instead of throwing an error, log and continue
-                // You can set a flag to indicate that the push token is missing
                 pushTokenMissing = true;
             }
-
             notificationPayload = {
                 to: bowserDriverUser.pushToken,
                 sound: 'default',
@@ -125,17 +119,17 @@ router.post('/', async (req, res) => {
             } else {
                 console.error('Invalid push token');
                 // Instead of throwing an error, log and continue
-                return res.status(201).json({ 
-                    message: 'Fueling allocation successful. Notification could not be sent due to invalid push token.', 
-                    order: newFuelingOrder 
+                return res.status(201).json({
+                    message: 'Fueling allocation successful. Notification could not be sent due to invalid push token.',
+                    order: newFuelingOrder
                 });
             }
         } catch (error) {
             console.error("Error sending push notification:", error);
             // Log the error but still return success for order allocation
-            return res.status(201).json({ 
-                message: 'Fueling allocation successful. Notification failed to send.', 
-                order: newFuelingOrder 
+            return res.status(201).json({
+                message: 'Fueling allocation successful. Notification failed to send.',
+                order: newFuelingOrder
             });
         }
 
@@ -151,6 +145,14 @@ router.post('/', async (req, res) => {
             throw new Error("Failed to update User documents");
         }
         res.status(201).json({ message: 'Fueling allocation successful. Notification sent to bowser driver.', order: newFuelingOrder });
+
+        // Create and save new FuelingOrder
+        try {
+            await newFuelingOrder.save();
+        } catch (error) {
+            console.error("Error creating FuelingOrder:", error);
+            throw new Error("Failed to create FuelingOrder");
+        }
     } catch (error) {
         console.error("Error in fueling allocation:", error);
         console.error("Error stack:", error.stack);
