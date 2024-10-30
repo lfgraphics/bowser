@@ -12,10 +12,14 @@ const fuelingOrderSchema = new mongoose.Schema({
     required: true
   },
   fuelQuantity: { type: Number, required: true },
+  bowser: {
+    _id: mongoose.Schema.Types.ObjectId,
+    regNo: String,
+  },
   bowserDriver: {
     _id: mongoose.Schema.Types.ObjectId,
     userName: { type: String, },
-    userId: { type: String, required: true }
+    userId: { type: String, required: true },
   },
   allocationAdmin: {
     _id: { type: mongoose.Schema.Types.ObjectId, required: true },

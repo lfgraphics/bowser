@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { isAuthenticated, getCurrentUser } from "@/lib/auth"
-import { Driver, User } from "@/types"
+import { BowserResponse, Driver, ResponseBowser, User } from "@/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue, } from "@/components/ui/select"
 import { Loader2 } from "lucide-react"
 import {
     AlertDialog,
@@ -23,11 +24,13 @@ import {
 import { SearchModal } from "@/components/SearchModal"
 import { searchItems } from '@/utils/searchUtils'
 import { Vehicle } from "@/types"
+import { ObjectId } from "mongoose"
 
 export default function FuelingAllocation() {
     const [isSearching, setIsSearching] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [foundDrivers, setFoundDrivers] = useState<Driver[]>([]);
+    const [foundBowsers, setFoundBowsers] = useState<BowserResponse>();
     const [foundVehicles, setFoundVehicles] = useState<Vehicle[]>([]);
     const [modalVisible, setModalVisible] = useState(false);
     const [vehicleNumber, setVehicleNumber] = useState("")
@@ -38,6 +41,9 @@ export default function FuelingAllocation() {
     const [quantityType, setQuantityType] = useState<'Full' | 'Part'>('Full')
     const [bowserDriverName, setBowserDriverName] = useState("")
     const [bowserDriverId, setBowserDriverId] = useState("")
+    const [bowserRegNo, setBowserRegNo] = useState("")
+    const [bowserId, setBowserId] = useState("")
+    const [bowserDriverMongoId, setBowserDriverMongoId] = useState<ObjectId>()
     const [bowserDrivers, setBowserDrivers] = useState<User[]>([]);
     const [selectedBowserDriver, setSelectedBowserDriver] = useState<User | null>(null);
     const [bowserDriverModalVisible, setBowserDriverModalVisible] = useState(false);
@@ -115,6 +121,31 @@ export default function FuelingAllocation() {
             setIsSearching(false);
         }
     }
+    const searchBowser = async (regNo: string) => {
+        setIsSearching(true);
+        try {
+            const response: ResponseBowser[] = await searchItems<ResponseBowser>(
+                'https://bowser-backend-2cdr.onrender.com/searchBowserDetails', //https://bowser-backend-2cdr.onrender.com
+                regNo,
+                `No proper details found with the given regNo ${regNo}`
+            );
+            if (response.bowserDetails.length > 0) {
+                setSearchModalConfig({
+                    isOpen: true,
+                    title: "Select a Bowser",
+                    items: response.bowserDetails,
+                    onSelect: handleBowserSelection,
+                    renderItem: (bowser) => `Bowser: ${bowser.regNo}\nDriver: ${bowser.bowserDriver.name} (${bowser.bowserDriver.userId})`,
+                    keyExtractor: (bowser) => bowser.regNo,
+                });
+            }
+        } catch (error) {
+            setFoundDrivers([]);
+            console.error('Error searching for driver:', error);
+        } finally {
+            setIsSearching(false);
+        }
+    }
 
     const searchVehicle = async (vehicleNumber: string) => {
         setIsSearching(true);
@@ -165,6 +196,17 @@ export default function FuelingAllocation() {
             setDriverId(recognizedId || driver.ITPLId || cleanName);
             setDriverName(cleanName);
             setDriverMobile(mobileNumber);
+        }
+    }
+    const handleBowserSelection = (bowser: ResponseBowser) => {
+        setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
+
+        if (bowser) {
+            setBowserId(bowser._id);
+            setBowserRegNo(bowser.regNo);
+            setBowserDriverId(bowser.bowserDriver?.userId || '');
+            setBowserDriverName(bowser.bowserDriver?.name || '');
+            setBowserDriverMongoId(bowser.bowserDriver?._id);
         }
     }
 
@@ -230,9 +272,14 @@ export default function FuelingAllocation() {
             driverName,
             driverMobile,
             quantityType,
-            fuelQuantity: parseFloat(fuelQuantity),
+            fuelQuantity,
+            bowser: {
+                _id: bowserId,
+                regNo: bowserRegNo,
+                ref: 'Bowser'
+            },
             bowserDriver: {
-                _id: selectedBowserDriver?._id || '',
+                _id: bowserDriverMongoId,
                 userName: bowserDriverName,
                 userId: bowserDriverId
             },
@@ -305,7 +352,7 @@ export default function FuelingAllocation() {
             )}
             <Card className="w-[450px]">
                 <CardHeader>
-                    <CardTitle>Fueling Allocation</CardTitle>
+                    <CardTitle>Fuel Allocation</CardTitle>
                     <CardDescription>Allocate fueling requirements</CardDescription>
                 </CardHeader>
                 <form onSubmit={handleSubmit}>
@@ -372,15 +419,21 @@ export default function FuelingAllocation() {
                             <div className="flex space-x-4 my-6">
                                 <div className="flex-[0.5]">
                                     <Label htmlFor="quantityType">Quantity Type</Label>
-                                    <select
-                                        id="quantityType"
+                                    <Select
                                         value={quantityType}
-                                        onChange={(e) => handleQuantityTypeChange(e.target.value as 'Full' | 'Part')}
-                                        className="form-select mt-2 block w-full bg-transparent"
+                                        onValueChange={(e) => handleQuantityTypeChange(e as "Full" | "Part")}
                                     >
-                                        <option className="bg-white text-black" value="Part">Part</option>
-                                        <option className="bg-white text-black" value="Full">Full</option>
-                                    </select>
+                                        <SelectTrigger className="w-[180px]">
+                                            <SelectValue placeholder="Select a quantity type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                {/* <SelectLabel>Quantity Type</SelectLabel> */}
+                                                <SelectItem value="Part">Part</SelectItem>
+                                                <SelectItem value="Full">Full</SelectItem>
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div className="flex-1">
                                     <Label htmlFor="fuelQuantity">Fuel Quantity</Label>
@@ -392,33 +445,43 @@ export default function FuelingAllocation() {
                                         required
                                         defaultValue={0}
                                         min={0}
-                                        type="number"
+                                        type="text"
                                         disabled={quantityType === 'Full'}
                                     />
                                 </div>
                             </div>
                         </div>
                         <h3 className="text-lg font-semibold mt-4 mb-2">Allocate the order to:</h3>
+                        <div className="flex flex-col space-y-1.5 mb-4">
+                            <Label htmlFor="bowserRegNo">Bowser Registration Number</Label>
+                            <Input
+                                id="bowserRegNo"
+                                placeholder="Enter bowser registration number"
+                                value={bowserRegNo}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setBowserRegNo(value);
+                                    if (value.length > 5) {
+                                        searchBowser(value);
+                                    }
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        searchBowser(bowserRegNo);
+                                    }
+                                }}
+                                required
+                            />
+                        </div>
                         <div className="flex flex-col space-y-1.5">
                             <Label htmlFor="bowserDriverId">Bowser Driver ID</Label>
                             <Input
                                 id="bowserDriverId"
                                 placeholder="Enter bowser driver ID"
                                 value={bowserDriverId}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setBowserDriverId(value);
-                                    if (value.length > 3) {
-                                        searchBowserDriver(value);
-                                    }
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && bowserDriverId.length > 3) {
-                                        e.preventDefault();
-                                        searchBowserDriver(bowserDriverId);
-                                    }
-                                }}
                                 required
+                                readOnly
                             />
                         </div>
                         <div className="flex flex-col space-y-1.5 mt-4">
@@ -427,13 +490,14 @@ export default function FuelingAllocation() {
                                 id="bowserDriverName"
                                 placeholder="Enter bowser driver name"
                                 value={bowserDriverName}
-                                onChange={(e) => setBowserDriverName(e.target.value)}
+                                // onChange={(e) => setBowserDriverName(e.target.value)}
                                 required
+                                readOnly
                             />
                         </div>
                     </CardContent>
                     <CardFooter className="flex justify-between">
-                        <Button disabled={submitting || isSearching} variant="outline" className="w-[40%]" onClick={resetForm}>Clear</Button>
+                        <Button disabled={submitting || isSearching} variant="outline" type="reset" className="w-[40%]" onClick={resetForm}>Clear</Button>
                         <Button disabled={submitting || isSearching} className="w-[50%]" variant="default" type="submit">
                             Allocate Fueling
                         </Button>

@@ -9,6 +9,39 @@ export interface Driver {
         LastUsed: boolean;
     }>;
 }
+
+// Define the BowserResponse interface
+export interface BowserResponse {
+    regNo: string;
+    bowserDriver: ResponseBowser;
+}
+
+export interface ResponseBowser {
+    bowserDetails:{
+
+    },
+    regNo: string;
+    _id: string;
+    bowserDriver: {
+        _id: mongoose.Schema.Types.ObjectId;
+        userId: string;
+        name: string;
+    };
+}
+
+// console.log(bowserResponse.bowserDetails[0].bowserDriver.userId);
+
+export interface Bowser {
+    regNo: string;
+    currentTrip: {
+        _id: mongoose.Schema.Types.ObjectId;
+        bowserDriver: {
+            _id: mongoose.Schema.Types.ObjectId;
+            userId: string;
+            userName: string;
+        };
+    };
+}
 export interface User {
     _id: string;
     userId: string;

@@ -83,6 +83,16 @@ router.post('/login', async (req, res) => {
         }
 
         if (deviceUUID && (user.deviceUUID !== deviceUUID)) {
+            const unauthorizedLogin = new UnAuthorizedLogin({
+                userId: user.userId,
+                name: user.name,
+                phoneNumber: user.phoneNumber,
+                registeredDeviceUUID: user.deviceUUID,
+                attemptedDeviceUUID: deviceUUID,
+                timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+            });
+
+            await unauthorizedLogin.save();
             return res.status(403).json({ message: 'You are loggin in from diffrent device\nContact admin to approve this device' });
         }
 

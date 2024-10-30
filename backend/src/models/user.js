@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { UsersAndRolesDatabaseConnection } = require('../../config/database');
 
 const userSchema = new mongoose.Schema({
-    userId: String,
+    userId: { type: String, unique: true },
     password: String,
     deviceUUID: String,
     phoneNumber: String,
@@ -16,7 +16,8 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Role'
     }],
-    pushToken: String
+    pushToken: String,
+    generationTime: { type: Date, default: Date.now, timezone: "Asia/Kolkata" },
 });
 
 module.exports = UsersAndRolesDatabaseConnection.model('User', userSchema, 'UsersCollection');
