@@ -29,10 +29,6 @@ import { ObjectId } from "mongoose"
 export default function FuelingAllocation() {
     const [isSearching, setIsSearching] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [foundDrivers, setFoundDrivers] = useState<Driver[]>([]);
-    const [foundBowsers, setFoundBowsers] = useState<BowserResponse>();
-    const [foundVehicles, setFoundVehicles] = useState<Vehicle[]>([]);
-    const [modalVisible, setModalVisible] = useState(false);
     const [vehicleNumber, setVehicleNumber] = useState("")
     const [driverId, setDriverId] = useState("")
     const [driverName, setDriverName] = useState("")
@@ -45,7 +41,6 @@ export default function FuelingAllocation() {
     const [bowserId, setBowserId] = useState("")
     const [bowserDriverMongoId, setBowserDriverMongoId] = useState<ObjectId>()
     const [bowserDrivers, setBowserDrivers] = useState<User[]>([]);
-    const [selectedBowserDriver, setSelectedBowserDriver] = useState<User | null>(null);
     const [bowserDriverModalVisible, setBowserDriverModalVisible] = useState(false);
     const router = useRouter()
     const [adminLocation, setAdminLocation] = useState('');
@@ -102,8 +97,6 @@ export default function FuelingAllocation() {
                 idNumber,
                 'No driver found with the given ID'
             );
-            setFoundDrivers(drivers);
-
             if (drivers.length > 0) {
                 setSearchModalConfig({
                     isOpen: true,
@@ -115,7 +108,6 @@ export default function FuelingAllocation() {
                 });
             }
         } catch (error) {
-            setFoundDrivers([]);
             console.error('Error searching for driver:', error);
         } finally {
             setIsSearching(false);
@@ -140,7 +132,6 @@ export default function FuelingAllocation() {
                 });
             }
         } catch (error) {
-            setFoundDrivers([]);
             console.error('Error searching for driver:', error);
         } finally {
             setIsSearching(false);
@@ -155,8 +146,6 @@ export default function FuelingAllocation() {
                 vehicleNumber,
                 'No vehicle found with the given number'
             );
-            setFoundVehicles(vehicles);
-
             if (vehicles.length > 0) {
                 setSearchModalConfig({
                     isOpen: true,
@@ -168,7 +157,6 @@ export default function FuelingAllocation() {
                 });
             }
         } catch (error) {
-            setFoundVehicles([]);
             console.error('Error searching for vehicle:', error);
         } finally {
             setIsSearching(false);
@@ -239,7 +227,6 @@ export default function FuelingAllocation() {
     }
 
     const handleBowserDriverSelection = (driver: User) => {
-        setSelectedBowserDriver(driver);
         setBowserDriverModalVisible(false);
 
         if (driver) {
@@ -330,8 +317,9 @@ export default function FuelingAllocation() {
         setDriverId("")
         setDriverName("")
         setDriverMobile("")
-        setQuantityType("Part")
-        setFuelQuantity("")
+        setQuantityType("Full")
+        setFuelQuantity("0")
+        setBowserRegNo('')
         setBowserDriverName("")
         setBowserDriverId("")
     }
@@ -367,7 +355,6 @@ export default function FuelingAllocation() {
                                     onChange={(e) => {
                                         setVehicleNumber(e.target.value.toUpperCase());
                                         if (e.target.value.length > 5) {
-                                            setFoundVehicles([]);
                                             searchVehicle(e.target.value.toUpperCase());
                                         }
                                     }}
@@ -480,8 +467,26 @@ export default function FuelingAllocation() {
                                 id="bowserDriverId"
                                 placeholder="Enter bowser driver ID"
                                 value={bowserDriverId}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setBowserDriverId(value);
+                                    if (value.length > 3) {
+                                        searchBowserDriver(value);
+                                        if (value.length > 5) {
+                                            searchBowserDriver(bowserDriverId);
+                                        }
+                                    }
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && bowserDriverId.length > 3) {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            searchBowserDriver(bowserDriverId);
+                                        }
+                                    }
+                                }}
                                 required
-                                readOnly
+                            // readOnly
                             />
                         </div>
                         <div className="flex flex-col space-y-1.5 mt-4">
@@ -490,9 +495,9 @@ export default function FuelingAllocation() {
                                 id="bowserDriverName"
                                 placeholder="Enter bowser driver name"
                                 value={bowserDriverName}
-                                // onChange={(e) => setBowserDriverName(e.target.value)}
+                                onChange={(e) => setBowserDriverName(e.target.value)}
                                 required
-                                readOnly
+                            // readOnly
                             />
                         </div>
                     </CardContent>

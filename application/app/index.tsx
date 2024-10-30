@@ -13,7 +13,7 @@ import { FormData } from '../src/types/models';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
-import { registerForPushNotificationsAsync } from '@/app/utils/notifications';
+import { registerForPushNotificationsAsync, registerPushTokenWithServer } from '@/app/utils/notifications';
 
 const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
 const pushTokenString = async () => {
@@ -262,6 +262,7 @@ const App = () => {
             // Proceed with logout after syncing
             await AsyncStorage.removeItem('userToken');
             await AsyncStorage.removeItem('userData');
+            await AsyncStorage.removeItem('pushToken');
             router.replace('/auth' as any);
           } else {
             // User chose not to submit offline data, cancel logout
@@ -271,12 +272,14 @@ const App = () => {
           // No offline data, proceed with normal logout
           await AsyncStorage.removeItem('userToken');
           await AsyncStorage.removeItem('userData');
+          await AsyncStorage.removeItem('pushToken');
           router.replace('/auth' as any);
         }
       } else {
         // No offline data, proceed with normal logout
         await AsyncStorage.removeItem('userToken');
         await AsyncStorage.removeItem('userData');
+        await AsyncStorage.removeItem('pushToken');
         router.replace('/auth' as any);
       }
     } catch (error) {
@@ -535,6 +538,18 @@ const App = () => {
       if (token && userDataString) {
         setIsLoggedIn(true);
         setUserData(JSON.parse(userDataString));
+
+        // Check for push token in AsyncStorage
+        const pushToken = await AsyncStorage.getItem('pushToken');
+        if (!pushToken) {
+          // Register push token with server
+          const newPushToken = await registerForPushNotificationsAsync();
+          if (newPushToken) {
+            await AsyncStorage.setItem('pushToken', newPushToken);
+            const userId = JSON.parse(userDataString)["User Id"];
+            await registerPushTokenWithServer(userId, newPushToken);
+          }
+        }
       } else {
         setIsLoggedIn(false);
       }

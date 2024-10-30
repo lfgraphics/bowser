@@ -2,61 +2,57 @@ const mongoose = require('mongoose');
 const { bowsersDatabaseConnection } = require('../../config/database');
 
 const tripSheetSchema = new mongoose.Schema({
-    BowserTripSheetID: {
+    bowserTripSheetID: {
         type: String,
         required: false,
         unique: true
     },
-    TripSheetGenerationDateTime: {
+    tripSheetGenerationDateTime: {
         type: Date,
         default: () => new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
     },
-    BowserDriver: {
-        ID: {
-            type: String,
-            required: true
-        },
-        Name: {
-            type: String,
-            required: true
-        },
-        MobileNumber: {
-            type: String,
-            required: true
-        }
+    bowserDriver: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: false
     },
-    BowserOdometerStartReading: {
+    bowser: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'BowsersCollection',
+        required: false
+    },
+    bowserOdometerStartReading: {
         type: Number,
         required: false
     },
-    FuelingAreaDestination: {
+    fuelingAreaDestination: {
         type: String,
         required: false
     },
-    BowserPumpEndReading: {
+    bowserPumpEndReading: {
         type: Number,
         required: false
     },
-    ProposedDepartureDateTime: {
+    proposedDepartureDateTime: {
         type: Date,
         required: false
     },
-    LoadQuantityByDipAndSlip: {
+    loadQuantityByDipAndSlip: {
         type: Number,
         required: false
     },
-    ChamberWiseDipList: {
+    chamberWiseDipList: {
         type: [Number],
         required: false
     },
-    ChamberWiseSealList: {
+    chamberWiseSealList: {
         type: [String],
         required: false
     },
-    ReferenceToBowserLoadingSheetID: {
+    referenceToBowserLoadingSheetID: {
         type: String,
         required: false
     }
 });
 
-module.exports = bowsersDatabaseConnection.model('tripSheet', tripSheetSchema, 'BowsersCollection');
+module.exports = bowsersDatabaseConnection.model('TripSheet', tripSheetSchema, 'BowsersCollection');

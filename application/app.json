@@ -20,8 +20,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.itplfirebase.bowsersdispensing",
-      "googleServicesFile": "./google-services.json"
+      "package": "com.itplfirebase.bowsersdispensing"
     },
     "web": {
       "bundler": "metro",

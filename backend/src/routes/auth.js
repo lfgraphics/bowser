@@ -111,6 +111,34 @@ router.post('/login', async (req, res) => {
         if (pushToken) {
             user.pushToken = pushToken;
             await user.save();
+        } else {
+            // Check if the user already has a push token
+            if (user.pushToken) {
+                // Save existing push token to AsyncStorage
+                res.json({
+                    message: 'Login successful',
+                    token,
+                    loginTime,
+                    verified: user.verified,
+                    user: userData,
+                    pushToken: user.pushToken // Send existing token back
+                });
+            } else {
+                // Generate a new push token
+                const newPushToken = await registerForPushNotificationsAsync();
+                if (newPushToken) {
+                    user.pushToken = newPushToken;
+                    await user.save();
+                    res.json({
+                        message: 'Login successful',
+                        token,
+                        loginTime,
+                        verified: user.verified,
+                        user: userData,
+                        pushToken: newPushToken // Send new token back
+                    });
+                }
+            }
         }
 
         res.json({

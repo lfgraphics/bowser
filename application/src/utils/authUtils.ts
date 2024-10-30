@@ -99,6 +99,7 @@ export const loginUser = async (userId: string, password: string): Promise<void>
     await AsyncStorage.setItem('userToken', data.token);
     await AsyncStorage.setItem('loginTime', data.loginTime);
     await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+    
     if (data.user.pushToken) {
       await AsyncStorage.setItem('pushToken', data.user.pushToken);
     } else {
@@ -123,6 +124,8 @@ export const signupUser = async (email: string, password: string): Promise<void>
 };
 
 export const logoutUser = async (): Promise<void> => {
+  // Remove push token from AsyncStorage on logout
+  await AsyncStorage.removeItem('pushToken');
   // Implement your logout logic here
   isLoggedIn = false;
 };
