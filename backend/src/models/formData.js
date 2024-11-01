@@ -16,15 +16,13 @@ const formDataSchema = new mongoose.Schema({
     gpsLocation: String,
     fuelingDateTime: String,
     bowserDriver: {
-        _id: mongoose.Schema.Types.ObjectId,
-        userName: String,
-        userId: String
+        name: String,
+        id: String,
+        phoneNo: String,
     },
     allocationAdmin: {
-        _id: { type: mongoose.Schema.Types.ObjectId, required: false },
-        userName: { type: String, required: false },
-        userId: { type: String, required: false },
-        location: String
+        name: { type: String, required: false },
+        id: { type: String, required: false },
     }
 });
 

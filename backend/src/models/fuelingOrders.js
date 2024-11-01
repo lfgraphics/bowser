@@ -22,10 +22,8 @@ const fuelingOrderSchema = new mongoose.Schema({
     userId: { type: String, required: true },
   },
   allocationAdmin: {
-    _id: { type: mongoose.Schema.Types.ObjectId, required: true },
-    userName: { type: String, required: true },
-    userId: { type: String, required: true },
-    location: { type: String},
+    name: { type: String, required: true },
+    id: { type: String, required: true },
   },
   createdAt: { type: String, default: () => new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) }
 });

@@ -2,24 +2,26 @@ const mongoose = require('mongoose');
 const { bowsersDatabaseConnection } = require('../../config/database');
 
 const tripSheetSchema = new mongoose.Schema({
-    bowserTripSheetID: {
+    tripSheetID: {
         type: String,
         required: false,
         unique: true
     },
     tripSheetGenerationDateTime: {
-        type: Date,
+        type: String,
         default: () => new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
     },
-    bowserDriver: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: false
-    },
+    bowserDriver: [
+        {
+            _id: mongoose.Schema.Types.ObjectId,
+            handOverDate: String,
+            name: String,
+            mobile: String,
+        }
+    ],
     bowser: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'BowsersCollection',
-        required: false
+        regNo: String,
+        _id: mongoose.Schema.Types.ObjectId
     },
     bowserOdometerStartReading: {
         type: Number,
@@ -30,28 +32,47 @@ const tripSheetSchema = new mongoose.Schema({
         required: false
     },
     bowserPumpEndReading: {
-        type: Number,
+        type: String,
         required: false
     },
-    proposedDepartureDateTime: {
-        type: Date,
+    proposedDepartureDateTime: { //shoud be after the generation date time
+        type: String,
         required: false
     },
-    loadQuantityByDipAndSlip: {
-        type: Number,
-        required: false
+    loadQuantityByDip: {
     },
-    chamberWiseDipList: {
-        type: [Number],
-        required: false
+    loadQuantityBySlip: {
     },
-    chamberWiseSealList: {
-        type: [String],
-        required: false
-    },
+    chamberWiseDipList: [
+        {
+            chamber1: {},
+            chamber2: {},
+            chamber3: {},
+            chamber4: {}
+        }
+    ],
+    chamberWiseSealList: [
+        {
+            chamber1: {},
+            chamber2: {},
+            chamber3: {},
+            chamber4: {}
+        }
+    ],
     referenceToBowserLoadingSheetID: {
         type: String,
         required: false
+    },
+    settelment: {
+        dateTime: String,
+        odometerClosing: {
+        },
+        bowserNewEndReading: {
+        },
+        settled: {
+            type: Boolean,
+            default: false
+        }
     }
 });
 
