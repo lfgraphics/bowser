@@ -22,25 +22,32 @@ interface RouteParams {
     driverName: string;
     quantityType: "Part" | "Full";
     quantity: string;
+    bowser: {
+        regNo: string,
+        driver: {
+            name: string,
+            id: string,
+            phoneNo: string
+        }
+    }
     allocationAdmin: {
-        _id: string;
-        userName: string;
-        userId: string;
-        location: string;
+        name: string;
+        id: string;
+        allocationTime: string
     };
 }
 
 export default function NotificationFuelingScreen() {
     const route = useRoute();
     const {
-        orderId,
         vehicleNumber = 'N/A',
         driverId = 'N/A',
         driverMobile = 'N/A',
         driverName = 'N/A',
         quantityType = 'N/A',
         quantity = 'N/A',
-        allocationAdmin // Add this
+        bowser,
+        allocationAdmin
     } = route.params as RouteParams;
 
 
@@ -132,7 +139,6 @@ export default function NotificationFuelingScreen() {
 
         if (currentFuelingDateTime && currentGpsLocation) {
             const formData: FormData = {
-                orderId: new mongoose.Types.ObjectId(orderId),
                 vehicleNumberPlateImage,
                 vehicleNumber: vehicleNumber.toUpperCase(),
                 driverName,
@@ -144,15 +150,18 @@ export default function NotificationFuelingScreen() {
                 quantityType,
                 gpsLocation: currentGpsLocation,
                 fuelingDateTime: currentFuelingDateTime,
-                bowserDriver: {
-                    _id: new mongoose.Types.ObjectId(userData._id),
-                    userName: userData.Name,
-                    userId: userData['User Id']
+                bowser: {
+                    regNo: userData.Bowser ? userData.Bowser : '',
+                    driver: {
+                        name: userData.Name,
+                        id: userData['User Id'],
+                        phoneNo: userData['Phone Number']
+                    }
                 },
                 allocationAdmin: {
-                    _id: new mongoose.Types.ObjectId(allocationAdmin._id),
-                    userName: allocationAdmin.userName,
-                    userId: allocationAdmin.userId
+                    name: allocationAdmin.name,
+                    id: allocationAdmin.id,
+                    allocationTime: allocationAdmin.allocationTime
                 },
             };
 
@@ -160,12 +169,12 @@ export default function NotificationFuelingScreen() {
 
             if (isOnline) {
                 try {
-                    const response = await fetch(`https://bowser-backend-2cdr.onrender.com/formsubmit`, {
+                    const response = await fetch(`https://bowser-backend-2cdr.onrender.com/addFuelingTransaction`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify(formData),
+                        body: JSON.stringify(FormData),
                     });
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);

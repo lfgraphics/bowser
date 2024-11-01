@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const FormData = require('../models/formData');
+const FuelingTransaction = require('../models/fuelingTransaction');
 
 // Get all fueling records
 router.get('/', async (req, res) => {
     try {
-        const records = await FormData.find({ verified: { $ne: true } });
+        const records = await FuelingTransaction.find({ verified: { $ne: true } });
         res.json(records);
     } catch (error) {
         console.error('Error fetching fueling records:', error);
@@ -19,7 +19,7 @@ router.put('/:id', async (req, res) => {
     const { verified, ...updateData } = req.body;
 
     try {
-        const updatedRecord = await FormData.findByIdAndUpdate(
+        const updatedRecord = await FuelingTransaction.findByIdAndUpdate(
             id,
             { ...updateData, verified },
             { new: true }

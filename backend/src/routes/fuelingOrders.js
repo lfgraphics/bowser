@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const FormData = require('../models/formData');
+const FuelingTransaction = require('../models/fuelingTransaction');
 const FuelingOrder = require('../models/fuelingOrders');
 
 router.get('/:userId', async (req, res) => {
@@ -11,11 +11,11 @@ router.get('/:userId', async (req, res) => {
         const skip = (page - 1) * limit;
 
         // Get all order IDs for the user
-        const userOrders = await FuelingOrder.find({'bowserDriver.userId': userId}, '_id');
+        const userOrders = await FuelingTransaction.find({'bowserDriver.userId': userId}, '_id');
         const userOrderIds = userOrders.map(order => order._id);
 
         // Find completed orders
-        const completedOrders = await FormData.find({ orderId: { $in: userOrderIds } }, 'orderId');
+        const completedOrders = await FuelingTransaction.find({ orderId: { $in: userOrderIds } }, 'orderId');
         const completedOrderIds = new Set(completedOrders.map(order => order.orderId.toString()));
 
         // Filter out completed orders
