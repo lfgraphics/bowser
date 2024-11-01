@@ -33,6 +33,7 @@ router.post('/signup', async (req, res) => {
             password: hashedPassword,
             phoneNumber,
             name,
+            bowserId,
             deviceUUID,
             verified: false
         });
@@ -105,6 +106,7 @@ router.post('/login', async (req, res) => {
             'Phone Number': user.phoneNumber,
             'Verified User': user.verified,
             'Role': roleNames,
+            'Bowser': user.bowserId,
             'Push Notification Token': pushToken,
         };
 

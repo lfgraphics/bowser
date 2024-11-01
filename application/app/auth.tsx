@@ -17,6 +17,7 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [name, setName] = useState('');
+  const [bowserId, setBowserId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -25,6 +26,7 @@ export default function AuthScreen() {
   const passwordInputRef = useRef<TextInput>(null);
   const phoneNumberInputRef = useRef<TextInput>(null);
   const nameInputRef = useRef<TextInput>(null);
+  const bowserIdInputRef = useRef<TextInput>(null);
 
   const handleAuth = async () => {
     setIsLoading(true);
@@ -46,6 +48,7 @@ export default function AuthScreen() {
         deviceUUID,
         phoneNumber: isLogin ? undefined : phoneNumber,
         name: isLogin ? undefined : name,
+        bowserId: isLogin ? undefined : bowserId,
         appName: 'Bowsers Fueling',
         ...(await AsyncStorage.getItem('pushToken')) ? { pushToken: await AsyncStorage.getItem('pushToken') } : {},
       });
@@ -265,6 +268,20 @@ export default function AuthScreen() {
                     placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                     value={name}
                     onChangeText={setName}
+                    returnKeyType="done"
+                    onSubmitEditing={() => bowserIdInputRef.current?.focus}
+                    blurOnSubmit={true}
+                  />
+                </View>
+                <View style={styles.inputContainer}>
+                  <Text style={{ color: colors.text }}>BowserId:</Text>
+                  <TextInput
+                    ref={bowserIdInputRef}
+                    style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                    placeholder="Enter your name"
+                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                    value={name}
+                    onChangeText={setBowserId}
                     returnKeyType="done"
                     onSubmitEditing={handleAuth}
                     blurOnSubmit={true}

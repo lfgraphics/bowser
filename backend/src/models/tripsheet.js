@@ -9,19 +9,22 @@ const tripSheetSchema = new mongoose.Schema({
     },
     tripSheetGenerationDateTime: {
         type: String,
-        default: () => new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+        default: () => {
+            const date = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' };
+            return date.toLocaleDateString('en-IN', options);
+        }
     },
     bowserDriver: [
         {
-            _id: mongoose.Schema.Types.ObjectId,
             handOverDate: String,
             name: String,
-            mobile: String,
+            id: String,
+            phoneNo: String,
         }
     ],
     bowser: {
         regNo: String,
-        _id: mongoose.Schema.Types.ObjectId
     },
     bowserOdometerStartReading: {
         type: Number,
@@ -35,9 +38,17 @@ const tripSheetSchema = new mongoose.Schema({
         type: String,
         required: false
     },
-    proposedDepartureDateTime: { //shoud be after the generation date time
+    proposedDepartureDateTime: {
         type: String,
-        required: false
+        required: false,
+        validate: {
+            validator: function (v) {
+                const generationDateTime = new Date(this.tripSheetGenerationDateTime);
+                const proposedDateTime = new Date(v);
+                return proposedDateTime > generationDateTime;
+            },
+            message: 'Proposed departure date time should be after the generation date time'
+        }
     },
     loadQuantityByDip: {
     },

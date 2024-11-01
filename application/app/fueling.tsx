@@ -3,10 +3,8 @@ import { Image, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, S
 import React, { useState, useRef, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import * as FileSystem from 'expo-file-system';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import * as ImageManipulator from 'expo-image-manipulator';
 import { useNavigation, useTheme } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import { Driver, FormData, Vehicle } from '@/src/types/models';
@@ -14,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
+import { compressImage } from '@/src/utils/imageManipulation';
 
 
 export default function FuelingScreen() {
@@ -55,7 +54,7 @@ export default function FuelingScreen() {
   const driverMobileInputRef = React.useRef<TextInput>(null);
   const fuelQuantityInputRef = React.useRef<TextInput>(null);
   const gpsLocationInputRef = React.useRef<TextInput>(null);
-  const scrollViewRef = useRef<ScrollView>(null); // Ref for ScrollView
+  const scrollViewRef = useRef<ScrollView>(null);
   const driversData: (Driver | { Name: string, ITPLId: string })[] = [
     { Name: "Select a driver", ITPLId: "placeholder" },
     ...foundDrivers
@@ -71,6 +70,22 @@ export default function FuelingScreen() {
 
     return () => unsubscribe();
   }, []);
+  // const location = async () => {
+  //   let { status } = await Location.requestForegroundPermissionsAsync();
+  //   if (status !== 'granted') {
+  //     const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
+  //     if (newStatus !== 'granted') {
+  //       console.warn('Location permission is still not granted.');
+  //       return;
+  //     }
+  //   }
+
+  //   let location = await Location.getCurrentPositionAsync({});
+  //   const coordinates = `Latitude ${location.coords.latitude}, Longitude ${location.coords.longitude}`;
+  //   setGpsLocation(coordinates);
+  //   return coordinates;
+  // }
+
   const location = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
@@ -81,11 +96,28 @@ export default function FuelingScreen() {
       }
     }
 
-    let location = await Location.getCurrentPositionAsync({});
-    const coordinates = `Latitude ${location.coords.latitude}, Longitude ${location.coords.longitude}`;
-    setGpsLocation(coordinates);
-    return coordinates;
-  }
+    try {
+      // Get the current position
+      let location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+
+      // Get the city name using reverse geocoding
+      let geocode = await Location.reverseGeocodeAsync({ latitude, longitude });
+      let city = geocode[0]?.city || 'City not found';
+
+      // Format the coordinates
+      const coordinates = `Latitude ${latitude}, Longitude ${longitude}`;
+      const fuelLocation = `Bowser at ${city}, ${coordinates}`;
+
+      // You can update your state with the city and coordinates
+      setGpsLocation(fuelLocation);
+      console.log(fuelLocation)
+      return fuelLocation;
+    } catch (error) {
+      console.error('Error getting location or city:', error);
+    }
+  };
+
   const fulingTime = () => {
     const currentDateTime = new Date().toLocaleString();
     setFuelingDateTime(currentDateTime);
@@ -98,15 +130,7 @@ export default function FuelingScreen() {
     const sizeInMB = sizeInKB / 1024;
     return `${sizeInKB.toFixed(2)} KB (${sizeInMB.toFixed(2)} MB)`;
   };
-  const compressImage = async (uri: string): Promise<string> => {
-    const manipulatedImage = await ImageManipulator.manipulateAsync(
-      uri,
-      [{ resize: { width: 500 } }],
-      { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
-    );
-    const base64Image = await imageToBase64(manipulatedImage.uri);
-    return base64Image;
-  };
+
   // form submit reset
   const submitDetails = async () => {
     setFormSubmitting(true);
@@ -132,7 +156,6 @@ export default function FuelingScreen() {
 
     if (currentFuelingDateTime && currentGpsLocation) {
       const formData: FormData = {
-        // orderId: new mongoose.Types.ObjectId(''),
         vehicleNumberPlateImage,
         vehicleNumber: vehicleNumber.toUpperCase(),
         driverName,
@@ -140,22 +163,25 @@ export default function FuelingScreen() {
         driverMobile,
         fuelMeterImage,
         slipImage,
-        fuelQuantity,
         quantityType,
+        fuelQuantity,
         gpsLocation: currentGpsLocation,
         fuelingDateTime: currentFuelingDateTime,
-        bowserDriver: {
-          _id: new mongoose.Types.ObjectId(userData._id),
-          userName: userData.Name,
-          userId: userData['User Id']
-        },
+        bowser: {
+          regNo: userData.Bowser ? userData.Bowser : '',
+          driver: {
+            name: userData.Name,
+            id: userData['User Id'],
+            phoneNo: userData['Phone Number']
+          }
+        }
       };
 
 
 
       if (isOnline) {
         try {
-          const response = await fetch(`https://bowser-backend-2cdr.onrender.com/formsubmit`, {
+          const response = await fetch(`https://bowser-backend-2cdr.onrender.com/addFuelingTransaction`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -286,12 +312,6 @@ export default function FuelingScreen() {
     setFuelingDateTime('');
   }
   // form data handling
-  const imageToBase64 = async (uri: string): Promise<string> => {
-    const base64 = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    return `data:image/jpeg;base64,${base64}`;
-  };
   const openNumberPlateCamera = async () => {
     if (vehicleNumberPlateImage) {
       return;

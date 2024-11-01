@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const FuelingOrder = require('../models/fuelingOrders');
+const FuelingTransaction = require('../models/fuelingTransaction');
 const mongoose = require('mongoose');
 const User = require('../models/user');
 const { Expo } = require('expo-server-sdk');
@@ -8,7 +8,7 @@ let expo = new Expo();
 
 router.post('/', async (req, res) => {
     let newFuelingOrder, bowserDriverUser, notificationPayload, pushTokenMissing = false;
-    let notificationSent = false; // Track if notification was sent
+    let notificationSent = false;
 
     try {
         const {
@@ -19,12 +19,12 @@ router.post('/', async (req, res) => {
             quantityType,
             fuelQuantity,
             bowser,
-            bowserDriver,
             allocationAdmin,
         } = req.body;
 
 
-        newFuelingOrder = new FuelingOrder({
+        newFuelingOrder = new FuelingTransaction({
+            orderId: new mongoose.Types.ObjectId(),
             vehicleNumber,
             driverId,
             driverName,
@@ -32,26 +32,23 @@ router.post('/', async (req, res) => {
             quantityType,
             fuelQuantity,
             bowser: {
-                _id: bowser._id,
                 regNo: bowser.regNo,
-                ref: 'Bowser'
-            },
-            bowserDriver: {
-                _id: bowserDriver._id,
-                userName: bowserDriver.userName,
-                userId: bowserDriver.userId
+                driver: {
+                    name: bowser.driver.name,
+                    id: bowser.driver.id,
+                    phoneNo: bowser.driver.phoneNo
+                }
             },
             allocationAdmin: {
-                _id: allocationAdmin._id,
-                userName: allocationAdmin.userName,
-                userId: allocationAdmin.userId,
-                location: allocationAdmin.location
+                name: allocationAdmin.name,
+                id: allocationAdmin.id,
+                allocationTime: allocationAdmin.allocationTime
             },
         });
 
         // Fetch bowser driver's push token
         try {
-            bowserDriverUser = await User.findOne({ userId: bowserDriver.userId });
+            bowserDriverUser = await User.findOne({ userId: bowser.driver.id });
             if (!bowserDriverUser || !bowserDriverUser.pushToken) {
                 console.warn('Bowser driver not found or push token not registered');
                 pushTokenMissing = true;
@@ -145,8 +142,8 @@ router.post('/', async (req, res) => {
         }
 
         // Prepare response message
-        const responseMessage = notificationSent 
-            ? 'Fueling allocation successful. Notification sent to bowser driver.' 
+        const responseMessage = notificationSent
+            ? 'Fueling allocation successful. Notification sent to bowser driver.'
             : 'Fueling allocation successful. No notification sent due to missing or invalid push token.';
 
         res.status(201).json({ message: responseMessage, order: newFuelingOrder });

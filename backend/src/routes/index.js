@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 
-const formSubmitRoutes = require('./formSubmit');
+const fuelingTransactionRouts = require('./addFuelingTransaction');
 const searchDriverRoutes = require('./searchDriver');
 const imageProcessingRoutes = require('./imageProcessing');
 const authRoutes = require('./auth');
 const fuelingOrdersRoutes = require('./fuelingOrders');
-const allocateFuelingRoutes = require('./fuelingAllocation');
+const allocateFuelingRoutes = require('./addFuelingAllocation');
 const searchVehicleNumberRoutes = require('./searchVehicleNumber');
 const notificationsRoutes = require('./notifications');
 const verifyFormDataRoutes = require('./verifyFormData');
@@ -16,7 +16,7 @@ router.get('/', (req, res) => {
     res.send('landing page');
 });
 
-router.use('/formsubmit', formSubmitRoutes);
+router.use('/addFuelingTransaction', fuelingTransactionRouts);
 router.use('/searchDriver', searchDriverRoutes);
 router.use('/imageprocessing', imageProcessingRoutes);
 router.use('/auth', authRoutes);

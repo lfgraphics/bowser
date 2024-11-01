@@ -57,7 +57,6 @@ export interface FuelNotificationProps {
 }
 
 export interface FormData {
-    orderId?: Types.ObjectId;
     vehicleNumberPlateImage: string | null;
     vehicleNumber: string;
     driverName: string;
@@ -69,15 +68,18 @@ export interface FormData {
     quantityType: 'Full' | 'Part' | 'N/A';
     gpsLocation: string;
     fuelingDateTime: string;
-    bowserDriver: {
-        _id: Types.ObjectId;
-        userName: string;
-        userId: string;
+    bowser: {
+        regNo: string,
+        driver: {
+            name: string;
+            id: string;
+            phoneNo: string;
+        }
     };
     allocationAdmin?: {
-        _id: Types.ObjectId;
-        userName: string;
-        userId: string;
+        name: string;
+        id: string;
+        allocationTime: string;
     };
 }
 export interface UserData {
