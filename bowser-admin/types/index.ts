@@ -17,7 +17,7 @@ export interface BowserResponse {
 }
 
 export interface ResponseBowser {
-    bowserDetails:{
+    bowserDetails: {
 
     },
     regNo: string;
@@ -66,14 +66,16 @@ export interface DispensesRecord {
     gpsLocation: String,
     fuelingDateTime: String,
     verified: boolean,
-    bowserDriver: {
-        _id: mongoose.Schema.Types.ObjectId,
-        userName: String,
-        userId: String
+    bowser: {
+        regNo: string,
+        driver: {
+            name: String,
+            id: String
+            phoneNo: String
+        }
     },
     allocationAdmin: {
-        _id: { type: mongoose.Schema.Types.ObjectId, required: false },
-        userName: { type: String, required: false },
+        name: { type: String, required: false },
         userId: { type: String, required: false }
     },
 }

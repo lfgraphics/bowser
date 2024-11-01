@@ -9,7 +9,7 @@ const fuelingOrdersRoutes = require('./fuelingOrders');
 const allocateFuelingRoutes = require('./addFuelingAllocation');
 const searchVehicleNumberRoutes = require('./searchVehicleNumber');
 const notificationsRoutes = require('./notifications');
-const verifyDispensesRoutes = require('./verifyDispenses');
+const listDispensesRouts = require('./listDispenses');
 const searchBowserRoutes = require('./searchBowserDetails');
 
 router.get('/', (req, res) => {
@@ -24,7 +24,7 @@ router.use('/fuelingOrders', fuelingOrdersRoutes);
 router.use('/allocateFueling', allocateFuelingRoutes);
 router.use('/searchVehicleNumber', searchVehicleNumberRoutes);
 router.use('/notifications', notificationsRoutes);
-router.use('/verifyFormData', verifyDispensesRoutes);
+router.use('/listDispenses', listDispensesRouts);
 router.use('/searchBowserDetails', searchBowserRoutes);
 
 module.exports = router;

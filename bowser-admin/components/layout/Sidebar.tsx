@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { Home, ClipboardList, ListCheck, User, LogOut, Menu, X } from 'lucide-react'
+import { Home, ClipboardList, ListCheck, User, LogOut, Menu, X, SheetIcon } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
@@ -75,6 +75,14 @@ export function Sidebar() {
                   <Button variant="ghost" className="w-full justify-start">
                     <ListCheck className="mr-2 h-4 w-4" />
                     Verify Dispenses
+                  </Button>
+                </Link>
+              </li>
+              <li>
+                <Link href="/dispense-records">
+                  <Button variant="ghost" className="w-full justify-start">
+                    <SheetIcon className="mr-2 h-4 w-4" />
+                    Dispense Records
                   </Button>
                 </Link>
               </li>
