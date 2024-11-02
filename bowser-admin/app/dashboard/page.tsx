@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { isAuthenticated } from '@/lib/auth';
 import FuelingAllocation from '@/components/FuelingAllocation';
+import loading from '../loading';
 
 export default function Dashboard() {
     const router = useRouter();
@@ -22,7 +23,7 @@ export default function Dashboard() {
     }, [router]);
 
     if (!authChecked) {
-        return <div>Loading...</div>;
+        return loading;
     }
 
     return (

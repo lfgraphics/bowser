@@ -21,27 +21,50 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
+import { isAuthenticated } from "@/lib/auth";
+import { useRouter } from "next/dist/client/components/navigation";
+import Loading from "../loading";
 
 const VehicleDispensesPage = () => {
     const [records, setRecords] = useState<DispensesRecord[]>([]);
     const [totalPages, setTotalPages] = useState(1);
+    const [totalRecords, setTotalRecords] = useState();
     const [currentPage, setCurrentPage] = useState(1);
     const [filter, setFilter] = useState({ bowserNumber: "", driverName: "" });
     const [sortBy, setSortBy] = useState("fuelingDateTime");
     const [order, setOrder] = useState("desc");
     const [localBowserNumber, setLocalBowserNumber] = useState("");
     const [localDriverName, setLocalDriverName] = useState("");
+    const [limit, setLimit] = useState(20);
+    const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
+    // Authentication check
+    useEffect(() => {
+        checkAuth();
+    }, [router]);
+
+    // Fetch records when dependencies change
     useEffect(() => {
         fetchRecords();
-    }, [currentPage, sortBy, order, filter]);
+    }, [currentPage, sortBy, order, filter, limit]);
+
+    const checkAuth = async () => {
+        setLoading(true);
+        const authenticated = await isAuthenticated();
+        if (!authenticated) {
+            router.push('/login');
+        }
+        setLoading(false);
+    };
 
     const fetchRecords = async () => {
+        setLoading(true);
         try {
             const response = await axios.get("https://bowser-backend-2cdr.onrender.com/listDispenses", {
                 params: {
                     page: currentPage,
-                    limit: 20, // Set the limit for records per page
+                    limit: limit,
                     sortBy,
                     order,
                     bowserNumber: filter.bowserNumber,
@@ -50,30 +73,69 @@ const VehicleDispensesPage = () => {
             });
             setRecords(response.data.records);
             setTotalPages(response.data.totalPages);
+            setCurrentPage(response.data.currentPage);
+            setTotalRecords(response.data.totalRecords);
         } catch (error) {
             console.error("Error fetching records:", error);
+            alert(error)
+        } finally {
+            setLoading(false);
         }
     };
 
     const exportToExcel = async () => {
+        setLoading(true);
         try {
+            const date: Date = new Date();
+            const options: Intl.DateTimeFormatOptions = {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+                timeZone: 'Asia/Kolkata',
+            };
+            const timestamp: string = date.toLocaleDateString('en-IN', options);
+            // const timestamp = new Date().toLocaleDateString();
+            const filterDescription = `${filter.bowserNumber ? `Bowser-${filter.bowserNumber},` : ''}${filter.driverName ? `Driver-${filter.driverName},` : ''
+                }`;
+            const filename = `Dispenses_data ${filterDescription} ${records.length}records downloaded at ${timestamp}.xlsx`;
+
             const response = await axios.get("https://bowser-backend-2cdr.onrender.com/listDispenses/export/excel", {
+                params: {
+                    bowserNumber: filter.bowserNumber,
+                    driverName: filter.driverName,
+                    sortBy,
+                    order,
+                    limit,
+                },
                 responseType: "blob",
             });
+
+            // Create a URL for the Blob and trigger the download
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement("a");
             link.href = url;
-            link.setAttribute("download", "dispenses_data.xlsx");
+            link.setAttribute("download", filename); // Use the generated filename
             document.body.appendChild(link);
             link.click();
+            link.remove(); // Clean up the link element
         } catch (error) {
             console.error("Error exporting data:", error);
-            alert("Error exporting data");
+            alert("Error exporting data.");
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <div>
+            {loading && (
+                <Loading />
+            )}
+
             <div className="mb-4 flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
                 <Input
                     placeholder="Filter by Bowser Number"
@@ -121,16 +183,21 @@ const VehicleDispensesPage = () => {
                     </SelectContent>
                 </Select>
 
+            </div>
+
+            <div className="mb-4 flex flex-col justify-between sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                <div className="flex items-center justify-between">Records limit <Input type="number" className="w-20 mx-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
+                <div className="flex items-center justify-between text-gray-300 font-[200]">Total found record{records.length > 1 ? "s" : ""} {records.length} out of {totalRecords} records </div>
                 <Button onClick={exportToExcel} className="w-full sm:w-auto">
                     Export to Excel
                 </Button>
             </div>
 
-
             <Table>
                 <TableCaption>A list of your recent Dispenses.</TableCaption>
                 <TableHeader>
                     <TableRow>
+                        <TableHead>Sr No</TableHead>
                         <TableHead>Fueling Time</TableHead>
                         <TableHead>Bowser Number</TableHead>
                         <TableHead>Bowser Location</TableHead>
@@ -144,13 +211,14 @@ const VehicleDispensesPage = () => {
                 <TableBody>
                     {records.map((record, index) => (
                         <TableRow key={index}>
+                            <TableCell>{index + 1}</TableCell>
                             <TableCell>{record.fuelingDateTime}</TableCell>
                             <TableCell>{record.bowser.regNo}</TableCell>
                             <TableCell>{record.gpsLocation}</TableCell>
                             <TableCell>{record.driverName}</TableCell>
                             <TableCell>{record.driverMobile}</TableCell>
                             <TableCell>{record.vehicleNumber}</TableCell>
-                            <TableCell>{record.fuelQuantity} L</TableCell>
+                            <TableCell>{record.quantityType} {record.fuelQuantity} L</TableCell>
                             <TableCell>
                                 <Link href={`/dispense-records/${record._id}`}>
                                     <Button variant="outline" size="sm">
