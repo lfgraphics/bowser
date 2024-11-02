@@ -98,7 +98,6 @@ const VehicleDispensesPage = () => {
                 timeZone: 'Asia/Kolkata',
             };
             const timestamp: string = date.toLocaleDateString('en-IN', options);
-            // const timestamp = new Date().toLocaleDateString();
             const filterDescription = `${filter.bowserNumber ? `Bowser-${filter.bowserNumber},` : ''}${filter.driverName ? `Driver-${filter.driverName},` : ''
                 }`;
             const filename = `Dispenses_data ${filterDescription} ${records.length}records downloaded at ${timestamp}.xlsx`;
@@ -132,7 +131,7 @@ const VehicleDispensesPage = () => {
 
     return (
         <div>
-            {loading && (
+            {(loading || records.length < 1) && (
                 <Loading />
             )}
 

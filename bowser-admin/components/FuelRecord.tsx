@@ -36,16 +36,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
             <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                     <User className="w-5 h-5" />
-                    <span>Driver: {record?.driverName}</span>
-                    {record?.verified ? (
-                        <Badge variant="default" className="ml-2 flex items-center">
-                            <CheckCircle className="w-4 h-4 mr-1" /> Verified
-                        </Badge>
-                    ) : (
-                        <Badge variant="destructive" className="ml-2 flex items-center">
-                            <XCircle className="w-4 h-4 mr-1" /> Not Verified
-                        </Badge>
-                    )}
+                    <span>Vehicle Driver: {`${record?.driverName} ${record?.driverId}`}</span>
                 </CardTitle>
             </CardHeader>
 
@@ -53,7 +44,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
             <CardContent>
                 <div className="mb-4">
                     <h2 className="text-md font-semibold">Vehicle Details</h2>
-                    <p className="text-sm text-gray-600"><strong>Number Plate:</strong> {record?.vehicleNumber}</p>
+                    <p className="text-sm text-foreground"><strong>Vehicle Number:</strong> {record?.vehicleNumber}</p>
                     <div className="flex space-x-4 mt-2">
                         <img className="w-32 h-32 object-cover rounded-md" src={`${record?.vehicleNumberPlateImage}`} alt="Vehicle Plate"
                             onClick={() => openImageModal(record.vehicleNumberPlateImage)}
@@ -63,7 +54,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
 
                 <div className="mb-4">
                     <h2 className="text-md font-semibold">Fueling Details</h2>
-                    <p className="text-sm text-gray-600"><strong>Quantity:</strong> {record?.fuelQuantity} liters - {record?.quantityType}</p>
+                    <p className="text-sm text-gray-600"><strong>Quantity:</strong> {record?.fuelQuantity} Liter - {record?.quantityType}</p>
                     <p className="text-sm text-gray-600"><strong>Date & Time:</strong> {record?.fuelingDateTime}</p>
                 </div>
 
@@ -101,12 +92,24 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                         />
                     </div>
                 </div>
+
+                <div className="recordVerificationStatus mt-6 flex items-center space-x-2">
+                    <p>Record Verification Status: </p>{record?.verified ? (
+                        <Badge variant="default" className="ml-2 flex items-center h-6 w-24 bg-green-500">
+                            <CheckCircle className="w-4 h-4 mr-1" /> Verified
+                        </Badge>
+                    ) : (
+                        <Badge variant="destructive" className="ml-2 flex items-center h-6 w-28">
+                            <XCircle className="w-4 h-4 mr-1" /> Not Verified
+                        </Badge>
+                    )}
+                </div>
             </CardContent>
 
             {/* Footer */}
             <CardFooter className="mt-4">
-                <p className="text-sm text-gray-500">Order ID: {String(record?.orderId)}</p>
-                <p className="text-sm text-gray-500">Admin: {String(record?.allocationAdmin?.name) || 'N/A'}</p>
+                {/* <p className="text-sm text-gray-500">Order ID: {String(record?.orderId)}</p> */}
+                <p className="text-sm text-gray-500">Allocated by: {`${record?.allocationAdmin?.name} Id: ${record?.allocationAdmin?.userId}`}</p>
             </CardFooter>
             {/* Modal for Image */}
             <Modal isOpen={isModalOpen} onClose={closeModal}>
