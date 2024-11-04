@@ -608,7 +608,7 @@ const App = () => {
           <MaterialIcons name="local-gas-station" size={24} color="white" style={{ marginRight: 5 }} />
         </View>
       </Link>
-      <Link style={styles.button} href={'/notifications'}>
+      <Link disabled style={styles.disabledButton} href={'/notifications'}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: 'white' }}>
             Pending Orders

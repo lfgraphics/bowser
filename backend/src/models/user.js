@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
     phoneNumber: String,
     name: String,
     verified: Boolean,
+    bowserId: String,
     orders: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'FuelingOrder'

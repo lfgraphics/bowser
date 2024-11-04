@@ -16,7 +16,7 @@ function isTokenValid(decodedToken) {
 
 router.post('/signup', async (req, res) => {
     try {
-        const { userId, password, phoneNumber, name, deviceUUID } = req.body;
+        const { userId, password, phoneNumber, name, deviceUUID, bowserId } = req.body;
 
         // Check if user already exists
         const existingUser = await User.findOne({ userId });
@@ -121,25 +121,11 @@ router.post('/login', async (req, res) => {
                     message: 'Login successful',
                     token,
                     loginTime,
+                    bowserId,
                     verified: user.verified,
                     user: userData,
-                    pushToken: user.pushToken // Send existing token back
+                    pushToken: user.pushToken
                 });
-            } else {
-                // Generate a new push token
-                const newPushToken = await registerForPushNotificationsAsync();
-                if (newPushToken) {
-                    user.pushToken = newPushToken;
-                    await user.save();
-                    res.json({
-                        message: 'Login successful',
-                        token,
-                        loginTime,
-                        verified: user.verified,
-                        user: userData,
-                        pushToken: newPushToken // Send new token back
-                    });
-                }
             }
         }
 

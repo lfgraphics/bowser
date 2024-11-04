@@ -54,7 +54,7 @@ export default function AuthScreen() {
       });
 
       const endpoint = isLogin ? 'login' : 'signup';
-      const response = await fetch(`https://bowser-backend-2cdr.onrender.com/auth/${endpoint}`, {
+      const response = await fetch(`http://192.168.137.1:5000/auth/${endpoint}`, { //https://bowser-backend-2cdr.onrender.com
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -278,9 +278,9 @@ export default function AuthScreen() {
                   <TextInput
                     ref={bowserIdInputRef}
                     style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                    placeholder="Enter your name"
+                    placeholder="Enter Bowser Id"
                     placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                    value={name}
+                    value={bowserId}
                     onChangeText={setBowserId}
                     returnKeyType="done"
                     onSubmitEditing={handleAuth}
