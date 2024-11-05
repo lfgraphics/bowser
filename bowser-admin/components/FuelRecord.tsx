@@ -6,6 +6,7 @@ import { MapPin, Phone, User, Fuel, CheckCircle, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import { DispensesRecord } from '@/types';
 import Modal from './Modal';
+import Loading from '@/app/loading';
 
 interface FuelRecordCardProps {
     record?: DispensesRecord;
@@ -16,7 +17,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
     if (!record) {
-        return <p className="text-center text-gray-500">Loading record...</p>;
+        return <Loading />;
     }
 
     // Function to handle image click

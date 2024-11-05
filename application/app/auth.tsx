@@ -6,7 +6,7 @@ import { useTheme } from '@react-navigation/native';
 import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { registerForPushNotificationsAsync, registerPushTokenWithServer } from '@/app/utils/notifications';
+// import { registerForPushNotificationsAsync, registerPushTokenWithServer } from '@/app/utils/notifications';
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -54,7 +54,7 @@ export default function AuthScreen() {
       });
 
       const endpoint = isLogin ? 'login' : 'signup';
-      const response = await fetch(`http://192.168.137.1:5000/auth/${endpoint}`, { //https://bowser-backend-2cdr.onrender.com
+      const response = await fetch(`https://bowser-backend-2cdr.onrender.com/auth/${endpoint}`, { //https://bowser-backend-2cdr.onrender.com  //http://192.168.137.1:5000
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,11 +99,11 @@ export default function AuthScreen() {
           }
 
           // Register push token every time after successful login
-          const localPushToken = await registerForPushNotificationsAsync();
-          if (localPushToken) {
-            await AsyncStorage.setItem('pushToken', localPushToken);
-            await registerPushTokenWithServer(data.user['User Id'], localPushToken);
-          }
+          // const localPushToken = await registerForPushNotificationsAsync();
+          // if (localPushToken) {
+          //   await AsyncStorage.setItem('pushToken', localPushToken);
+          //   await registerPushTokenWithServer(data.user['User Id'], localPushToken);
+          // }
           router.replace('/'); // Navigate to index page
         } catch (storageError) {
           console.error('Error saving to AsyncStorage:', storageError);
@@ -268,8 +268,8 @@ export default function AuthScreen() {
                     placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                     value={name}
                     onChangeText={setName}
-                    returnKeyType="done"
-                    onSubmitEditing={() => bowserIdInputRef.current?.focus}
+                    returnKeyType="next"
+                    onSubmitEditing={() => bowserIdInputRef.current?.focus()}
                     blurOnSubmit={true}
                   />
                 </View>

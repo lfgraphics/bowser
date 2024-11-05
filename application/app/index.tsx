@@ -10,48 +10,48 @@ import * as Location from 'expo-location';
 import { Camera } from 'expo-camera';
 import NetInfo from '@react-native-community/netinfo';
 import { FormData } from '../src/types/models';
-import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
-import Constants from 'expo-constants';
-import { registerForPushNotificationsAsync, registerPushTokenWithServer } from '@/app/utils/notifications';
+// import * as Device from 'expo-device';
+// import * as Notifications from 'expo-notifications';
+// import Constants from 'expo-constants';
+// import { registerForPushNotificationsAsync, registerPushTokenWithServer } from '@/app/utils/notifications';
 
-const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-const pushTokenString = async () => {
-  return (await Notifications.getDevicePushTokenAsync()).data;
-}
+// const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+// const pushTokenString = async () => {
+//   return (await Notifications.getDevicePushTokenAsync()).data;
+// }
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+// Notifications.setNotificationHandler({
+//   handleNotification: async () => ({
+//     shouldShowAlert: true,
+//     shouldPlaySound: true,
+//     shouldSetBadge: true,
+//   }),
+// });
 
-async function sendPushNotification(expoPushToken: string) {
-  const message = {
-    to: expoPushToken,
-    sound: 'default',
-    title: 'Original Title',
-    body: 'And here is the body!',
-    data: { someData: 'goes here' },
-  };
+// async function sendPushNotification(expoPushToken: string) {
+//   const message = {
+//     to: expoPushToken,
+//     sound: 'default',
+//     title: 'Original Title',
+//     body: 'And here is the body!',
+//     data: { someData: 'goes here' },
+//   };
 
-  await fetch('https://exp.host/--/api/v2/push/send', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Accept-encoding': 'gzip, deflate',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(message),
-  });
-}
+//   await fetch('https://exp.host/--/api/v2/push/send', {
+//     method: 'POST',
+//     headers: {
+//       Accept: 'application/json',
+//       'Accept-encoding': 'gzip, deflate',
+//       'Content-Type': 'application/json',
+//     },
+//     body: JSON.stringify(message),
+//   });
+// }
 
-function handleRegistrationError(errorMessage: string) {
-  alert(errorMessage);
-  throw new Error(errorMessage);
-}
+// function handleRegistrationError(errorMessage: string) {
+//   alert(errorMessage);
+//   throw new Error(errorMessage);
+// }
 
 const App = () => {
   const router = useRouter();
@@ -120,7 +120,7 @@ const App = () => {
             if (userConfirmed) {
               for (const formData of offlineArray) {
                 try {
-                  const response = await fetch(`https://bowser-backend-2cdr.onrender.com/formsubmit`, { //https://bowser-backend-2cdr.onrender.com
+                  const response = await fetch(`https://bowser-backend-2cdr.onrender.com/addFuelingTransaction`, { //https://bowser-backend-2cdr.onrender.com
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
@@ -180,18 +180,18 @@ const App = () => {
         );
       }
 
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
+      // const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      // let finalStatus = existingStatus;
 
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
+      // if (existingStatus !== 'granted') {
+      //   const { status } = await Notifications.requestPermissionsAsync();
+      //   finalStatus = status;
+      // }
 
-      if (finalStatus !== 'granted') {
-        Alert.alert('Permissions Required', 'This app requires push notification permissions to function properly.', [{ text: 'OK' }]);
-        return;
-      }
+      // if (finalStatus !== 'granted') {
+      //   Alert.alert('Permissions Required', 'This app requires push notification permissions to function properly.', [{ text: 'OK' }]);
+      //   return;
+      // }
 
       // Update permissions flag in AsyncStorage
       await AsyncStorage.setItem('permissionsGranted', 'true');
@@ -305,7 +305,7 @@ const App = () => {
   const handleSubmitOfflineData = async (item: FormData, index: number) => {
     if (isOnline) {
       try {
-        const response = await fetch(`https://bowser-backend-2cdr.onrender.com/formsubmit`, {
+        const response = await fetch(`https://bowser-backend-2cdr.onrender.com/addFuelingTransaction`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -431,104 +431,104 @@ const App = () => {
   };
 
 
-  const handleNotificationAction = (action: string, data: any) => {
-    switch (action) {
-      case 'call':
-        if (data.phoneNumber) {
-          Linking.openURL(`tel:${data.phoneNumber}`);
-        }
-        break;
-      case 'openScreen':
-        if (data.screenName === 'NotificationFueling') {
-          router.push({
-            pathname: '/NotificationFueling',
-            params: data.params
-          });
-        }
-        break;
-      default:
-    }
-  };
+  // const handleNotificationAction = (action: string, data: any) => {
+  //   switch (action) {
+  //     case 'call':
+  //       if (data.phoneNumber) {
+  //         Linking.openURL(`tel:${data.phoneNumber}`);
+  //       }
+  //       break;
+  //     case 'openScreen':
+  //       if (data.screenName === 'NotificationFueling') {
+  //         router.push({
+  //           pathname: '/NotificationFueling',
+  //           params: data.params
+  //         });
+  //       }
+  //       break;
+  //     default:
+  //   }
+  // };
 
-  useEffect(() => {
-    const backgroundSubscription = Notifications.addNotificationResponseReceivedListener(response => {
-      const data = response.notification.request.content.data;
-      if (data.buttons) {
-        // Assuming the user tapped the notification, we'll execute the first button action
-        const firstButton = data.buttons[0];
-        handleNotificationAction(firstButton.action, firstButton);
-      }
-    });
+  // useEffect(() => {
+  //   const backgroundSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+  //     const data = response.notification.request.content.data;
+  //     if (data.buttons) {
+  //       // Assuming the user tapped the notification, we'll execute the first button action
+  //       const firstButton = data.buttons[0];
+  //       handleNotificationAction(firstButton.action, firstButton);
+  //     }
+  //   });
 
-    const foregroundSubscription = Notifications.addNotificationReceivedListener(notification => {
-      const { title, body } = notification.request.content;
-      const data = notification.request.content.data;
+  //   const foregroundSubscription = Notifications.addNotificationReceivedListener(notification => {
+  //     const { title, body } = notification.request.content;
+  //     const data = notification.request.content.data;
 
-      Alert.alert(
-        title || 'New Order',
-        body || 'You have received a new fueling order.',
-        data.buttons?.map((button: any) => ({
-          text: button.text,
-          onPress: () => handleNotificationAction(button.action, button)
-        }))
-      );
-    });
+  //     Alert.alert(
+  //       title || 'New Order',
+  //       body || 'You have received a new fueling order.',
+  //       data.buttons?.map((button: any) => ({
+  //         text: button.text,
+  //         onPress: () => handleNotificationAction(button.action, button)
+  //       }))
+  //     );
+  //   });
 
-    return () => {
-      Notifications.removeNotificationSubscription(backgroundSubscription);
-      Notifications.removeNotificationSubscription(foregroundSubscription);
-    };
-  }, []);
+  //   return () => {
+  //     Notifications.removeNotificationSubscription(backgroundSubscription);
+  //     Notifications.removeNotificationSubscription(foregroundSubscription);
+  //   };
+  // }, []);
 
-  useEffect(() => {
-    const setupPushNotifications = async () => {
-      try {
-        const token = await registerForPushNotificationsAsync();
-        if (token) {
-          await AsyncStorage.setItem('pushToken', token);
+  // useEffect(() => {
+  //   const setupPushNotifications = async () => {
+  //     try {
+  //       const token = await registerForPushNotificationsAsync();
+  //       if (token) {
+  //         await AsyncStorage.setItem('pushToken', token);
 
-          const userData = await AsyncStorage.getItem('userData');
-          if (userData) {
-            const parsedUserData = JSON.parse(userData);
-            const userId = parsedUserData["User Id"];
-            if (!userId) {
-              throw new Error('userId is undefined or null');
-            }
+  //         const userData = await AsyncStorage.getItem('userData');
+  //         if (userData) {
+  //           const parsedUserData = JSON.parse(userData);
+  //           const userId = parsedUserData["User Id"];
+  //           if (!userId) {
+  //             throw new Error('userId is undefined or null');
+  //           }
 
-            const API_BASE_URL = 'https://bowser-backend-2cdr.onrender.com';
-            const response = await fetch(`${API_BASE_URL}/notifications/register-token`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ userId, pushToken: token }),
-            });
+  //           const API_BASE_URL = 'https://bowser-backend-2cdr.onrender.com';
+  //           const response = await fetch(`${API_BASE_URL}/notifications/register-token`, {
+  //             method: 'POST',
+  //             headers: {
+  //               'Content-Type': 'application/json',
+  //             },
+  //             body: JSON.stringify({ userId, pushToken: token }),
+  //           });
 
-            if (!response.ok) {
-              const errorText = await response.text();
-              console.warn(`Failed to register push token with server: ${errorText}`);
-            }
-          } else {
-            console.warn('User data not found in AsyncStorage');
-          }
-        } else {
-          console.warn('Failed to get push token');
-        }
-      } catch (error) {
-        console.error('Error setting up push notifications:', error);
-      }
-    };
+  //           if (!response.ok) {
+  //             const errorText = await response.text();
+  //             console.warn(`Failed to register push token with server: ${errorText}`);
+  //           }
+  //         } else {
+  //           console.warn('User data not found in AsyncStorage');
+  //         }
+  //       } else {
+  //         console.warn('Failed to get push token');
+  //       }
+  //     } catch (error) {
+  //       console.error('Error setting up push notifications:', error);
+  //     }
+  //   };
 
-    setupPushNotifications();
-  }, []);
+  //   setupPushNotifications();
+  // }, []);
 
-  useEffect(() => {
-    registerForPushNotificationsAsync().then(token => {
-      if (token) {
-        AsyncStorage.setItem('pushToken', token);
-      }
-    });
-  }, []);
+  // useEffect(() => {
+  //   registerForPushNotificationsAsync().then(token => {
+  //     if (token) {
+  //       AsyncStorage.setItem('pushToken', token);
+  //     }
+  //   });
+  // }, []);
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -540,16 +540,16 @@ const App = () => {
         setUserData(JSON.parse(userDataString));
 
         // Check for push token in AsyncStorage
-        const pushToken = await AsyncStorage.getItem('pushToken');
-        if (!pushToken) {
-          // Register push token with server
-          const newPushToken = await registerForPushNotificationsAsync();
-          if (newPushToken) {
-            await AsyncStorage.setItem('pushToken', newPushToken);
-            const userId = JSON.parse(userDataString)["User Id"];
-            await registerPushTokenWithServer(userId, newPushToken);
-          }
-        }
+        // const pushToken = await AsyncStorage.getItem('pushToken');
+        // if (!pushToken) {
+        //   // Register push token with server
+        //   const newPushToken = await registerForPushNotificationsAsync();
+        //   if (newPushToken) {
+        //     await AsyncStorage.setItem('pushToken', newPushToken);
+        //     const userId = JSON.parse(userDataString)["User Id"];
+        //     await registerPushTokenWithServer(userId, newPushToken);
+        //   }
+        // }
       } else {
         setIsLoggedIn(false);
       }
@@ -631,6 +631,7 @@ const App = () => {
             <ScrollView style={styles.modalScrollView}>
               {renderUserData()}
               {offlineDataLength > 0 && (
+                // <Text>{offlineDataLength ? offlineDataLength : "no offiline data"}</Text>
                 <TouchableOpacity
                   style={styles.offlineDataButton}
                   onPress={() => setOfflineDataModalVisible(true)}

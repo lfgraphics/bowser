@@ -29,8 +29,6 @@ export interface ResponseBowser {
     };
 }
 
-// console.log(bowserResponse.bowserDetails[0].bowserDriver.userId);
-
 export interface Bowser {
     regNo: string;
     currentTrip: {
@@ -78,4 +76,65 @@ export interface DispensesRecord {
         name: { type: String, required: false },
         userId: { type: String, required: false }
     },
+}
+
+export interface TripSheet {
+    _id?: string;
+    tripSheetId: string;
+    tripSheetGenerationDateTime: string;
+    bowserDriver: {
+        handOverDate: string;
+        name: string;
+        id: string;
+        phoneNo: string;
+    }[];
+    bowser: {
+        regNo: string;
+    };
+    bowserOdometerStartReading?: number;
+    fuelingAreaDestination?: string;
+    bowserPumpEndReading?: string;
+    proposedDepartureDateTime?: string;
+    loadQuantityByDip?: {
+        [key: string]: any; // Adjust this if you have a specific type for load quantities
+    };
+    loadQuantityBySlip?: {
+        [key: string]: any; // Adjust this if you have a specific type for load quantities
+    };
+    chamberWiseDipList?: {
+        chamber1?: any;
+        chamber2?: any;
+        chamber3?: any;
+        chamber4?: any;
+    }[];
+    chamberWiseSealList?: {
+        chamber1?: any;
+        chamber2?: any;
+        chamber3?: any;
+        chamber4?: any;
+    }[];
+    referenceToBowserLoadingSheetID?: string;
+    settelment?: {
+        dateTime?: string;
+        odometerClosing?: {
+            [key: string]: any; // Adjust this if you have a specific type for odometer readings
+        };
+        bowserNewEndReading?: {
+            [key: string]: any; // Adjust this if you have a specific type for end readings
+        };
+        settled: boolean;
+    };
+}
+
+
+export interface Filters {
+    driverName: string;
+    bowserRegNo: string;
+    tripSheetId: string;
+    unsettled: boolean;
+}
+
+export interface Sort {
+    field: string;
+    order: 'asc' | 'desc';
 }

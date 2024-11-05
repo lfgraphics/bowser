@@ -3,6 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const Role = require('../models/role');
+const TripSheet = require ('../models/tripsheet');
 const UnAuthorizedLogin = require('../models/unauthorizedLogin');
 const argon2 = require('argon2');
 
@@ -99,6 +100,12 @@ router.post('/login', async (req, res) => {
 
         const token = jwt.sign({ userId: user.userId, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
         const loginTime = new Date().toISOString();
+        let id = user.userId
+        const searchCriteria = {};
+        searchCriteria['bowserDriver.id'] = id;
+        const tripSheet = await TripSheet.findOne(searchCriteria).select('tripSheetId');
+        const userTripSheetId = tripSheet.tripSheetId;
+        console.log(userTripSheetId)
         const userData = {
             _id: user._id,
             'User Id': user.userId,
@@ -107,7 +114,8 @@ router.post('/login', async (req, res) => {
             'Verified User': user.verified,
             'Role': roleNames,
             'Bowser': user.bowserId,
-            'Push Notification Token': pushToken,
+            'Trip Sheet Id': userTripSheetId || "Not on a trip",
+            'Push Notification Token': pushToken || user.pushToken,
         };
 
         if (pushToken) {

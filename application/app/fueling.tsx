@@ -30,6 +30,7 @@ export default function FuelingScreen() {
   const [fuelQuantity, setFuelQuantity] = useState<string>('0');
   const [gpsLocation, setGpsLocation] = useState('');
   const [fuelingDateTime, setFuelingDateTime] = useState('');
+  const [tripSheetId, setTripSheetId] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [foundDrivers, setFoundDrivers] = useState<Driver[]>([]);
   const [selectedDriver, setSelectedDriver] = useState<string>('');
@@ -54,6 +55,7 @@ export default function FuelingScreen() {
   const driverMobileInputRef = React.useRef<TextInput>(null);
   const fuelQuantityInputRef = React.useRef<TextInput>(null);
   const gpsLocationInputRef = React.useRef<TextInput>(null);
+  const tripSheetIdRef = React.useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const driversData: (Driver | { Name: string, ITPLId: string })[] = [
     { Name: "Select a driver", ITPLId: "placeholder" },
@@ -86,35 +88,38 @@ export default function FuelingScreen() {
   //   return coordinates;
   // }
 
-  const location = async () => {
+  const getLocationWithTimeout = async (timeout = 10000) => {
+    return Promise.race([
+      Location.getCurrentPositionAsync({}),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Location timeout")), timeout))
+    ]);
+  };
+
+  const location = async (): Promise<string | { error: string }> => {
+    // Request location permissions
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
-      const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
-      if (newStatus !== 'granted') {
-        console.warn('Location permission is still not granted.');
-        return;
-      }
+      return { error: "Location permission denied" };
     }
 
     try {
-      // Get the current position
-      let location = await Location.getCurrentPositionAsync({});
+      // Attempt to get the current position
+      let location: Location.LocationObject = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
 
-      // Get the city name using reverse geocoding
+      // Reverse geocode to get city name
       let geocode = await Location.reverseGeocodeAsync({ latitude, longitude });
       let city = geocode[0]?.city || 'City not found';
 
-      // Format the coordinates
+      // Format the coordinates and return
       const coordinates = `Latitude ${latitude}, Longitude ${longitude}`;
       const fuelLocation = `Bowser at ${city}, ${coordinates}`;
 
-      // You can update your state with the city and coordinates
       setGpsLocation(fuelLocation);
-      console.log(fuelLocation)
       return fuelLocation;
     } catch (error) {
-      console.error('Error getting location or city:', error);
+      console.error("Error getting location or city:", error);
+      return { error: "Unable to retrieve location. Please check your internet connection." };
     }
   };
 
@@ -134,13 +139,13 @@ export default function FuelingScreen() {
   // form submit reset
   const submitDetails = async () => {
     setFormSubmitting(true);
-    if (!validateInputs()) {
-      setFormSubmitting(false);
-      return;
-    }
+    // if (!validateInputs()) {
+    //   setFormSubmitting(false);
+    //   return;
+    // }
 
     let currentFuelingDateTime = fuelingDateTime;
-    let currentGpsLocation = gpsLocation;
+    let currentGpsLocation = gpsLocation; // Keep the previous GPS location
     const userDataString = await AsyncStorage.getItem('userData');
     const userData = userDataString ? JSON.parse(userDataString) : null;
     if (!userData) {
@@ -148,157 +153,151 @@ export default function FuelingScreen() {
       router.replace('/auth');
       return;
     }
+
     currentFuelingDateTime = await fulingTime();
-    const locationResult = await location();
-    if (locationResult) {
-      currentGpsLocation = locationResult;
+    const locationResult = await location(); // Get location info
+
+    // Check if locationResult is an error object or a string
+    if (typeof locationResult === 'string') {
+      // Successfully retrieved location
+      currentGpsLocation = locationResult; // Set the GPS location
+    } else if (typeof locationResult === 'object' && locationResult.error) {
+      // Handle the location error
+      Alert.alert(
+        "Location Error",
+        locationResult.error, // Show the error message
+        [{ text: "OK" }]
+      );
+      // You can choose to log this error or handle it further if needed
     }
 
-    if (currentFuelingDateTime && currentGpsLocation) {
-      const formData: FormData = {
-        vehicleNumberPlateImage,
-        vehicleNumber: vehicleNumber.toUpperCase(),
-        driverName,
-        driverId: driverId.toUpperCase(),
-        driverMobile,
-        fuelMeterImage,
-        slipImage,
-        quantityType,
-        fuelQuantity,
-        gpsLocation: currentGpsLocation,
-        fuelingDateTime: currentFuelingDateTime,
-        bowser: {
-          regNo: userData.Bowser ? userData.Bowser : '',
-          driver: {
-            name: userData.Name,
-            id: userData['User Id'],
-            phoneNo: userData['Phone Number']
-          }
+
+    // Prepare formData
+    const formData: FormData = {
+      vehicleNumberPlateImage,
+      tripSheetId,
+      vehicleNumber: vehicleNumber.toUpperCase(),
+      driverName,
+      driverId: driverId.toUpperCase(),
+      driverMobile,
+      fuelMeterImage,
+      slipImage,
+      quantityType,
+      fuelQuantity,
+      gpsLocation: currentGpsLocation, // This may still be the previous value if location failed
+      fuelingDateTime: currentFuelingDateTime,
+      bowser: {
+        regNo: userData.Bowser ? userData.Bowser : '',
+        driver: {
+          name: userData.Name,
+          id: userData['User Id'],
+          phoneNo: userData['Phone Number']
         }
-      };
+      }
+    };
 
-
-
-      if (isOnline) {
-        try {
-          const response = await fetch(`https://bowser-backend-2cdr.onrender.com/addFuelingTransaction`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData),
-          });
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const responseData = await response.json();
-          Alert.alert(
-            "Success",
-            responseData.message,
-            [
-              {
-                text: "OK", onPress: () => {
-                }
+    if (isOnline) {
+      try {
+        const response = await fetch(`https://bowser-backend-2cdr.onrender.com/addFuelingTransaction`, { //https://bowser-backend-2cdr.onrender.com // http://192.168.137.1:5000
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const responseData = await response.json();
+        Alert.alert(
+          "Success",
+          responseData.message,
+          [
+            {
+              text: "OK", onPress: () => {
               }
-            ],
-            { cancelable: false }
-          );
-          resetForm();
-          navigation.navigate('index' as never);
-        } catch (err) {
-          console.error('Fetch error:', err); // Log any fetch errors
-          let errorMessage = 'An unknown error occurred';
-
-          if (err instanceof Response) {
-            try {
-              const errorData = await err.json();
-              errorMessage = errorData.message || errorData.error || errorMessage;
-            } catch (jsonError) {
-              console.error('Error parsing JSON:', jsonError);
             }
-          } else if (err instanceof Error) {
-            errorMessage = err.message;
+          ],
+          { cancelable: false }
+        );
+        resetForm();
+        navigation.navigate('index' as never);
+      } catch (err) {
+        console.error('Fetch error:', err); // Log any fetch errors
+        let errorMessage = 'An unknown error occurred';
+
+        if (err instanceof Response) {
+          try {
+            const errorData = await err.json();
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch (jsonError) {
+            console.error('Error parsing JSON:', jsonError);
           }
-
-          Alert.alert(
-            "Error",
-            errorMessage,
-            [
-              {
-                text: "OK", onPress: () => {
-                }
-              }
-            ],
-            { cancelable: false }
-          );
-        } finally {
-          setFormSubmitting(false);
+        } else if (err instanceof Error) {
+          errorMessage = err.message;
         }
-      } else {
-        try {
-          Alert.alert(
-            "No Internet Connection",
-            "Please connect to the internet. Waiting for 10 seconds...",
-            [{ text: "OK" }]
-          );
 
-          // Wait for 10 seconds
-          await new Promise(resolve => setTimeout(resolve, 10000));
-
-          // Check internet connection again
-          const netInfo = await NetInfo.fetch();
-          if (netInfo.isConnected) {
-            // If now connected, try to submit the form again
-            setIsOnline(true);
-            submitDetails();
-            return;
-          }
-
-          // If still offline, ask to save data offline
-          Alert.alert(
-            "Still Offline",
-            "Do you want to save the data offline?",
-            [
-              {
-                text: "Yes",
-                onPress: async () => {
-                  const offlineData = await AsyncStorage.getItem('offlineFuelingData');
-                  let offlineArray = offlineData ? JSON.parse(offlineData) : [];
-                  offlineArray.push(formData);
-                  await AsyncStorage.setItem('offlineFuelingData', JSON.stringify(offlineArray));
-                  Alert.alert(
-                    "Success",
-                    "Data saved offline. It will be submitted when you're back online.",
-                    [{ text: "OK", onPress: () => { } }],
-                    { cancelable: false }
-                  );
-                  resetForm();
-                  navigation.navigate('index' as never);
-                }
-              },
-              {
-                text: "No",
-                onPress: () => {
-                  setFormSubmitting(false);
-                },
-                style: "cancel"
+        Alert.alert(
+          "Error",
+          errorMessage,
+          [
+            {
+              text: "OK", onPress: () => {
               }
-            ]
-          );
-        } catch (error) {
-          console.error('Error handling offline data:', error);
-          Alert.alert(
-            "Error",
-            "Failed to handle offline data. Please try again.",
-            [{ text: "OK", onPress: () => { } }],
-            { cancelable: false }
-          );
-        } finally {
-          setFormSubmitting(false);
+            }
+          ],
+          { cancelable: false }
+        );
+      } finally {
+        setFormSubmitting(false);
+      }
+    } else {
+      try {
+        // Alert.alert(
+        //   "No Internet Connection",
+        //   "Please connect to the internet. Waiting for 10 seconds...",
+        //   [{ text: "OK" }]
+        // );
+
+        // // Wait for 10 seconds
+        // await new Promise(resolve => setTimeout(resolve, 10000));
+
+        // Check internet connection again
+        const netInfo = await NetInfo.fetch();
+        if (netInfo.isConnected) {
+          // If now connected, try to submit the form again
+          setIsOnline(true);
+          submitDetails();
+          return;
         }
+
+        // If still offline, ask to save data offline
+        const offlineData = await AsyncStorage.getItem('offlineFuelingData');
+        let offlineArray = offlineData ? JSON.parse(offlineData) : [];
+        offlineArray.push(formData);
+        await AsyncStorage.setItem('offlineFuelingData', JSON.stringify(offlineArray));
+        Alert.alert(
+          "Success",
+          "Data saved offline. It will be submitted when you're back online.",
+          [{ text: "OK", onPress: () => { } }],
+          { cancelable: false }
+        );
+        resetForm();
+        navigation.navigate('index' as never);
+      } catch (error) {
+        console.error('Error handling offline data:', error);
+        Alert.alert(
+          "Error",
+          "Failed to handle offline data. Please try again.",
+          [{ text: "OK", onPress: () => { } }],
+          { cancelable: false }
+        );
+      } finally {
+        setFormSubmitting(false);
       }
     }
   }
+
   const resetForm = () => {
     setVehicleNumberPlateImage(null);
     setFuelMeterImage(null);
@@ -548,6 +547,14 @@ export default function FuelingScreen() {
     }
   }
 
+  const getUserTripSheetId = async () => {
+    const userDataString = await AsyncStorage.getItem('userData');
+    const userData = userDataString ? JSON.parse(userDataString) : null;
+    const tripSheetId = userData['Trip Sheet Id']
+    setTripSheetId(tripSheetId)
+  };
+  getUserTripSheetId()
+
   return (
     <View style={[styles.container, styles.main]}>
       <ScrollView ref={scrollViewRef} contentContainerStyle={styles.scrollViewContent}>
@@ -559,6 +566,21 @@ export default function FuelingScreen() {
           </ThemedView>
 
           <ThemedView style={styles.section}>
+            <ThemedView style={styles.inputContainer}>
+              <ThemedText>Trip Sheet Number:</ThemedText>
+              <TextInput
+                keyboardType="numeric"
+                ref={tripSheetIdRef}
+                style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                placeholder="Enter trip sheet number"
+                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                value={tripSheetId}
+                onChangeText={(text) => { setTripSheetId(text.toUpperCase()); }}
+                returnKeyType="next"
+                onSubmitEditing={() => vehicleNumberInputRef.current?.focus()}
+                blurOnSubmit={false}
+              />
+            </ThemedView>
             {vehicleNumberPlateImage && (
               <>
                 <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
@@ -589,7 +611,7 @@ export default function FuelingScreen() {
                 value={vehicleNumber}
                 onChangeText={(text) => {
                   setVehicleNumber(text.toUpperCase());
-                  if (text.length > 5) {
+                  if (text.length > 3) {
                     setFoundVehicles([]);
                     setNoVehicleFound(false);
                     searchVehicleByNumber(text);
@@ -785,12 +807,12 @@ export default function FuelingScreen() {
                   <Picker.Item label="Part" value="Part" />
                 </Picker>
                 <TextInput
-                  onFocus={() => {
-                    if (!fuelMeterImage) {
-                      openFuelMeterCamera();
-                    }
-                  }}
-                  onPress={() => !fuelMeterImage && openFuelMeterCamera()}
+                  // onFocus={() => {
+                  //   if (!fuelMeterImage) {
+                  //     openFuelMeterCamera();
+                  //   }
+                  // }}
+                  // onPress={() => !fuelMeterImage && openFuelMeterCamera()}
                   ref={fuelQuantityInputRef}
                   style={[styles.input, styles.threeQuarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
                   placeholder="Enter fuel quantity"

@@ -1,9 +1,9 @@
-import { LoaderCircle } from 'lucide-react'
+import { Loader2, LoaderCircle } from 'lucide-react'
 
 const Loading = () => {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <LoaderCircle className="w-12 h-12 text-white animate-spin" />
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <Loader2 className="h-10 w-10 animate-spin text-white" />
         </div>
     )
 }

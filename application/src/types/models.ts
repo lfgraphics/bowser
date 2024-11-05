@@ -58,6 +58,7 @@ export interface FuelNotificationProps {
 
 export interface FormData {
     vehicleNumberPlateImage: string | null;
+    tripSheetId: string,
     vehicleNumber: string;
     driverName: string;
     driverId: string;

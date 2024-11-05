@@ -2,11 +2,7 @@ const mongoose = require('mongoose');
 const { bowsersDatabaseConnection } = require('../../config/database');
 
 const tripSheetSchema = new mongoose.Schema({
-    tripSheetID: {
-        type: String,
-        required: false,
-        unique: true
-    },
+    tripSheetId: { type: String, required: true, unique: true },
     tripSheetGenerationDateTime: {
         type: String,
         default: () => {
@@ -20,6 +16,7 @@ const tripSheetSchema = new mongoose.Schema({
             handOverDate: String,
             name: String,
             id: String,
+            _id: false,
             phoneNo: String,
         }
     ],
@@ -85,6 +82,9 @@ const tripSheetSchema = new mongoose.Schema({
             default: false
         }
     }
-});
+}, { versionKey: false });
 
-module.exports = bowsersDatabaseConnection.model('TripSheet', tripSheetSchema, 'BowsersCollection');
+// Disable automatic _id generation for bowserDriver
+tripSheetSchema.path('bowserDriver').schema.add({ _id: false });
+
+module.exports = bowsersDatabaseConnection.model('TripSheet', tripSheetSchema, 'TripSheetsCollection');

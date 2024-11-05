@@ -11,6 +11,7 @@ const searchVehicleNumberRoutes = require('./searchVehicleNumber');
 const notificationsRoutes = require('./notifications');
 const listDispensesRouts = require('./listDispenses');
 const searchBowserRoutes = require('./searchBowserDetails');
+const tripSheetRoutes = require('./tripSheet');
 
 router.get('/', (req, res) => {
     res.send('landing page');
@@ -26,5 +27,6 @@ router.use('/searchVehicleNumber', searchVehicleNumberRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/listDispenses', listDispensesRouts);
 router.use('/searchBowserDetails', searchBowserRoutes);
+router.use('/tripSheet', tripSheetRoutes);
 
 module.exports = router;

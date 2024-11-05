@@ -7,12 +7,15 @@ const fs = require('fs');
 
 // Route to get filtered, paginated, and sorted fueling records
 router.get('/', async (req, res) => {
-    const { bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'fuelingDateTime', order = 'desc' } = req.query;
+    const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'fuelingDateTime', order = 'desc' } = req.query;
     const skip = (page - 1) * limit;
     let filter = { verified: { $ne: true } };
 
     if (bowserNumber) {
         filter['bowser.regNo'] = bowserNumber;
+    }
+    if (tripSheetId) {
+        filter['tripSheetId'] = { $regex: tripSheetId, $options: 'i' };
     }
 
     if (driverName) {
@@ -31,6 +34,7 @@ router.get('/', async (req, res) => {
     try {
         const records = await FuelingTransaction.find(filter, {
             vehicleNumber: 1,
+            tripSheetId: 1,
             quantityType: 1,
             fuelQuantity: 1,
             driverName: 1,
@@ -77,6 +81,7 @@ router.get('/export/excel', async (req, res) => {
         // Fetch filtered, sorted, and limited records
         const records = await FuelingTransaction.find(filter, {
             fuelingDateTime: 1,
+            tripSheetId: 1,
             bowser: 1,
             gpsLocation: 1,
             driverName: 1,
@@ -85,11 +90,12 @@ router.get('/export/excel', async (req, res) => {
             fuelQuantity: 1,
             quantityType: 1,
         })
-        .sort({ [sortBy]: sortOrder })
-        .limit(recordLimit);
+            .sort({ [sortBy]: sortOrder })
+            .limit(recordLimit);
 
         // Format records for Excel
         const formattedRecords = records.map(record => ({
+            'Trip Sheet Number': record.tripSheetId,
             'Fueling Time': record.fuelingDateTime,
             'Fueling Location': record.gpsLocation,
             'Bowser Number': record.bowser.regNo,
@@ -115,7 +121,7 @@ router.get('/export/excel', async (req, res) => {
         XLSX.writeFile(workbook, filePath);
 
         // Send the file to the client for download
-        
+
         res.download(filePath, fileName, err => {
             if (err) {
                 console.error('Error sending file:', err);

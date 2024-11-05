@@ -3,6 +3,7 @@ const { bowsersDatabaseConnection } = require('../../config/database');
 
 const fuelingTransactionSchema = new mongoose.Schema({
     orderId: { type: mongoose.Schema.Types.ObjectId, required: false },
+    tripSheetId: { type: String},
     vehicleNumberPlateImage: { type: String, required: false },
     vehicleNumber: { type: String, required: true },
     driverId: { type: String, required: false },
