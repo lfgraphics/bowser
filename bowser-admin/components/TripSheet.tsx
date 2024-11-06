@@ -71,7 +71,7 @@ const TripSheetPage = () => {
                 <h1 className="text-2xl font-bold mb-4">Trip Sheets</h1>
                 <Link href={`/tripsheets/create`}>
                     <Button variant="secondary">
-                        <Plus className="mr-2" /> Create New Sheet < PlusIcon />
+                        <Plus className="mr-2" /> Create New Sheet
                     </Button>
                 </Link>
             </div>

@@ -259,7 +259,7 @@ const VehicleDispensesPage = () => {
                             className="w-full sm:w-auto"
                         />
                     </div>
-                    <div className="flex items-center justify-between">Records limit <Input type="number" className="w-20 mx-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
+                    <div className="flex items-center justify-between">Records limit <Input type="number" className="w-20 ml-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
                     <div className="flex items-center justify-between text-gray-300 font-[200]">Total found record{records.length > 1 ? "s" : ""} {records.length} out of {totalRecords} records </div>
                     <Button onClick={exportToExcel} className="w-full sm:w-auto">
                         Export to Excel
