@@ -62,7 +62,7 @@ router.get('/', async (req, res) => {
 
 // Route to export fueling records to Excel
 router.get('/export/excel', async (req, res) => {
-    const { bowserNumber, driverName, sortBy = 'fuelingDateTime', order = 'desc', limit } = req.query;
+    const { bowserNumber, driverName, tripSheetId, sortBy = 'fuelingDateTime', order = 'desc', limit } = req.query;
     let filter = { verified: { $ne: true } };
 
     // Apply filters if provided
@@ -72,6 +72,9 @@ router.get('/export/excel', async (req, res) => {
 
     if (driverName) {
         filter['driverName'] = { $regex: driverName, $options: 'i' };
+    }
+    if (tripSheetId) {
+        filter['tripSheetId'] = { $regex: tripSheetId, $options: 'i' };
     }
 
     const sortOrder = order === 'asc' ? 1 : -1;

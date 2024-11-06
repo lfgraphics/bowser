@@ -20,24 +20,54 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion"
 import Link from "next/link";
 import { isAuthenticated } from "@/lib/auth";
 import { useRouter } from "next/dist/client/components/navigation";
 import Loading from "../loading";
+import { DateRange } from "react-day-picker"
+import { DatePickerWithRange } from "@/components/DatePickerWithRange";
 
 const VehicleDispensesPage = () => {
     const [records, setRecords] = useState<DispensesRecord[]>([]);
     const [totalPages, setTotalPages] = useState(1);
     const [totalRecords, setTotalRecords] = useState();
     const [currentPage, setCurrentPage] = useState(1);
-    const [filter, setFilter] = useState({ bowserNumber: "", driverName: "" });
+    const [filter, setFilter] = useState({ bowserNumber: "", driverName: "", tripSheetId: "" });
     const [sortBy, setSortBy] = useState("fuelingDateTime");
     const [order, setOrder] = useState("desc");
     const [localBowserNumber, setLocalBowserNumber] = useState("");
     const [localDriverName, setLocalDriverName] = useState("");
+    const [localTripSheetId, setLocalTripSheetId] = useState("");
     const [limit, setLimit] = useState(20);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
+
+    // const [selectedDateRange, setSelectedDateRange] = React.useState<DateRange | undefined>(undefined)
+
+    // // Callback to handle date changes
+    // const handleDateChange = (date: DateRange | undefined) => {
+    //     setSelectedDateRange(date)
+    // }
+    // Function to prepare dates for the backend
+    // const getBackendDateFilter = () => {
+    //     if (!selectedDateRange || !selectedDateRange.from) return null
+
+    //     const startDate = new Date(selectedDateRange.from)
+    //     const endDate = selectedDateRange.to ? new Date(selectedDateRange.to) : new Date()
+
+    //     return {
+    //         fuelingDateTime: {
+    //             $gte: startDate,
+    //             $lte: endDate,
+    //         },
+    //     }
+    // }
 
     // Authentication check
     useEffect(() => {
@@ -47,7 +77,7 @@ const VehicleDispensesPage = () => {
     // Fetch records when dependencies change
     useEffect(() => {
         fetchRecords();
-    }, [currentPage, sortBy, order, filter, limit]);
+    }, [currentPage, sortBy, order, filter, limit,]); //selectedDateRange
 
     const checkAuth = async () => {
         setLoading(true);
@@ -61,6 +91,22 @@ const VehicleDispensesPage = () => {
     const fetchRecords = async () => {
         setLoading(true);
         try {
+            // const dateFilter = getBackendDateFilter(); // Function to get the date range filter
+
+            // let adjustedStartDate, adjustedEndDate;
+
+            // if (selectedDateRange?.from) {
+            //     // Set startDate to the beginning of the day
+            //     adjustedStartDate = new Date(selectedDateRange.from);
+            //     adjustedStartDate.setHours(0, 0, 0, 0);
+            // }
+
+            // if (selectedDateRange?.to) {
+            //     // Set endDate to the end of the day
+            //     adjustedEndDate = new Date(selectedDateRange.to);
+            //     adjustedEndDate.setHours(23, 59, 59, 999);
+            // }
+
             const response = await axios.get("https://bowser-backend-2cdr.onrender.com/listDispenses", {
                 params: {
                     page: currentPage,
@@ -69,15 +115,19 @@ const VehicleDispensesPage = () => {
                     order,
                     bowserNumber: filter.bowserNumber,
                     driverName: filter.driverName,
+                    tripSheetId: filter.tripSheetId,
+                    // startDate: adjustedStartDate ? adjustedStartDate.toISOString() : undefined,
+                    // endDate: adjustedEndDate ? adjustedEndDate.toISOString() : undefined,
                 },
             });
+
             setRecords(response.data.records);
             setTotalPages(response.data.totalPages);
             setCurrentPage(response.data.currentPage);
             setTotalRecords(response.data.totalRecords);
         } catch (error) {
             console.error("Error fetching records:", error);
-            alert(error)
+            alert(error);
         } finally {
             setLoading(false);
         }
@@ -86,7 +136,7 @@ const VehicleDispensesPage = () => {
     const exportToExcel = async () => {
         setLoading(true);
         try {
-            const date: Date = new Date();
+            const date = new Date();
             const options: Intl.DateTimeFormatOptions = {
                 weekday: 'short',
                 year: 'numeric',
@@ -98,17 +148,26 @@ const VehicleDispensesPage = () => {
                 timeZone: 'Asia/Kolkata',
             };
             const timestamp: string = date.toLocaleDateString('en-IN', options);
-            const filterDescription = `${filter.bowserNumber ? `Bowser-${filter.bowserNumber},` : ''}${filter.driverName ? `Driver-${filter.driverName},` : ''
-                }`;
-            const filename = `Dispenses_data ${filterDescription} ${records.length}records downloaded at ${timestamp}.xlsx`;
+
+            // const dateFilter = getBackendDateFilter(); // Function to get the date range filter
+
+            // // Construct date description if date range is provided
+            // const dateDescription = dateFilter
+            //     ? `Date-${new Date(dateFilter.fuelingDateTime.$gte).toLocaleDateString()} to ${new Date(dateFilter.fuelingDateTime.$lte).toLocaleDateString()} ,`
+            //     : '';
+            const filterDescription = `${filter.bowserNumber ? `Bowser-${filter.bowserNumber} ,` : ''}${filter.driverName ? `Driver-${filter.driverName} ,` : ''}${filter.tripSheetId ? `Trip Sheet-${filter.tripSheetId} ,` : ''}`; //${selectedDateRange != undefined && dateDescription}`;
+            const filename = `Dispenses_data ${filterDescription} ${records.length}record${records.length > 1 ? "s" : ""}, downloaded at ${timestamp}.xlsx`;
 
             const response = await axios.get("https://bowser-backend-2cdr.onrender.com/listDispenses/export/excel", {
                 params: {
                     bowserNumber: filter.bowserNumber,
                     driverName: filter.driverName,
+                    tripSheetId: filter.tripSheetId,
                     sortBy,
                     order,
                     limit,
+                    // startDate: dateFilter?.fuelingDateTime.$gte, // Add startDate
+                    // endDate: dateFilter?.fuelingDateTime.$lte, // Add endDate
                 },
                 responseType: "blob",
             });
@@ -129,74 +188,167 @@ const VehicleDispensesPage = () => {
         }
     };
 
+
     return (
         <div>
             {(loading || records.length < 1) && (
                 <Loading />
             )}
+            <div className="bigScreen hidden lg:block">
+                <div className="mb-4 flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                    <Input
+                        placeholder="Filter by Bowser Number"
+                        value={localBowserNumber}
+                        onChange={(e) => setLocalBowserNumber(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                setFilter({ ...filter, bowserNumber: localBowserNumber });
+                            }
+                        }}
+                        className="w-full sm:w-auto"
+                    />
+                    <Input
+                        placeholder="Filter by Driver Name"
+                        value={localDriverName}
+                        onChange={(e) => setLocalDriverName(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                setFilter({ ...filter, driverName: localDriverName });
+                            }
+                        }}
+                        className="w-full sm:w-auto"
+                    />
 
-            <div className="mb-4 flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
-                <Input
-                    placeholder="Filter by Bowser Number"
-                    value={localBowserNumber}
-                    onChange={(e) => setLocalBowserNumber(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            setFilter({ ...filter, bowserNumber: localBowserNumber });
-                        }
-                    }}
-                    className="w-full sm:w-auto"
-                />
-                <Input
-                    placeholder="Filter by Driver Name"
-                    value={localDriverName}
-                    onChange={(e) => setLocalDriverName(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            setFilter({ ...filter, driverName: localDriverName });
-                        }
-                    }}
-                    className="w-full sm:w-auto"
-                />
+                    {/* Sort By Dropdown */}
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="flex items-center justify-between border rounded p-2">
+                            <SelectValue placeholder="Sort By" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="fuelingDateTime">Sort by Fueling Time</SelectItem>
+                            <SelectItem value="vehicleNumber">Sort by Vehicle Number</SelectItem>
+                            <SelectItem value="bowser.regNo">Sort by Bowser Number</SelectItem>
+                        </SelectContent>
+                    </Select>
 
-                {/* Sort By Dropdown */}
-                <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="flex items-center justify-between border rounded p-2">
-                        <SelectValue placeholder="Sort By" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="fuelingDateTime">Sort by Fueling Time</SelectItem>
-                        <SelectItem value="vehicleNumber">Sort by Vehicle Number</SelectItem>
-                        <SelectItem value="bowser.regNo">Sort by Bowser Number</SelectItem>
-                    </SelectContent>
-                </Select>
+                    {/* Order Dropdown */}
+                    <Select value={order} onValueChange={setOrder}>
+                        <SelectTrigger className="flex items-center justify-between border rounded p-2">
+                            <SelectValue placeholder="Order" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="desc">Descending</SelectItem>
+                            <SelectItem value="asc">Ascending</SelectItem>
+                        </SelectContent>
+                    </Select>
 
-                {/* Order Dropdown */}
-                <Select value={order} onValueChange={setOrder}>
-                    <SelectTrigger className="flex items-center justify-between border rounded p-2">
-                        <SelectValue placeholder="Order" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="desc">Descending</SelectItem>
-                        <SelectItem value="asc">Ascending</SelectItem>
-                    </SelectContent>
-                </Select>
+                </div>
 
+                <div className="mb-4 flex flex-col justify-between sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                    {/* <DatePickerWithRange onDateChange={handleDateChange} /> */}
+                    <div className="flex items-center justify-between">
+                        <Input
+                            placeholder="Filter by Trip Sheet Id/ Number"
+                            value={localTripSheetId}
+                            onChange={(e) => setLocalTripSheetId(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    setFilter({ ...filter, tripSheetId: localTripSheetId });
+                                }
+                            }}
+                            className="w-full sm:w-auto"
+                        />
+                    </div>
+                    <div className="flex items-center justify-between">Records limit <Input type="number" className="w-20 mx-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
+                    <div className="flex items-center justify-between text-gray-300 font-[200]">Total found record{records.length > 1 ? "s" : ""} {records.length} out of {totalRecords} records </div>
+                    <Button onClick={exportToExcel} className="w-full sm:w-auto">
+                        Export to Excel
+                    </Button>
+                </div>
             </div>
+            <Accordion type="single" collapsible className="block lg:hidden">
+                <AccordionItem value="item-1">
+                    <AccordionTrigger>Filters and sorting</AccordionTrigger>
+                    <AccordionContent>
+                        <div className="mb-4 flex flex-col sm:flex-row flex-wrap sm:space-x-2 space-y-2 sm:space-y-0 w-screen">
+                            <Input
+                                placeholder="Filter by Bowser Number"
+                                value={localBowserNumber}
+                                onChange={(e) => setLocalBowserNumber(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        setFilter({ ...filter, bowserNumber: localBowserNumber });
+                                    }
+                                }}
+                                className="w-full sm:w-auto"
+                            />
+                            <Input
+                                placeholder="Filter by Driver Name"
+                                value={localDriverName}
+                                onChange={(e) => setLocalDriverName(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        setFilter({ ...filter, driverName: localDriverName });
+                                    }
+                                }}
+                                className="w-full sm:w-auto"
+                            />
 
-            <div className="mb-4 flex flex-col justify-between sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
-                <div className="flex items-center justify-between">Records limit <Input type="number" className="w-20 mx-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
-                <div className="flex items-center justify-between text-gray-300 font-[200]">Total found record{records.length > 1 ? "s" : ""} {records.length} out of {totalRecords} records </div>
-                <Button onClick={exportToExcel} className="w-full sm:w-auto">
-                    Export to Excel
-                </Button>
-            </div>
+                            {/* Sort By Dropdown */}
+                            <Select value={sortBy} onValueChange={setSortBy}>
+                                <SelectTrigger className="flex items-center justify-between border rounded p-2">
+                                    <SelectValue placeholder="Sort By" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="fuelingDateTime">Sort by Fueling Time</SelectItem>
+                                    <SelectItem value="vehicleNumber">Sort by Vehicle Number</SelectItem>
+                                    <SelectItem value="bowser.regNo">Sort by Bowser Number</SelectItem>
+                                </SelectContent>
+                            </Select>
 
+                            {/* Order Dropdown */}
+                            <Select value={order} onValueChange={setOrder}>
+                                <SelectTrigger className="flex items-center justify-between border rounded p-2">
+                                    <SelectValue placeholder="Order" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="desc">Descending</SelectItem>
+                                    <SelectItem value="asc">Ascending</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                        </div>
+
+                        <div className="mb-4 flex flex-col justify-between sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 flex-wrap">
+                            {/* <DatePickerWithRange onDateChange={handleDateChange} /> */}
+                            <div className="flex items-center justify-between">
+                                <Input
+                                    placeholder="Filter by Trip Sheet Id/ Number"
+                                    value={localTripSheetId}
+                                    onChange={(e) => setLocalTripSheetId(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            setFilter({ ...filter, tripSheetId: localTripSheetId });
+                                        }
+                                    }}
+                                    className="w-full sm:w-auto"
+                                />
+                            </div>
+                            <div className="flex items-center justify-between">Records limit <Input type="number" className="w-20 mx-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
+                            <div className="flex items-center justify-between text-gray-300 font-[200]">Total found record{records.length > 1 ? "s" : ""} {records.length} out of {totalRecords} records </div>
+                            <Button onClick={exportToExcel} className="w-full sm:w-auto">
+                                Export to Excel
+                            </Button>
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
             <Table>
                 <TableCaption>A list of your recent Dispenses.</TableCaption>
                 <TableHeader>
                     <TableRow>
                         <TableHead>Sr No</TableHead>
+                        <TableHead>Trip Sheet Id/ Number</TableHead>
                         <TableHead>Fueling Time</TableHead>
                         <TableHead>Bowser Number</TableHead>
                         <TableHead>Bowser Location</TableHead>
@@ -211,6 +363,7 @@ const VehicleDispensesPage = () => {
                     {records.map((record, index) => (
                         <TableRow key={index}>
                             <TableCell>{index + 1}</TableCell>
+                            <TableCell>{record.tripSheetId}</TableCell>
                             <TableCell>{record.fuelingDateTime}</TableCell>
                             <TableCell>{record.bowser.regNo}</TableCell>
                             <TableCell>{record.gpsLocation}</TableCell>

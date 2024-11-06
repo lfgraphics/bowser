@@ -52,6 +52,7 @@ export interface Vehicle {
 export interface DispensesRecord {
     _id: mongoose.Schema.Types.ObjectId;
     orderId: mongoose.Schema.Types.ObjectId,
+    tripSheetId: string;
     vehicleNumberPlateImage: string,
     vehicleNumber: string,
     driverName: String,

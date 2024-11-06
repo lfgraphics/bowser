@@ -54,7 +54,7 @@ const TripSheetPage = () => {
         if (window.confirm('Are you sure you want to delete this Trip Sheet?')) {
             setLoading(true);
             try {
-                await axios.delete(`https://bowser-backend-2cdr.onrender.com/tripsheet/${id}`);
+                await axios.delete(`https://bowser-backend-2cdr.onrender.com/tripsheet/delete/${id}`);
                 toast({ title: 'Success', description: 'Trip Sheet deleted successfully', variant: 'success' });
                 loadSheets();
             } catch (error) {
@@ -67,7 +67,14 @@ const TripSheetPage = () => {
 
     return (
         <div className="bg-background text-foreground p-6">
-            <h1 className="text-2xl font-bold mb-4">Trip Sheets</h1>
+            <div className="flex justify-between items-start">
+                <h1 className="text-2xl font-bold mb-4">Trip Sheets</h1>
+                <Link href={`/tripsheets/create`}>
+                    <Button variant="secondary">
+                        <Plus className="mr-2" /> Create New Sheet < PlusIcon />
+                    </Button>
+                </Link>
+            </div>
             <Toaster />
             <div className="mb-4 flex space-x-4">
                 <Input
@@ -101,10 +108,12 @@ const TripSheetPage = () => {
             <Table className="w-full">
                 <TableHeader>
                     <TableRow>
-                        <TableHead onClick={() => setSort({ field: 'tripSheetId', order: sort.order === 'asc' ? 'desc' : 'asc' })}>
+                        <TableHead className='flex gap-3' onClick={() => setSort({ field: 'tripSheetId', order: sort.order === 'asc' ? 'desc' : 'asc' })}>
                             Trip Sheet ID {sort.order === "asc" ? <SortAsc /> : <SortDesc />}
                         </TableHead>
+                        <TableHead>Created on</TableHead>
                         <TableHead>Driver Name</TableHead>
+                        <TableHead>Driver Id</TableHead>
                         <TableHead>Bowser Reg No</TableHead>
                         <TableHead>Actions</TableHead>
                     </TableRow>
@@ -122,7 +131,9 @@ const TripSheetPage = () => {
                         sheets.map((sheet) => (
                             <TableRow key={sheet._id}>
                                 <TableCell>{sheet.tripSheetId}</TableCell>
+                                <TableCell>{sheet.tripSheetGenerationDateTime}</TableCell>
                                 <TableCell>{sheet.bowserDriver[0].name}</TableCell>
+                                <TableCell>{sheet.bowserDriver[0].id}</TableCell>
                                 <TableCell>{sheet.bowser.regNo}</TableCell>
                                 <TableCell className="flex space-x-2">
                                     <Link href={`/tripsheets/view/${sheet._id}`}>
@@ -144,11 +155,6 @@ const TripSheetPage = () => {
                     )}
                 </TableBody>
             </Table>
-            <Link href={`/tripsheets/create`}>
-                <Button variant="secondary" className="mt-4">
-                    <Plus className="mr-2" /> Create New Sheet < PlusIcon />
-                </Button>
-            </Link>
         </div>
     );
 };

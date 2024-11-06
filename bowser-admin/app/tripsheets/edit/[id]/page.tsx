@@ -20,7 +20,7 @@ export const page = ({ params }: { params: { id: string } }) => {
         fetchRecords();
     }, []);
     return (
-        <div><TripSheetView record={record} /></div>
+        <div>{params.id}</div>
     )
 }
 
