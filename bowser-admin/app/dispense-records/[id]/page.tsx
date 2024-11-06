@@ -10,6 +10,7 @@ export const page = ({ params }: { params: { id: string } }) => {
         const fetchRecords = async () => {
             try {
                 const response = await axios.get(`https://bowser-backend-2cdr.onrender.com/listDispenses/${params.id}`);
+                setRecord(response.data);
             } catch (error) {
                 console.error('Error fetching records:', error);
             }
