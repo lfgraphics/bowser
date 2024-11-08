@@ -115,7 +115,7 @@ export interface TripSheet {
         chamber4?: any;
     }[];
     referenceToBowserLoadingSheetID?: string;
-    settelment?: {
+    settelment: {
         dateTime?: string;
         odometerClosing?: {
             [key: string]: any; // Adjust this if you have a specific type for odometer readings

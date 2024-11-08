@@ -42,7 +42,7 @@ const TripSheetCreationPage: React.FC = () => {
 
     const createTripSheet = async (tripSheet: TripSheet) => {
         try {
-            const response = await fetch('https://bowser-backend-2cdr.onrender.com/tripSheet/create', {
+            const response = await fetch('https://bowser-backend-2cdr.onrender.com/tripSheet/create', { //https://bowser-backend-2cdr.onrender.com http://localhost:5000
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -55,8 +55,7 @@ const TripSheetCreationPage: React.FC = () => {
             }
 
             const result = await response.json();
-            console.log(result);
-            alert(response)
+            alert(result.message)
             window.location.reload(); // Reload the page on success
         } catch (error) {
             console.error('Error creating Trip Sheet:', error);
@@ -84,7 +83,6 @@ const TripSheetCreationPage: React.FC = () => {
                     settled,
                 },
             };
-            console.log(newTripSheet)
             await createTripSheet(newTripSheet);
         } catch (error) {
             alert('Error creating TripSheet: ' + error);
@@ -113,7 +111,6 @@ const TripSheetCreationPage: React.FC = () => {
                     value={bowserRegNo}
                     onChange={(e) => {
                         setBowserRegNo(e.target.value)
-                        console.log(e.target.value)
                     }
                     }
                     placeholder="Enter Bowser Registration No"
@@ -132,7 +129,7 @@ const TripSheetCreationPage: React.FC = () => {
 
             <div className="mb-4">
                 <Label>Fueling Area Destination</Label>
-                <Textarea
+                <Input
                     value={fuelingAreaDestination || ''}
                     onChange={(e) => setFuelingAreaDestination(e.target.value)}
                     placeholder="Enter Fueling Area Destination"
@@ -176,6 +173,15 @@ const TripSheetCreationPage: React.FC = () => {
 
             {bowserDriver.map((driver, index) => (
                 <div key={index} className="mb-4 border-t pt-4">
+                    <Label>{`Driver ID`}</Label>
+                    {/* //${index + 1} */}
+                    <Input
+                        value={driver.id}
+                        onChange={(e) =>
+                            setBowserDriver(bowserDriver.map((d, i) => (i === index ? { ...d, id: e.target.value } : d)))
+                        }
+                        placeholder="Enter Driver ID"
+                    />
                     <Label>{`Driver Name`}</Label>
                     {/* //${index + 1} */}
                     <Input
@@ -198,17 +204,7 @@ const TripSheetCreationPage: React.FC = () => {
                         }
                         placeholder="Enter Phone No"
                     />
-                    <Label>{`Driver ID`}</Label>
-                    {/* //${index + 1} */}
-                    <Input
-                        value={driver.id}
-                        onChange={(e) =>
-                            setBowserDriver(bowserDriver.map((d, i) => (i === index ? { ...d, id: e.target.value } : d)))
-                        }
-                        placeholder="Enter Driver ID"
-                    />
-                    <Label>{`Driver HandOver Date`}</Label>
-                    {/* //${index + 1} */}
+                    {/* <Label>{`Driver HandOver Date`}</Label>
                     <Input
                         type="datetime-local"
                         value={driver.handOverDate}
@@ -219,7 +215,7 @@ const TripSheetCreationPage: React.FC = () => {
                             )
                         }
 
-                    />
+                    /> */}
                 </div>
             ))}
 
@@ -229,7 +225,7 @@ const TripSheetCreationPage: React.FC = () => {
 
 
             <Button onClick={handleSubmit} className="mt-4" variant="default" disabled={loading}>
-                Submit TripSheet
+                Create TripSheet
             </Button>
         </div>
     );

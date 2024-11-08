@@ -14,21 +14,21 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Toaster } from "@/components/ui/toaster"
-import { Trash, Edit, Eye, Plus, SortAsc, SortDesc, PlusIcon } from 'lucide-react'; // Lucide React icons
-import axios from 'axios'; // For API calls
+import { Edit, Eye, Plus, SortAsc, SortDesc, PlusIcon } from 'lucide-react';
+import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { TripSheet, Filters, Sort } from '@/types/index';
 
 
 const TripSheetPage = () => {
-    const [sheets, setSheets] = useState<TripSheet[]>([]); // Use TripSheet[] for the sheets state
+    const [sheets, setSheets] = useState<TripSheet[]>([]);
     const [filters, setFilters] = useState<Filters>({
         driverName: '',
         bowserRegNo: '',
         tripSheetId: '',
         unsettled: false,
     });
-    const [sort, setSort] = useState<Sort>({ field: '', order: 'asc' });
+    const [sort, setSort] = useState<Sort>({ field: '', order: 'desc' });
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
 
@@ -47,21 +47,6 @@ const TripSheetPage = () => {
             toast({ title: 'Error', description: 'Failed to load sheets', variant: "destructive" });
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleDelete = async (id: string) => {
-        if (window.confirm('Are you sure you want to delete this Trip Sheet?')) {
-            setLoading(true);
-            try {
-                await axios.delete(`https://bowser-backend-2cdr.onrender.com/tripsheet/delete/${id}`);
-                toast({ title: 'Success', description: 'Trip Sheet deleted successfully', variant: 'success' });
-                loadSheets();
-            } catch (error) {
-                toast({ title: 'Error', description: 'Failed to delete Trip Sheet', variant: "destructive" });
-            } finally {
-                setLoading(false);
-            }
         }
     };
 
@@ -121,11 +106,11 @@ const TripSheetPage = () => {
                 <TableBody>
                     {loading ? (
                         <TableRow>
-                            <TableCell colSpan={4} className="text-center">Loading...</TableCell>
+                            <TableCell colSpan={6} className="text-center">Loading...</TableCell>
                         </TableRow>
                     ) : sheets.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={4} className="text-center">No records found</TableCell>
+                            <TableCell colSpan={6} className="text-center">No records found</TableCell>
                         </TableRow>
                     ) : (
                         sheets.map((sheet) => (
@@ -136,19 +121,11 @@ const TripSheetPage = () => {
                                 <TableCell>{sheet.bowserDriver[0].id}</TableCell>
                                 <TableCell>{sheet.bowser.regNo}</TableCell>
                                 <TableCell className="flex space-x-2">
-                                    <Link href={`/tripsheets/view/${sheet._id}`}>
-                                        <Button variant="ghost">
-                                            <Eye />
-                                        </Button>
-                                    </Link>
                                     <Link href={`/tripsheets/edit/${sheet._id}`}>
                                         <Button variant="ghost">
                                             <Edit />
                                         </Button>
                                     </Link>
-                                    <Button variant="ghost" onClick={() => handleDelete(sheet._id ? sheet._id : '')} color="red">
-                                        <Trash />
-                                    </Button>
                                 </TableCell>
                             </TableRow>
                         ))

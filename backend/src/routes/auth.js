@@ -104,7 +104,8 @@ router.post('/login', async (req, res) => {
         let id = user.userId
         const searchCriteria = {};
         searchCriteria['bowserDriver.id'] = id;
-        const tripSheet = await TripSheet.findOne(searchCriteria).select('tripSheetId');
+        const tripSheets = await TripSheet.find(searchCriteria).select('tripSheetId').where('settelment.settled', false);
+        const tripSheet = tripSheets[0];
         const userTripSheetId = tripSheet.tripSheetId;
 
         const userData = {

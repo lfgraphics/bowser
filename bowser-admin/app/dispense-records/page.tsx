@@ -360,7 +360,7 @@ const VehicleDispensesPage = () => {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {records.map((record, index) => (
+                    {records.length > 0 && records.map((record, index) => (
                         <TableRow key={index}>
                             <TableCell>{index + 1}</TableCell>
                             <TableCell>{record.tripSheetId}</TableCell>
@@ -380,6 +380,13 @@ const VehicleDispensesPage = () => {
                             </TableCell>
                         </TableRow>
                     ))}
+                    {/* Calculate total fuel quantity if filtered by tripSheetId */}
+                    <TableRow>
+                        <TableCell colSpan={8} className="text-right font-bold">Total Fuel Quantity:</TableCell>
+                        <TableCell>
+                            {records.reduce((total, record) => total + Number(record.fuelQuantity), 0)} L
+                        </TableCell>
+                    </TableRow>
                 </TableBody>
             </Table>
 

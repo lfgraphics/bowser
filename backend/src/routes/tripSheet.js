@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const TripSheet = require('../models/tripsheet');
 const mongoose = require('mongoose');
+const User = require('../models/user');
+const Bowser = require('../models/bowser');
 
 router.post('/create', async (req, res) => {
     let tripSheetId = req.body.tripSheetId
@@ -10,7 +12,7 @@ router.post('/create', async (req, res) => {
         throw new Error("tripSheetId cannot be null or undefined");
     }
     try {
-        console.log('Received data:', req.body);
+        // console.log('Received data:', req.body);
         const newSheet = new TripSheet(req.body);
 
         const saveOptions = {
@@ -27,7 +29,35 @@ router.post('/create', async (req, res) => {
 
         await Promise.race([savePromise, timeoutPromise]);
 
-        res.status(200).json({ message: 'Sheet added successfully' });
+        // Step 1: Update or add bowserId in the user model
+        const bowserDriverId = req.body.bowserDriver[0].id; // Assuming there's at least one driver
+        const bowserRegNo = req.body.bowser.regNo;
+
+        // console.log(`Updating user with userId: ${bowserDriverId} to set bowserId: ${bowserRegNo}`);
+        const updatedUser = await User.findOneAndUpdate(
+            { userId: bowserDriverId }, // Assuming userId is the identifier
+            { $set: { bowserId: bowserRegNo } },
+            { new: true, upsert: true } // Create if not found
+        );
+        // console.log('User updated:', updatedUser);
+
+        // Step 2: Update the bowser with the current trip's _id
+        const newTripSheet = await TripSheet.findOne({ tripSheetId: tripSheetId });
+        // console.log(`Updating bowser with regNo: ${bowserRegNo} to set currentTrip: ${newTripSheet._id}`);
+        
+        const updatedBowser = await Bowser.findOneAndUpdate(
+            { regNo: bowserRegNo },
+            { $set: { currentTrip: newTripSheet._id } },
+            { new: true }
+        );
+
+        if (!updatedBowser) {
+            console.warn(`No bowser found with regNo: ${bowserRegNo}`);
+        } else {
+            // console.log('Bowser updated:', updatedBowser);
+        }
+
+        res.status(200).json({ message: 'Trip Sheet created successfully' });
     } catch (err) {
         console.error('Error adding sheet record:', err);
 
@@ -43,7 +73,7 @@ router.post('/create', async (req, res) => {
             });
         } else {
             res.status(500).json({
-                message: 'An error occurred while saving the fuleing transaction data. Please try again',
+                message: 'An error occurred while Trip Sheet. Please try again',
                 error: err.message
             });
         }
