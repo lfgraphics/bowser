@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-// import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Phone, User, Fuel, CheckCircle, XCircle } from 'lucide-react';
-import Image from 'next/image';
+import { MapPin, User, CheckCircle, XCircle } from 'lucide-react';
 import { DispensesRecord } from '@/types';
 import Modal from './Modal';
 import Loading from '@/app/loading';
