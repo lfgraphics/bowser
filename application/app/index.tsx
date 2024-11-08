@@ -10,6 +10,7 @@ import * as Location from 'expo-location';
 import { Camera } from 'expo-camera';
 import NetInfo from '@react-native-community/netinfo';
 import { FormData } from '../src/types/models';
+import FuelingRecords from '@/components/FuelingRecords';
 // import * as Device from 'expo-device';
 // import * as Notifications from 'expo-notifications';
 // import Constants from 'expo-constants';
@@ -616,6 +617,9 @@ const App = () => {
           <Ionicons name="notifications" size={20} color="white" style={{ marginRight: 5 }} />
         </View>
       </Link>
+      {
+        isOnline && <FuelingRecords />
+      }
 
       <Modal
         animationType="slide"
@@ -701,6 +705,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'dark',
+    height: 80,
     paddingHorizontal: 20,
   },
   button: {

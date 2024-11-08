@@ -27,7 +27,7 @@ export default function FuelingScreen() {
   const [driverName, setDriverName] = useState('');
   const [driverId, setDriverId] = useState('');
   const [driverMobile, setDriverMobile] = useState('');
-  const [fuelQuantity, setFuelQuantity] = useState<string>('0');
+  const [fuelQuantity, setFuelQuantity] = useState<string>('');
   const [gpsLocation, setGpsLocation] = useState('');
   const [fuelingDateTime, setFuelingDateTime] = useState('');
   const [tripSheetId, setTripSheetId] = useState('');
@@ -139,10 +139,10 @@ export default function FuelingScreen() {
   // form submit reset
   const submitDetails = async () => {
     setFormSubmitting(true);
-    // if (!validateInputs()) {
-    //   setFormSubmitting(false);
-    //   return;
-    // }
+    if (!validateInputs()) {
+      setFormSubmitting(false);
+      return;
+    }
 
     let currentFuelingDateTime = fuelingDateTime;
     let currentGpsLocation = gpsLocation; // Keep the previous GPS location
@@ -475,6 +475,10 @@ export default function FuelingScreen() {
       );
       return false;
     }
+    if (!vehicleNumberPlateImage) {
+      alert("Vehicle number plate image is required.");
+      return false;
+    }
     if (!driverName) {
       alert("Driver Name is required.");
       driverNameInputRef.current?.measureLayout(
@@ -505,7 +509,15 @@ export default function FuelingScreen() {
       );
       return false;
     }
-    if (!fuelQuantity) {
+    if (!fuelMeterImage) {
+      alert("Vehicle number plate image is required.");
+      return false;
+    }
+    if (!slipImage) {
+      alert("Vehicle number plate image is required.");
+      return false;
+    }
+    if (!fuelQuantity || Number(fuelQuantity) < 1) {
       alert("Fuel Quantity is required.");
       fuelQuantityInputRef.current?.measureLayout(
         scrollViewRef.current?.getInnerViewNode(),
@@ -547,13 +559,60 @@ export default function FuelingScreen() {
     }
   }
 
-  const getUserTripSheetId = async () => {
-    const userDataString = await AsyncStorage.getItem('userData');
-    const userData = userDataString ? JSON.parse(userDataString) : null;
-    const tripSheetId = userData['Trip Sheet Id']
-    setTripSheetId(tripSheetId)
+  // Function to fetch and validate trip sheet
+  const validateTrip = async (): Promise<boolean> => {
+    if (isOnline && tripSheetId) {
+      try {
+        const baseUrl = 'https://bowser-backend-2cdr.onrender.com' //'http://192.168.137.1:5000'; // Your base URL
+        const endpoint = `/tripSheet/all?tripSheetId=${encodeURIComponent(tripSheetId)}&unsettled=true`;
+
+        // Fetch data
+        const response = await fetch(`${baseUrl}${endpoint}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch trip sheet');
+        }
+
+        const sheets = await response.json();
+
+        // Return true if sheets array is not empty, indicating an unsettled trip sheet
+        return sheets.length > 0;
+      } catch (error) {
+        console.error('Error fetching unsettled trip sheets:', (error as Error).message);
+        return false;
+      }
+    }
+    return false;
   };
-  getUserTripSheetId()
+
+  // Function to get the tripSheetId from AsyncStorage
+  const getUserTripSheetId = async () => {
+    try {
+      const userDataString = await AsyncStorage.getItem('userData');
+      const userData = userDataString ? JSON.parse(userDataString) : null;
+      const tripSheetId = userData ? userData['Trip Sheet Id'] : null;
+      setTripSheetId(tripSheetId);
+    } catch (error) {
+      console.error('Error fetching user data from AsyncStorage:', error);
+    }
+  };
+
+  // Effect to validate the trip once tripSheetId is set
+  useEffect(() => {
+    const checkTripValidity = async () => {
+      await getUserTripSheetId();
+
+      if (tripSheetId) {
+        const isValidTrip = await validateTrip();
+        if (!isValidTrip) {
+          Alert.alert('Error', 'Your Trip is closed.');
+          router.replace('/');
+        }
+      }
+    };
+
+    checkTripValidity();
+  }, [tripSheetId]);
+
 
   return (
     <View style={[styles.container, styles.main]}>
@@ -567,8 +626,8 @@ export default function FuelingScreen() {
 
           <ThemedView style={styles.section}>
             <ThemedView style={styles.inputContainer}>
-              <ThemedText>Trip Sheet Number:</ThemedText>
-              <TextInput
+              <ThemedText>Trip Sheet Number: {tripSheetId}</ThemedText>
+              {/* <TextInput
                 keyboardType="numeric"
                 ref={tripSheetIdRef}
                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
@@ -579,7 +638,7 @@ export default function FuelingScreen() {
                 returnKeyType="next"
                 onSubmitEditing={() => vehicleNumberInputRef.current?.focus()}
                 blurOnSubmit={false}
-              />
+              /> */}
             </ThemedView>
             {vehicleNumberPlateImage && (
               <>

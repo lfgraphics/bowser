@@ -107,3 +107,11 @@ export interface UserData {
         };
     }>;
 }
+
+export interface TripSheet {
+    tripSheetId: string;
+    settelment: {
+        settled: boolean;
+    };
+    // Add any other fields from your TripSheet schema that you might need
+};
