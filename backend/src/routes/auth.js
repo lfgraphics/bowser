@@ -100,12 +100,15 @@ router.post('/login', async (req, res) => {
 
         const token = jwt.sign({ userId: user.userId, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
         const loginTime = new Date().toISOString();
+        
         let id = user.userId
-        const searchCriteria = {};
-        searchCriteria['bowserDriver.id'] = id;
+        const searchCriteria = {
+            'bowserDriver.id': id,
+            'settlement.settled': false
+        };
         const tripSheet = await TripSheet.findOne(searchCriteria).select('tripSheetId');
         const userTripSheetId = tripSheet.tripSheetId;
-        console.log(userTripSheetId)
+
         const userData = {
             _id: user._id,
             'User Id': user.userId,
