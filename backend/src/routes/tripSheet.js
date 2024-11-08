@@ -117,7 +117,7 @@ router.get('/find-by-id/:id', async (req, res) => {
         res.status(500).json({ message: 'Server error', error: err.message, stack: err.stack });
     }
 });
-router.put('/update/:id', async (req, res) => {
+router.patch('/update/:id', async (req, res) => {
     const id = req.params.id;
     const updateData = req.body;
 

@@ -38,14 +38,14 @@ const tripSheetSchema = new mongoose.Schema({
     proposedDepartureDateTime: {
         type: String,
         required: false,
-        validate: {
-            validator: function (v) {
-                const generationDateTime = new Date(this.tripSheetGenerationDateTime);
-                const proposedDateTime = new Date(v);
-                return proposedDateTime > generationDateTime;
-            },
-            message: 'Proposed departure date time should be after the generation date time'
-        }
+        // validate: {
+        //     validator: function (v) {
+        //         const generationDateTime = new Date(this.tripSheetGenerationDateTime);
+        //         const proposedDateTime = new Date(v);
+        //         return proposedDateTime > generationDateTime;
+        //     },
+        //     message: 'Proposed departure date time should be after the generation date time'
+        // }
     },
     loadQuantityByDip: {
     },
