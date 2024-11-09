@@ -1,10 +1,21 @@
 "use client"
 import FuelRecordCard from '@/components/FuelRecord';
+import { isAuthenticated } from '@/lib/auth';
 import { DispensesRecord } from '@/types';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 
 export const page = ({ params }: { params: { id: string } }) => {
+    const checkAuth = () => {
+        const authenticated = isAuthenticated();
+        if (!authenticated) {
+            window.location.href = '/login';
+        }
+    };
+    useEffect(() => {
+        checkAuth();
+    }, []);
+    
     const [record, setRecord] = useState<DispensesRecord>();
     useEffect(() => {
         const fetchRecords = async () => {

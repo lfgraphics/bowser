@@ -2,15 +2,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { isAuthenticated, getCurrentUser } from "@/lib/auth"
-import { BowserResponse, Driver, ResponseBowser, User } from "@/types"
+import { Driver, ResponseBowser, User } from "@/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue, } from "@/components/ui/select"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select"
 import { Loader2 } from "lucide-react"
 import {
     AlertDialog,
@@ -42,7 +41,6 @@ export default function FuelingAllocation() {
     const [bowserDriverMongoId, setBowserDriverMongoId] = useState<ObjectId>()
     const [bowserDrivers, setBowserDrivers] = useState<User[]>([]);
     const [bowserDriverModalVisible, setBowserDriverModalVisible] = useState(false);
-    const router = useRouter()
     const [adminLocation, setAdminLocation] = useState('');
     const [alertDialogOpen, setAlertDialogOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
@@ -62,32 +60,15 @@ export default function FuelingAllocation() {
         keyExtractor: () => "",
     });
 
-    useEffect(() => {
-        if (!isAuthenticated()) {
-            router.push('/login')
-        }
-    }, [router])
-
-    useEffect(() => {
-        getAdminLocation();
-    }, []);
-
-    const getAdminLocation = async () => {
-        if ('geolocation' in navigator) {
-            try {
-                const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(resolve, reject);
-                });
-                const { latitude, longitude } = position.coords;
-                setAdminLocation(`Latitude ${latitude}, Longitude ${longitude}`);
-            } catch (error) {
-                console.error('Error getting location:', error);
-                setAdminLocation('Location not available');
-            }
-        } else {
-            setAdminLocation('Geolocation not supported');
+    const checkAuth = () => {
+        const authenticated = isAuthenticated();
+        if (!authenticated) {
+            window.location.href = '/login';
         }
     };
+    useEffect(() => {
+        checkAuth();
+    }, []);
 
     const searchDriver = async (idNumber: string) => {
         setIsSearching(true);
@@ -117,7 +98,7 @@ export default function FuelingAllocation() {
         setIsSearching(true);
         try {
             const response: ResponseBowser[] = await searchItems<ResponseBowser>(
-                'https://bowser-backend-2cdr.onrender.com/searchBowserDetails', //https://bowser-backend-2cdr.onrender.com
+                'https://bowser-backend-2cdr.onrender.com/searchBowserDetails/trip', //https://bowser-backend-2cdr.onrender.com
                 regNo,
                 `No proper details found with the given regNo ${regNo}`
             );
@@ -127,12 +108,34 @@ export default function FuelingAllocation() {
                     title: "Select a Bowser",
                     items: response.bowserDetails,
                     onSelect: handleBowserSelection,
-                    renderItem: (bowser) => `Bowser: ${bowser.regNo}\nDriver: ${bowser.bowserDriver.name} (${bowser.bowserDriver.userId})`,
+                    renderItem: (bowser) => `Bowser: ${bowser.regNo}\nDriver: ${bowser.bowserDriver.name} (${bowser.bowserDriver.id})`,
                     keyExtractor: (bowser) => bowser.regNo,
                 });
             }
         } catch (error) {
             console.error('Error searching for driver:', error);
+        } finally {
+            setIsSearching(false);
+        }
+    }
+
+    const searchBowserDriver = async (userId: string) => {
+        setIsSearching(true);
+        try {
+            const response = await searchItems('https://bowser-backend-2cdr.onrender.com/searchDriver/bowser-drivers', userId, `No details found with the user id: ${userId}`)// fetch(`https://bowser-backend-2cdr.onrender.com/searchDriver/bowser-drivers/${userId}`); //https://bowser-backend-2cdr.onrender.com
+            const drivers = response;
+            if (drivers.length > 0) {
+                setSearchModalConfig({
+                    isOpen: true,
+                    title: "Select a Bowser Driver",
+                    items: drivers,
+                    onSelect: handleBowserDriverSelection,
+                    renderItem: (driver) => `${driver.name} (${driver.id})`,
+                    keyExtractor: (driver) => driver.id,
+                });
+            }
+        } catch (error) {
+            console.error('Error searching for bowser driver:', error);
         } finally {
             setIsSearching(false);
         }
@@ -192,42 +195,14 @@ export default function FuelingAllocation() {
         if (bowser) {
             setBowserId(bowser._id);
             setBowserRegNo(bowser.regNo);
-            setBowserDriverId(bowser.bowserDriver?.userId || '');
+            setBowserDriverId(bowser.bowserDriver?.id || '');
             setBowserDriverName(bowser.bowserDriver?.name || '');
             setBowserDriverMongoId(bowser.bowserDriver?._id);
         }
     }
 
-    const searchBowserDriver = async (userId: string) => {
-        setIsSearching(true);
-        try {
-            const response = await fetch(`https://bowser-backend-2cdr.onrender.com/searchDriver/bowser-drivers/${userId}`); //https://bowser-backend-2cdr.onrender.com
-
-            if (!response.ok) {
-                let errorMessage = 'An error occurred while searching for the bowser driver.';
-                if (response.status === 404) {
-                    errorMessage = 'No bowser driver found with the given ID.';
-                }
-                throw new Error(errorMessage);
-            }
-
-            const drivers: User[] = await response.json();
-            setBowserDrivers(drivers);
-
-            if (drivers.length === 0) {
-            } else {
-                setBowserDriverModalVisible(true);
-            }
-        } catch (error) {
-            console.error('Error searching for bowser driver:', error);
-            setBowserDrivers([]);
-        } finally {
-            setIsSearching(false);
-        }
-    }
-
     const handleBowserDriverSelection = (driver: User) => {
-        setBowserDriverModalVisible(false);
+        setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
 
         if (driver) {
             setBowserDriverId(driver.userId);
@@ -267,14 +242,13 @@ export default function FuelingAllocation() {
             },
             bowserDriver: {
                 _id: bowserDriverMongoId,
-                userName: bowserDriverName,
-                userId: bowserDriverId
+                name: bowserDriverName,
+                id: bowserDriverId
             },
             allocationAdmin: {
                 _id: currentUser._id,
-                userName: currentUser.name,
-                userId: currentUser.userId,
-                location: adminLocation
+                name: currentUser.name,
+                id: currentUser.userId,
             },
         };
 
@@ -354,7 +328,7 @@ export default function FuelingAllocation() {
                                     value={vehicleNumber}
                                     onChange={(e) => {
                                         setVehicleNumber(e.target.value.toUpperCase());
-                                        if (e.target.value.length > 5) {
+                                        if (e.target.value.length > 3) {
                                             searchVehicle(e.target.value.toUpperCase());
                                         }
                                     }}
@@ -448,7 +422,7 @@ export default function FuelingAllocation() {
                                 onChange={(e) => {
                                     const value = e.target.value;
                                     setBowserRegNo(value);
-                                    if (value.length > 5) {
+                                    if (value.length > 3) {
                                         searchBowser(value);
                                     }
                                 }}
@@ -472,7 +446,7 @@ export default function FuelingAllocation() {
                                     setBowserDriverId(value);
                                     if (value.length > 3) {
                                         searchBowserDriver(value);
-                                        if (value.length > 5) {
+                                        if (value.length > 3) {
                                             searchBowserDriver(bowserDriverId);
                                         }
                                     }

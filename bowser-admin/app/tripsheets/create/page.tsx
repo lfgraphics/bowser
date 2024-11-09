@@ -1,25 +1,31 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Label } from "@/components/ui/label"
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { DateTimePicker } from '@/components/ui/datetime-picker';
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { TripSheet } from '@/types';
-import { Plus } from 'lucide-react';
 import Loading from '@/app/loading';
+import { isAuthenticated } from '@/lib/auth';
 
 const TripSheetCreationPage: React.FC = () => {
-    // State for form inputs
+    const checkAuth = () => {
+        const authenticated = isAuthenticated();
+        if (!authenticated) {
+            window.location.href = '/login';
+        }
+    };
+    useEffect(() => {
+        checkAuth();
+    }, []);
     const [tripSheetId, setTripSheetId] = useState<string>('');
     const [tripSheetGenerationDateTime, setTripSheetGenerationDateTime] = useState<string>(
         new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
@@ -32,13 +38,22 @@ const TripSheetCreationPage: React.FC = () => {
     const [fuelingAreaDestination, setFuelingAreaDestination] = useState<string | undefined>(undefined);
     const [proposedDepartureDateTime, setProposedDepartureDateTime] = useState<string | undefined>(undefined);
     const [referenceToBowserLoadingSheetID, setReferenceToBowserLoadingSheetID] = useState<string | undefined>(undefined);
-    const [settled, setSettled] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
+    const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState("");
 
-    // Handler to add a new bowser driver
-    const addBowserDriver = () => {
-        setBowserDriver([...bowserDriver, { handOverDate: '', name: '', id: '', phoneNo: '' }]);
-    };
+    const resetForm = () => {
+        setTripSheetId('');
+        setTripSheetGenerationDateTime(new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
+        setBowserDriver([{ handOverDate: '', name: '', id: '', phoneNo: '' }]);
+        setBowserRegNo('');
+        setBowserOdometerStartReading(undefined);
+        setFuelingAreaDestination(undefined);
+        setProposedDepartureDateTime(undefined);
+        setReferenceToBowserLoadingSheetID(undefined);
+        setAlertDialogOpen(false);
+        setAlertMessage("");
+    }
 
     const createTripSheet = async (tripSheet: TripSheet) => {
         try {
@@ -51,15 +66,15 @@ const TripSheetCreationPage: React.FC = () => {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to create Trip Sheet');
+                throw new Error('Failed to create Trip Sheet\n' + response.text);
             }
 
             const result = await response.json();
-            alert(result.message)
-            window.location.reload(); // Reload the page on success
+            setAlertMessage(result.message);
+            setAlertDialogOpen(true);
         } catch (error) {
-            console.error('Error creating Trip Sheet:', error);
-            // Handle error (e.g., notify user)
+            setAlertMessage('Error creating TripSheet: ' + error);
+            setAlertDialogOpen(true);
         }
     };
 
@@ -80,12 +95,13 @@ const TripSheetCreationPage: React.FC = () => {
                     dateTime: undefined,
                     odometerClosing: {},
                     bowserNewEndReading: {},
-                    settled,
+                    settled: false,
                 },
             };
             await createTripSheet(newTripSheet);
         } catch (error) {
-            alert('Error creating TripSheet: ' + error);
+            setAlertMessage('Error creating TripSheet: ' + error);
+            setAlertDialogOpen(true);
         } finally {
             setLoading(false)
         }
@@ -227,6 +243,25 @@ const TripSheetCreationPage: React.FC = () => {
             <Button onClick={handleSubmit} className="mt-4" variant="default" disabled={loading}>
                 Create TripSheet
             </Button>
+
+            <AlertDialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Fueling Allocation Result</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {alertMessage}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => {
+                            setAlertDialogOpen(false);
+                            resetForm();
+                        }}>
+                            OK
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

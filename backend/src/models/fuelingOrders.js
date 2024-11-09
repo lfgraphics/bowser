@@ -18,8 +18,8 @@ const fuelingOrderSchema = new mongoose.Schema({
   },
   bowserDriver: {
     _id: mongoose.Schema.Types.ObjectId,
-    userName: { type: String, },
-    userId: { type: String, required: true },
+    name: { type: String, },
+    id: { type: String, required: true },
   },
   allocationAdmin: {
     name: { type: String, required: true },

@@ -1,5 +1,4 @@
 "use client"
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from "@/components/ui/label";
@@ -19,8 +18,19 @@ import {
 import { Edit } from 'lucide-react';
 import Loading from '@/app/loading';
 import { Checkbox } from '@/components/ui/checkbox';
+import { isAuthenticated } from '@/lib/auth';
 
 export const page = ({ params }: { params: { id: string } }) => {
+    const checkAuth = () => {
+        const authenticated = isAuthenticated();
+        if (!authenticated) {
+            window.location.href = '/login';
+        }
+    };
+    useEffect(() => {
+        checkAuth();
+    }, []);
+
     const [record, setRecord] = useState<TripSheet | undefined>(undefined);
     const [loading, setLoading] = useState<boolean>(true);
     const [bowserDriver, setBowserDriver] = useState<TripSheet['bowserDriver']>([]);
@@ -30,10 +40,10 @@ export const page = ({ params }: { params: { id: string } }) => {
 
     useEffect(() => {
         const fetchRecords = async () => {
+            setLoading(true);
             try {
                 const response = await axios.get(`https://bowser-backend-2cdr.onrender.com/tripsheet/find-by-id/${params.id}`);
-                const sheetData = response.data.sheet; // Extract the sheet data from the response
-
+                const sheetData = response.data.sheet;
                 // Update the state with the correct structure
                 setRecord({
                     _id: sheetData._id,
@@ -47,13 +57,14 @@ export const page = ({ params }: { params: { id: string } }) => {
                     chamberWiseSealList: sheetData.chamberWiseSealList || [],
                     proposedDepartureDateTime: sheetData.proposedDepartureDateTime || '',
                     settelment: sheetData.settelment || { settled: false },
-                    bowserOdometerStartReading: sheetData.bowserOdometerStartReading || 0, // Default value if not present
+                    bowserOdometerStartReading: sheetData.bowserOdometerStartReading || 0,
                     fuelingAreaDestination: sheetData.fuelingAreaDestination || '',
                     bowserPumpEndReading: sheetData.bowserPumpEndReading || '',
                 });
-                setBowserDriver(sheetData.bowserDriver || []); // Set the driver details
+                setBowserDriver(sheetData.bowserDriver || []);
             } catch (error) {
                 console.error('Error fetching records:', error);
+                alert(`Error fetching records: ${error}`);
             } finally {
                 setLoading(false);
             }
@@ -63,14 +74,15 @@ export const page = ({ params }: { params: { id: string } }) => {
     }, [params.id]);
 
     const handleUpdate = async () => {
-        if (!record) return; // Ensure record is defined
+        if (!record) return;
         try {
-            const updatedTripSheet = { ...record, bowserDriver }; // Include updated driver details
+            const updatedTripSheet = { ...record, bowserDriver };
             await axios.patch(`https://bowser-backend-2cdr.onrender.com/tripSheet/update/${params.id}`, updatedTripSheet); //https://bowser-backend-2cdr.onrender.com http://localhost:5000
             setShowSuccessAlert(true);
             setEditing(false)
         } catch (error) {
             console.error('Error updating Trip Sheet:', error);
+            alert(`Error updating Trip Sheet: ${error}`);
         }
     };
 
@@ -81,6 +93,7 @@ export const page = ({ params }: { params: { id: string } }) => {
             window.history.back()
         } catch (error) {
             console.error('Error deleting Trip Sheet:', error);
+            alert(`Error deleting Trip Sheet: ${error}`);
         } finally {
             setShowDeleteDialog(false);
         }

@@ -10,6 +10,10 @@ const bowserSchema = new mongoose.Schema({
     chamberDipListBeforeLoadingStart: [String],
     chamberDipListAfterLoadingEnd: [String],
     chamberSealList: [String],
+    currentTrip: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'TripSheet'
+    },
     pumpSlips: [{
         quantity: String,
         slipPhoto: String,

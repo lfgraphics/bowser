@@ -24,7 +24,7 @@ export interface ResponseBowser {
     _id: string;
     bowserDriver: {
         _id: mongoose.Schema.Types.ObjectId;
-        userId: string;
+        id: string;
         name: string;
     };
 }

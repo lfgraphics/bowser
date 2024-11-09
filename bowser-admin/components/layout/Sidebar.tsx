@@ -63,18 +63,10 @@ export function Sidebar() {
                 </Link>
               </li>
               <li>
-                <Link href="/my-orders">
+                <Link href="/my-allocations">
                   <Button variant="ghost" className="w-full justify-start">
                     <ClipboardList className="mr-2 h-4 w-4" />
-                    My Orders
-                  </Button>
-                </Link>
-              </li>
-              <li>
-                <Link href="/verify-dispenses">
-                  <Button variant="ghost" className="w-full justify-start">
-                    <ListCheck className="mr-2 h-4 w-4" />
-                    Verify Dispenses
+                    My Allocations
                   </Button>
                 </Link>
               </li>

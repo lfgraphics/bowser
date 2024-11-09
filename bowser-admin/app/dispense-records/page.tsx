@@ -28,10 +28,7 @@ import {
 } from "@/components/ui/accordion"
 import Link from "next/link";
 import { isAuthenticated } from "@/lib/auth";
-import { useRouter } from "next/dist/client/components/navigation";
 import Loading from "../loading";
-import { DateRange } from "react-day-picker"
-import { DatePickerWithRange } from "@/components/DatePickerWithRange";
 
 const VehicleDispensesPage = () => {
     const [records, setRecords] = useState<DispensesRecord[]>([]);
@@ -46,47 +43,21 @@ const VehicleDispensesPage = () => {
     const [localTripSheetId, setLocalTripSheetId] = useState("");
     const [limit, setLimit] = useState(20);
     const [loading, setLoading] = useState(true);
-    const router = useRouter();
 
-    // const [selectedDateRange, setSelectedDateRange] = React.useState<DateRange | undefined>(undefined)
-
-    // // Callback to handle date changes
-    // const handleDateChange = (date: DateRange | undefined) => {
-    //     setSelectedDateRange(date)
-    // }
-    // Function to prepare dates for the backend
-    // const getBackendDateFilter = () => {
-    //     if (!selectedDateRange || !selectedDateRange.from) return null
-
-    //     const startDate = new Date(selectedDateRange.from)
-    //     const endDate = selectedDateRange.to ? new Date(selectedDateRange.to) : new Date()
-
-    //     return {
-    //         fuelingDateTime: {
-    //             $gte: startDate,
-    //             $lte: endDate,
-    //         },
-    //     }
-    // }
-
-    // Authentication check
+    const checkAuth = () => {
+        const authenticated = isAuthenticated();
+        if (!authenticated) {
+            window.location.href = '/login';
+        }
+    };
     useEffect(() => {
         checkAuth();
-    }, [router]);
+    }, []);
 
-    // Fetch records when dependencies change
     useEffect(() => {
         fetchRecords();
-    }, [currentPage, sortBy, order, filter, limit,]); //selectedDateRange
+    }, [currentPage, sortBy, order, filter, limit,]);
 
-    const checkAuth = async () => {
-        setLoading(true);
-        const authenticated = await isAuthenticated();
-        if (!authenticated) {
-            router.push('/login');
-        }
-        setLoading(false);
-    };
 
     const fetchRecords = async () => {
         setLoading(true);

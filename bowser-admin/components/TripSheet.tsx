@@ -14,13 +14,25 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Toaster } from "@/components/ui/toaster"
-import { Edit, Eye, Plus, SortAsc, SortDesc, PlusIcon } from 'lucide-react';
+import { Edit, Plus, SortAsc, SortDesc, } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { TripSheet, Filters, Sort } from '@/types/index';
+import { isAuthenticated } from '@/lib/auth';
 
 
 const TripSheetPage = () => {
+
+    const checkAuth = () => {
+        const authenticated = isAuthenticated();
+        if (!authenticated) {
+            window.location.href = '/login';
+        }
+    };
+    useEffect(() => {
+        checkAuth();
+    }, []);
+
     const [sheets, setSheets] = useState<TripSheet[]>([]);
     const [filters, setFilters] = useState<Filters>({
         driverName: '',

@@ -1,7 +1,5 @@
 "use client"
-
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { login } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,14 +11,13 @@ import Link from "next/link"
 export default function Login() {
   const [userId, setUserId] = useState("")
   const [password, setPassword] = useState("")
-  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
       const response = await login(userId, password)
       if (response.user.verified) {
-        router.push("/dashboard")
+        window.location.href = "/dashboard"
       } else {
         alert("Account not verified. Please contact an administrator to verify your account.")
       }
