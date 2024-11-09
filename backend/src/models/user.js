@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema({
     name: String,
     verified: Boolean,
     bowserId: String,
+    resetToken: String,
+    resetTokenExpiry: Date,
     orders: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'FuelingOrder'

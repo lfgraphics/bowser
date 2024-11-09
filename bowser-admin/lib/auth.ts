@@ -26,6 +26,7 @@ export function logout(): void {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
     localStorage.setItem('isLoggedIn', 'false');
+    window.location.href = "/login"
 }
 
 export function isAuthenticated(): boolean {

@@ -1,14 +1,15 @@
 "use client"
-
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { signup } from "@/lib/auth"
+import { isAuthenticated, signup } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { UserPlus } from "lucide-react"
 import Link from "next/link"
+import Loading from "@/app/loading"
+
 
 export default function Signup() {
   const [userId, setUserId] = useState("")
@@ -16,9 +17,17 @@ export default function Signup() {
   const [name, setName] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
   const router = useRouter()
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      window.location.href = "/dashboard";
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
     try {
       await signup({ userId, password, name, phoneNumber })
       alert("Signup successful. Your account has been created. Please wait for admin verification.")
@@ -26,8 +35,12 @@ export default function Signup() {
     } catch (error) {
       console.error("Signup failed:", error)
       alert("Signup failed. An error occurred during signup. Please try again.")
+    } finally {
+      setLoading(true)
     }
   }
+
+  if (loading) return <Loading />;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">

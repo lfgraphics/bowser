@@ -1,18 +1,27 @@
 "use client"
-import { useState } from "react"
-import { login } from "@/lib/auth"
+import { useEffect, useState } from "react"
+import { isAuthenticated, login } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { LogIn } from "lucide-react"
 import Link from "next/link"
+import Loading from "@/app/loading"
 
 export default function Login() {
   const [userId, setUserId] = useState("")
   const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      window.location.href = "/dashboard";
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
+    setLoading(true)
     e.preventDefault()
     try {
       const response = await login(userId, password)
@@ -24,8 +33,12 @@ export default function Login() {
     } catch (error) {
       console.error("Login failed:", error)
       alert("Login failed. Please check your credentials and try again.")
+    } finally {
+      setLoading(true)
     }
   }
+
+  if (loading) return <Loading />;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">

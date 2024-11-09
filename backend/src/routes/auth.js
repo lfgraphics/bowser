@@ -3,9 +3,10 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const Role = require('../models/role');
-const TripSheet = require ('../models/tripsheet');
+const TripSheet = require('../models/tripsheet');
 const UnAuthorizedLogin = require('../models/unauthorizedLogin');
 const argon2 = require('argon2');
+const crypto = require('crypto');
 
 
 function isTokenValid(decodedToken) {
@@ -14,6 +15,10 @@ function isTokenValid(decodedToken) {
     const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
     return now - tokenIssueTime < sevenDaysInMs;
 }
+
+const generateResetToken = () => {
+    return crypto.randomBytes(10).toString('hex');
+};
 
 router.post('/signup', async (req, res) => {
     try {
@@ -100,7 +105,7 @@ router.post('/login', async (req, res) => {
 
         const token = jwt.sign({ userId: user.userId, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
         const loginTime = new Date().toISOString();
-        
+
         let id = user.userId
         const searchCriteria = {};
         searchCriteria['bowserDriver.id'] = id;
@@ -211,6 +216,59 @@ router.post('/get-push-token', async (req, res) => {
         res.json({ token: user.pushToken });
     } catch (error) {
         console.error('Error fetching push token:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.post('/generate-reset-url', async (req, res) => {
+    const { userId } = req.body;
+    try {
+        const user = await User.findOne({ userId });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const resetToken = generateResetToken();
+        const expiryTime = Date.now() + 3600000; // 1 hour from now
+
+        user.resetToken = resetToken;
+        user.resetTokenExpiry = expiryTime;
+
+        try {
+            await user.save();
+        } catch (error) {
+            console.error('Error saving user:', error);
+        }
+
+        const resetUrl = `https://itpl-bowser-admin.vercel.app/reset-password?token=${resetToken}&userId=${userId}`;
+        res.json({ resetUrl });
+    } catch (error) {
+        console.error('Error generating reset URL:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.post('/reset-password', async (req, res) => {
+    const { userId, token, password, confirmPassword } = req.body;
+    try {
+        const user = await User.findOne({ userId });
+        if (!user || user.resetToken !== token || user.resetTokenExpiry < Date.now()) {
+            return res.status(400).json({ message: 'Invalid or expired token' });
+        }
+
+        if (password !== confirmPassword) {
+            return res.status(400).json({ message: 'Passwords do not match' });
+        }
+
+        // Hash the new password
+        user.password = await argon2.hash(password);
+        user.resetToken = undefined; // Clear the reset token
+        user.resetTokenExpiry = undefined; // Clear the expiry time
+        await user.save();
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (error) {
+        console.error('Error resetting password:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
