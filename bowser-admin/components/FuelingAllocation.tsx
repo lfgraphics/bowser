@@ -59,6 +59,7 @@ export default function FuelingAllocation() {
         renderItem: () => null,
         keyExtractor: () => "",
     });
+    const [driverMobileNotFound, setDriverMobileNotFound] = useState(false);
 
     const checkAuth = () => {
         const authenticated = isAuthenticated();
@@ -170,11 +171,6 @@ export default function FuelingAllocation() {
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
 
         if (driver) {
-            const lastUsedNumber = driver.MobileNo?.find(num => num.LastUsed);
-            const defaultNumber = driver.MobileNo?.find(num => num.IsDefaultNumber);
-            const firstNumber = driver.MobileNo?.[0];
-            const mobileNumber = (lastUsedNumber || defaultNumber || firstNumber)?.MobileNo || '';
-
             const idMatch = driver.Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
             let cleanName = driver.Name.trim();
             let recognizedId = '';
@@ -186,7 +182,21 @@ export default function FuelingAllocation() {
 
             setDriverId(recognizedId || driver.ITPLId || cleanName);
             setDriverName(cleanName);
-            setDriverMobile(mobileNumber);
+
+            if (driver.MobileNo && driver.MobileNo.length > 0) {
+                const lastUsedNumber = driver.MobileNo.find(num => num.LastUsed);
+                const defaultNumber = driver.MobileNo.find(num => num.IsDefaultNumber);
+                const firstNumber = driver.MobileNo[0];
+                const mobileNumber = (lastUsedNumber || defaultNumber || firstNumber)?.MobileNo || '';
+
+                setDriverId(driver.ITPLId || '');
+                setDriverName(driver.Name);
+                setDriverMobile(mobileNumber);
+                setDriverMobileNotFound(false);
+            } else {
+                setDriverMobile('');
+                setDriverMobileNotFound(true);
+            }
         }
     }
     const handleBowserSelection = (bowser: ResponseBowser) => {
@@ -215,6 +225,29 @@ export default function FuelingAllocation() {
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
     }
 
+    const updateDriverMobile = async () => {
+        try {
+            const response = await fetch('https://bowser-backend-2cdr.onrender.com/searchDriver/updateDriverMobile', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ driverId, driverMobile }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to update driver mobile number: ${response.status}`);
+            }
+
+            const result = await response.json();
+            setAlertMessage(result.message);
+            setAlertDialogOpen(true);
+        } catch (error) {
+            console.error('Error updating driver mobile number:', error);
+            throw error;
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
@@ -226,6 +259,17 @@ export default function FuelingAllocation() {
             setAlertDialogOpen(true);
             setSubmitting(false);
             return;
+        }
+
+        if (driverMobileNotFound && driverMobile) {
+            try {
+                await updateDriverMobile();
+            } catch (error) {
+                setSubmitting(false);
+                setAlertMessage("Failed to update driver mobile number. Please try again.");
+                setAlertDialogOpen(true);
+                return;
+            }
         }
 
         const allocationData = {
@@ -253,7 +297,7 @@ export default function FuelingAllocation() {
         };
 
         try {
-            const response = await fetch('https://bowser-backend-2cdr.onrender.com/allocateFueling', { //https://bowser-backend-2cdr.onrender.com
+            const response = await fetch('https://bowser-backend-2cdr.onrender.com/allocateFueling', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -261,14 +305,13 @@ export default function FuelingAllocation() {
                 body: JSON.stringify(allocationData),
             });
 
-            const responseText = await response.text()
+            const responseText = await response.text();
 
             if (!response.ok) {
                 throw new Error(`Failed to allocate fueling: ${response.status} ${response.statusText}`);
             }
 
-            const result = JSON.parse(responseText)
-
+            const result = JSON.parse(responseText);
             setAlertMessage(result.message);
             setAlertDialogOpen(true);
         } catch (error) {

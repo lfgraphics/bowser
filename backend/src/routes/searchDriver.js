@@ -61,4 +61,34 @@ router.get('/bowser-drivers/:userId', async (req, res) => {
     }
 });
 
+router.post('/updateDriverMobile', async (req, res) => {
+    const { driverId, driverMobile } = req.body;
+
+    if (!driverId || !driverMobile) {
+        return res.status(400).json({ message: 'Driver ID and mobile number are required.' });
+    }
+
+    try {
+        const updatedDriver = await Driver.findOneAndUpdate(
+            { "Name": { "$regex": driverId, "$options": "i" } },
+            {
+                $set: {
+                    "MobileNo.0.MobileNo": driverMobile,
+                    "MobileNo.0.LastUsed": true
+                }
+            },
+            { new: true, upsert: true }
+        );
+
+        if (!updatedDriver) {
+            return res.status(404).json({ message: 'Driver not found.' });
+        }
+
+        res.status(200).json({ message: 'Driver mobile number updated successfully.', driver: updatedDriver });
+    } catch (error) {
+        console.error('Error updating driver mobile number:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
 module.exports = router;

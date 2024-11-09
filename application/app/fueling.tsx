@@ -1,5 +1,4 @@
-import mongoose from 'mongoose';
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, ScrollView, View, ActivityIndicator, Button, Alert, Modal, FlatList } from 'react-native';
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, ScrollView, View, ActivityIndicator, Alert, Modal, FlatList } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -47,6 +46,7 @@ export default function FuelingScreen() {
   const [noVehicleFound, setNoVehicleFound] = useState(false);
   const [isSearchingVehicle, setIsSearchingVehicle] = useState(false);
   const [vehicleModalVisible, setVehicleModalVisible] = useState(false);
+  const [driverMobileNotFound, setDriverMobileNotFound] = useState(false);
 
   // declare refs for input fields---->
   const vehicleNumberInputRef = React.useRef<TextInput>(null);
@@ -55,7 +55,6 @@ export default function FuelingScreen() {
   const driverMobileInputRef = React.useRef<TextInput>(null);
   const fuelQuantityInputRef = React.useRef<TextInput>(null);
   const gpsLocationInputRef = React.useRef<TextInput>(null);
-  const tripSheetIdRef = React.useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const driversData: (Driver | { Name: string, ITPLId: string })[] = [
     { Name: "Select a driver", ITPLId: "placeholder" },
@@ -72,28 +71,6 @@ export default function FuelingScreen() {
 
     return () => unsubscribe();
   }, []);
-  // const location = async () => {
-  //   let { status } = await Location.requestForegroundPermissionsAsync();
-  //   if (status !== 'granted') {
-  //     const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
-  //     if (newStatus !== 'granted') {
-  //       console.warn('Location permission is still not granted.');
-  //       return;
-  //     }
-  //   }
-
-  //   let location = await Location.getCurrentPositionAsync({});
-  //   const coordinates = `Latitude ${location.coords.latitude}, Longitude ${location.coords.longitude}`;
-  //   setGpsLocation(coordinates);
-  //   return coordinates;
-  // }
-
-  const getLocationWithTimeout = async (timeout = 10000) => {
-    return Promise.race([
-      Location.getCurrentPositionAsync({}),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Location timeout")), timeout))
-    ]);
-  };
 
   const location = async (): Promise<string | { error: string }> => {
     // Request location permissions
@@ -136,16 +113,42 @@ export default function FuelingScreen() {
     return `${sizeInKB.toFixed(2)} KB (${sizeInMB.toFixed(2)} MB)`;
   };
 
-  // form submit reset
   const submitDetails = async () => {
     setFormSubmitting(true);
-    if (!validateInputs()) {
-      setFormSubmitting(false);
-      return;
-    }
+    // if (!validateInputs()) {
+    //   setFormSubmitting(false);
+    //   return;
+    // }
 
+    if (driverMobileNotFound && driverMobile && isOnline) {
+      try {
+        const updateResponse = await fetch(`https://bowser-backend-2cdr.onrender.com/searchDriver/updateDriverMobile`, { //https://bowser-backend-2cdr.onrender.com http://192.168.137.1:5000
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ driverId, driverMobile }),
+        });
+
+        if (!updateResponse.ok) {
+          throw new Error(`Failed to update driver mobile number: ${updateResponse.status}`);
+        }
+
+        await submitFormData();
+      } catch (error) {
+        console.error('Error updating driver mobile number:', error);
+        Alert.alert("Error", "Failed to update driver mobile number. Please try again.");
+      } finally {
+        setFormSubmitting(false);
+      }
+    } else {
+      await submitFormData();
+    }
+  }
+
+  const submitFormData = async () => {
     let currentFuelingDateTime = fuelingDateTime;
-    let currentGpsLocation = gpsLocation; // Keep the previous GPS location
+    let currentGpsLocation = gpsLocation;
     const userDataString = await AsyncStorage.getItem('userData');
     const userData = userDataString ? JSON.parse(userDataString) : null;
     if (!userData) {
@@ -155,20 +158,16 @@ export default function FuelingScreen() {
     }
 
     currentFuelingDateTime = await fulingTime();
-    const locationResult = await location(); // Get location info
+    const locationResult = await location();
 
-    // Check if locationResult is an error object or a string
     if (typeof locationResult === 'string') {
-      // Successfully retrieved location
-      currentGpsLocation = locationResult; // Set the GPS location
+      currentGpsLocation = locationResult;
     } else if (typeof locationResult === 'object' && locationResult.error) {
-      // Handle the location error
       Alert.alert(
         "Location Error",
-        locationResult.error, // Show the error message
+        locationResult.error,
         [{ text: "OK" }]
       );
-      // You can choose to log this error or handle it further if needed
     }
 
 
@@ -223,7 +222,7 @@ export default function FuelingScreen() {
         resetForm();
         navigation.navigate('index' as never);
       } catch (err) {
-        console.error('Fetch error:', err); // Log any fetch errors
+        console.error('Fetch error:', err);
         let errorMessage = 'An unknown error occurred';
 
         if (err instanceof Response) {
@@ -253,19 +252,8 @@ export default function FuelingScreen() {
       }
     } else {
       try {
-        // Alert.alert(
-        //   "No Internet Connection",
-        //   "Please connect to the internet. Waiting for 10 seconds...",
-        //   [{ text: "OK" }]
-        // );
-
-        // // Wait for 10 seconds
-        // await new Promise(resolve => setTimeout(resolve, 10000));
-
-        // Check internet connection again
         const netInfo = await NetInfo.fetch();
         if (netInfo.isConnected) {
-          // If now connected, try to submit the form again
           setIsOnline(true);
           submitDetails();
           return;
@@ -431,6 +419,7 @@ export default function FuelingScreen() {
         setDriverMobile((lastUsedNumber || defaultNumber || firstNumber)?.MobileNo || '');
       } else {
         setDriverMobile('');
+        setDriverMobileNotFound(true);
       }
 
       // Extract ID from name
@@ -563,7 +552,7 @@ export default function FuelingScreen() {
   const validateTrip = async (): Promise<boolean> => {
     if (isOnline && tripSheetId) {
       try {
-        const baseUrl = 'https://bowser-backend-2cdr.onrender.com' //'http://192.168.137.1:5000'; // Your base URL
+        const baseUrl = 'https://bowser-backend-2cdr.onrender.com' //'http://192.168.137.1:5000';
         const endpoint = `/tripSheet/all?tripSheetId=${encodeURIComponent(tripSheetId)}&unsettled=true`;
 
         // Fetch data
@@ -574,7 +563,6 @@ export default function FuelingScreen() {
 
         const sheets = await response.json();
 
-        // Return true if sheets array is not empty, indicating an unsettled trip sheet
         return sheets.length > 0;
       } catch (error) {
         console.error('Error fetching unsettled trip sheets:', (error as Error).message);
@@ -627,18 +615,6 @@ export default function FuelingScreen() {
           <ThemedView style={styles.section}>
             <ThemedView style={styles.inputContainer}>
               <ThemedText>Trip Sheet Number: {tripSheetId}</ThemedText>
-              {/* <TextInput
-                keyboardType="numeric"
-                ref={tripSheetIdRef}
-                style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                placeholder="Enter trip sheet number"
-                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                value={tripSheetId}
-                onChangeText={(text) => { setTripSheetId(text.toUpperCase()); }}
-                returnKeyType="next"
-                onSubmitEditing={() => vehicleNumberInputRef.current?.focus()}
-                blurOnSubmit={false}
-              /> */}
             </ThemedView>
             {vehicleNumberPlateImage && (
               <>
@@ -866,12 +842,12 @@ export default function FuelingScreen() {
                   <Picker.Item label="Part" value="Part" />
                 </Picker>
                 <TextInput
-                  // onFocus={() => {
-                  //   if (!fuelMeterImage) {
-                  //     openFuelMeterCamera();
-                  //   }
-                  // }}
-                  // onPress={() => !fuelMeterImage && openFuelMeterCamera()}
+                  onFocus={() => {
+                    if (!fuelMeterImage) {
+                      openFuelMeterCamera();
+                    }
+                  }}
+                  onPress={() => !fuelMeterImage && openFuelMeterCamera()}
                   ref={fuelQuantityInputRef}
                   style={[styles.input, styles.threeQuarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
                   placeholder="Enter fuel quantity"
