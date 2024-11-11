@@ -55,27 +55,27 @@ export interface DispensesRecord {
     tripSheetId: string;
     vehicleNumberPlateImage: string,
     vehicleNumber: string,
-    driverName: String,
-    driverId: String,
-    driverMobile: String,
+    driverName: string,
+    driverId: string,
+    driverMobile: string,
     fuelMeterImage: string,
     slipImage: string,
-    fuelQuantity: String,
-    quantityType: String,
-    gpsLocation: String,
-    fuelingDateTime: String,
+    fuelQuantity: string,
+    quantityType: string,
+    gpsLocation: string,
+    fuelingDateTime: string,
     verified: boolean,
     bowser: {
         regNo: string,
         driver: {
-            name: String,
-            id: String
-            phoneNo: String
+            name: string,
+            id: string
+            phoneNo: string
         }
     },
     allocationAdmin: {
-        name: { type: String, required: false },
-        userId: { type: String, required: false }
+        name: { type: string, required: false },
+        userId: { type: string, required: false }
     },
 }
 

@@ -110,7 +110,7 @@ export const page = ({ params }: { params: { id: string } }) => {
             <div className='flex gap-3 items-center'>
                 <h1>Trip Sheet: {record?.tripSheetId}</h1>
                 <Button variant="ghost" onClick={() => setEditing(!editing)}>
-                    <Edit />
+                    {editing ? 'Cancel' : 'Edit'}
                 </Button>
             </div>
             <h3>Generation Time: {record?.tripSheetGenerationDateTime}</h3>

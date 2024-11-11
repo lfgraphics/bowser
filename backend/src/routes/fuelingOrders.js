@@ -21,9 +21,7 @@ router.get('/:userId', async (req, res) => {
         // Filter out completed orders
         const pendingOrderIds = userOrderIds.filter(id => !completedOrderIds.has(id.toString()));
         // Fetch pending orders with pagination
-        const orders = await FuelingOrder.find({ _id: { $in: pendingOrderIds } })
-            .skip(skip)
-            .limit(limit);
+        const orders = await FuelingOrder.find({ _id: { $in: pendingOrderIds } }).skip(skip).limit(limit);
 
         const total = pendingOrderIds.length;
 

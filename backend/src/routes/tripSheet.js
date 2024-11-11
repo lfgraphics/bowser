@@ -79,6 +79,7 @@ router.post('/create', async (req, res) => {
         }
     }
 })
+
 router.get('/all', async (req, res) => {
     const { driverName, bowserRegNo, tripSheetId, unsettled, sortField, sortOrder } = req.query;
     const query = {};
@@ -111,16 +112,11 @@ router.get('/find-by-sheetId/:tripSheetId', async (req, res) => {
         const sheets = await TripSheet.find({
             tripSheetId: { $regex: tripSheetId, $options: 'i' }
         });
-
-        console.log(sheets)
-
+        
         if (sheets.length === 0) {
             console.log(`No sheets found with the given Trip Sheet ID: ${tripSheetId}`);
             return res.status(404).json({ message: 'No Sheet found with the given tripSheetId number' });
         }
-
-        console.log(`Found ${sheets.length} sheets with the given sheet id: ${tripSheetId}`);
-
         res.status(200).json({ sheets });
 
     } catch (err) {

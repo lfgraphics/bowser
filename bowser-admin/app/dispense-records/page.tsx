@@ -35,14 +35,16 @@ const VehicleDispensesPage = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalRecords, setTotalRecords] = useState();
     const [currentPage, setCurrentPage] = useState(1);
-    const [filter, setFilter] = useState({ bowserNumber: "", driverName: "", tripSheetId: "" });
+    const [filter, setFilter] = useState({ bowserNumber: "", driverName: "", tripSheetId: "", verified: "all" });
     const [sortBy, setSortBy] = useState("fuelingDateTime");
     const [order, setOrder] = useState("desc");
     const [localBowserNumber, setLocalBowserNumber] = useState("");
     const [localDriverName, setLocalDriverName] = useState("");
     const [localTripSheetId, setLocalTripSheetId] = useState("");
+    const [localVerified, setLocalVerified] = useState("");
     const [limit, setLimit] = useState(20);
     const [loading, setLoading] = useState(true);
+    const [verificationStatus, setVerificationStatus] = useState("all");
 
     const checkAuth = () => {
         const authenticated = isAuthenticated();
@@ -56,7 +58,7 @@ const VehicleDispensesPage = () => {
 
     useEffect(() => {
         fetchRecords();
-    }, [currentPage, sortBy, order, filter, limit,]);
+    }, [currentPage, sortBy, order, filter, limit, verificationStatus]);
 
 
     const fetchRecords = async () => {
@@ -78,7 +80,7 @@ const VehicleDispensesPage = () => {
             //     adjustedEndDate.setHours(23, 59, 59, 999);
             // }
 
-            const response = await axios.get("https://bowser-backend-2cdr.onrender.com/listDispenses", {
+            const response = await axios.get("http://localhost:5000/listDispenses", { //https://bowser-backend-2cdr.onrender.com
                 params: {
                     page: currentPage,
                     limit: limit,
@@ -87,6 +89,7 @@ const VehicleDispensesPage = () => {
                     bowserNumber: filter.bowserNumber,
                     driverName: filter.driverName,
                     tripSheetId: filter.tripSheetId,
+                    verified: verificationStatus,
                     // startDate: adjustedStartDate ? adjustedStartDate.toISOString() : undefined,
                     // endDate: adjustedEndDate ? adjustedEndDate.toISOString() : undefined,
                 },
@@ -230,6 +233,16 @@ const VehicleDispensesPage = () => {
                             className="w-full sm:w-auto"
                         />
                     </div>
+                    <Select value={verificationStatus} onValueChange={setVerificationStatus}>
+                        <SelectTrigger className="flex items-center justify-between border rounded p-2 w-[120px]">
+                            <SelectValue placeholder="Verification Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="true">Verified</SelectItem>
+                            <SelectItem value="false">Unverified</SelectItem>
+                        </SelectContent>
+                    </Select>
                     <div className="flex items-center justify-between">Records limit <Input type="number" className="w-20 ml-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
                     <div className="flex items-center justify-between text-gray-300 font-[200]">Total found record{records.length > 1 ? "s" : ""} {records.length} out of {totalRecords} records </div>
                     <Button onClick={exportToExcel} className="w-full sm:w-auto">
@@ -267,7 +280,7 @@ const VehicleDispensesPage = () => {
 
                             {/* Sort By Dropdown */}
                             <Select value={sortBy} onValueChange={setSortBy}>
-                                <SelectTrigger className="flex items-center justify-between border rounded p-2">
+                                <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full self-center">
                                     <SelectValue placeholder="Sort By" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -279,7 +292,7 @@ const VehicleDispensesPage = () => {
 
                             {/* Order Dropdown */}
                             <Select value={order} onValueChange={setOrder}>
-                                <SelectTrigger className="flex items-center justify-between border rounded p-2">
+                                <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full self-center">
                                     <SelectValue placeholder="Order" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -305,6 +318,16 @@ const VehicleDispensesPage = () => {
                                     className="w-full sm:w-auto"
                                 />
                             </div>
+                            <Select value={verificationStatus} onValueChange={setVerificationStatus}>
+                                <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full self-center">
+                                    <SelectValue placeholder="Verification Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="true">Verified</SelectItem>
+                                    <SelectItem value="false">Unverified</SelectItem>
+                                </SelectContent>
+                            </Select>
                             <div className="flex items-center justify-between">Records limit <Input type="number" className="w-20 mx-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
                             <div className="flex items-center justify-between text-gray-300 font-[200]">Total found record{records.length > 1 ? "s" : ""} {records.length} out of {totalRecords} records </div>
                             <Button onClick={exportToExcel} className="w-full sm:w-auto">
@@ -332,19 +355,19 @@ const VehicleDispensesPage = () => {
                 </TableHeader>
                 <TableBody>
                     {records.length > 0 && records.map((record, index) => (
-                        <TableRow key={index}>
+                        <TableRow key={index} className={`${record.verified ? "bg-green-200 hover:bg-green-50 text-background" : ""}`}>
                             <TableCell>{index + 1}</TableCell>
                             <TableCell>{record.tripSheetId}</TableCell>
                             <TableCell>{record.fuelingDateTime}</TableCell>
                             <TableCell>{record.bowser.regNo}</TableCell>
-                            <TableCell>{record.gpsLocation}</TableCell>
+                            <TableCell>{record.gpsLocation.substring(0, 15) + "..."}</TableCell>
                             <TableCell>{record.driverName}</TableCell>
                             <TableCell>{record.driverMobile}</TableCell>
                             <TableCell>{record.vehicleNumber}</TableCell>
                             <TableCell>{record.quantityType} {record.fuelQuantity} L</TableCell>
                             <TableCell>
                                 <Link href={`/dispense-records/${record._id}`}>
-                                    <Button variant="outline" size="sm">
+                                    <Button variant={`${record.verified ? "secondary" : "outline"}`} size="sm">
                                         View Details
                                     </Button>
                                 </Link>
@@ -357,6 +380,7 @@ const VehicleDispensesPage = () => {
                         <TableCell>
                             {records.reduce((total, record) => total + Number(record.fuelQuantity), 0)} L
                         </TableCell>
+                        <TableCell className="text-right font-bold"></TableCell>
                     </TableRow>
                 </TableBody>
             </Table>

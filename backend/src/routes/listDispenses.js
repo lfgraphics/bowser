@@ -7,9 +7,16 @@ const fs = require('fs');
 
 // Route to get filtered, paginated, and sorted fueling records
 router.get('/', async (req, res) => {
-    const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'fuelingDateTime', order = 'desc' } = req.query;
+    const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'fuelingDateTime', order = 'desc', verified } = req.query;
+    console.log(req.query);
     const skip = (page - 1) * limit;
-    let filter = { verified: { $ne: true } };
+    let filter = {};
+
+    if (verified === 'true') {
+        filter.verified = true;
+    } else if (verified === 'false') {
+        filter.verified = { $in: [false, null] };
+    }
 
     if (bowserNumber) {
         filter['bowser.regNo'] = bowserNumber;
@@ -42,12 +49,10 @@ router.get('/', async (req, res) => {
             bowser: 1,
             fuelingDateTime: 1,
             gpsLocation: 1,
-        })
-            .skip(skip)
-            .limit(Number(limit))
-            .sort({ [sortBy]: sortOrder });
-
+            verified: 1
+        }).skip(skip).limit(Number(limit)).sort({ [sortBy]: sortOrder });
         const totalRecords = await FuelingTransaction.countDocuments();
+
         res.json({
             totalRecords,
             totalPages: Math.ceil(totalRecords / limit),
@@ -153,6 +158,30 @@ router.get('/:id', async (req, res) => {
     } catch (error) {
         console.error('Error fetching data:', error);
         res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.patch('/update/:id', async (req, res) => {
+    const { id } = req.params;
+    const updateData = req.body; // Get the data to update from the request body
+
+    try {
+        // Find the record by ID and update it
+        const updatedRecord = await FuelingTransaction.findByIdAndUpdate(id, updateData, {
+            new: true, // Return the updated document
+            runValidators: true, // Validate the update against the model's schema
+        });
+
+        console.log(updatedRecord)
+
+        if (!updatedRecord) {
+            return res.status(404).json({ heading: "Failed", message: 'Record not found' });
+        }
+
+        res.json({ heading: "Success!", message: 'Record updated successfully', updatedRecord }); // Send the updated record and a success message back to the client
+    } catch (error) {
+        console.error('Error updating record:', error);
+        res.status(500).json({ heading: "Failed!", message: 'Internal server error' });
     }
 });
 
