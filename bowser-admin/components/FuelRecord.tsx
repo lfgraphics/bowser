@@ -81,7 +81,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
         }
 
         try {
-            let response = await axios.patch(`http://localhost:5000/listDispenses/update/${record._id}`, updatedFields); // https://bowser-backend-2cdr.onrender.com/listDispenses/update
+            let response = await axios.patch(`https://bowser-backend-2cdr.onrender.com/listDispenses/update/${record._id}`, updatedFields); // https://bowser-backend-2cdr.onrender.com/listDispenses/update
             setShowAlert(true)
             setAlertTitle(response.data.heading)
             setAlertMessage(response.data.message)

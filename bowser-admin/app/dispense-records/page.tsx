@@ -80,7 +80,7 @@ const VehicleDispensesPage = () => {
             //     adjustedEndDate.setHours(23, 59, 59, 999);
             // }
 
-            const response = await axios.get("http://localhost:5000/listDispenses", { //https://bowser-backend-2cdr.onrender.com
+            const response = await axios.get("https://bowser-backend-2cdr.onrender.com/listDispenses", { //https://bowser-backend-2cdr.onrender.com
                 params: {
                     page: currentPage,
                     limit: limit,
