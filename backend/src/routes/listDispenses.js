@@ -67,9 +67,14 @@ router.get('/', async (req, res) => {
 
 // Route to export fueling records to Excel
 router.get('/export/excel', async (req, res) => {
-    const { bowserNumber, driverName, tripSheetId, sortBy = 'fuelingDateTime', order = 'desc', limit } = req.query;
-    let filter = { verified: { $ne: true } };
+    const { bowserNumber, driverName, tripSheetId, sortBy = 'fuelingDateTime', order = 'desc', limit, verified } = req.query;
+    let filter = {};
 
+    if (verified === 'true') {
+        filter.verified = true;
+    } else if (verified === 'false') {
+        filter.verified = { $in: [false, null] };
+    }
     // Apply filters if provided
     if (bowserNumber) {
         filter['bowser.regNo'] = bowserNumber;
@@ -97,9 +102,8 @@ router.get('/export/excel', async (req, res) => {
             vehicleNumber: 1,
             fuelQuantity: 1,
             quantityType: 1,
-        })
-            .sort({ [sortBy]: sortOrder })
-            .limit(recordLimit);
+            verified: 1
+        }).sort({ [sortBy]: sortOrder }).limit(recordLimit);
 
         // Format records for Excel
         const formattedRecords = records.map(record => ({
