@@ -86,7 +86,7 @@ export default function FuelingScreen() {
 
       // Reverse geocode to get city name
       let geocode = await Location.reverseGeocodeAsync({ latitude, longitude });
-      let city = geocode[0]?.city || 'City not found';
+      let city = geocode[0]?.city ; ","; geocode[0].district || 'City not found';
 
       // Format the coordinates and return
       const coordinates = `Latitude ${latitude}, Longitude ${longitude}`;

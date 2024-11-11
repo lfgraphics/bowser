@@ -22,7 +22,7 @@ const generateResetToken = () => {
 
 router.post('/signup', async (req, res) => {
     try {
-        const { userId, password, phoneNumber, name, deviceUUID, bowserId } = req.body;
+        const { userId, password, phoneNumber, name, deviceUUID } = req.body;
 
         // Check if user already exists
         const existingUser = await User.findOne({ userId });
@@ -39,7 +39,6 @@ router.post('/signup', async (req, res) => {
             password: hashedPassword,
             phoneNumber,
             name,
-            bowserId,
             deviceUUID,
             verified: false
         });
@@ -100,18 +99,17 @@ router.post('/login', async (req, res) => {
             });
 
             await unauthorizedLogin.save();
-            return res.status(403).json({ message: 'You are loggin in from diffrent device\nContact admin to approve this device' });
+            return res.status(403).json({ message: 'You are loggin in from a diffrent device\nContact admin to approve this device' });
         }
 
         const token = jwt.sign({ userId: user.userId, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
         const loginTime = new Date().toISOString();
 
-        let id = user.userId
-        const searchCriteria = {};
-        searchCriteria['bowserDriver.id'] = id;
-        const tripSheets = await TripSheet.find(searchCriteria).select('tripSheetId').where('settelment.settled', false);
-        const tripSheet = tripSheets[0];
-        const userTripSheetId = tripSheet.tripSheetId;
+        const userTripSheetId = (await TripSheet.find({ 'bowserDriver.id': user.userId }).select('tripSheetId').where('settelment.settled', false))[0].tripSheetId;
+
+        if (!userTripSheetId) {
+            return res.status(404).json({ message: "User is not linked to any trip\n Can't login" });
+        }
 
         const userData = {
             _id: user._id,
@@ -121,6 +119,7 @@ router.post('/login', async (req, res) => {
             'Verified User': user.verified,
             'Role': roleNames,
             'Bowser': user.bowserId,
+            TripSheet: userTripSheetId,
             'Trip Sheet Id': userTripSheetId || "Not on a trip",
             'Push Notification Token': pushToken || user.pushToken,
         };

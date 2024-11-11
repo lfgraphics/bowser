@@ -70,17 +70,59 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
+    const checkLoginStatus = async () => {
+      const token = await AsyncStorage.getItem('userToken');
+      const userDataString = await AsyncStorage.getItem('userData');
+
+      if (token && userDataString) {
+        setIsLoggedIn(true);
+        setUserData(JSON.parse(userDataString));
+
+        // Check for push token in AsyncStorage
+        // const pushToken = await AsyncStorage.getItem('pushToken');
+        // if (!pushToken) {
+        //   // Register push token with server
+        //   const newPushToken = await registerForPushNotificationsAsync();
+        //   if (newPushToken) {
+        //     await AsyncStorage.setItem('pushToken', newPushToken);
+        //     const userId = JSON.parse(userDataString)["User Id"];
+        //     await registerPushTokenWithServer(userId, newPushToken);
+        //   }
+        // }
+      } else {
+        setIsLoggedIn(false);
+      }
+      setIsLoading(false);
+    };
+
+    checkLoginStatus();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsOnline(state.isConnected ?? false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     const initializeApp = async () => {
       try {
         await syncOfflineData();
-        await getOfflineDataLength()
 
         const userDataString = await AsyncStorage.getItem('userData');
         if (userDataString) {
           setUserData(JSON.parse(userDataString));
         }
 
-        await requestPermissions(); // Request permissions
+        if (!isLoggedIn) {
+          router.replace('/auth' as any);
+          return;
+        }
+
+        await getOfflineDataLength()
+        await requestPermissions();
       } catch (error) {
         console.error('Error initializing app:', error);
         setError('An error occurred while initializing the app. Please try again.');
@@ -89,14 +131,6 @@ const App = () => {
       }
     };
     initializeApp();
-  }, []);
-
-  React.useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener(state => {
-      setIsOnline(state.isConnected ?? false);
-    });
-
-    return () => unsubscribe();
   }, []);
 
   const syncOfflineData = async () => {
@@ -531,34 +565,6 @@ const App = () => {
   //   });
   // }, []);
 
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      const token = await AsyncStorage.getItem('userToken');
-      const userDataString = await AsyncStorage.getItem('userData');
-
-      if (token && userDataString) {
-        setIsLoggedIn(true);
-        setUserData(JSON.parse(userDataString));
-
-        // Check for push token in AsyncStorage
-        // const pushToken = await AsyncStorage.getItem('pushToken');
-        // if (!pushToken) {
-        //   // Register push token with server
-        //   const newPushToken = await registerForPushNotificationsAsync();
-        //   if (newPushToken) {
-        //     await AsyncStorage.setItem('pushToken', newPushToken);
-        //     const userId = JSON.parse(userDataString)["User Id"];
-        //     await registerPushTokenWithServer(userId, newPushToken);
-        //   }
-        // }
-      } else {
-        setIsLoggedIn(false);
-      }
-      setIsLoading(false);
-    };
-
-    checkLoginStatus();
-  }, []);
 
   if (isLoading) {
     return <View style={styles.container}>
@@ -585,11 +591,6 @@ const App = () => {
         </TouchableOpacity>
       </View>
     );
-  }
-
-  if (!isLoggedIn) {
-    router.replace('/auth' as any);
-    return;
   }
 
   return (
