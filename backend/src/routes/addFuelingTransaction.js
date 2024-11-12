@@ -5,8 +5,6 @@ const FuelingTransaction = require('../models/fuelingTransaction');
 router.post('/', async (req, res) => {
     try {
         const fuelingTransaction = new FuelingTransaction(req.body);
-        console.log("req body", req.body)
-        console.log("constructed", fuelingTransaction)
 
         const saveOptions = {
             writeConcern: {

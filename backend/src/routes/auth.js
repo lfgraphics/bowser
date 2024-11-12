@@ -118,7 +118,7 @@ router.post('/login', async (req, res) => {
             'Phone Number': user.phoneNumber,
             'Verified User': user.verified,
             'Role': roleNames,
-            'Bowser': user.bowserId,
+            // 'Bowser': user.bowserId,
             TripSheet: userTripSheetId,
             'Trip Sheet Id': userTripSheetId || "Not on a trip",
             'Push Notification Token': pushToken || user.pushToken,
@@ -135,7 +135,7 @@ router.post('/login', async (req, res) => {
                     message: 'Login successful',
                     token,
                     loginTime,
-                    bowserId,
+                    // bowserId,
                     verified: user.verified,
                     user: userData,
                     pushToken: user.pushToken

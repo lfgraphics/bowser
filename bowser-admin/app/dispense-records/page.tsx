@@ -29,6 +29,7 @@ import {
 import Link from "next/link";
 import { isAuthenticated } from "@/lib/auth";
 import Loading from "../loading";
+import { Check, CheckSquare, Eye, X } from "lucide-react";
 
 const VehicleDispensesPage = () => {
     const [records, setRecords] = useState<DispensesRecord[]>([]);
@@ -37,7 +38,7 @@ const VehicleDispensesPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [filter, setFilter] = useState({ bowserNumber: "", driverName: "", tripSheetId: "", verified: "all" });
     const [sortBy, setSortBy] = useState("fuelingDateTime");
-    const [order, setOrder] = useState("desc");
+    const [order, setOrder] = useState("asc");
     const [localBowserNumber, setLocalBowserNumber] = useState("");
     const [localDriverName, setLocalDriverName] = useState("");
     const [localTripSheetId, setLocalTripSheetId] = useState("");
@@ -338,49 +339,51 @@ const VehicleDispensesPage = () => {
                 </AccordionItem>
             </Accordion>
             <Table>
-                <TableCaption>A list of your recent Dispenses.</TableCaption>
+                {/* <TableCaption>A list of your recent Dispenses.</TableCaption> */}
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Sr No</TableHead>
-                        <TableHead>Trip Sheet Id/ Number</TableHead>
+                        <TableHead>S N</TableHead>
+                        <TableHead>Trip Sheet Id</TableHead>
                         <TableHead>Fueling Time</TableHead>
-                        <TableHead>Bowser Number</TableHead>
+                        <TableHead>Bowser No.</TableHead>
                         <TableHead>Bowser Location</TableHead>
                         <TableHead>Driver Name</TableHead>
-                        <TableHead>Driver Mobile</TableHead>
+                        <TableHead>Driver Mob.</TableHead>
                         <TableHead>Vehicle Number</TableHead>
-                        <TableHead>Fuel Quantity</TableHead>
+                        <TableHead>Fuel Qty</TableHead>
                         <TableHead>Action</TableHead>
+                        <TableHead align="justify">Verified</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {records.length > 0 && records.map((record, index) => (
-                        <TableRow key={index} className={`${record.verified ? "bg-green-200 hover:bg-green-50 text-background" : ""}`}>
+                        <TableRow key={index}>
                             <TableCell>{index + 1}</TableCell>
                             <TableCell>{record.tripSheetId}</TableCell>
                             <TableCell>{record.fuelingDateTime}</TableCell>
                             <TableCell>{record.bowser.regNo}</TableCell>
-                            <TableCell>{record.gpsLocation.substring(0, 15) + "..."}</TableCell>
+                            <TableCell>{record.gpsLocation.replace('Bowser at', "").split(',')[0].substring(0, 15) + "..."}</TableCell>
                             <TableCell>{record.driverName}</TableCell>
                             <TableCell>{record.driverMobile}</TableCell>
                             <TableCell>{record.vehicleNumber}</TableCell>
-                            <TableCell>{record.quantityType} {record.fuelQuantity} L</TableCell>
-                            <TableCell>
+                            <TableCell>{record.quantityType[0]} {record.fuelQuantity} L</TableCell>
+                            <TableCell className="flex gap-2 items-center">
                                 <Link href={`/dispense-records/${record._id}`}>
-                                    <Button variant={`${record.verified ? "secondary" : "outline"}`} size="sm">
-                                        View Details
+                                    <Button variant="outline" size="sm">
+                                        <Eye />
                                     </Button>
                                 </Link>
                             </TableCell>
+                            <TableCell>{record.verified ? <Check /> : <X />}</TableCell>
                         </TableRow>
                     ))}
                     {/* Calculate total fuel quantity if filtered by tripSheetId */}
                     <TableRow>
                         <TableCell colSpan={8} className="text-right font-bold">Total Fuel Quantity:</TableCell>
                         <TableCell>
-                            {records.reduce((total, record) => total + Number(record.fuelQuantity), 0)} L
+                            {records.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)} L
                         </TableCell>
-                        <TableCell className="text-right font-bold"></TableCell>
+                        <TableCell colSpan={2} className="text-right font-bold"></TableCell>
                     </TableRow>
                 </TableBody>
             </Table>

@@ -5,10 +5,8 @@ const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
 
-// Route to get filtered, paginated, and sorted fueling records
 router.get('/', async (req, res) => {
     const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'fuelingDateTime', order = 'desc', verified } = req.query;
-    console.log(req.query);
     const skip = (page - 1) * limit;
     let filter = {};
 
@@ -167,16 +165,13 @@ router.get('/:id', async (req, res) => {
 
 router.patch('/update/:id', async (req, res) => {
     const { id } = req.params;
-    const updateData = req.body; // Get the data to update from the request body
+    const updateData = req.body;
 
     try {
-        // Find the record by ID and update it
         const updatedRecord = await FuelingTransaction.findByIdAndUpdate(id, updateData, {
-            new: true, // Return the updated document
-            runValidators: true, // Validate the update against the model's schema
+            new: true,
+            runValidators: true,
         });
-
-        console.log(updatedRecord)
 
         if (!updatedRecord) {
             return res.status(404).json({ heading: "Failed", message: 'Record not found' });

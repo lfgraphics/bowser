@@ -9,12 +9,11 @@ router.post('/create', async (req, res) => {
     let tripSheetId = req.body.tripSheetId
     if (!tripSheetId || typeof tripSheetId !== 'string') {
         console.error("Invalid tripSheetId:", tripSheetId);
+        res.status(400).json({ message: 'Invalid tripSheetId' });
         throw new Error("tripSheetId cannot be null or undefined");
     }
     try {
-        // console.log('Received data:', req.body);
         const newSheet = new TripSheet(req.body);
-
         const saveOptions = {
             writeConcern: {
                 w: 'majority',
@@ -29,37 +28,28 @@ router.post('/create', async (req, res) => {
 
         await Promise.race([savePromise, timeoutPromise]);
 
-        // Step 1: Update or add bowserId in the user model
-        const bowserDriverId = req.body.bowserDriver[0].id; // Assuming there's at least one driver
-        const bowserRegNo = req.body.bowser.regNo;
+        // const bowserDriverId = req.body.bowserDriver[0].id;
+        // const bowserRegNo = req.body.bowser.regNo;
+        // const updatedUser = await User.findOneAndUpdate(
+        //     { userId: bowserDriverId },
+        //     { $set: { bowserId: bowserRegNo } },
+        //     { new: true, upsert: true }
+        // );
 
-        // console.log(`Updating user with userId: ${bowserDriverId} to set bowserId: ${bowserRegNo}`);
-        const updatedUser = await User.findOneAndUpdate(
-            { userId: bowserDriverId }, // Assuming userId is the identifier
-            { $set: { bowserId: bowserRegNo } },
-            { new: true, upsert: true } // Create if not found
-        );
-        // console.log('User updated:', updatedUser);
+        // const updatedBowser = await Bowser.findOneAndUpdate(
+        //     { regNo: bowserRegNo },
+        //     { $set: { currentTrip:  newSheet._id } },
+        //     { new: true }
+        // );
 
-        // Step 2: Update the bowser with the current trip's _id
-        const newTripSheet = await TripSheet.findOne({ tripSheetId: tripSheetId });
-        // console.log(`Updating bowser with regNo: ${bowserRegNo} to set currentTrip: ${newTripSheet._id}`);
-        
-        const updatedBowser = await Bowser.findOneAndUpdate(
-            { regNo: bowserRegNo },
-            { $set: { currentTrip: newTripSheet._id } },
-            { new: true }
-        );
-
-        if (!updatedBowser) {
-            console.warn(`No bowser found with regNo: ${bowserRegNo}`);
-        } else {
-            // console.log('Bowser updated:', updatedBowser);
-        }
+        // if (!updatedBowser) {
+        //     console.warn(`No bowser found with regNo: ${bowserRegNo}`);
+        // } else {
+        // }
 
         res.status(200).json({ message: 'Trip Sheet created successfully' });
     } catch (err) {
-        console.error('Error adding sheet record:', err);
+        console.error('Error creating Trip Sheet:', err);
 
         if (err.message === 'Save operation timed out') {
             res.status(503).json({
@@ -73,7 +63,7 @@ router.post('/create', async (req, res) => {
             });
         } else {
             res.status(500).json({
-                message: 'An error occurred while Trip Sheet. Please try again',
+                message: 'An error occurred while Trip Sheet Creation. Please try again',
                 error: err.message
             });
         }
@@ -107,14 +97,11 @@ router.get('/find-by-sheetId/:tripSheetId', async (req, res) => {
     const tripSheetId = req.params.tripSheetId;
 
     try {
-        console.log(`Searching for Trip Sheet with tripSheetId: ${tripSheetId}`);
-        // First, find all bowsers with the given registration number.
         const sheets = await TripSheet.find({
             tripSheetId: { $regex: tripSheetId, $options: 'i' }
         });
         
         if (sheets.length === 0) {
-            console.log(`No sheets found with the given Trip Sheet ID: ${tripSheetId}`);
             return res.status(404).json({ message: 'No Sheet found with the given tripSheetId number' });
         }
         res.status(200).json({ sheets });

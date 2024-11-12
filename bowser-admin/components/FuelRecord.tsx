@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, User, CheckCircle, XCircle } from 'lucide-react';
+import { MapPin, User, Check, X } from 'lucide-react';
 import { DispensesRecord } from '@/types';
 import Modal from './Modal';
 import Loading from '@/app/loading';
@@ -70,14 +70,18 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
         if (updatedRecord.gpsLocation !== record.gpsLocation) {
             updatedFields.gpsLocation = updatedRecord.gpsLocation;
         }
-        if (updatedRecord.verified !== record.verified) {
+        if (updatedRecord.verified !== record.verified || (updatedRecord.verified === false && !record.verified)) {
             updatedFields.verified = updatedRecord.verified;
         }
 
         // Proceed only if there are changes
         if (Object.keys(updatedFields).length === 0) {
             alert('No changes detected.');
-            return; // Exit if no changes
+            setShowAlert(true)
+            setAlertTitle("Suspicious Update")
+            setAlertMessage("You can't update without any change in details")
+            setLoading(false)
+            return;
         }
 
         try {
@@ -85,7 +89,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
             setShowAlert(true)
             setAlertTitle(response.data.heading)
             setAlertMessage(response.data.message)
-            setEditing(false); // Exit editing mode after ful update
+            setEditing(false);
         } catch (error: any) {
             console.error('Error updating record:', error);
             setShowAlert(true)
@@ -207,11 +211,11 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                         ) : (
                             updatedRecord?.verified ? (
                                 <Badge variant="succes" className="ml-2 flex items-center h-6 w-28">
-                                    <CheckCircle className="w-4 h-4 mr-1" /> Verified
+                                    <Check className="w-4 h-4 mr-1" /> Verified
                                 </Badge>
                             ) : (
                                 <Badge variant="destructive" className="ml-2 flex items-center h-6 w-28">
-                                    <XCircle className="w-4 h-4 mr-1" /> Not Verified
+                                    <X className="w-4 h-4 mr-1" /> Not Verified
                                 </Badge>
                             )
                         )}

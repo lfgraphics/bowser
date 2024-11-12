@@ -9,12 +9,11 @@ import {
     SelectContent,
     SelectGroup,
     SelectItem,
-    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
 import { Toaster } from "@/components/ui/toaster"
-import { Edit, Plus, SortAsc, SortDesc, } from 'lucide-react';
+import { ArrowDown01, ArrowUp10, Edit, Plus } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { TripSheet, Filters, Sort } from '@/types/index';
@@ -95,7 +94,6 @@ const TripSheetPage = () => {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup>
-                            <SelectLabel>Status</SelectLabel>
                             <SelectItem value="false">All</SelectItem>
                             <SelectItem value="true">Unsettled</SelectItem>
                         </SelectGroup>
@@ -105,8 +103,8 @@ const TripSheetPage = () => {
             <Table className="w-full">
                 <TableHeader>
                     <TableRow>
-                        <TableHead className='flex gap-3' onClick={() => setSort({ field: 'tripSheetId', order: sort.order === 'asc' ? 'desc' : 'asc' })}>
-                            Trip Sheet ID {sort.order === "asc" ? <SortAsc /> : <SortDesc />}
+                        <TableHead onClick={() => setSort({ field: 'tripSheetId', order: sort.order === 'asc' ? 'desc' : 'asc' })}>
+                            <div className='flex gap-3'>Trip Sheet ID {sort.order === "asc" ? <ArrowUp10 /> : <ArrowDown01 />}</div>
                         </TableHead>
                         <TableHead>Created on</TableHead>
                         <TableHead>Driver Name</TableHead>

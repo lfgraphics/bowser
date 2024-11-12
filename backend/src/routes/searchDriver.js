@@ -30,30 +30,28 @@ router.get('/:searchTerm', async (req, res) => {
 
 router.get('/bowser-drivers/:userId', async (req, res) => {
     const userId = req.params.userId;
-    const bowserDriverRoleId = '6710ddc21e5c7dc410e64e34'; // ObjectId for the bowser driver role
+    const bowserDriverRoleId = '6710ddc21e5c7dc410e64e34';
 
     try {
-
-        // Find users with a userId that matches the search term (using regex for partial match)
-        const users = await User.find({ userId: { $regex: userId, $options: 'i' } });
+        const users = await User.find({ userId: { $regex: userId, $options: 'i' } }, 'userId name phoneNumber roles verified');
 
         if (users.length === 0) {
             return res.status(404).json({ message: 'No users found' });
         }
 
-
-        // Filter users to only those with the bowser driver role
         const bowserDrivers = users.filter(user => 
-            user.roles.some(role => role.toString() === bowserDriverRoleId)
+            user.verified && user.roles.some(role => role.toString() === bowserDriverRoleId)
         );
 
         if (bowserDrivers.length === 0) {
             return res.status(404).json({ message: 'No users found with the bowser driver role' });
         }
 
-
-        // Return the filtered list of bowser drivers
-        res.status(200).json(bowserDrivers);
+        res.status(200).json(bowserDrivers.map(driver => ({
+            id: driver.userId,
+            name: driver.name,
+            phoneNo: driver.phoneNumber
+        })));
     } catch (err) {
         console.error('Error searching bowser drivers:', err);
         console.error('Error stack:', err.stack);

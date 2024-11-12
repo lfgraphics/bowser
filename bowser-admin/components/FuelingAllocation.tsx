@@ -8,9 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { isAuthenticated, getCurrentUser } from "@/lib/auth"
 import { Driver, ResponseBowser, User } from "@/types"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select"
-import { Loader2 } from "lucide-react"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -24,6 +22,7 @@ import { SearchModal } from "@/components/SearchModal"
 import { searchItems } from '@/utils/searchUtils'
 import { Vehicle } from "@/types"
 import { ObjectId } from "mongoose"
+import Loading from "@/app/loading"
 
 export default function FuelingAllocation() {
     const [isSearching, setIsSearching] = useState(false);
@@ -39,9 +38,6 @@ export default function FuelingAllocation() {
     const [bowserRegNo, setBowserRegNo] = useState("")
     const [bowserId, setBowserId] = useState("")
     const [bowserDriverMongoId, setBowserDriverMongoId] = useState<ObjectId>()
-    const [bowserDrivers, setBowserDrivers] = useState<User[]>([]);
-    const [bowserDriverModalVisible, setBowserDriverModalVisible] = useState(false);
-    const [adminLocation, setAdminLocation] = useState('');
     const [alertDialogOpen, setAlertDialogOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
     const [searchModalConfig, setSearchModalConfig] = useState<{
@@ -351,9 +347,7 @@ export default function FuelingAllocation() {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
             {(submitting || isSearching) && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                    <Loader2 className="h-10 w-10 animate-spin text-white" />
-                </div>
+                <Loading />
             )}
             <Card className="w-[450px]">
                 <CardHeader>
@@ -503,7 +497,7 @@ export default function FuelingAllocation() {
                                     }
                                 }}
                                 required
-                            // readOnly
+                                readOnly
                             />
                         </div>
                         <div className="flex flex-col space-y-1.5 mt-4">
@@ -514,7 +508,7 @@ export default function FuelingAllocation() {
                                 value={bowserDriverName}
                                 onChange={(e) => setBowserDriverName(e.target.value)}
                                 required
-                            // readOnly
+                                readOnly
                             />
                         </div>
                     </CardContent>
@@ -538,26 +532,6 @@ export default function FuelingAllocation() {
                 renderItem={searchModalConfig.renderItem}
                 keyExtractor={searchModalConfig.keyExtractor}
             />
-
-            <Dialog open={bowserDriverModalVisible} onOpenChange={setBowserDriverModalVisible}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Select a Bowser Driver</DialogTitle>
-                    </DialogHeader>
-                    <div className="mt-4 space-y-2">
-                        {bowserDrivers.map((driver, index) => (
-                            <Button
-                                key={index}
-                                className="w-full justify-start"
-                                variant="outline"
-                                onClick={() => handleBowserDriverSelection(driver)}
-                            >
-                                {driver.name} ({driver.userId})
-                            </Button>
-                        ))}
-                    </div>
-                </DialogContent>
-            </Dialog>
 
             <AlertDialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
                 <AlertDialogContent>
