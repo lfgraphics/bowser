@@ -99,6 +99,11 @@ const FuelingRecords: React.FC = () => {
                 <ActivityIndicator size="large" color={colors.primary} />
             ) : (
                 <ScrollView style={styles.scrollView}>
+                    {records.length > 0 &&
+                        <Text style={[styles.title, { color: colors.text }]}>
+                            Total Fueled Quantity: {records.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)} L
+                        </Text>
+                    }
                     {records.length > 0 ? (
                         records.map((record) => (
                             <View style={[styles.modalItem, { backgroundColor: colors.card }]} key={record._id}>
