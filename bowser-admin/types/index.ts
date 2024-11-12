@@ -65,6 +65,7 @@ export interface DispensesRecord {
     gpsLocation: string,
     fuelingDateTime: string,
     verified: boolean,
+    posted: boolean,
     bowser: {
         regNo: string,
         driver: {

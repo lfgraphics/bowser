@@ -5,7 +5,6 @@ import { DispensesRecord } from "@/types";
 import {
     Table,
     TableBody,
-    TableCaption,
     TableCell,
     TableHead,
     TableHeader,
@@ -29,7 +28,7 @@ import {
 import Link from "next/link";
 import { isAuthenticated } from "@/lib/auth";
 import Loading from "../loading";
-import { Check, CheckSquare, Eye, X } from "lucide-react";
+import { Check, Eye, ListChecks, ListX, X } from "lucide-react";
 
 const VehicleDispensesPage = () => {
     const [records, setRecords] = useState<DispensesRecord[]>([]);
@@ -42,10 +41,11 @@ const VehicleDispensesPage = () => {
     const [localBowserNumber, setLocalBowserNumber] = useState("");
     const [localDriverName, setLocalDriverName] = useState("");
     const [localTripSheetId, setLocalTripSheetId] = useState("");
-    const [localVerified, setLocalVerified] = useState("");
     const [limit, setLimit] = useState(20);
     const [loading, setLoading] = useState(true);
     const [verificationStatus, setVerificationStatus] = useState("all");
+    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set()); // Track selected rows
+    const [selectAll, setSelectAll] = useState(false); // Track if all rows are selected
 
     const checkAuth = () => {
         const authenticated = isAuthenticated();
@@ -163,6 +163,27 @@ const VehicleDispensesPage = () => {
         }
     };
 
+    // Function to toggle selection of a row
+    const toggleRowSelection = (id: string) => {
+        setSelectedRows((prev) => {
+            const newSelectedRows = new Set(prev);
+            if (newSelectedRows.has(id)) {
+                newSelectedRows.delete(id); // Deselect if already selected
+            } else {
+                newSelectedRows.add(id); // Select if not selected
+            }
+            return newSelectedRows;
+        });
+    };
+    const toggleSelectAll = async () => {
+        if (selectAll) {
+            setSelectedRows(new Set()); // Deselect all
+        } else {
+            const allRowIds = new Set(records.map(record => record._id.toString())); // Create a set of all row IDs
+            setSelectedRows(allRowIds); // Select all
+        }
+        setSelectAll(!selectAll); // Toggle the select all state
+    };
 
     return (
         <div>
@@ -245,7 +266,10 @@ const VehicleDispensesPage = () => {
                         </SelectContent>
                     </Select>
                     <div className="flex items-center justify-between">Records limit <Input type="number" className="w-20 ml-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
-                    <div className="flex items-center justify-between text-muted-foreground font-[200]">Total found record{records.length > 1 ? "s" : ""} {records.length} out of {totalRecords} records </div>
+                    <div className="flex items-center justify-between text-muted-foreground font-[200]">{records.length} out of {totalRecords} records </div>
+                    <Button variant="outline" onClick={toggleSelectAll}>
+                        {selectAll ? <ListX size={32}/> : <ListChecks size={32}/>}
+                    </Button>
                     <Button onClick={exportToExcel} className="w-full sm:w-auto">
                         Export to Excel
                     </Button>
@@ -350,14 +374,20 @@ const VehicleDispensesPage = () => {
                         <TableHead>Driver Name</TableHead>
                         <TableHead>Driver Mob.</TableHead>
                         <TableHead>Vehicle Number</TableHead>
+                        <TableHead>Qty Type</TableHead>
                         <TableHead>Fuel Qty</TableHead>
                         <TableHead>Action</TableHead>
                         <TableHead align="justify">Verified</TableHead>
+                        <TableHead align="justify">Posted</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {records.length > 0 && records.map((record, index) => (
-                        <TableRow key={index}>
+                        <TableRow
+                            key={index}
+                            onClick={() => toggleRowSelection(`${record._id}`)}
+                            className={selectedRows.has(`${record._id}`) ? "bg-blue-200 hover:bg-blue-100 text-black" : ""}
+                        >
                             <TableCell>{index + 1}</TableCell>
                             <TableCell>{record.tripSheetId}</TableCell>
                             <TableCell>{record.fuelingDateTime}</TableCell>
@@ -366,21 +396,23 @@ const VehicleDispensesPage = () => {
                             <TableCell>{record.driverName}</TableCell>
                             <TableCell>{record.driverMobile}</TableCell>
                             <TableCell>{record.vehicleNumber}</TableCell>
-                            <TableCell>{record.quantityType[0]} {record.fuelQuantity} L</TableCell>
+                            <TableCell>{record.quantityType}</TableCell>
+                            <TableCell>{record.fuelQuantity}</TableCell>
                             <TableCell className="flex gap-2 items-center">
                                 <Link href={`/dispense-records/${record._id}`}>
-                                    <Button variant="outline" size="sm">
+                                    <Button variant={selectedRows.has(`${record._id}`) ? "secondary" : "outline"} size="sm">
                                         <Eye />
                                     </Button>
                                 </Link>
                             </TableCell>
                             <TableCell>{record.verified ? <Check /> : <X />}</TableCell>
+                            <TableCell>{record.posted ? <Check /> : <X />}</TableCell>
                         </TableRow>
                     ))}
                     {/* Calculate total fuel quantity if filtered by tripSheetId */}
                     <TableRow>
-                        <TableCell colSpan={8} className="text-right font-bold">Total Fuel Quantity:</TableCell>
-                        <TableCell>
+                        <TableCell colSpan={9} className="text-right font-bold">Total Fuel Quantity:</TableCell>
+                        <TableCell colSpan={2}>
                             {records.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)} L
                         </TableCell>
                         <TableCell colSpan={2} className="text-right font-bold"></TableCell>
