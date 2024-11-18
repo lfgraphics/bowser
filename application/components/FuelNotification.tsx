@@ -17,7 +17,7 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
   driverName,
   quantity,
   quantityType,
-  bowserDriver,
+  bowser,
   allocationAdmin
 }) => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -40,7 +40,7 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
       driverName,
       quantityType,
       quantity,
-      bowserDriver,
+      bowser,
       allocationAdmin
     });
   };

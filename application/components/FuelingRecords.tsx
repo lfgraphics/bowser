@@ -68,10 +68,10 @@ const FuelingRecords: React.FC = () => {
         }
     }, [tripSheetId]);
 
-    const handleViewDetails = (record: DispensesRecord) => {
-        setSelectedRecord(record);
-        setModalVisible(true);
-    };
+    // const handleViewDetails = (record: DispensesRecord) => {
+    //     setSelectedRecord(record);
+    //     setModalVisible(true);
+    // };
 
     const closeModal = () => {
         setModalVisible(false);
@@ -93,14 +93,14 @@ const FuelingRecords: React.FC = () => {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <Text style={[styles.title, { color: colors.text }]}>Fueling Records</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Your Fueling Records</Text>
 
             {loading ? (
                 <ActivityIndicator size="large" color={colors.primary} />
             ) : (
                 <ScrollView style={styles.scrollView}>
                     {records.length > 0 &&
-                        <Text style={[styles.title, { color: colors.text }]}>
+                        <Text style={[styles.secondaryTitle, { color: colors.text }]}>
                             Total Fueled Quantity: {records.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)} L
                         </Text>
                     }
@@ -149,6 +149,13 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 24,
+        alignSelf:'center',
+        fontWeight: 'bold',
+        marginBottom: 16,
+    },
+    secondaryTitle: {
+        fontSize: 18,
+        alignSelf:'center',
         fontWeight: 'bold',
         marginBottom: 16,
     },

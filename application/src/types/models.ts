@@ -1,12 +1,3 @@
-import { Types } from 'mongoose';
-
-export interface Vehicle {
-    VehicleNo: string;
-    type: string;
-    capacity: number;
-    lastMaintenanceDate: Date;
-}
-
 export interface Driver {
     Name: string;
     ITPLId: string | null;
@@ -17,10 +8,17 @@ export interface Driver {
     }>;
 }
 
+export interface Vehicle {
+    VehicleNo: string;
+    type: string;
+    capacity: number;
+    lastMaintenanceDate: Date;
+    driverDetails: Driver;
+}
+
 export type BowserDriver = {
-    "User Id": string;
-    _id: string;
-    userName: string;
+    id: string;
+    name: string;
 };
 
 export type FuelingOrderData = {
@@ -32,10 +30,17 @@ export type FuelingOrderData = {
     fuelQuantity: number;
     quantityType: "Full" | "Part" | 'N/A';
     vehicleNumber: string;
+    bowser: {
+        regNo: string;
+        driver: {
+            id: string;
+            name: string;
+        }
+    };
     allocationAdmin?: {
-        _id: string;
-        userName: string;
-        userId: string;
+        name: string;
+        id: string;
+        phoneNo: string;
     };
 };
 
@@ -47,16 +52,20 @@ export interface FuelNotificationProps {
     driverName: string;
     quantityType: "Part" | "Full" | "N/A";
     quantity: string;
-    bowserDriver: BowserDriver;
+    bowser: {
+        regNo: string;
+        driver: BowserDriver;
+    };
     allocationAdmin: {
-        _id: string;
-        userName: string;
-        userId: string;
+        name: string;
+        id: string;
+        phoneNo: string;
     };
 
 }
 
 export interface FormData {
+    orderId?: string;
     vehicleNumberPlateImage: string | null;
     tripSheetId: string,
     vehicleNumber: string;
@@ -80,7 +89,6 @@ export interface FormData {
     allocationAdmin?: {
         name: string;
         id: string;
-        allocationTime: string;
     };
 }
 export interface UserData {

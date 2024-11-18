@@ -86,11 +86,12 @@ export default function FuelingScreen() {
 
       // Reverse geocode to get city name
       let geocode = await Location.reverseGeocodeAsync({ latitude, longitude });
-      let city = geocode[0]?.city ; ","; geocode[0].district || 'City not found';
+      let city = geocode[0]?.city || 'City  not found';
+      let district = geocode[0]?.district || 'District not found';
 
       // Format the coordinates and return
       const coordinates = `Latitude ${latitude}, Longitude ${longitude}`;
-      const fuelLocation = `Bowser at ${city}, ${coordinates}`;
+      const fuelLocation = `Bowser at ${city}, ${district} ${coordinates}`;
 
       setGpsLocation(fuelLocation);
       return fuelLocation;
@@ -115,10 +116,10 @@ export default function FuelingScreen() {
 
   const submitDetails = async () => {
     setFormSubmitting(true);
-    // if (!validateInputs()) {
-    //   setFormSubmitting(false);
-    //   return;
-    // }
+    if (!validateInputs()) {
+      setFormSubmitting(false);
+      return;
+    }
 
     if (driverMobileNotFound && driverMobile && isOnline) {
       try {
@@ -422,7 +423,7 @@ export default function FuelingScreen() {
         setDriverMobileNotFound(true);
       }
 
-      // Extract ID from name
+      // Extract ID from namaae
       const idMatch = selectedDriverData.Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
       let cleanName = selectedDriverData.Name.trim();
       let recognizedId = '';
@@ -687,6 +688,8 @@ export default function FuelingScreen() {
                       onPress={() => {
                         setSelectedVehicle(item.VehicleNo);
                         setVehicleNumber(item.VehicleNo);
+                        handleDriverSelection(item.driverDetails.Name)
+                        setFoundDrivers([item.driverDetails]);
                         setVehicleModalVisible(false);
                       }}
                     >

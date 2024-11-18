@@ -36,8 +36,8 @@ export default function NotificationsScreen() {
             if (!userData || !userData['User Id']) {
                 throw new Error('User data not found. Please log in again.');
             }
-            const API_BASE_URL = 'https://bowser-backend-2cdr.onrender.com';
-            const response = await axios.get<ServerResponse>(`${API_BASE_URL}/fuelingOrders/${userData['User Id']}`);
+            const url = `http://192.168.137.1:5000/fuelingOrders/${userData['User Id']}`; //https://bowser-backend-2cdr.onrender.com
+            const response = await axios.get<ServerResponse>(url);
             setNotificationsData(response.data.orders);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');
@@ -62,7 +62,7 @@ export default function NotificationsScreen() {
 
     if (error) {
         return (
-            <View style={styles.centerContainer}>
+            <View style={[styles.centerContainer]}>
                 <Text>{error}</Text>
             </View>
         );
@@ -85,18 +85,18 @@ export default function NotificationsScreen() {
                             driverName={data.driverName}
                             quantityType={data.quantityType}
                             quantity={data.fuelQuantity.toString()}
-                            bowserDriver={data.bowserDriver}
+                            bowser={data.bowser}
                             orderId={data._id.toString()}
                             allocationAdmin={data.allocationAdmin || {
-                                _id: '',
-                                userName: '',
-                                userId: ''
+                                name: '',
+                                id: '',
+                                phoneNo: ''
                             }}
                         />
                     </View>
                 ))
             ) : (
-                <Text style={styles.noNotifications}>No notifications available</Text>
+                <Text style={styles.noNotifications}>No Pending Orders Available</Text>
             )}
             <View style={{ height: 40 }} />
         </ScrollView>

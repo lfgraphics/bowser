@@ -70,32 +70,32 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const checkLoginStatus = async () => {
-      const token = await AsyncStorage.getItem('userToken');
-      const userDataString = await AsyncStorage.getItem('userData');
+    // const checkLoginStatus = async () => {
+    //   const token = await AsyncStorage.getItem('userToken');
+    //   const userDataString = await AsyncStorage.getItem('userData');
 
-      if (token && userDataString) {
-        setIsLoggedIn(true);
-        setUserData(JSON.parse(userDataString));
+    //   if (token && userDataString) {
+    //     setIsLoggedIn(true);
+    //     setUserData(JSON.parse(userDataString));
 
-        // Check for push token in AsyncStorage
-        // const pushToken = await AsyncStorage.getItem('pushToken');
-        // if (!pushToken) {
-        //   // Register push token with server
-        //   const newPushToken = await registerForPushNotificationsAsync();
-        //   if (newPushToken) {
-        //     await AsyncStorage.setItem('pushToken', newPushToken);
-        //     const userId = JSON.parse(userDataString)["User Id"];
-        //     await registerPushTokenWithServer(userId, newPushToken);
-        //   }
-        // }
-      } else {
-        setIsLoggedIn(false);
-      }
-      setIsLoading(false);
-    };
+    //     // Check for push token in AsyncStorage
+    //     // const pushToken = await AsyncStorage.getItem('pushToken');
+    //     // if (!pushToken) {
+    //     //   // Register push token with server
+    //     //   const newPushToken = await registerForPushNotificationsAsync();
+    //     //   if (newPushToken) {
+    //     //     await AsyncStorage.setItem('pushToken', newPushToken);
+    //     //     const userId = JSON.parse(userDataString)["User Id"];
+    //     //     await registerPushTokenWithServer(userId, newPushToken);
+    //     //   }
+    //     // }
+    //   } else {
+    //     setIsLoggedIn(false);
+    //   }
+    //   setIsLoading(false);
+    // };
 
-    checkLoginStatus();
+    checkUserLoggedIn();
   }, []);
 
   useEffect(() => {
@@ -116,7 +116,7 @@ const App = () => {
           setUserData(JSON.parse(userDataString));
         }
 
-        if (!isLoggedIn) {
+        if (!checkUserLoggedIn) {
           router.replace('/auth' as any);
           return;
         }
@@ -610,7 +610,8 @@ const App = () => {
           <MaterialIcons name="local-gas-station" size={24} color="white" style={{ marginRight: 5 }} />
         </View>
       </Link>
-      <Link disabled style={styles.disabledButton} href={'/notifications'}>
+      <Link style={styles.disabledButton} href={'/notifications'}>
+        {/* disabled */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: 'white' }}>
             Pending Orders

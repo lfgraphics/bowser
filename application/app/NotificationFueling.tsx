@@ -46,6 +46,7 @@ export default function NotificationFuelingScreen() {
         driverName = 'N/A',
         quantityType = 'N/A',
         quantity = 'N/A',
+        orderId,
         bowser,
         allocationAdmin
     } = route.params as RouteParams;
@@ -117,10 +118,10 @@ export default function NotificationFuelingScreen() {
     // form submit reset
     const submitDetails = async () => {
         setFormSubmitting(true);
-        if (!validateInputs()) {
-            setFormSubmitting(false);
-            return;
-        }
+        // if (!validateInputs()) {
+        //     setFormSubmitting(false);
+        //     return;
+        // }
 
         let currentFuelingDateTime = fuelingDateTime;
         let currentGpsLocation = gpsLocation;
@@ -137,17 +138,29 @@ export default function NotificationFuelingScreen() {
             currentGpsLocation = locationResult;
         }
 
+        let tripSheetId
+
+        try {
+            const userDataString = await AsyncStorage.getItem('userData');
+            const userData = userDataString ? JSON.parse(userDataString) : null;
+            tripSheetId = userData ? userData['Trip Sheet Id'] : null;
+        } catch (error) {
+            console.error('Error fetching user data from AsyncStorage:', error);
+        }
+
         if (currentFuelingDateTime && currentGpsLocation) {
             const formData: FormData = {
+                orderId,
                 vehicleNumberPlateImage,
+                tripSheetId,
                 vehicleNumber: vehicleNumber.toUpperCase(),
                 driverName,
                 driverId: driverId.toUpperCase(),
                 driverMobile,
                 fuelMeterImage,
                 slipImage,
-                fuelQuantity,
                 quantityType,
+                fuelQuantity,
                 gpsLocation: currentGpsLocation,
                 fuelingDateTime: currentFuelingDateTime,
                 bowser: {
@@ -161,20 +174,17 @@ export default function NotificationFuelingScreen() {
                 allocationAdmin: {
                     name: allocationAdmin.name,
                     id: allocationAdmin.id,
-                    allocationTime: allocationAdmin.allocationTime
                 },
             };
 
-
-
             if (isOnline) {
                 try {
-                    const response = await fetch(`https://bowser-backend-2cdr.onrender.com/addFuelingTransaction`, {
+                    const response = await fetch(`https://bowser-backend-2cdr.onrender.com/addFuelingTransaction`, { //https://bowser-backend-2cdr.onrender.com // http://192.168.137.1:5000
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify(FormData),
+                        body: JSON.stringify(formData),
                     });
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
