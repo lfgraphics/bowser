@@ -105,11 +105,15 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign({ userId: user.userId, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
         const loginTime = new Date().toISOString();
 
-        const userTripSheetId = (await TripSheet.find({ 'bowserDriver.id': user.userId }).select('tripSheetId').where('settelment.settled', false))[0].tripSheetId;
+        const userTripSheets = await TripSheet.find({ 'bowserDriver.id': user.userId })
+            .select('tripSheetId')
+            .where('settelment.settled', false);
 
-        if (!userTripSheetId) {
-            return res.status(404).json({ message: "User is not linked to any trip\n Can't login" });
+        if (userTripSheets.length === 0) {
+            return res.status(404).json({ message: "No unsettled trip sheet found for the user \nCan't login" });
         }
+
+        const userTripSheetId = userTripSheets[0].tripSheetId;
 
         const userData = {
             _id: user._id,
@@ -118,7 +122,7 @@ router.post('/login', async (req, res) => {
             'Phone Number': user.phoneNumber,
             'Verified User': user.verified,
             'Role': roleNames,
-            // 'Bowser': user.bowserId,
+            'Bowser': user.bowserId,
             TripSheet: userTripSheetId,
             'Trip Sheet Id': userTripSheetId || "Not on a trip",
             'Push Notification Token': pushToken || user.pushToken,
@@ -247,7 +251,7 @@ router.post('/generate-reset-url', async (req, res) => {
     }
 });
 
-router.post('/reset-password', async (req, res) => {
+router.patch('/reset-password', async (req, res) => {
     const { userId, token, password, confirmPassword } = req.body;
     try {
         const user = await User.findOne({ userId });

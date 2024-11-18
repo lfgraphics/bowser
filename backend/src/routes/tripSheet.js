@@ -28,25 +28,23 @@ router.post('/create', async (req, res) => {
 
         await Promise.race([savePromise, timeoutPromise]);
 
-        // const bowserDriverId = req.body.bowserDriver[0].id;
-        // const bowserRegNo = req.body.bowser.regNo;
-        // const updatedUser = await User.findOneAndUpdate(
-        //     { userId: bowserDriverId },
-        //     { $set: { bowserId: bowserRegNo } },
-        //     { new: true, upsert: true }
-        // );
+        const bowserDriverId = req.body.bowserDriver[0].id;
+        const bowserRegNo = req.body.bowser.regNo;
+        await User.findOneAndUpdate(
+            { userId: bowserDriverId },
+            { $set: { bowserId: bowserRegNo } },
+            { new: true, upsert: true }
+        );
 
-        // const updatedBowser = await Bowser.findOneAndUpdate(
-        //     { regNo: bowserRegNo },
-        //     { $set: { currentTrip:  newSheet._id } },
-        //     { new: true }
-        // );
+        const updatedBowser = await Bowser.findOneAndUpdate(
+            { regNo: bowserRegNo },
+            { $set: { currentTrip: newSheet._id } },
+            { new: true }
+        );
 
-        // if (!updatedBowser) {
-        //     console.warn(`No bowser found with regNo: ${bowserRegNo}`);
-        // } else {
-        // }
-
+        if (!updatedBowser) {
+            console.warn(`No bowser found with regNo: ${bowserRegNo}`);
+        }
         res.status(200).json({ message: 'Trip Sheet created successfully' });
     } catch (err) {
         console.error('Error creating Trip Sheet:', err);
@@ -100,7 +98,7 @@ router.get('/find-by-sheetId/:tripSheetId', async (req, res) => {
         const sheets = await TripSheet.find({
             tripSheetId: { $regex: tripSheetId, $options: 'i' }
         });
-        
+
         if (sheets.length === 0) {
             return res.status(404).json({ message: 'No Sheet found with the given tripSheetId number' });
         }

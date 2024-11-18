@@ -11,17 +11,16 @@ router.get('/:userId', async (req, res) => {
         const skip = (page - 1) * limit;
 
         // Get all order IDs for the user
-        const userOrders = await FuelingTransaction.find({'bowserDriver.userId': userId}, '_id');
+        const userOrders = await FuelingOrder.find({ 'bowser.driver.id': userId }); //, '_id'
         const userOrderIds = userOrders.map(order => order._id);
 
         // Find completed orders
         const completedOrders = await FuelingTransaction.find({ orderId: { $in: userOrderIds } }, 'orderId');
         const completedOrderIds = new Set(completedOrders.map(order => order.orderId.toString()));
-
         // Filter out completed orders
         const pendingOrderIds = userOrderIds.filter(id => !completedOrderIds.has(id.toString()));
-        // Fetch pending orders with pagination
-        const orders = await FuelingOrder.find({ _id: { $in: pendingOrderIds } }).skip(skip).limit(limit);
+        // Fetch all user orders and filter out completed orders in one go
+        const orders = userOrders.filter(order => !completedOrderIds.has(order._id.toString())).slice(skip, skip + limit);
 
         const total = pendingOrderIds.length;
 

@@ -13,13 +13,12 @@ const fuelingOrderSchema = new mongoose.Schema({
   },
   fuelQuantity: { type: Number, required: true },
   bowser: {
-    _id: mongoose.Schema.Types.ObjectId,
-    regNo: String,
-  },
-  bowserDriver: {
-    _id: mongoose.Schema.Types.ObjectId,
-    name: { type: String, },
-    id: { type: String, required: true },
+    regNo: { type: String, },
+    driver: {
+      name: { type: String, },
+      id: { type: String, required: true },
+      phoneNo: { type: String, },
+    }
   },
   allocationAdmin: {
     name: { type: String, required: true },

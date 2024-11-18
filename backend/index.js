@@ -29,3 +29,27 @@ connectDatabases()
     console.error('Failed to connect to databases:', error);
     process.exit(1);
   });
+
+  // const fetchLocationData = async (latitude, longitude) => {
+  //   const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`;
+    
+  //   try {
+  //     const response = await fetch(url);
+  //     const data = await response.json();
+  //     if (data && data.address) {
+  //       const { county: state_district, state, city, town, village } = data.address;
+  //       const location = city || town || village;
+  //       let obj = `${location}, ${data.address.state_district}, ${state}`
+  //       return obj
+  //     } else {
+  //       console.log("No results found");
+  //       return null;
+  //     }
+  //   } catch (error) {
+  //     console.error(error);
+  //     return null;
+  //   }
+  // };
+  
+  // Example usage
+  // fetchLocationData(26.7474572, 83.2323794).then(console.log);
