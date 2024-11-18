@@ -7,7 +7,7 @@ import * as FileSystem from 'expo-file-system';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { useNavigation, useRoute, useTheme } from '@react-navigation/native';
+import { useRoute, useTheme } from '@react-navigation/native';
 import { FormData } from '@/src/types/models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
@@ -54,7 +54,6 @@ export default function NotificationFuelingScreen() {
 
     // declare state variables---->
     const colorScheme = useColorScheme();
-    const navigation = useNavigation();
     const [vehicleNumberPlateImage, setVehicleNumberPlateImage] = useState<string | null>(null);
     const [fuelMeterImage, setFuelMeterImage] = useState<string | null>(null);
     const [slipImage, setSlipImage] = useState<string | null>(null);
@@ -202,7 +201,7 @@ export default function NotificationFuelingScreen() {
                         { cancelable: false }
                     );
                     resetForm();
-                    navigation.navigate('index' as never);
+                    router.replace('/')
                 } catch (err) {
                     let errorMessage = 'An unknown error occurred';
 
@@ -269,7 +268,7 @@ export default function NotificationFuelingScreen() {
                                         { cancelable: false }
                                     );
                                     resetForm();
-                                    navigation.navigate('index' as never);
+                                    router.replace('/')
                                 }
                             },
                             {

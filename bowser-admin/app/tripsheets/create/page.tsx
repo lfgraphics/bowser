@@ -127,7 +127,7 @@ const TripSheetCreationPage: React.FC = () => {
         setLoading(true);
         try {
             const response: ResponseBowser[] = await searchItems<ResponseBowser>(
-                'http://localhost:5000/searchBowserDetails', //https://bowser-backend-2cdr.onrender.com
+                'https://bowser-backend-2cdr.onrender.com/searchBowserDetails', //https://bowser-backend-2cdr.onrender.com
                 regNo,
                 `No proper details found with the given regNo ${regNo}`
             );

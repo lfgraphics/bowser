@@ -34,9 +34,12 @@
         {
           "icon": "./assets/images/icon.png",
           "color": "#ffffff",
-          "sounds": ["./assets/notification.mp3"]
+          "sounds": [
+            "./assets/notification.mp3"
+          ]
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
@@ -54,5 +57,6 @@
       "androidMode": "default",
       "androidCollapsedTitle": "New Order"
     }
+    // "newArchEnabled": true
   }
 }

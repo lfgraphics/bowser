@@ -4,7 +4,7 @@ import FuelNotification from '@/components/FuelNotification';
 import { FuelingOrderData } from '@/src/types/models';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useTheme } from '@react-navigation/native';
 
 interface ServerResponse {
     orders: FuelingOrderData[];
@@ -17,6 +17,7 @@ export default function NotificationsScreen() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
+    const { colors } = useTheme();
 
     useEffect(() => {
         fetchNotifications();
@@ -36,7 +37,7 @@ export default function NotificationsScreen() {
             if (!userData || !userData['User Id']) {
                 throw new Error('User data not found. Please log in again.');
             }
-            const url = `http://192.168.137.1:5000/fuelingOrders/${userData['User Id']}`; //https://bowser-backend-2cdr.onrender.com
+            const url = `https://bowser-backend-2cdr.onrender.com/fuelingOrders/${userData['User Id']}`; //https://bowser-backend-2cdr.onrender.com //http://192.168.137.1:5000
             const response = await axios.get<ServerResponse>(url);
             setNotificationsData(response.data.orders);
         } catch (err) {
@@ -62,8 +63,8 @@ export default function NotificationsScreen() {
 
     if (error) {
         return (
-            <View style={[styles.centerContainer]}>
-                <Text>{error}</Text>
+            <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
+                <Text style={{ color: colors.text }}>{error}</Text>
             </View>
         );
     }

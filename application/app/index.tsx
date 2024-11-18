@@ -11,6 +11,7 @@ import { Camera } from 'expo-camera';
 import NetInfo from '@react-native-community/netinfo';
 import { FormData } from '../src/types/models';
 import FuelingRecords from '@/components/FuelingRecords';
+import { useTheme } from '@react-navigation/native';
 // import * as Device from 'expo-device';
 // import * as Notifications from 'expo-notifications';
 // import Constants from 'expo-constants';
@@ -68,6 +69,8 @@ const App = () => {
   const [isOfflineDataModalVisible, setOfflineDataModalVisible] = useState(false);
   const [isOfflineDataLoading, setIsOfflineDataLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { colors } = useTheme();
+
 
   useEffect(() => {
     // const checkLoginStatus = async () => {
@@ -368,13 +371,13 @@ const App = () => {
     if (!userData) return null;
 
     return (
-      <View style={styles.modalBody}>
+      <View style={[styles.modalBody, { backgroundColor: colors.card }]}>
         {Object.entries(userData)
           .filter(([key]) => key !== '_id') // && key !== 'Push Notification Token'
           .map(([key, value]) => (
             <View key={key} style={styles.dataRow}>
-              <Text style={styles.dataKey}>{key.charAt(0).toUpperCase() + key.slice(1)}:</Text>
-              <Text style={styles.dataValue}>{String(value)}</Text>
+              <Text style={[styles.dataKey, { color: colors.text }]}>{key.charAt(0).toUpperCase() + key.slice(1)}: </Text>
+              <Text style={[styles.dataValue, { color: colors.text }]}>{String(value)}</Text>
             </View>
           ))}
       </View>
@@ -410,7 +413,7 @@ const App = () => {
   };
 
   const renderAccordionContent = (item: FormData) => (
-    <View style={styles.accordionContent}>
+    <View style={[styles.accordionContent, { backgroundColor: colors.card }]}>
       {Object.entries(item).map(([key, value]) => (
         <View key={key} style={styles.dataRow}>
           <Text style={styles.dataKey}>{formatKey(key)}:</Text>
@@ -434,7 +437,7 @@ const App = () => {
     } else if (key === 'bowserDriver') {
       if (Array.isArray(value)) {
         return (
-          <View>
+          <View style={[{ backgroundColor: colors.card }]}>
             {value.map((driver: any, index: number) => (
               <View key={index} style={styles.bowserDriverItem}>
                 <Text style={styles.dataValue}>Driver {index + 1}:</Text>
@@ -581,7 +584,7 @@ const App = () => {
 
   if (!permissionsGranted || !isGPSEnabled) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.card }]}>
         <Text style={styles.errorText}>Please grant necessary permissions and enable GPS to use this app.</Text>
         <TouchableOpacity style={styles.button} onPress={requestPermissions}>
           <Text style={styles.buttonText}>Grant Permissions</Text>
@@ -594,7 +597,7 @@ const App = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <TouchableOpacity
         style={styles.profileButton}
         onPress={() => setProfileModalVisible(true)}
@@ -630,22 +633,24 @@ const App = () => {
         onRequestClose={() => setProfileModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Profile</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Profile</Text>
             </View>
-            <ScrollView style={styles.modalScrollView}>
+            <ScrollView style={[styles.modalScrollView, { backgroundColor: colors.card }]}>
               {renderUserData()}
               {offlineDataLength > 0 && (
-                // <Text>{offlineDataLength ? offlineDataLength : "no offiline data"}</Text>
-                <TouchableOpacity
-                  style={styles.offlineDataButton}
-                  onPress={() => setOfflineDataModalVisible(true)}
-                >
-                  <Text style={styles.offlineDataButtonText}>
-                    View Offline Data ({offlineDataLength})
-                  </Text>
-                </TouchableOpacity>
+                <>
+                  <Text style={{ color: colors.text }}>{offlineDataLength ? offlineDataLength : "no offiline data"}</Text>
+                  <TouchableOpacity
+                    style={styles.offlineDataButton}
+                    onPress={() => setOfflineDataModalVisible(true)}
+                  >
+                    <Text style={styles.offlineDataButtonText}>
+                      View Offline Data ({offlineDataLength})
+                    </Text>
+                  </TouchableOpacity>
+                </>
               )}
             </ScrollView>
             <View style={styles.modalFooter}>

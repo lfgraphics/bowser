@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { useNavigation, useTheme } from '@react-navigation/native';
+import { useTheme } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import { Driver, FormData, Vehicle } from '@/src/types/models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,7 +16,6 @@ import { compressImage } from '@/src/utils/imageManipulation';
 
 export default function FuelingScreen() {
   // declare state variables---->
-  const navigation = useNavigation();
   const colorScheme = useColorScheme();
   const { colors } = useTheme();
   const [vehicleNumberPlateImage, setVehicleNumberPlateImage] = useState<string | null>(null);
@@ -221,7 +220,7 @@ export default function FuelingScreen() {
           { cancelable: false }
         );
         resetForm();
-        navigation.navigate('index' as never);
+        router.replace('/')
       } catch (err) {
         console.error('Fetch error:', err);
         let errorMessage = 'An unknown error occurred';
@@ -272,7 +271,7 @@ export default function FuelingScreen() {
           { cancelable: false }
         );
         resetForm();
-        navigation.navigate('index' as never);
+        router.replace('/')
       } catch (error) {
         console.error('Error handling offline data:', error);
         Alert.alert(
@@ -604,9 +603,9 @@ export default function FuelingScreen() {
 
 
   return (
-    <View style={[styles.container, styles.main]}>
+    <View style={[styles.container, styles.main, { backgroundColor: colors.background }]}>
       <ScrollView ref={scrollViewRef} contentContainerStyle={styles.scrollViewContent}>
-        <ThemedView style={styles.formContainer}>
+        <ThemedView style={[styles.formContainer, { backgroundColor: colors.background }]}>
           <View style={{ height: 60 }} />
           <ThemedText type="title">Fuel Dispensing Form</ThemedText>
           <ThemedView style={styles.section}>
@@ -641,7 +640,7 @@ export default function FuelingScreen() {
               <TextInput
                 ref={vehicleNumberInputRef}
                 onPress={() => !vehicleNumberPlateImage && openNumberPlateCamera()}
-                style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Enter vehicle number"
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                 value={vehicleNumber}

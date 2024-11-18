@@ -44,7 +44,7 @@ const FuelingRecords: React.FC = () => {
         setLoading(true);
 
         try {
-            const baseUrl = 'https://bowser-backend-2cdr.onrender.com' // 'http://192.168.137.1:5000'; // Update with your actual URL
+            const baseUrl = 'https://bowser-backend-2cdr.onrender.com' // 'http://192.168.137.1:5000'; // https://bowser-backend-2cdr.onrender.com
             const response = await axios.get(`${baseUrl}/listDispenses`, {
                 params: { tripSheetId },
             });
@@ -184,7 +184,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     modalItem: {
-        backgroundColor: '#fff',
         padding: 16,
         marginBottom: 8,
         borderRadius: 8,

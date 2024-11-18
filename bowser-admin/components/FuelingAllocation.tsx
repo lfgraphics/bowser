@@ -95,7 +95,7 @@ export default function FuelingAllocation() {
         setIsSearching(true);
         try {
             const response: ResponseBowser[] = await searchItems<ResponseBowser>(
-                'http://localhost:5000/searchBowserDetails/trip', //https://bowser-backend-2cdr.onrender.com
+                'https://bowser-backend-2cdr.onrender.com/searchBowserDetails/trip', //https://bowser-backend-2cdr.onrender.com
                 regNo,
                 `No proper details found with the given regNo ${regNo}`
             );
@@ -142,7 +142,7 @@ export default function FuelingAllocation() {
         setIsSearching(true);
         try {
             const vehicles = await searchItems<Vehicle>(
-                'http://localhost:5000/searchVehicleNumber', //https://bowser-backend-2cdr.onrender.com
+                'https://bowser-backend-2cdr.onrender.com/searchVehicleNumber', //https://bowser-backend-2cdr.onrender.com
                 vehicleNumber,
                 'No vehicle found with the given number'
             );
@@ -325,7 +325,7 @@ export default function FuelingAllocation() {
         console.log(allocationData)
 
         try {
-            const response = await fetch('http://localhost:5000/allocateFueling', { //https://bowser-backend-2cdr.onrender.com
+            const response = await fetch('https://bowser-backend-2cdr.onrender.com/allocateFueling', { //https://bowser-backend-2cdr.onrender.com
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
