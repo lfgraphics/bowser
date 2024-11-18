@@ -34,14 +34,13 @@ export default function Login() {
       console.error("Login failed:", error)
       alert("Login failed. Please check your credentials and try again.")
     } finally {
-      setLoading(true)
+      setLoading(false)
     }
   }
 
-  if (loading) return <Loading />;
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
+      {loading && <Loading />}
       <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>Login</CardTitle>

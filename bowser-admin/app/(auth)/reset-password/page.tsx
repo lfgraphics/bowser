@@ -33,7 +33,7 @@ export default function ResetPassword() {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
 
-            const response = await axios.post('https://bowser-backend-2cdr.onrender.com/auth/reset-password', { //https://bowser-backend-2cdr.onrender.com
+            const response = await axios.patch('https://bowser-backend-2cdr.onrender.com/auth/reset-password', { //https://bowser-backend-2cdr.onrender.com
                 userId,
                 token,
                 password,
@@ -45,14 +45,13 @@ export default function ResetPassword() {
         } catch (err) {
             setError((err as any).response?.data?.message || 'An error occurred');
         } finally {
-            setLoading(true)
+            setLoading(false)
         }
     }
 
-    if (loading) return <Loading />;
-
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
+            {loading && <Loading />}
             <Card className="w-[350px]">
                 <CardHeader>
                     <CardTitle>Reset Password</CardTitle>

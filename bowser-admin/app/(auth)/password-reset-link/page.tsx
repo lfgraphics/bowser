@@ -5,14 +5,17 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import axios from "axios"
-import { Copy, Ghost } from "lucide-react"
+import { Copy } from "lucide-react"
+import Loading from "@/app/loading"
 
 export default function GenerateResetUrl() {
     const [userId, setUserId] = useState("")
     const [resetUrl, setResetUrl] = useState("")
     const [error, setError] = useState("")
+    const [loading, setLoading] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent) => {
+        setLoading(true)
         e.preventDefault()
         setError("")
         setResetUrl("")
@@ -22,11 +25,14 @@ export default function GenerateResetUrl() {
             setResetUrl(response.data.resetUrl)
         } catch (err) {
             setError((err as any).response?.data?.message || 'An error occurred while generating the reset URL.')
+        } finally {
+            setLoading(false)
         }
     }
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
+            {loading && <Loading />}
             <Card className="w-[350px]">
                 <CardHeader>
                     <CardTitle>Generate Reset URL</CardTitle>

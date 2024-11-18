@@ -30,7 +30,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Bowser Admin" />
       </Head>
-      <body className={`${inter.className} dark:bg-background dark:text-foreground`}>
+      <body className={`dark:bg-background dark:text-foreground`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -38,7 +38,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {isAuth && <Sidebar />}
-          <div className={`min-h-screen ${isAuth ? 'md:pl-60' : ''}`}>
+          <div className={`min-h-screen`}>
             <main className="p-4 md:p-8 pt-14">
               {children}
             </main>

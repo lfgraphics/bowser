@@ -1,10 +1,9 @@
 "use client"
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { isAuthenticated } from '@/lib/auth';
 import FuelingAllocation from '@/components/FuelingAllocation';
-import loading from '../loading';
+import Loading from '../loading';
 
 export default function Dashboard() {
     const router = useRouter();
@@ -23,7 +22,7 @@ export default function Dashboard() {
     }, [router]);
 
     if (!authChecked) {
-        return loading;
+        return <Loading />;
     }
 
     return (

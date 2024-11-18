@@ -40,10 +40,9 @@ export default function Signup() {
     }
   }
 
-  if (loading) return <Loading />;
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
+      {loading && <Loading />}
       <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>Sign Up</CardTitle>

@@ -17,10 +17,10 @@ export default function ThemeChanger() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild className="w-full justify-start">
+      <DropdownMenuTrigger asChild className="w-full justify-start pl-4">
         <Button variant="ghost" size="icon">
-          <Sun className="h-[1.2rem] w-full rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" /><span className="ml-2 block dark:hidden text-black">Light</span>
-          <Moon className="absolute h-[1.2rem] w-full rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" /><span className="ml-2 hidden dark:block text-white">Dark</span>
+          <Sun className="h-[1.2rem] w-full rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" /><span className="ml-2 block dark:hidden text-foreground">Light</span>
+          <Moon className="absolute h-[1.2rem] w-full rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" /><span className="ml-2 hidden dark:block text-foreground">Dark</span>
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>

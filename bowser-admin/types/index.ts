@@ -20,6 +20,7 @@ export interface ResponseBowser {
     bowserDetails: {
 
     },
+    tripSheetId: string,
     regNo: string;
     _id: string;
     bowserDriver: {
@@ -46,7 +47,8 @@ export interface User {
     name: string;
 }
 export interface Vehicle {
-    VehicleNo: string;
+    vehicleNo: string;
+    driverDetails: Driver
 }
 
 export interface DispensesRecord {
