@@ -114,11 +114,9 @@ router.get('/find-by-id/:id', async (req, res) => {
     const id = req.params.id;
 
     try {
-        console.log(`Searching for Trip Sheet with id: ${id}`);
         // First, find all bowsers with the given registration number.
         const sheet = await TripSheet.findById(new mongoose.Types.ObjectId(id));
 
-        console.log(sheet)
 
         res.status(200).json({ sheet });
 
@@ -133,14 +131,12 @@ router.patch('/update/:id', async (req, res) => {
     const updateData = req.body;
 
     try {
-        console.log(`Attempting to update Trip Sheet with id: ${id}`);
         const updatedSheet = await TripSheet.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
 
         if (!updatedSheet) {
             return res.status(404).json({ message: 'Trip Sheet not found' });
         }
 
-        console.log(`Successfully updated Trip Sheet with id: ${id}`);
         res.status(200).json({ message: 'Trip Sheet updated successfully', success: true });
     } catch (err) {
         console.error('Error updating Trip Sheet:', err);
@@ -151,14 +147,12 @@ router.delete('/delete/:id', async (req, res) => {
     const id = req.params.id;
 
     try {
-        console.log(`Attempting to delete Trip Sheet with id: ${id}`);
         const deletedSheet = await TripSheet.findByIdAndDelete(id);
 
         if (!deletedSheet) {
             return res.status(404).json({ message: 'Trip Sheet not found' });
         }
 
-        console.log(`Successfully deleted Trip Sheet with id: ${id}`);
         res.status(200).json({ message: 'Trip Sheet deleted successfully', success: true });
     } catch (err) {
         console.error('Error deleting Trip Sheet:', err);
