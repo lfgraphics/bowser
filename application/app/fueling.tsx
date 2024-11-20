@@ -1,5 +1,6 @@
+import * as React from 'react';
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, ScrollView, View, ActivityIndicator, Alert, Modal, FlatList } from 'react-native';
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { ThemedText } from '@/components/ThemedText';
@@ -525,15 +526,16 @@ export default function FuelingScreen() {
 
       if (!response.ok) {
         if (response.status === 404) {
-          alert('No vehicle found with the given number');
-          setFoundVehicles([]);
-          setNoVehicleFound(true);
+          Alert.alert('No vehicle found with the given number');
           return;
         }
         throw new Error('Server error');
       }
 
       const vehicles: Vehicle[] = await response.json();
+      let foundDrivers: Driver[] = [];
+      vehicles.map((vc) => { foundDrivers.push(vc.driverDetails) })
+      setFoundDrivers(foundDrivers)
       setFoundVehicles(vehicles);
       setNoVehicleFound(false);
 
@@ -605,17 +607,17 @@ export default function FuelingScreen() {
   return (
     <View style={[styles.container, styles.main, { backgroundColor: colors.background }]}>
       <ScrollView ref={scrollViewRef} contentContainerStyle={styles.scrollViewContent}>
-        <ThemedView style={[styles.formContainer, { backgroundColor: colors.background }]}>
+        <View style={[styles.formContainer, { backgroundColor: colors.background }]}>
           <View style={{ height: 60 }} />
           <ThemedText type="title">Fuel Dispensing Form</ThemedText>
-          <ThemedView style={styles.section}>
+          <View style={styles.section}>
             <ThemedText style={{ textAlign: 'center' }}>{Date().toLocaleString()}</ThemedText>
-          </ThemedView>
+          </View>
 
-          <ThemedView style={styles.section}>
-            <ThemedView style={styles.inputContainer}>
+          <View style={styles.section}>
+            <View style={styles.inputContainer}>
               <ThemedText>Trip Sheet Number: {tripSheetId}</ThemedText>
-            </ThemedView>
+            </View>
             {vehicleNumberPlateImage && (
               <>
                 <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
@@ -635,7 +637,7 @@ export default function FuelingScreen() {
                 </View>
               </TouchableOpacity>
             )}
-            <ThemedView style={styles.inputContainer}>
+            <View style={styles.inputContainer}>
               <ThemedText>Vehicle Number:</ThemedText>
               <TextInput
                 ref={vehicleNumberInputRef}
@@ -654,9 +656,9 @@ export default function FuelingScreen() {
                 }}
                 returnKeyType="next"
                 onSubmitEditing={() => driverIdInputRef.current?.focus()}
-                blurOnSubmit={false}
+                blurOnSubmit={true}
               />
-            </ThemedView>
+            </View>
             {noVehicleFound && (
               <ThemedText style={styles.errorText}>No vehicle found with the given number</ThemedText>
             )}
@@ -685,24 +687,25 @@ export default function FuelingScreen() {
                     <TouchableOpacity
                       style={[styles.vehicleItem, { backgroundColor: colors.card }]}
                       onPress={() => {
-                        setSelectedVehicle(item.VehicleNo);
-                        setVehicleNumber(item.VehicleNo);
-                        handleDriverSelection(item.driverDetails.Name)
-                        setFoundDrivers([item.driverDetails]);
+                        setSelectedVehicle(item.vehicleNo);
+                        setVehicleNumber(item.vehicleNo);
+                        handleDriverSelection(item.driverDetails?.Name || 'Unknown Driver'); // Defensive check
+                        setFoundDrivers([item.driverDetails || { Name: 'Unknown Driver' }]); // Defensive check
                         setVehicleModalVisible(false);
                       }}
                     >
-                      <Text style={{ color: colors.text }}>{item.VehicleNo}</Text>
+                      <Text style={{ color: colors.text }}>{item.vehicleNo}</Text>
                     </TouchableOpacity>
                   )}
-                  keyExtractor={(item) => item.VehicleNo}
+                  keyExtractor={(item) => item.vehicleNo} // Fixed: Ensure key extraction matches the data model case
                 />
+
               </View>
             </Modal>
-          </ThemedView>
+          </View>
 
-          <ThemedView style={styles.section}>
-            <ThemedView style={styles.inputContainer}>
+          <View style={styles.section}>
+            <View style={styles.inputContainer}>
               <ThemedText>Driver ID:</ThemedText>
               <TextInput
                 ref={driverIdInputRef}
@@ -722,7 +725,7 @@ export default function FuelingScreen() {
                 onSubmitEditing={() => driverNameInputRef.current?.focus()}
                 blurOnSubmit={false}
               />
-            </ThemedView>
+            </View>
             {noDriverFound && (
               <ThemedText style={styles.errorText}>No driver found with the given ID</ThemedText>
             )}
@@ -753,7 +756,7 @@ export default function FuelingScreen() {
               </View>
             </Modal>
 
-            <ThemedView style={styles.inputContainer}>
+            <View style={styles.inputContainer}>
               <ThemedText>Driver Name:</ThemedText>
               <TextInput
                 ref={driverNameInputRef}
@@ -766,9 +769,9 @@ export default function FuelingScreen() {
                 onSubmitEditing={() => driverMobileInputRef.current?.focus()}
                 blurOnSubmit={false}
               />
-            </ThemedView>
+            </View>
 
-            <ThemedView style={styles.inputContainer}>
+            <View style={styles.inputContainer}>
               <ThemedText>Driver Mobile Number:</ThemedText>
               <TextInput
                 ref={driverMobileInputRef}
@@ -782,10 +785,10 @@ export default function FuelingScreen() {
                 onSubmitEditing={() => fuelQuantityInputRef.current?.focus()}
                 blurOnSubmit={false}
               />
-            </ThemedView>
-          </ThemedView>
+            </View>
+          </View>
 
-          <ThemedView style={styles.section}>
+          <View style={styles.section}>
             {fuelMeterImage && (
               <>
                 <Image source={{ uri: fuelMeterImage }} style={styles.uploadedImage} />
@@ -822,7 +825,7 @@ export default function FuelingScreen() {
               </View>
             </TouchableOpacity>}
 
-            <ThemedView style={styles.inputContainer}>
+            <View style={styles.inputContainer}>
               <ThemedText>Fuel Quantity Dispensed:</ThemedText>
               <View style={styles.rowContainer}>
                 <Picker
@@ -864,8 +867,8 @@ export default function FuelingScreen() {
                   blurOnSubmit={false}
                 />
               </View>
-            </ThemedView>
-          </ThemedView>
+            </View>
+          </View>
 
           <TouchableOpacity
             style={styles.submitButton}
@@ -885,7 +888,7 @@ export default function FuelingScreen() {
               <Ionicons name="refresh-outline" size={20} color="white" />
             </View>
           </TouchableOpacity>
-        </ThemedView>
+        </View>
       </ScrollView>
       {formSubmitting && (
         <View style={styles.loaderContainer}>

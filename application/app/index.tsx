@@ -1,6 +1,7 @@
 import 'react-native-get-random-values';
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Modal, Alert, ScrollView, Image, Linking, Platform } from 'react-native';
+import * as React from 'react';
+import { useEffect, useState } from 'react';
+import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Modal, Alert, ScrollView, Image } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { checkUserLoggedIn } from '../src/utils/authUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';

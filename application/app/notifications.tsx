@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator, Text, RefreshControl } from 'react-native';
 import FuelNotification from '@/components/FuelNotification';
 import { FuelingOrderData } from '@/src/types/models';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useTheme } from '@react-navigation/native';
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
 
 interface ServerResponse {
     orders: FuelingOrderData[];
@@ -55,17 +58,17 @@ export default function NotificationsScreen() {
 
     if (loading) {
         return (
-            <View style={styles.centerContainer}>
+            <ThemedView style={styles.centerContainer}>
                 <ActivityIndicator size="large" />
-            </View>
+            </ThemedView>
         );
     }
 
     if (error) {
         return (
-            <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
-                <Text style={{ color: colors.text }}>{error}</Text>
-            </View>
+            <ThemedView style={[styles.centerContainer, { backgroundColor: colors.background }]}>
+                <ThemedText style={{ color: colors.text }}>{error}</ThemedText>
+            </ThemedView>
         );
     }
 
@@ -78,7 +81,7 @@ export default function NotificationsScreen() {
         >
             {notificationsData.length > 0 ? (
                 notificationsData.map((data) => (
-                    <View style={{ marginBottom: 10 }} key={data._id}>
+                    <ThemedView style={{ marginBottom: 10 }} key={data._id}>
                         <FuelNotification
                             vehicleNumber={data.vehicleNumber}
                             driverId={data.driverId}
@@ -91,15 +94,15 @@ export default function NotificationsScreen() {
                             allocationAdmin={data.allocationAdmin || {
                                 name: '',
                                 id: '',
-                                phoneNo: ''
+                                allocationTime: ''
                             }}
                         />
-                    </View>
+                    </ThemedView>
                 ))
             ) : (
-                <Text style={styles.noNotifications}>No Pending Orders Available</Text>
+                <ThemedText style={styles.noNotifications}>No Pending Orders Available</ThemedText>
             )}
-            <View style={{ height: 40 }} />
+            <ThemedView style={{ height: 40 }} />
         </ScrollView>
     );
 }

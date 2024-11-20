@@ -1,9 +1,13 @@
-import React from 'react';
+import * as React from 'react';
 import { View, Text, TouchableOpacity, Linking, Alert, StyleSheet } from 'react-native';
 import { useNavigation, useTheme } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { FuelNotificationProps } from '../src/types/models';
+import { useState } from 'react';
+import NotificationFuelingScreen from '@/app/NotificationFueling';
+import { ThemedView } from './ThemedView';
+import { ThemedText } from './ThemedText';
 
 type RootStackParamList = {
   NotificationFueling: FuelNotificationProps;
@@ -22,6 +26,7 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
 }) => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme();
+  const [notificationFuelingVisible, setNotificationFuelingVisible] = useState<boolean>(false);
 
   const handleCallDriver = () => {
     if (driverMobile) {
@@ -46,24 +51,43 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.card }]}>
-      <Text style={[styles.vehicleNumber, { color: colors.text }]}>{vehicleNumber}</Text>
-      {driverMobile && <Text style={[styles.detail, { color: colors.text }]}>Mobile No.: {driverMobile}</Text>}
-      {driverName && <Text style={[styles.detail, { color: colors.text }]}>Driver Name: {driverName}</Text>}
-      <Text style={[styles.detail, { color: colors.text }]}>Fueling: {quantityType}</Text>
-      {quantity && <Text style={[styles.detail, { color: colors.text }]}>Quantity: {quantity}</Text>}
-      <View style={styles.buttonContainer}>
-        {driverMobile && <TouchableOpacity style={styles.button} onPress={handleCallDriver}>
-          <Ionicons name="call" size={32} color={'white'} />
-        </TouchableOpacity>}
-        <TouchableOpacity style={[styles.button, styles.disabledButton]}>
-          <Ionicons name="location" size={32} color={'white'} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={handleGiveFuel}>
-          <MaterialIcons name="local-gas-station" size={24} color={'white'} />
-        </TouchableOpacity>
-      </View>
-    </View>
+    <>
+      {notificationFuelingVisible ? (
+        <NotificationFuelingScreen
+          orderId={orderId}
+          vehicleNumber={vehicleNumber}
+          driverId={driverId}
+          driverMobile={driverMobile}
+          driverName={driverName}
+          quantity={quantity}
+          quantityType={quantityType}
+          bowser={bowser}
+          allocationAdmin={allocationAdmin}
+          setNotificationFuelingVisible={setNotificationFuelingVisible} // Pass callback to hide screen
+        />
+      ) : (
+        <ThemedView style={[styles.container, { backgroundColor: colors.card }]}>
+          <ThemedText style={[styles.vehicleNumber, { color: colors.text }]}>{vehicleNumber}</ThemedText>
+          {driverMobile && <ThemedText style={[styles.detail, { color: colors.text }]}>Mobile No.: {driverMobile}</ThemedText>}
+          {driverName && <ThemedText style={[styles.detail, { color: colors.text }]}>Driver Name: {driverName}</ThemedText>}
+          <ThemedText style={[styles.detail, { color: colors.text }]}>Fueling: {quantityType}</ThemedText>
+          {quantity && <ThemedText style={[styles.detail, { color: colors.text }]}>Quantity: {quantity}</ThemedText>}
+          <ThemedView style={styles.buttonContainer}>
+            {driverMobile && (
+              <TouchableOpacity style={styles.button} onPress={handleCallDriver}>
+                <Ionicons name="call" size={32} color={'white'} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={[styles.button, styles.disabledButton]}>
+              <Ionicons name="location" size={32} color={'white'} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleGiveFuel}>
+              <MaterialIcons name="local-gas-station" size={24} color={'white'} />
+            </TouchableOpacity>
+          </ThemedView>
+        </ThemedView>
+      )}
+    </>
   );
 };
 

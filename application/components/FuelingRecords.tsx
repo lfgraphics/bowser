@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet, ActivityIndicator, Alert, useColorScheme, useWindowDimensions, FlatList, ScrollView } from 'react-native';
+import * as React from 'react';
+import { useEffect, useState } from 'react';
+import { TouchableOpacity, Modal, StyleSheet, ActivityIndicator, Alert, FlatList } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { useTheme } from '@react-navigation/native';
+import { ThemedText } from './ThemedText';
+import { ThemedView } from './ThemedView';
+// import { useTheme } from '@react-navigation/native';
 
 interface DispensesRecord {
     _id: string;
@@ -26,7 +29,7 @@ const FuelingRecords: React.FC = () => {
     const [selectedRecord, setSelectedRecord] = useState<DispensesRecord | null>(null);
     const [modalVisible, setModalVisible] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
-    const { colors } = useTheme();
+    // const { colors } = useTheme();
 
     const getUserTripSheetId = async () => {
         try {
@@ -68,7 +71,7 @@ const FuelingRecords: React.FC = () => {
         }
     }, [tripSheetId]);
 
-    // const handleViewDetails = (record: DispensesRecord) => {
+    // const handleThemedViewDetails = (record: DispensesRecord) => {
     //     setSelectedRecord(record);
     //     setModalVisible(true);
     // };
@@ -79,53 +82,53 @@ const FuelingRecords: React.FC = () => {
     };
 
     const renderDriverItem = ({ item }: { item: DispensesRecord }) => (
-        <View style={[styles.modalItem, { backgroundColor: colors.card }]}>
-            <Text style={[styles.modalText, { color: colors.text }]}><Text style={styles.label}>Date:</Text> {item.fuelingDateTime}</Text>
-            <Text style={[styles.modalText, { color: colors.text }]}><Text style={styles.label}>Vehicle No.:</Text> {item.vehicleNumber}</Text>
-            <Text style={[styles.modalText, { color: colors.text }]}><Text style={styles.label}>Driver Name:</Text> {item.driverName}</Text>
-            <Text style={[styles.modalText, { color: colors.text }]}><Text style={styles.label}>Fuel Quantity:</Text> {item.fuelQuantity}</Text>
-            <Text style={[styles.modalText, { color: colors.text }]}><Text style={styles.label}>GPS Location:</Text> {item.gpsLocation}</Text>
-            <Text style={[styles.modalText, { color: colors.text }]}>
-                <Text style={styles.label}>Verified:</Text> {item.verified ? "Yes" : "No"}
-            </Text>
-        </View>
+        <ThemedView style={[styles.modalItem,]}>
+            <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Date:</ThemedText> {item.fuelingDateTime}</ThemedText>
+            <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Vehicle No.:</ThemedText> {item.vehicleNumber}</ThemedText>
+            <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Driver Name:</ThemedText> {item.driverName}</ThemedText>
+            <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Fuel Quantity:</ThemedText> {item.fuelQuantity}</ThemedText>
+            <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>GPS Location:</ThemedText> {item.gpsLocation}</ThemedText>
+            <ThemedText style={[styles.modalText,]}>
+                <ThemedText style={styles.label}>Verified:</ThemedText> {item.verified ? "Yes" : "No"}
+            </ThemedText>
+        </ThemedView>
     );
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <Text style={[styles.title, { color: colors.text }]}>Your Fueling Records</Text>
+        <ThemedView style={[styles.container,]}>
+            <ThemedText style={[styles.title,]}>Your Fueling Records</ThemedText>
 
             {loading ? (
-                <ActivityIndicator size="large" color={colors.primary} />
+                <ActivityIndicator size="large" />
             ) : (
-                <ScrollView style={styles.scrollView}>
+                <ThemedView style={styles.scrollThemedView}>
                     {records.length > 0 &&
-                        <Text style={[styles.secondaryTitle, { color: colors.text }]}>
+                        <ThemedText style={[styles.secondaryTitle,]}>
                             Total Fueled Quantity: {records.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)} L
-                        </Text>
+                        </ThemedText>
                     }
                     {records.length > 0 ? (
                         records.map((record) => (
-                            <View style={[styles.modalItem, { backgroundColor: colors.card }]} key={record._id}>
-                                <Text style={[styles.modalText, { color: colors.text }]}><Text style={styles.label}>Date:</Text> {record.fuelingDateTime.split(' ')[0].replace(',', '')}</Text>
-                                <Text style={[styles.modalText, { color: colors.text }]}><Text style={styles.label}>Vehicle No.:</Text> {record.vehicleNumber}</Text>
-                                <Text style={[styles.modalText, { color: colors.text }]}><Text style={styles.label}>Driver Name:</Text> {record.driverName}</Text>
-                                <Text style={[styles.modalText, { color: colors.text }]}><Text style={styles.label}>Fuel Quantity:</Text> {record.fuelQuantity}</Text>
-                                <Text style={[styles.modalText, { color: colors.text }]}><Text style={styles.label}>GPS Location:</Text> {record.gpsLocation}</Text>
-                                <Text style={[styles.modalText, { color: colors.text }]}><Text style={styles.label}>Verified:</Text> {record.verified ? "Yes" : "No"}</Text>
-                            </View>
+                            <ThemedView style={[styles.modalItem,]} key={record._id}>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Date:</ThemedText> {record.fuelingDateTime.split(' ')[0].replace(',', '')}</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Vehicle No.:</ThemedText> {record.vehicleNumber}</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Driver Name:</ThemedText> {record.driverName}</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Fuel Quantity:</ThemedText> {record.fuelQuantity}</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>GPS Location:</ThemedText> {record.gpsLocation}</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Verified:</ThemedText> {record.verified ? "Yes" : "No"}</ThemedText>
+                            </ThemedView>
                         ))
                     ) : (
-                        <Text style={[styles.noRecordsText, { color: colors.text }]}>No records found.</Text>
+                        <ThemedText style={[styles.noRecordsText,]}>No records found.</ThemedText>
                     )}
-                </ScrollView>
+                </ThemedView>
             )}
 
             {/* Modal for displaying details */}
             <Modal visible={modalVisible} transparent={true} animationType="slide" onRequestClose={closeModal}>
-                <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+                <ThemedView style={[styles.modalContainer,]}>
                     <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-                        <Text style={[styles.closeButtonText, { color: colors.text }]}>Close</Text>
+                        <ThemedText style={[styles.closeButtonText,]}>Close</ThemedText>
                     </TouchableOpacity>
 
                     {selectedRecord && (
@@ -135,9 +138,9 @@ const FuelingRecords: React.FC = () => {
                             keyExtractor={(item) => item._id}
                         />
                     )}
-                </View>
+                </ThemedView>
             </Modal>
-        </View>
+        </ThemedView>
     );
 };
 
@@ -149,13 +152,13 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 24,
-        alignSelf:'center',
+        alignSelf: 'center',
         fontWeight: 'bold',
         marginBottom: 16,
     },
     secondaryTitle: {
         fontSize: 18,
-        alignSelf:'center',
+        alignSelf: 'center',
         fontWeight: 'bold',
         marginBottom: 16,
     },
@@ -195,7 +198,7 @@ const styles = StyleSheet.create({
     label: {
         fontWeight: 'bold',
     },
-    scrollView: {
+    scrollThemedView: {
         maxHeight: 300,
         width: '100%',
     },

@@ -1,4 +1,4 @@
-import { registerForPushNotificationsAsync } from '@/app/utils/notifications';
+// import { registerForPushNotificationsAsync } from '@/app/utils/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 // This is a placeholder implementation. Replace with your actual authentication logic.
@@ -100,16 +100,16 @@ export const loginUser = async (userId: string, password: string): Promise<void>
     await AsyncStorage.setItem('loginTime', data.loginTime);
     await AsyncStorage.setItem('userData', JSON.stringify(data.user));
     
-    if (data.user.pushToken) {
-      await AsyncStorage.setItem('pushToken', data.user.pushToken);
-    } else {
-      const newPushToken = await registerForPushNotificationsAsync();
-      if (newPushToken) {
-        await AsyncStorage.setItem('pushToken', newPushToken);
-      } else {
-        throw new Error('Failed to get new push token');
-      }
-    }
+    // if (data.user.pushToken) {
+    //   await AsyncStorage.setItem('pushToken', data.user.pushToken);
+    // } else {
+    //   const newPushToken = await registerForPushNotificationsAsync();
+    //   if (newPushToken) {
+    //     await AsyncStorage.setItem('pushToken', newPushToken);
+    //   } else {
+    //     throw new Error('Failed to get new push token');
+    //   }
+    // }
   } catch (error) {
     console.error('Error during login:', error);
     throw error;

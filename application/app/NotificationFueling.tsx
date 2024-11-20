@@ -1,13 +1,13 @@
-import mongoose from 'mongoose';
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, ScrollView, View, ActivityIndicator, Button, Alert, Modal, FlatList } from 'react-native';
-import React, { useState, useRef, useEffect } from 'react';
+import * as React from 'react';
+import { Image, StyleSheet, TextInput, TouchableOpacity, useColorScheme, ScrollView, View, ActivityIndicator, Button, Alert, Modal, FlatList, BackHandler } from 'react-native';
+import { useState, useRef, useEffect, Dispatch, SetStateAction, } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import * as FileSystem from 'expo-file-system';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { useRoute, useTheme } from '@react-navigation/native';
+import { useTheme } from '@react-navigation/native';
 import { FormData } from '@/src/types/models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
@@ -27,7 +27,6 @@ interface RouteParams {
         driver: {
             name: string,
             id: string,
-            phoneNo: string
         }
     }
     allocationAdmin: {
@@ -35,21 +34,32 @@ interface RouteParams {
         id: string;
         allocationTime: string
     };
+    setNotificationFuelingVisible: Dispatch<SetStateAction<boolean>>
 }
 
-export default function NotificationFuelingScreen() {
-    const route = useRoute();
-    const {
-        vehicleNumber = 'N/A',
-        driverId = 'N/A',
-        driverMobile = 'N/A',
-        driverName = 'N/A',
-        quantityType = 'N/A',
-        quantity = 'N/A',
-        orderId,
-        bowser,
-        allocationAdmin
-    } = route.params as RouteParams;
+const NotificationFuelingScreen = ({
+    orderId,
+    vehicleNumber,
+    driverId,
+    driverMobile,
+    driverName,
+    quantity,
+    quantityType,
+    bowser,
+    allocationAdmin,
+    setNotificationFuelingVisible
+}: RouteParams) => {
+
+    useEffect(() => {
+        const backAction = () => {
+            setNotificationFuelingVisible(false); // Hide the fueling screen when back is pressed
+            return true;
+        };
+
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+        return () => backHandler.remove();
+    }, [setNotificationFuelingVisible]);
 
 
     // declare state variables---->
@@ -117,10 +127,10 @@ export default function NotificationFuelingScreen() {
     // form submit reset
     const submitDetails = async () => {
         setFormSubmitting(true);
-        // if (!validateInputs()) {
-        //     setFormSubmitting(false);
-        //     return;
-        // }
+        if (!validateInputs()) {
+            setFormSubmitting(false);
+            return;
+        }
 
         let currentFuelingDateTime = fuelingDateTime;
         let currentGpsLocation = gpsLocation;
@@ -424,7 +434,7 @@ export default function NotificationFuelingScreen() {
 
     return (
         <ThemedView style={[styles.container, styles.main]}>
-            <ScrollView style={{ backgroundColor: colors.background }}>
+            <ScrollView>
                 <ThemedView style={styles.section}>
                     <ThemedText type="title">Fuel Dispensing Form</ThemedText>
                     <ThemedText style={{ textAlign: 'center' }}>{Date().toLocaleString()}</ThemedText>
@@ -613,6 +623,8 @@ export default function NotificationFuelingScreen() {
         </ThemedView>
     );
 }
+
+export default NotificationFuelingScreen;
 
 const styles = StyleSheet.create({
     main: {

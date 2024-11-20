@@ -9,7 +9,7 @@ export interface Driver {
 }
 
 export interface Vehicle {
-    VehicleNo: string;
+    vehicleNo: string;
     type: string;
     capacity: number;
     lastMaintenanceDate: Date;
@@ -28,7 +28,7 @@ export type FuelingOrderData = {
     driverMobile?: string;
     driverName: string;
     fuelQuantity: number;
-    quantityType: "Full" | "Part" | 'N/A';
+    quantityType: "Full" | "Part";
     vehicleNumber: string;
     bowser: {
         regNo: string;
@@ -40,7 +40,7 @@ export type FuelingOrderData = {
     allocationAdmin?: {
         name: string;
         id: string;
-        phoneNo: string;
+        allocationTime: string;
     };
 };
 
@@ -50,7 +50,7 @@ export interface FuelNotificationProps {
     driverId: string;
     driverMobile: string;
     driverName: string;
-    quantityType: "Part" | "Full" | "N/A";
+    quantityType: "Part" | "Full" ;
     quantity: string;
     bowser: {
         regNo: string;
@@ -59,12 +59,13 @@ export interface FuelNotificationProps {
     allocationAdmin: {
         name: string;
         id: string;
-        phoneNo: string;
+        allocationTime: string;
     };
 
 }
 
 export interface FormData {
+
     orderId?: string;
     vehicleNumberPlateImage: string | null;
     tripSheetId: string,
