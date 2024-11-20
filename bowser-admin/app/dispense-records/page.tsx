@@ -268,7 +268,7 @@ const VehicleDispensesPage = () => {
                     <div className="flex items-center justify-between">Records limit <Input type="number" className="w-20 ml-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
                     <div className="flex items-center justify-between text-muted-foreground font-[200]">{records.length} out of {totalRecords} records </div>
                     <Button variant="outline" onClick={toggleSelectAll}>
-                        {selectAll ? <ListX size={32}/> : <ListChecks size={32}/>}
+                        {selectAll ? <ListX size={32} /> : <ListChecks size={32} />}
                     </Button>
                     <Button onClick={exportToExcel} className="w-full sm:w-auto">
                         Export to Excel
@@ -368,6 +368,7 @@ const VehicleDispensesPage = () => {
                     <TableRow>
                         <TableHead>S N</TableHead>
                         <TableHead>Trip Sheet Id</TableHead>
+                        <TableHead>Fueling Type</TableHead>
                         <TableHead>Fueling Time</TableHead>
                         <TableHead>Bowser No.</TableHead>
                         <TableHead>Bowser Location</TableHead>
@@ -390,7 +391,8 @@ const VehicleDispensesPage = () => {
                         >
                             <TableCell>{index + 1}</TableCell>
                             <TableCell>{record.tripSheetId}</TableCell>
-                            <TableCell>{record.fuelingDateTime}</TableCell>
+                            <TableCell>{record.category || "Unspecified"}</TableCell>
+                            <TableCell>{record.fuelingDateTime.replace(/\/20(\d{2})/, "/$1")}</TableCell>
                             <TableCell>{record.bowser.regNo}</TableCell>
                             <TableCell>{record.gpsLocation?.substring(0, 15) + "..."}</TableCell>
                             <TableCell>{record.driverName}</TableCell>
@@ -411,7 +413,7 @@ const VehicleDispensesPage = () => {
                     ))}
                     {/* Calculate total fuel quantity if filtered by tripSheetId */}
                     <TableRow>
-                        <TableCell colSpan={9} className="text-right font-bold">Total Fuel Quantity:</TableCell>
+                        <TableCell colSpan={10} className="text-right font-bold">Total Fuel Quantity:</TableCell>
                         <TableCell colSpan={2}>
                             {records.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)} L
                         </TableCell>
