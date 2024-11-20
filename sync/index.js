@@ -228,10 +228,10 @@ async function main() {
   await connectToDatabases(); // Establish connections
 
   try {
-    const tripSyncResult = await syncTripData();
+    await syncTripData(); //const tripSyncResult = 
     // console.log("Sync operation completed:", tripSyncResult);
-    const driverSyncResult = await syncDriversData();
-    const vehicleSyncResult = await syncVechiclesData();
+    await syncDriversData(); //const driverSyncResult = 
+    await syncVechiclesData(); //const vehicleSyncResult = 
     // deleteOtherFieldsInAtlas()
   } catch (error) {
     console.error("Sync operation failed:", error);

@@ -3,11 +3,20 @@ const { bowsersDatabaseConnection } = require('../../config/database');
 
 const fuelingTransactionSchema = new mongoose.Schema({
     orderId: { type: mongoose.Schema.Types.ObjectId, required: false },
+    category: {
+        type: String, require: true,
+        validate: {
+            validator: function (v) {
+                return v === 'Own' || v === 'Attatch' || v === 'Bulk Sale';
+            },
+            message: 'Fueling category must be either Bulk Sale or Attatch or Own'
+        }
+    },
     tripSheetId: { type: String },
     vehicleNumberPlateImage: { type: String, required: false },
     vehicleNumber: { type: String, required: true },
     driverId: { type: String, required: false },
-    driverName: { type: String, required: true },
+    driverName: { type: String, required: false },
     driverMobile: { type: String, required: false },
     fuelMeterImage: { type: String, required: false },
     slipImage: { type: String, required: false },
@@ -22,7 +31,15 @@ const fuelingTransactionSchema = new mongoose.Schema({
         }
     },
     fuelQuantity: { type: String, required: true },
-    gpsLocation: { type: String, required: false },
+    gpsLocation: {
+        type: String, required: true,
+        validate: {
+            validator: function (value) {
+                return value.trim().length > 0;
+            },
+            message: "Gps location can't be blank"
+        }
+    },
     fuelingDateTime: { type: String, required: false },
     bowser: {
         regNo: { type: String, require: false },
@@ -33,6 +50,7 @@ const fuelingTransactionSchema = new mongoose.Schema({
         },
     },
     verified: { type: Boolean, default: false },
+    posted: { type: Boolean, default: false },
     allocationAdmin: {
         name: { type: String, required: false },
         id: { type: String, required: false },

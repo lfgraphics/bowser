@@ -614,7 +614,7 @@ const App = () => {
           <MaterialIcons name="local-gas-station" size={24} color="white" style={{ marginRight: 5 }} />
         </View>
       </Link>
-      <Link style={styles.disabledButton} href={'/notifications'}>
+      <Link disabled style={styles.disabledButton} href={'/notifications'}>
         {/* disabled */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: 'white' }}>

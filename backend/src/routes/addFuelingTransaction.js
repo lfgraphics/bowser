@@ -28,7 +28,12 @@ router.post('/', async (req, res) => {
     try {
         let fuelingTransaction = new FuelingTransaction(req.body);
 
-        let cordinates = fuelingTransaction.gpsLocation.split(',')
+        if (!fuelingTransaction.gpsLocation || fuelingTransaction.gpsLocation.length == 0) {
+            return res.status(502).json({ message: 'GPS location not found\nPlease try again' })
+        }
+
+        let cordinates = fuelingTransaction.gpsLocation?.split(',')
+
 
         let location = await fetchLocationData(cordinates[0], cordinates[1]);
 

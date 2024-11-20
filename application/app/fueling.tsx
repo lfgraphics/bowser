@@ -6,7 +6,7 @@ import * as Location from 'expo-location';
 import { ThemedText } from '@/components/ThemedText';
 import { useTheme } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
-import { Driver, FormData, Vehicle } from '@/src/types/models';
+import { Driver, FormData, FuelingTypes, Vehicle } from '@/src/types/models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
@@ -46,6 +46,7 @@ export default function FuelingScreen() {
   const [isSearchingVehicle, setIsSearchingVehicle] = useState(false);
   const [vehicleModalVisible, setVehicleModalVisible] = useState(false);
   const [driverMobileNotFound, setDriverMobileNotFound] = useState(false);
+  const [fueling, setFueling] = useState<FuelingTypes>('Own')
 
   // declare refs for input fields---->
   const vehicleNumberInputRef = React.useRef<TextInput>(null);
@@ -163,9 +164,8 @@ export default function FuelingScreen() {
       );
     }
 
-
-    // Prepare formData
     const formData: FormData = {
+      category: fueling,
       vehicleNumberPlateImage,
       tripSheetId,
       vehicleNumber: vehicleNumber.toUpperCase(),
@@ -176,7 +176,7 @@ export default function FuelingScreen() {
       slipImage,
       quantityType,
       fuelQuantity,
-      gpsLocation: currentGpsLocation, // This may still be the previous value if location failed
+      gpsLocation: currentGpsLocation,
       fuelingDateTime: currentFuelingDateTime,
       bowser: {
         regNo: userData.Bowser ? userData.Bowser : '',
@@ -190,7 +190,7 @@ export default function FuelingScreen() {
 
     if (isOnline) {
       try {
-        const response = await fetch(`http://192.168.137.1:5000/addFuelingTransaction`, { //https://bowser-backend-2cdr.onrender.com // http://192.168.137.1:5000
+        const response = await fetch(`https://bowser-backend-2cdr.onrender.com/addFuelingTransaction`, { //https://bowser-backend-2cdr.onrender.com // http://192.168.137.1:5000
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -391,7 +391,7 @@ export default function FuelingScreen() {
       setIsSearching(false);
     }
   }
-  const renderDriverItem = ({ item }: { item: Driver | { Name: string, ITPLId: string } }) => (
+  const renderDriverItem = ({ item }: { item: Driver }) => (
     <TouchableOpacity
       style={[styles.driverItem, { backgroundColor: colors.card }]}
       onPress={() => handleDriverSelection(item.Name)}
@@ -461,18 +461,8 @@ export default function FuelingScreen() {
       alert("Vehicle number plate image is required.");
       return false;
     }
-    if (!driverName) {
-      alert("Driver Name is required.");
-      driverNameInputRef.current?.measureLayout(
-        scrollViewRef.current?.getInnerViewNode(),
-        (x, y) => {
-          scrollViewRef.current?.scrollTo({ y: y, animated: true });
-        }
-      );
-      return false;
-    }
     if (!driverId) {
-      alert("Driver ID is required.");
+      alert("ID/Name is required.");
       driverIdInputRef.current?.measureLayout(
         scrollViewRef.current?.getInnerViewNode(),
         (x, y) => {
@@ -482,7 +472,7 @@ export default function FuelingScreen() {
       return false;
     }
     if (!driverMobile) {
-      alert("Driver Mobile Number is required.");
+      alert("Mobile Number is required.");
       driverMobileInputRef.current?.measureLayout(
         scrollViewRef.current?.getInnerViewNode(),
         (x, y) => {
@@ -492,10 +482,6 @@ export default function FuelingScreen() {
       return false;
     }
     if (!fuelMeterImage) {
-      alert("Vehicle number plate image is required.");
-      return false;
-    }
-    if (!slipImage) {
       alert("Vehicle number plate image is required.");
       return false;
     }
@@ -600,12 +586,23 @@ export default function FuelingScreen() {
     <View style={[styles.container, styles.main, { backgroundColor: colors.background }]}>
       <ScrollView ref={scrollViewRef} contentContainerStyle={styles.scrollViewContent}>
         <View style={[styles.formContainer, { backgroundColor: colors.background }]}>
-          <View style={{ height: 60 }} />
+          {/* Nav for diffrent type */}
+          <View style={[styles.navContainer, { backgroundColor: colors.card }]}>
+            {(['Own', 'Attatch', 'Bulk Sale'] as FuelingTypes[]).map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={[styles.navButton, fueling === option && styles.activeButton]}
+                onPress={() => setFueling(option)}
+              >
+                <Text style={[styles.submitButtonText, { color: `${fueling == option ? colors.card : colors.text}` }]}>{option}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           <ThemedText type="title">Fuel Dispensing Form</ThemedText>
           <View style={styles.section}>
             <ThemedText style={{ textAlign: 'center' }}>{Date().toLocaleString()}</ThemedText>
           </View>
-
           <View style={styles.section}>
             <View style={styles.inputContainer}>
               <ThemedText>Trip Sheet Number: {tripSheetId}</ThemedText>
@@ -622,28 +619,33 @@ export default function FuelingScreen() {
                 style={[styles.photoButton]}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="car-outline" size={20} color="white" style={{ marginRight: 5 }} />
+                  {(fueling == 'Own' || fueling == 'Attatch') && <Ionicons name="car-outline" size={20} color="white" style={{ marginRight: 5 }} />}
                   <ThemedText style={{ color: 'white' }}>
-                    Take Vehicle Number Plate Photo
+                    Take {(fueling == 'Own' || fueling == 'Attatch') ? 'Vehicle Number Plate' : 'Selling Point'} Photo
                   </ThemedText>
                 </View>
               </TouchableOpacity>
             )}
             <View style={styles.inputContainer}>
-              <ThemedText>Vehicle Number:</ThemedText>
+              <ThemedText>{(fueling == 'Own' || fueling == 'Attatch') ? 'Vehicle Number:' : 'Party Name'}</ThemedText>
               <TextInput
                 ref={vehicleNumberInputRef}
                 onPress={() => !vehicleNumberPlateImage && openNumberPlateCamera()}
                 style={[styles.input, { color: colors.text }]}
-                placeholder="Enter vehicle number"
+                placeholder={(fueling == 'Own' || fueling == 'Attatch') ? 'Enter Vehicle Number:' : 'Enter Party Name'}
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                 value={vehicleNumber}
                 onChangeText={(text) => {
                   setVehicleNumber(text.toUpperCase());
-                  if (text.length > 3) {
-                    setFoundVehicles([]);
-                    setNoVehicleFound(false);
-                    searchVehicleByNumber(text);
+                  if (fueling == 'Own') {
+                    if (text.length > 3) {
+                      setFoundVehicles([]);
+                      setNoVehicleFound(false);
+                      searchVehicleByNumber(text);
+                    }
+                  } else {
+                    // will intigrate functionality for finding party name
+                    // will intigrate functionality for finding attatched vehicle
                   }
                 }}
                 returnKeyType="next"
@@ -654,7 +656,7 @@ export default function FuelingScreen() {
             {noVehicleFound && (
               <ThemedText style={styles.errorText}>No vehicle found with the given number</ThemedText>
             )}
-            {!noVehicleFound && !(vehicleNumber == "") && <TouchableOpacity
+            {!noVehicleFound && fueling == 'Own' && !(vehicleNumber == "") && <TouchableOpacity
               style={[styles.pickerContainer,]}
               onPress={() => setVehicleModalVisible(true)}
             >
@@ -698,19 +700,23 @@ export default function FuelingScreen() {
 
           <View style={styles.section}>
             <View style={styles.inputContainer}>
-              <ThemedText>Driver ID:</ThemedText>
+              <ThemedText>{fueling == 'Bulk Sale' ? 'Manager Name:' : fueling == 'Own' ? 'Driver Id' : 'Driver Name'}</ThemedText>
               <TextInput
                 ref={driverIdInputRef}
                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                placeholder="Enter driver ID"
+                placeholder={`Enter ${fueling == 'Bulk Sale' ? 'Manager Name:' : fueling == 'Own' ? 'Driver Id' : 'Driver Name'}`}
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                 value={driverId}
                 onChangeText={(text) => {
                   setDriverId(text);
-                  if (text.length > 3 && !(text == "")) {
-                    setFoundDrivers([]);
-                    setNoDriverFound(false);
-                    searchDriverById(text);
+                  if (fueling == 'Own') {
+                    if (text.length > 3 && !(text == "")) {
+                      setFoundDrivers([]);
+                      setNoDriverFound(false);
+                      searchDriverById(text);
+                    }
+                  } else {
+                    // will intigrate functionality for finding and updating Manager name
                   }
                 }}
                 keyboardType="default"
@@ -721,7 +727,7 @@ export default function FuelingScreen() {
             {noDriverFound && (
               <ThemedText style={styles.errorText}>No driver found with the given ID</ThemedText>
             )}
-            {!noDriverFound && !(driverId == "") && <TouchableOpacity
+            {fueling == 'Own' && !noDriverFound && !(driverId == "") && <TouchableOpacity
               style={[styles.pickerContainer,]}
               onPress={() => setModalVisible(true)}
             >
@@ -748,23 +754,25 @@ export default function FuelingScreen() {
               </View>
             </Modal>
 
-            <View style={styles.inputContainer}>
-              <ThemedText>Driver Name:</ThemedText>
-              <TextInput
-                ref={driverNameInputRef}
-                style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                placeholder="Enter driver name"
-                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                value={driverName}
-                onChangeText={setDriverName}
-                returnKeyType="next"
-                onSubmitEditing={() => driverMobileInputRef.current?.focus()}
-                blurOnSubmit={false}
-              />
-            </View>
+            {fueling == 'Own' &&
+              <View style={styles.inputContainer}>
+                <ThemedText>Driver Name:</ThemedText>
+                <TextInput
+                  ref={driverNameInputRef}
+                  style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                  placeholder="Enter driver name"
+                  placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                  value={driverName}
+                  onChangeText={setDriverName}
+                  returnKeyType="next"
+                  onSubmitEditing={() => driverMobileInputRef.current?.focus()}
+                  blurOnSubmit={false}
+                />
+              </View>
+            }
 
             <View style={styles.inputContainer}>
-              <ThemedText>Driver Mobile Number:</ThemedText>
+              <ThemedText>{fueling !== 'Bulk Sale' ? 'Driver' : 'Manager'} Mobile Number:</ThemedText>
               <TextInput
                 ref={driverMobileInputRef}
                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
@@ -820,7 +828,7 @@ export default function FuelingScreen() {
             <View style={styles.inputContainer}>
               <ThemedText>Fuel Quantity Dispensed:</ThemedText>
               <View style={styles.rowContainer}>
-                <Picker
+                {fueling !== 'Bulk Sale' && <Picker
                   style={[
                     styles.input,
                     styles.quarterInput,
@@ -837,7 +845,7 @@ export default function FuelingScreen() {
                 >
                   <Picker.Item label="Full" value="Full" />
                   <Picker.Item label="Part" value="Part" />
-                </Picker>
+                </Picker>}
                 <TextInput
                   onFocus={() => {
                     if (!fuelMeterImage) {
@@ -876,7 +884,7 @@ export default function FuelingScreen() {
             onPress={resetForm}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-              <ThemedText style={styles.resetButtonText}>Reset</ThemedText>
+              <ThemedText style={[styles.resetButtonText, { color: colors.text }]}>Reset</ThemedText>
               <Ionicons name="refresh-outline" size={20} color="white" />
             </View>
           </TouchableOpacity>
@@ -899,6 +907,26 @@ export default function FuelingScreen() {
 const styles = StyleSheet.create({
   main: {
     backgroundColor: 'dark',
+  },
+  navContainer: {
+    paddingVertical: 10,
+    borderRadius: 5,
+    // backgroundColor: '#151718',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 20
+  },
+  navButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    width: 90,
+    alignItems: 'center',
+    textAlign: 'center'
+  },
+  activeButton: {
+    backgroundColor: '#0a7ea4',
   },
   containerTitles: {
     paddingTop: 4,

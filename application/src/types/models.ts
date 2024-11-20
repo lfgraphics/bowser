@@ -8,6 +8,8 @@ export interface Driver {
     }>;
 }
 
+export type FuelingTypes = 'Own' | 'Attatch' | 'Bulk Sale'
+
 export interface Vehicle {
     vehicleNo: string;
     type: string;
@@ -50,7 +52,7 @@ export interface FuelNotificationProps {
     driverId: string;
     driverMobile: string;
     driverName: string;
-    quantityType: "Part" | "Full" ;
+    quantityType: "Part" | "Full";
     quantity: string;
     bowser: {
         regNo: string;
@@ -65,7 +67,7 @@ export interface FuelNotificationProps {
 }
 
 export interface FormData {
-
+    category: FuelingTypes
     orderId?: string;
     vehicleNumberPlateImage: string | null;
     tripSheetId: string,
