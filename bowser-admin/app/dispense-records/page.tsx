@@ -377,8 +377,8 @@ const VehicleDispensesPage = () => {
                         <TableHead>Qty Type</TableHead>
                         <TableHead>Fuel Qty</TableHead>
                         <TableHead>Action</TableHead>
-                        <TableHead align="justify">Verified</TableHead>
-                        <TableHead align="justify">Posted</TableHead>
+                        <TableHead>Verified</TableHead>
+                        <TableHead>Posted</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -392,7 +392,7 @@ const VehicleDispensesPage = () => {
                             <TableCell>{record.tripSheetId}</TableCell>
                             <TableCell>{record.fuelingDateTime}</TableCell>
                             <TableCell>{record.bowser.regNo}</TableCell>
-                            <TableCell>{record.gpsLocation.replace('Bowser at', "").split(',')[0].substring(0, 15) + "..."}</TableCell>
+                            <TableCell>{record.gpsLocation?.substring(0, 15) + "..."}</TableCell>
                             <TableCell>{record.driverName}</TableCell>
                             <TableCell>{record.driverMobile}</TableCell>
                             <TableCell>{record.vehicleNumber}</TableCell>
