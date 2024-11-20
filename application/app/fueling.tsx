@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { useTheme } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import { Driver, FormData, Vehicle } from '@/src/types/models';
@@ -84,17 +83,10 @@ export default function FuelingScreen() {
       let location: Location.LocationObject = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
 
-      // Reverse geocode to get city name
-      let geocode = await Location.reverseGeocodeAsync({ latitude, longitude });
-      let city = geocode[0]?.city || 'City  not found';
-      let district = geocode[0]?.district || 'District not found';
+      const coordinates = `${latitude}, ${longitude}`;
 
-      // Format the coordinates and return
-      const coordinates = `Latitude ${latitude}, Longitude ${longitude}`;
-      const fuelLocation = `Bowser at ${city}, ${district} ${coordinates}`;
-
-      setGpsLocation(fuelLocation);
-      return fuelLocation;
+      setGpsLocation(coordinates);
+      return coordinates;
     } catch (error) {
       console.error("Error getting location or city:", error);
       return { error: "Unable to retrieve location. Please check your internet connection." };
@@ -198,7 +190,7 @@ export default function FuelingScreen() {
 
     if (isOnline) {
       try {
-        const response = await fetch(`https://bowser-backend-2cdr.onrender.com/addFuelingTransaction`, { //https://bowser-backend-2cdr.onrender.com // http://192.168.137.1:5000
+        const response = await fetch(`http://192.168.137.1:5000/addFuelingTransaction`, { //https://bowser-backend-2cdr.onrender.com // http://192.168.137.1:5000
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

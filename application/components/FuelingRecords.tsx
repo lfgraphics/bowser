@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { TouchableOpacity, Modal, StyleSheet, ActivityIndicator, Alert, FlatList } from 'react-native';
+import { StyleSheet, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { ThemedText } from './ThemedText';
@@ -26,8 +26,6 @@ interface DispensesRecord {
 const FuelingRecords: React.FC = () => {
     const [tripSheetId, setTripSheetId] = useState<string | null>(null);
     const [records, setRecords] = useState<DispensesRecord[]>([]);
-    const [selectedRecord, setSelectedRecord] = useState<DispensesRecord | null>(null);
-    const [modalVisible, setModalVisible] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
     // const { colors } = useTheme();
 
@@ -71,37 +69,14 @@ const FuelingRecords: React.FC = () => {
         }
     }, [tripSheetId]);
 
-    // const handleThemedViewDetails = (record: DispensesRecord) => {
-    //     setSelectedRecord(record);
-    //     setModalVisible(true);
-    // };
-
-    const closeModal = () => {
-        setModalVisible(false);
-        setSelectedRecord(null);
-    };
-
-    const renderDriverItem = ({ item }: { item: DispensesRecord }) => (
-        <ThemedView style={[styles.modalItem,]}>
-            <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Date:</ThemedText> {item.fuelingDateTime}</ThemedText>
-            <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Vehicle No.:</ThemedText> {item.vehicleNumber}</ThemedText>
-            <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Driver Name:</ThemedText> {item.driverName}</ThemedText>
-            <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Fuel Quantity:</ThemedText> {item.fuelQuantity}</ThemedText>
-            <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>GPS Location:</ThemedText> {item.gpsLocation}</ThemedText>
-            <ThemedText style={[styles.modalText,]}>
-                <ThemedText style={styles.label}>Verified:</ThemedText> {item.verified ? "Yes" : "No"}
-            </ThemedText>
-        </ThemedView>
-    );
-
     return (
-        <ThemedView style={[styles.container,]}>
+        <ThemedView style={[styles.scrollThemedView,]}>
             <ThemedText style={[styles.title,]}>Your Fueling Records</ThemedText>
 
             {loading ? (
                 <ActivityIndicator size="large" />
             ) : (
-                <ThemedView style={styles.scrollThemedView}>
+                <ScrollView style={styles.scrollThemedView}>
                     {records.length > 0 &&
                         <ThemedText style={[styles.secondaryTitle,]}>
                             Total Fueled Quantity: {records.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)} L
@@ -121,25 +96,8 @@ const FuelingRecords: React.FC = () => {
                     ) : (
                         <ThemedText style={[styles.noRecordsText,]}>No records found.</ThemedText>
                     )}
-                </ThemedView>
+                </ScrollView >
             )}
-
-            {/* Modal for displaying details */}
-            <Modal visible={modalVisible} transparent={true} animationType="slide" onRequestClose={closeModal}>
-                <ThemedView style={[styles.modalContainer,]}>
-                    <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-                        <ThemedText style={[styles.closeButtonText,]}>Close</ThemedText>
-                    </TouchableOpacity>
-
-                    {selectedRecord && (
-                        <FlatList
-                            data={[selectedRecord]}
-                            renderItem={renderDriverItem}
-                            keyExtractor={(item) => item._id}
-                        />
-                    )}
-                </ThemedView>
-            </Modal>
         </ThemedView>
     );
 };
@@ -154,7 +112,7 @@ const styles = StyleSheet.create({
         fontSize: 24,
         alignSelf: 'center',
         fontWeight: 'bold',
-        marginBottom: 16,
+        marginBottom: 8,
     },
     secondaryTitle: {
         fontSize: 18,
@@ -181,15 +139,17 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         padding: 12,
         borderRadius: 4,
-        marginBottom: 16,
+        borderBottomColor: 'white'
     },
     closeButtonText: {
         fontWeight: 'bold',
     },
     modalItem: {
-        padding: 16,
+        padding: 4,
         marginBottom: 8,
         borderRadius: 8,
+        borderBottomColor: 'white',
+        borderBottomWidth: 1
     },
     modalText: {
         fontSize: 16,
@@ -199,6 +159,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     scrollThemedView: {
+        borderRadius: 8,
+        padding: 10,
         maxHeight: 300,
         width: '100%',
     },
