@@ -168,7 +168,7 @@ export default function FuelingAllocation() {
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
 
         if (driver) {
-            const idMatch = driver.Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\)| - ITPL-?\d+| -ITPL-?\d+)/i);
+            const idMatch = driver.Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
             let cleanName = driver.Name.trim();
             let recognizedId = '';
             if (idMatch) {
@@ -219,7 +219,7 @@ export default function FuelingAllocation() {
     const handleVehicleSelection = (vehicle: Vehicle) => {
         setVehicleNumber(vehicle.vehicleNo);
         if (vehicle.driverDetails) {
-            const idMatch = vehicle.driverDetails.Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\)| - ITPL-?\d+| -ITPL-?\d+)/i);
+            const idMatch = vehicle.driverDetails.Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
             let cleanName = vehicle.driverDetails.Name.trim();
             let recognizedId = '';
             if (idMatch) {
