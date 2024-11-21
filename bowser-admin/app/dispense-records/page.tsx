@@ -35,6 +35,7 @@ const VehicleDispensesPage = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalRecords, setTotalRecords] = useState();
     const [currentPage, setCurrentPage] = useState(1);
+    const [category, setCategory] = useState('all');
     const [filter, setFilter] = useState({ bowserNumber: "", driverName: "", tripSheetId: "", verified: "all" });
     const [sortBy, setSortBy] = useState("fuelingDateTime");
     const [order, setOrder] = useState("asc");
@@ -59,7 +60,7 @@ const VehicleDispensesPage = () => {
 
     useEffect(() => {
         fetchRecords();
-    }, [currentPage, sortBy, order, filter, limit, verificationStatus]);
+    }, [currentPage, sortBy, order, filter, limit, verificationStatus, category]);
 
 
     const fetchRecords = async () => {
@@ -91,6 +92,7 @@ const VehicleDispensesPage = () => {
                     driverName: filter.driverName,
                     tripSheetId: filter.tripSheetId,
                     verified: verificationStatus,
+                    category,
                     // startDate: adjustedStartDate ? adjustedStartDate.toISOString() : undefined,
                     // endDate: adjustedEndDate ? adjustedEndDate.toISOString() : undefined,
                 },
@@ -255,14 +257,25 @@ const VehicleDispensesPage = () => {
                             className="w-full sm:w-auto"
                         />
                     </div>
-                    <Select value={verificationStatus} onValueChange={setVerificationStatus}>
-                        <SelectTrigger className="flex items-center justify-between border rounded p-2 w-[120px]">
+                    <Select onValueChange={setVerificationStatus}>
+                        <SelectTrigger className="flex items-center justify-between border rounded p-2 w-[140px]">
                             <SelectValue placeholder="Verification Status" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All</SelectItem>
                             <SelectItem value="true">Verified</SelectItem>
                             <SelectItem value="false">Unverified</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select onValueChange={setCategory}>
+                        <SelectTrigger className="flex items-center justify-between border rounded p-2 w-[120px]">
+                            <SelectValue className="text-muted" placeholder="Fueling Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="Own">Own</SelectItem>
+                            <SelectItem value="Attatch">Attatch</SelectItem>
+                            <SelectItem value="Bulk Sale">Bulk Sale</SelectItem>
                         </SelectContent>
                     </Select>
                     <div className="flex items-center justify-between">Records limit <Input type="number" className="w-20 ml-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
@@ -343,7 +356,7 @@ const VehicleDispensesPage = () => {
                                     className="w-full sm:w-auto"
                                 />
                             </div>
-                            <Select value={verificationStatus} onValueChange={setVerificationStatus}>
+                            <Select onValueChange={setVerificationStatus}>
                                 <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full self-center">
                                     <SelectValue placeholder="Verification Status" />
                                 </SelectTrigger>
@@ -351,6 +364,17 @@ const VehicleDispensesPage = () => {
                                     <SelectItem value="all">All</SelectItem>
                                     <SelectItem value="true">Verified</SelectItem>
                                     <SelectItem value="false">Unverified</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select onValueChange={setCategory}>
+                                <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full">
+                                    <SelectValue className="text-muted" placeholder="Fueling Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="Own">Own</SelectItem>
+                                    <SelectItem value="Attatch">Attatch</SelectItem>
+                                    <SelectItem value="Bulk Sale">Bulk Sale</SelectItem>
                                 </SelectContent>
                             </Select>
                             <div className="flex items-center justify-between">Records limit <Input type="number" className="w-20 mx-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
@@ -391,7 +415,7 @@ const VehicleDispensesPage = () => {
                         >
                             <TableCell>{index + 1}</TableCell>
                             <TableCell>{record.tripSheetId}</TableCell>
-                            <TableCell>{record.category || "Unspecified"}</TableCell>
+                            <TableCell>{record.category || 'Unspecified'}</TableCell>
                             <TableCell>{record.fuelingDateTime.replace(/\/20(\d{2})/, "/$1")}</TableCell>
                             <TableCell>{record.bowser.regNo}</TableCell>
                             <TableCell>{record.gpsLocation?.substring(0, 15) + "..."}</TableCell>
