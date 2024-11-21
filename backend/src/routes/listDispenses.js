@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 
 router.get('/', async (req, res) => {
-    const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'fuelingDateTime', order = 'desc', verified } = req.query;
+    const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'fuelingDateTime', order = 'desc', verified, category } = req.query;
     const skip = (page - 1) * limit;
     let filter = {};
 
@@ -34,7 +34,15 @@ router.get('/', async (req, res) => {
         };
     }
 
+
+    if (category !== 'all') {
+        console.log(category)
+        filter['category'] = category;
+    }
+
     const sortOrder = order === 'asc' ? 1 : -1;
+
+    console.log(filter)
 
     try {
         const records = await FuelingTransaction.find(filter, {
@@ -47,16 +55,21 @@ router.get('/', async (req, res) => {
             bowser: 1,
             fuelingDateTime: 1,
             gpsLocation: 1,
-            verified: 1
+            verified: 1,
+            category: 1
         }).skip(skip).limit(Number(limit)).sort({ [sortBy]: sortOrder });
         const totalRecords = await FuelingTransaction.countDocuments();
 
-        res.json({
-            totalRecords,
-            totalPages: Math.ceil(totalRecords / limit),
-            currentPage: Number(page),
-            records,
-        });
+        if (records.length == 0) {
+            res.status(400).json({ message: 'No records found' })
+        } else {
+            res.json({
+                totalRecords,
+                totalPages: Math.ceil(totalRecords / limit),
+                currentPage: Number(page),
+                records,
+            });
+        }
     } catch (error) {
         console.error('Error fetching fueling records:', error);
         res.status(500).json({ message: 'Internal server error' });

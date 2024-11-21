@@ -4,7 +4,7 @@ const { bowsersDatabaseConnection } = require('../../config/database');
 const fuelingTransactionSchema = new mongoose.Schema({
     orderId: { type: mongoose.Schema.Types.ObjectId, required: false },
     category: {
-        type: String, require: true,
+        type: String, require: false,
         validate: {
             validator: function (v) {
                 return v === 'Own' || v === 'Attatch' || v === 'Bulk Sale';
@@ -14,7 +14,7 @@ const fuelingTransactionSchema = new mongoose.Schema({
     },
     tripSheetId: { type: String },
     vehicleNumberPlateImage: { type: String, required: false },
-    vehicleNumber: { type: String, required: true },
+    vehicleNumber: { type: String, required: false },
     driverId: { type: String, required: false },
     driverName: { type: String, required: false },
     driverMobile: { type: String, required: false },
@@ -22,7 +22,7 @@ const fuelingTransactionSchema = new mongoose.Schema({
     slipImage: { type: String, required: false },
     quantityType: {
         type: String,
-        required: true,
+        required: false,
         validate: {
             validator: function (v) {
                 return v === 'Full' || v === 'Part';
@@ -30,9 +30,9 @@ const fuelingTransactionSchema = new mongoose.Schema({
             message: 'Quantity type must be either Full or Part'
         }
     },
-    fuelQuantity: { type: String, required: true },
+    fuelQuantity: { type: String, required: false },
     gpsLocation: {
-        type: String, required: true,
+        type: String, required: false,
         validate: {
             validator: function (value) {
                 return value.trim().length > 0;
