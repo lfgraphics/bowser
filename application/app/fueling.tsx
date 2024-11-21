@@ -699,31 +699,33 @@ export default function FuelingScreen() {
           </View>
 
           <View style={styles.section}>
-            <View style={styles.inputContainer}>
-              <ThemedText>{fueling == 'Bulk Sale' ? 'Manager Name:' : fueling == 'Own' ? 'Driver Id' : 'Driver Name'}</ThemedText>
-              <TextInput
-                ref={driverIdInputRef}
-                style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                placeholder={`Enter ${fueling == 'Bulk Sale' ? 'Manager Name:' : fueling == 'Own' ? 'Driver Id' : 'Driver Name'}`}
-                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                value={driverId}
-                onChangeText={(text) => {
-                  setDriverId(text);
-                  if (fueling == 'Own') {
-                    if (text.length > 3 && !(text == "")) {
-                      setFoundDrivers([]);
-                      setNoDriverFound(false);
-                      searchDriverById(text);
+            {fueling == 'Own' &&
+              <View style={styles.inputContainer}>
+                <ThemedText>Driver Id:</ThemedText>
+                <TextInput
+                  ref={driverIdInputRef}
+                  style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                  placeholder={`Enter Driver Id`}
+                  placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                  value={driverId}
+                  onChangeText={(text) => {
+                    setDriverId(text);
+                    if (fueling == 'Own') {
+                      if (text.length > 3 && !(text == "")) {
+                        setFoundDrivers([]);
+                        setNoDriverFound(false);
+                        searchDriverById(text);
+                      }
+                    } else {
+                      // will intigrate functionality for finding and updating Manager name
                     }
-                  } else {
-                    // will intigrate functionality for finding and updating Manager name
-                  }
-                }}
-                keyboardType="default"
-                onSubmitEditing={() => driverNameInputRef.current?.focus()}
-                blurOnSubmit={false}
-              />
-            </View>
+                  }}
+                  keyboardType="default"
+                  onSubmitEditing={() => driverNameInputRef.current?.focus()}
+                  blurOnSubmit={false}
+                />
+              </View>
+            }
             {noDriverFound && (
               <ThemedText style={styles.errorText}>No driver found with the given ID</ThemedText>
             )}
@@ -754,22 +756,20 @@ export default function FuelingScreen() {
               </View>
             </Modal>
 
-            {fueling == 'Own' &&
-              <View style={styles.inputContainer}>
-                <ThemedText>Driver Name:</ThemedText>
-                <TextInput
-                  ref={driverNameInputRef}
-                  style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                  placeholder="Enter driver name"
-                  placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                  value={driverName}
-                  onChangeText={setDriverName}
-                  returnKeyType="next"
-                  onSubmitEditing={() => driverMobileInputRef.current?.focus()}
-                  blurOnSubmit={false}
-                />
-              </View>
-            }
+            <View style={styles.inputContainer}>
+              <ThemedText>{fueling == 'Bulk Sale' ? 'Manager Name:' : 'Driver Name:'}</ThemedText>
+              <TextInput
+                ref={driverNameInputRef}
+                style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                placeholder={`Enter ${fueling == 'Bulk Sale' ? 'Manager Name:' : 'Driver Name'}`}
+                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                value={driverName}
+                onChangeText={setDriverName}
+                returnKeyType="next"
+                onSubmitEditing={() => driverMobileInputRef.current?.focus()}
+                blurOnSubmit={false}
+              />
+            </View>
 
             <View style={styles.inputContainer}>
               <ThemedText>{fueling !== 'Bulk Sale' ? 'Driver' : 'Manager'} Mobile Number:</ThemedText>
