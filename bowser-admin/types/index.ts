@@ -41,10 +41,24 @@ export interface Bowser {
         };
     };
 }
+// Define TypeScript interfaces
 export interface User {
-    _id: string;
+    _id:  mongoose.Schema.Types.ObjectId;
     userId: string;
+    phoneNumber: string;
     name: string;
+    verified: boolean;
+    roles: Role[];
+}
+
+export interface Role {
+    _id:  mongoose.Schema.Types.ObjectId;
+    name: string;
+    permissions: {
+        apps: { name: string; access: 'read' | 'write' | 'admin' | null }[];
+        functions: { name: string; allowed: boolean }[];
+        customPermissions: Record<string, any>;
+    };
 }
 export interface Vehicle {
     vehicleNo: string;
