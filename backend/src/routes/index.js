@@ -14,10 +14,7 @@ const searchBowserRoutes = require('./searchBowserDetails');
 const tripSheetRoutes = require('./tripSheet');
 const userRoutes = require('./users');
 const roleRoutes = require('./roles');
-<<<<<<< HEAD
 const bowserRoutes = require('./bowsers');
-=======
->>>>>>> dc70fc9f7b0e015cf8cd49bca9c0542f3ba056b8
 
 router.get('/', (req, res) => {
     res.send('landing page');
@@ -36,9 +33,6 @@ router.use('/searchBowserDetails', searchBowserRoutes);
 router.use('/tripSheet', tripSheetRoutes);
 router.use('/users', userRoutes)
 router.use('/roles', roleRoutes)
-<<<<<<< HEAD
 router.use('/bowsers', bowserRoutes)
-=======
->>>>>>> dc70fc9f7b0e015cf8cd49bca9c0542f3ba056b8
 
 module.exports = router;
