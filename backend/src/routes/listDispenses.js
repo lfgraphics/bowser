@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
     }
 
 
-    if (category !== 'all') {
+    if (category !== undefined && category !== 'all') {
         console.log(category)
         filter['category'] = category;
     }
@@ -196,5 +196,21 @@ router.patch('/update/:id', async (req, res) => {
         res.status(500).json({ heading: "Failed!", message: 'Internal server error' });
     }
 });
+
+router.delete('/delete/:id', async (req, res) => {
+    const id = req.params.id;
+    try {
+        const deletedRecord = await FuelingTransaction.findByIdAndDelete(id);
+
+        if (!deletedRecord) {
+            return res.status(404).json({ message: 'Record not found' });
+        }
+
+        res.status(200).json({ message: 'Fueling record deleted successfully', success: true });
+    } catch (err) {
+        console.error('Error deleting Fueling record:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+})
 
 module.exports = router;
