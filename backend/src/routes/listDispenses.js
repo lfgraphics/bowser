@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
     }
 
 
-    if (category !== undefined && category !== 'all') {
+    if (category !== 'all') {
         console.log(category)
         filter['category'] = category;
     }
