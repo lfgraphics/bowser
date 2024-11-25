@@ -1,7 +1,7 @@
-import { Role, User } from "@/types";
+import { Bowser, Role, TripSheet, User } from "@/types";
 import axios from "axios";
 
-const BASE_URL = 'https://bowser-backend-2cdr.onrender.com';  //https://bowser-backend-2cdr.onrender.com  http://localhost:5000
+const BASE_URL = 'http://localhost:8000';  //https://bowser-backend-2cdr.onrender.com  http://localhost:5000
 
 export const getUsers = async (): Promise<User[]> => {
     const response = await fetch(`${BASE_URL}/users`);
@@ -65,4 +65,31 @@ export const deleteRole = async (roleId: string): Promise<void> => {
         method: 'DELETE',
     });
     if (!response.ok) throw new Error('Failed to delete role');
+};
+
+export const getBowsers = async (): Promise<Bowser[]> => {
+    const response = await fetch(`${BASE_URL}/bowsers`);
+    if (!response.ok) throw new Error('Failed to fetch bowsers');
+    return response.json();
+};
+
+export const udpateBowser = async (id: string, data: Bowser): Promise<Bowser> => {
+    const response = await fetch(`${BASE_URL}/bowsers/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data }),
+    });
+    if (!response.ok) throw new Error('Failed to update Bowser');
+    return response.json();
+};
+
+export const deleteBowser = async (id: string): Promise<void> => {
+    const response = await axios.delete(`${BASE_URL}/bowsers/${id}`)
+    if (response.status !== 200) throw new Error('Failed to delete user');
+};
+
+export const getTripSheets = async (): Promise<TripSheet[]> => {
+    const response = await fetch(`${BASE_URL}/tripSheet/all?unsettled=true`);
+    if (!response.ok) throw new Error('Failed to fetch roles');
+    return response.json();
 };

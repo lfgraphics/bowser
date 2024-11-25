@@ -5,8 +5,7 @@ import { getUsers, updateUserVerification, deleteUser, updateUserRoles, getRoles
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import RoleSelectionDialog from "@/components/RoleSelectionDialog";
-import mongoose from "mongoose";
-import { Role } from "@/types";
+import { Role, User } from "@/types";
 import Loading from "../loading";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -20,16 +19,6 @@ import {
     AlertDialogAction,
     AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-
-interface User {
-    _id: mongoose.Schema.Types.ObjectId;
-    userId: string;
-    name: string;
-    verified: boolean;
-    roles: Role[];
-    phoneNumber: string;
-    generationTime?: Date;
-}
 
 type Nav = 'Users' | 'Roles';
 
@@ -108,7 +97,7 @@ const UsersList = () => {
                     >{option}
                     </Button>))}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {nav == 'Users' && users.map((user, index) => (
                     <UsersCard
                         key={index}
@@ -162,6 +151,7 @@ const UsersList = () => {
                                 <p>
                                     Apps: {role.permissions.apps.map((app) => app.name).join(', ')}
                                     <br />
+                                    Rights: {role.permissions.apps.map((app) => app.access).join(', ')}
                                 </p>
                             </>
                         }

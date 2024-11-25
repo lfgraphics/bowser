@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { Home, ClipboardList, ListCheck, User, LogOut, Menu, X, SheetIcon, Users2, Users } from 'lucide-react'
+import { Home, ClipboardList, ListCheck, User, LogOut, Menu, X, SheetIcon, Users2, Users, CaravanIcon } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -79,6 +79,14 @@ export function Sidebar() {
                     <Button variant="ghost" className="w-full justify-start">
                       <User className="mr-2 h-4 w-4" />
                       Profile
+                    </Button>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/manage-bowsers">
+                    <Button variant="ghost" className="w-full justify-start">
+                      <CaravanIcon className="mr-2 h-4 w-4" />
+                      Manage Bowsers
                     </Button>
                   </Link>
                 </li>

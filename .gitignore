@@ -62,5 +62,9 @@ expo-env.d.ts
 *.swp
 *.swo
 
+<<<<<<< HEAD
 google-services.json
 application/bowsers-management-75bd5acb5c9f.json
+=======
+google-services.json
+>>>>>>> dc70fc9f7b0e015cf8cd49bca9c0542f3ba056b8

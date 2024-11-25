@@ -31,70 +31,9 @@ export interface ResponseBowser {
 }
 
 export interface Bowser {
+    _id: string;
     regNo: string;
-    currentTrip: {
-        _id: mongoose.Schema.Types.ObjectId;
-        bowserDriver: {
-            _id: mongoose.Schema.Types.ObjectId;
-            userId: string;
-            userName: string;
-        };
-    };
-}
-// Define TypeScript interfaces
-export interface User {
-    _id:  mongoose.Schema.Types.ObjectId;
-    userId: string;
-    phoneNumber: string;
-    name: string;
-    verified: boolean;
-    roles: Role[];
-}
-
-export interface Role {
-    _id:  mongoose.Schema.Types.ObjectId;
-    name: string;
-    permissions: {
-        apps: { name: string; access: 'read' | 'write' | 'admin' | null }[];
-        functions: { name: string; allowed: boolean }[];
-        customPermissions: Record<string, any>;
-    };
-}
-export interface Vehicle {
-    vehicleNo: string;
-    driverDetails: Driver
-}
-
-export interface DispensesRecord {
-    _id: mongoose.Schema.Types.ObjectId;
-    orderId: mongoose.Schema.Types.ObjectId,
-    category: string;
-    tripSheetId: string;
-    vehicleNumberPlateImage: string,
-    vehicleNumber: string,
-    driverName: string,
-    driverId: string,
-    driverMobile: string,
-    fuelMeterImage: string,
-    slipImage: string,
-    fuelQuantity: string,
-    quantityType: string,
-    gpsLocation: string,
-    fuelingDateTime: string,
-    verified: boolean,
-    posted: boolean,
-    bowser: {
-        regNo: string,
-        driver: {
-            name: string,
-            id: string
-            phoneNo: string
-        }
-    },
-    allocationAdmin: {
-        name: { type: string, required: false },
-        userId: { type: string, required: false }
-    },
+    currentTrip: TripSheet
 }
 
 export interface TripSheet {
@@ -143,6 +82,62 @@ export interface TripSheet {
         };
         settled: boolean;
     };
+}
+
+export interface User {
+    _id: mongoose.Schema.Types.ObjectId;
+    userId: string;
+    phoneNumber: string;
+    name: string;
+    verified: boolean;
+    roles: Role[];
+    generationTime: Date;
+}
+
+export interface Role {
+    _id: mongoose.Schema.Types.ObjectId;
+    name: string;
+    permissions: {
+        apps: { name: string; access: 'read' | 'write' | 'admin' | null }[];
+        functions: { name: string; allowed: boolean }[];
+        customPermissions: Record<string, any>;
+    };
+}
+export interface Vehicle {
+    vehicleNo: string;
+    driverDetails: Driver
+}
+
+export interface DispensesRecord {
+    _id: mongoose.Schema.Types.ObjectId;
+    orderId: mongoose.Schema.Types.ObjectId,
+    category: string;
+    tripSheetId: string;
+    vehicleNumberPlateImage: string,
+    vehicleNumber: string,
+    driverName: string,
+    driverId: string,
+    driverMobile: string,
+    fuelMeterImage: string,
+    slipImage: string,
+    fuelQuantity: string,
+    quantityType: string,
+    gpsLocation: string,
+    fuelingDateTime: string,
+    verified: boolean,
+    posted: boolean,
+    bowser: {
+        regNo: string,
+        driver: {
+            name: string,
+            id: string
+            phoneNo: string
+        }
+    },
+    allocationAdmin: {
+        name: { type: string, required: false },
+        userId: { type: string, required: false }
+    },
 }
 
 
