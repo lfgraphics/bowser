@@ -56,11 +56,6 @@ const UsersList = () => {
         checkAuth();
     }, []);
 
-    if(!superAdmin){
-        return <p>You do not have permission to view this page <br />Your should ask Super Admin for these actions</p>
-    }
-
-
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -117,79 +112,83 @@ const UsersList = () => {
     return (
         <>
             {loading && <Loading />}
-            <Toaster />
-            <div className="nav mx-auto mb-4 flex gap-4 bg-muted-foreground bg-opacity-35 w-max p-4 rounded-lg">
-                {(['Users', 'Roles'] as Nav[]).map((option) => (
-                    <Button
-                        key={option}
-                        variant={nav == option ? 'default' : 'secondary'}
-                        onClick={() => setNav(option)}
-                    >{option}
-                    </Button>))}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {nav == 'Users' && users.map((user, index) => (
-                    <UsersCard
-                        key={index}
-                        header={`${user.name}, ID: ${user.userId}`}
-                        description={`Phone: ${user.phoneNumber}`}
-                        content={
-                            <div>
-                                <p className="flex gap-4">Verified: {user.verified ? <Check /> : <X />}</p>
-                                <p>Roles: {user.roles?.map((role) => role.name).join(', ')}</p>
-                                {user.generationTime && <p>Created on: {`${new Date(user.generationTime)?.toLocaleString('en-GB', {
-                                    day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-                                }).replace(/\//g, '-')}`}</p>}
-                            </div>
-                        }
-                        footer={
-                            <div className="flex gap-2 justify-between">
-                                <Button variant='outline' onClick={() => handleUpdateVerification(user.userId, !user.verified)}>
-                                    {user.verified ? 'Unverify' : 'Verify'}
-                                </Button>
-                                <AlertDialog open={selectedUserId === user.userId} onOpenChange={(isOpen) => !isOpen && setSelectedUserId(null)}>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="destructive" onClick={() => setSelectedUserId(user.userId)}>Delete</Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Are you sure you want to delete this user: {`${user.name}, Id: ${user.userId}`}? This action cannot be undone.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogAction onClick={() => handleDeleteUser()}>Delete</AlertDialogAction>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                                <RoleSelectionDialog
-                                    user={user}
-                                    roles={roles}
-                                    onUpdateRoles={handleUpdateRoles}
-                                />
-                            </div>
-                        }
-                    />
-                ))}
-                {nav === 'Roles' && roles.map((role, index) => (
-                    <UsersCard
-                        key={index}
-                        header={`${role.name}`}
-                        description="None"
-                        content={
-                            <>
-                                <p>
-                                    Apps: {role.permissions.apps.map((app) => app.name).join(', ')}
-                                    <br />
-                                    Rights: {role.permissions.apps.map((app) => app.access).join(', ')}
-                                </p>
-                            </>
-                        }
-                        footer={<p>will see</p>}
-                    />
-                ))}
+            {!superAdmin ? <p className="block mx-auto w-max p-3 border rounded-md mt-72 border-foreground scale-150">You do not have permission to view this page<br />Your should ask Super Admin for these actions</p> :
+                <>
+                    <Toaster />
+                    <div className="nav mx-auto mb-4 flex gap-4 bg-muted-foreground bg-opacity-35 w-max p-4 rounded-lg">
+                        {(['Users', 'Roles'] as Nav[]).map((option) => (
+                            <Button
+                                key={option}
+                                variant={nav == option ? 'default' : 'secondary'}
+                                onClick={() => setNav(option)}
+                            >{option}
+                            </Button>))}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {nav == 'Users' && users.map((user, index) => (
+                            <UsersCard
+                                key={index}
+                                header={`${user.name}, ID: ${user.userId}`}
+                                description={`Phone: ${user.phoneNumber}`}
+                                content={
+                                    <div>
+                                        <p className="flex gap-4">Verified: {user.verified ? <Check /> : <X />}</p>
+                                        <p>Roles: {user.roles?.map((role) => role.name).join(', ')}</p>
+                                        {user.generationTime && <p>Created on: {`${new Date(user.generationTime)?.toLocaleString('en-GB', {
+                                            day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+                                        }).replace(/\//g, '-')}`}</p>}
+                                    </div>
+                                }
+                                footer={
+                                    <div className="flex gap-2 justify-between">
+                                        <Button variant='outline' onClick={() => handleUpdateVerification(user.userId, !user.verified)}>
+                                            {user.verified ? 'Unverify' : 'Verify'}
+                                        </Button>
+                                        <AlertDialog open={selectedUserId === user.userId} onOpenChange={(isOpen) => !isOpen && setSelectedUserId(null)}>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="destructive" onClick={() => setSelectedUserId(user.userId)}>Delete</Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Are you sure you want to delete this user: {`${user.name}, Id: ${user.userId}`}? This action cannot be undone.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogAction onClick={() => handleDeleteUser()}>Delete</AlertDialogAction>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                        <RoleSelectionDialog
+                                            user={user}
+                                            roles={roles}
+                                            onUpdateRoles={handleUpdateRoles}
+                                        />
+                                    </div>
+                                }
+                            />
+                        ))}
+                        {nav === 'Roles' && roles.map((role, index) => (
+                            <UsersCard
+                                key={index}
+                                header={`${role.name}`}
+                                description="None"
+                                content={
+                                    <>
+                                        <p>
+                                            Apps: {role.permissions.apps.map((app) => app.name).join(', ')}
+                                            <br />
+                                            Rights: {role.permissions.apps.map((app) => app.access).join(', ')}
+                                        </p>
+                                    </>
+                                }
+                                footer={<p>will see</p>}
+                            />
+                        ))}
 
-            </div>
+                    </div>
+                </>
+            }
         </>
 
     );
