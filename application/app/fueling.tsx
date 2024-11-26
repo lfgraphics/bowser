@@ -22,6 +22,9 @@ export default function FuelingScreen() {
   const [fuelMeterImage, setFuelMeterImage] = useState<string | null>(null);
   const [slipImage, setSlipImage] = useState<string | null>(null);
   const [vehicleNumber, setVehicleNumber] = useState('');
+  const [odometer, setOdodmeter] = useState('');
+  const [adminId, setAdminId] = useState('');
+  const [adminName, setAdminName] = useState('');
   const [driverName, setDriverName] = useState('');
   const [driverId, setDriverId] = useState('');
   const [driverMobile, setDriverMobile] = useState('');
@@ -42,6 +45,7 @@ export default function FuelingScreen() {
   const [isOnline, setIsOnline] = useState(true);
   const [foundVehicles, setFoundVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<string>('');
+  const [partyName, setPartyName] = useState<string>('');
   const [noVehicleFound, setNoVehicleFound] = useState(false);
   const [isSearchingVehicle, setIsSearchingVehicle] = useState(false);
   const [vehicleModalVisible, setVehicleModalVisible] = useState(false);
@@ -50,11 +54,14 @@ export default function FuelingScreen() {
 
   // declare refs for input fields---->
   const vehicleNumberInputRef = React.useRef<TextInput>(null);
+  const partyNameInputRef = React.useRef<TextInput>(null);
   const driverNameInputRef = React.useRef<TextInput>(null);
   const driverIdInputRef = React.useRef<TextInput>(null);
   const driverMobileInputRef = React.useRef<TextInput>(null);
   const fuelQuantityInputRef = React.useRef<TextInput>(null);
-  const gpsLocationInputRef = React.useRef<TextInput>(null);
+  const adminIdInputRef = React.useRef<TextInput>(null);
+  const adminNameInputRef = React.useRef<TextInput>(null);
+  const odometerInputRef = React.useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const driversData: (Driver | { Name: string, ITPLId: string })[] = [
     { Name: "Select a driver", ITPLId: "placeholder" },
@@ -166,6 +173,8 @@ export default function FuelingScreen() {
 
     const formData: FormData = {
       category: fueling,
+      party: partyName,
+      odometer,
       vehicleNumberPlateImage,
       tripSheetId,
       vehicleNumber: vehicleNumber.toUpperCase(),
@@ -185,6 +194,10 @@ export default function FuelingScreen() {
           id: userData['User Id'],
           phoneNo: userData['Phone Number']
         }
+      },
+      allocationAdmin: {
+        id: adminId,
+        name: adminName
       }
     };
 
@@ -284,12 +297,13 @@ export default function FuelingScreen() {
     setFuelMeterImage(null);
     setSlipImage(null);
     setVehicleNumber('');
-    setDriverName('');
+    setOdodmeter('');
+    setPartyName('');
     setDriverId('');
+    setDriverName('');
     setDriverMobile('');
     setFuelQuantity('0');
-    setGpsLocation('');
-    setFuelingDateTime('');
+    setAdminId('');
   }
   // form data handling
   const openNumberPlateCamera = async () => {
@@ -447,7 +461,7 @@ export default function FuelingScreen() {
     }
   }
   const validateInputs = () => {
-    if (!vehicleNumber) {
+    if ((fueling !== "Bulk Sale") && !vehicleNumber) {
       alert("Vehicle Number is required.");
       vehicleNumberInputRef.current?.measureLayout(
         scrollViewRef.current?.getInnerViewNode(),
@@ -461,7 +475,7 @@ export default function FuelingScreen() {
       alert("Vehicle number plate image is required.");
       return false;
     }
-    if (!driverId) {
+    if (fueling == "Own" && !driverId) {
       alert("ID/Name is required.");
       driverIdInputRef.current?.measureLayout(
         scrollViewRef.current?.getInnerViewNode(),
@@ -581,6 +595,10 @@ export default function FuelingScreen() {
     checkTripValidity();
   }, [tripSheetId]);
 
+  useEffect(() => {
+    fueling == "Own" ? setPartyName("Own") : setPartyName("")
+  }, [fueling])
+
 
   return (
     <View style={[styles.container, styles.main, { backgroundColor: colors.background }]}>
@@ -621,18 +639,18 @@ export default function FuelingScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                   {(fueling == 'Own' || fueling == 'Attatch') && <Ionicons name="car-outline" size={20} color="white" style={{ marginRight: 5 }} />}
                   <ThemedText style={{ color: 'white' }}>
-                    Take {(fueling == 'Own' || fueling == 'Attatch') ? 'Vehicle Number Plate' : 'Selling Point'} Photo
+                    Take {(fueling == 'Own' || fueling == 'Attatch') ? 'Vehicle Number Plate' : 'Saling Point'} Photo
                   </ThemedText>
                 </View>
               </TouchableOpacity>
             )}
-            <View style={styles.inputContainer}>
-              <ThemedText>{(fueling == 'Own' || fueling == 'Attatch') ? 'Vehicle Number:' : 'Party Name'}</ThemedText>
+            {fueling !== "Bulk Sale" && <View style={styles.inputContainer}>
+              <ThemedText>Vehicle Number:</ThemedText>
               <TextInput
                 ref={vehicleNumberInputRef}
                 onPress={() => !vehicleNumberPlateImage && openNumberPlateCamera()}
                 style={[styles.input, { color: colors.text }]}
-                placeholder={(fueling == 'Own' || fueling == 'Attatch') ? 'Enter Vehicle Number:' : 'Enter Party Name'}
+                placeholder={'Enter Vehicle Number:'}
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                 value={vehicleNumber}
                 onChangeText={(text) => {
@@ -652,7 +670,40 @@ export default function FuelingScreen() {
                 onSubmitEditing={() => driverIdInputRef.current?.focus()}
                 blurOnSubmit={true}
               />
-            </View>
+            </View>}
+            {fueling == "Own" && <View style={styles.inputContainer}>
+              <ThemedText>Odo Meter:</ThemedText>
+              <TextInput
+                ref={odometerInputRef}
+                onPress={() => !vehicleNumberPlateImage && openNumberPlateCamera()}
+                style={[styles.input, { color: colors.text }]}
+                placeholder={'Enter Vehicle Odo Meter:'}
+                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                value={odometer}
+                onChangeText={(text) => { setOdodmeter(text.toUpperCase()); }}
+                returnKeyType="next"
+                keyboardType="number-pad"
+                onSubmitEditing={() => driverIdInputRef.current?.focus()}
+                blurOnSubmit={true}
+              />
+            </View>}
+            {fueling !== "Own" && <View style={styles.inputContainer}>
+              <ThemedText>{fueling == "Attatch" ? "Vendor" : "Party"} Name</ThemedText>
+              <TextInput
+                // readOnly={fueling == "Own"}
+                ref={partyNameInputRef}
+                style={[styles.input, { color: colors.text }]}
+                placeholder={`Enter ${fueling == "Attatch" ? "Vendor" : "Party"} Name`}
+                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                value={partyName}
+                onChangeText={(text) => {
+                  setPartyName(text.toUpperCase());
+                }}
+                returnKeyType="next"
+                onSubmitEditing={() => driverIdInputRef.current?.focus()}
+                blurOnSubmit={true}
+              />
+            </View>}
             {noVehicleFound && (
               <ThemedText style={styles.errorText}>No vehicle found with the given number</ThemedText>
             )}
@@ -757,11 +808,11 @@ export default function FuelingScreen() {
             </Modal>
 
             <View style={styles.inputContainer}>
-              <ThemedText>{fueling == 'Bulk Sale' ? 'Manager Name:' : 'Driver Name:'}</ThemedText>
+              <ThemedText>{fueling !== "Bulk Sale" ? "Driver" : "Manager"} Name:</ThemedText>
               <TextInput
                 ref={driverNameInputRef}
                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                placeholder={`Enter ${fueling == 'Bulk Sale' ? 'Manager Name:' : 'Driver Name'}`}
+                placeholder={`Enter ${fueling !== "Bulk Sale" ? "Driver" : "Manager"} Name`}
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                 value={driverName}
                 onChangeText={setDriverName}
@@ -847,12 +898,8 @@ export default function FuelingScreen() {
                   <Picker.Item label="Part" value="Part" />
                 </Picker>}
                 <TextInput
-                  onFocus={() => {
-                    if (!fuelMeterImage) {
-                      openFuelMeterCamera();
-                    }
-                  }}
-                  onPress={() => !fuelMeterImage && openFuelMeterCamera()}
+                  // onFocus={() => {if (!fuelMeterImage) {openFuelMeterCamera()}}}
+                  // onPress={() => !fuelMeterImage && openFuelMeterCamera()}
                   ref={fuelQuantityInputRef}
                   style={[styles.input, styles.threeQuarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
                   placeholder="Enter fuel quantity"
@@ -863,7 +910,35 @@ export default function FuelingScreen() {
                     setFuelQuantity(text);
                   }}
                   returnKeyType="next"
-                  onSubmitEditing={() => gpsLocationInputRef.current?.focus()}
+                  onSubmitEditing={() => adminIdInputRef.current?.focus()}
+                  blurOnSubmit={false}
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <ThemedText>Order by</ThemedText>
+                <TextInput
+                  ref={adminIdInputRef}
+                  style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                  placeholder="Ordered by"
+                  // 
+                  placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                  keyboardType="default"
+                  value={adminId}
+                  onChangeText={setAdminId}
+                  returnKeyType="next"
+                  onSubmitEditing={() => adminNameInputRef.current?.focus()}
+                  blurOnSubmit={false}
+                />
+                <TextInput
+                  ref={adminNameInputRef}
+                  style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C', display: 'none' }]}
+                  placeholder="Enter Allocation Admin Name"
+                  placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                  keyboardType="default"
+                  value={adminName}
+                  onChangeText={setAdminName}
+                  returnKeyType="next"
+                  onSubmitEditing={() => fuelQuantityInputRef.current?.focus()}
                   blurOnSubmit={false}
                 />
               </View>

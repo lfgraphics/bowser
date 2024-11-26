@@ -66,8 +66,17 @@ export interface FuelNotificationProps {
 
 }
 
+export interface AppUpdates {
+    _id: string,
+    buildVersion: number,
+    url: string,
+    pushDate: Date
+}
+
 export interface FormData {
-    category: FuelingTypes
+    category: FuelingTypes;
+    party: string;
+    odometer: string;
     orderId?: string;
     vehicleNumberPlateImage: string | null;
     tripSheetId: string,

@@ -15,6 +15,8 @@ interface DispensesRecord {
     bowser: {
         regNo: string;
     };
+    category: string;
+    party: string;
     driverName: string;
     gpsLocation: string;
     verified: boolean;
@@ -53,7 +55,7 @@ const FuelingRecords: React.FC = () => {
             setRecords(response.data.records);
         } catch (error) {
             console.error('Error fetching records:', error);
-            Alert.alert('Error', 'Failed to fetch fueling records');
+            // Alert.alert('Error', 'Failed to fetch fueling records');
         } finally {
             setLoading(false);
         }
@@ -86,8 +88,10 @@ const FuelingRecords: React.FC = () => {
                         records.map((record) => (
                             <ThemedView style={[styles.modalItem,]} key={record._id}>
                                 <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Date:</ThemedText> {record.fuelingDateTime.split(' ')[0].replace(',', '')}</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Category:</ThemedText> {record.category}</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>party:</ThemedText> {record.party}</ThemedText>
                                 <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Vehicle No.:</ThemedText> {record.vehicleNumber}</ThemedText>
-                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Driver Name:</ThemedText> {record.driverName}</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Manager/Driver Name:</ThemedText> {record.driverName}</ThemedText>
                                 <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Fuel Quantity:</ThemedText> {record.fuelQuantity}</ThemedText>
                                 <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>GPS Location:</ThemedText> {record.gpsLocation}</ThemedText>
                                 <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Verified:</ThemedText> {record.verified ? "Yes" : "No"}</ThemedText>

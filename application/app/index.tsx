@@ -10,51 +10,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { Camera } from 'expo-camera';
 import NetInfo from '@react-native-community/netinfo';
-import { FormData } from '../src/types/models';
+import { AppUpdates, FormData } from '../src/types/models';
 import FuelingRecords from '@/components/FuelingRecords';
 import { useTheme } from '@react-navigation/native';
-// import * as Device from 'expo-device';
-// import * as Notifications from 'expo-notifications';
-// import Constants from 'expo-constants';
-// import { registerForPushNotificationsAsync, registerPushTokenWithServer } from '@/app/utils/notifications';
-
-// const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-// const pushTokenString = async () => {
-//   return (await Notifications.getDevicePushTokenAsync()).data;
-// }
-
-// Notifications.setNotificationHandler({
-//   handleNotification: async () => ({
-//     shouldShowAlert: true,
-//     shouldPlaySound: true,
-//     shouldSetBadge: true,
-//   }),
-// });
-
-// async function sendPushNotification(expoPushToken: string) {
-//   const message = {
-//     to: expoPushToken,
-//     sound: 'default',
-//     title: 'Original Title',
-//     body: 'And here is the body!',
-//     data: { someData: 'goes here' },
-//   };
-
-//   await fetch('https://exp.host/--/api/v2/push/send', {
-//     method: 'POST',
-//     headers: {
-//       Accept: 'application/json',
-//       'Accept-encoding': 'gzip, deflate',
-//       'Content-Type': 'application/json',
-//     },
-//     body: JSON.stringify(message),
-//   });
-// }
-
-// function handleRegistrationError(errorMessage: string) {
-//   alert(errorMessage);
-//   throw new Error(errorMessage);
-// }
+import { getAppUpdate } from '@/src/utils/helpers'
 
 const App = () => {
   const router = useRouter();
@@ -69,43 +28,28 @@ const App = () => {
   const [offlineData, setOfflineData] = useState<FormData[]>([]);
   const [isOfflineDataModalVisible, setOfflineDataModalVisible] = useState(false);
   const [isOfflineDataLoading, setIsOfflineDataLoading] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { colors } = useTheme();
-
+  const appVersion = 33
+  const [appurl, setAppUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    // const checkLoginStatus = async () => {
-    //   const token = await AsyncStorage.getItem('userToken');
-    //   const userDataString = await AsyncStorage.getItem('userData');
-
-    //   if (token && userDataString) {
-    //     setIsLoggedIn(true);
-    //     setUserData(JSON.parse(userDataString));
-
-    //     // Check for push token in AsyncStorage
-    //     // const pushToken = await AsyncStorage.getItem('pushToken');
-    //     // if (!pushToken) {
-    //     //   // Register push token with server
-    //     //   const newPushToken = await registerForPushNotificationsAsync();
-    //     //   if (newPushToken) {
-    //     //     await AsyncStorage.setItem('pushToken', newPushToken);
-    //     //     const userId = JSON.parse(userDataString)["User Id"];
-    //     //     await registerPushTokenWithServer(userId, newPushToken);
-    //     //   }
-    //     // }
-    //   } else {
-    //     setIsLoggedIn(false);
-    //   }
-    //   setIsLoading(false);
-    // };
-
     checkUserLoggedIn();
   }, []);
+
+  let showUpdateLink = async () => {
+    let appPushsOnDb: AppUpdates[] = await getAppUpdate()
+    let latesApp = appPushsOnDb[0]
+    if (latesApp.buildVersion > appVersion) {
+      setAppUrl(latesApp.url)
+    }
+  }
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       setIsOnline(state.isConnected ?? false);
     });
+
+    showUpdateLink()
 
     return () => unsubscribe();
   }, []);
@@ -653,6 +597,8 @@ const App = () => {
                   </TouchableOpacity>
                 </>
               )}
+              {appurl && <Link style={styles.button} href={appurl}><Text style={{ color: colors.text }}>Update app</Text>
+              </Link>}
             </ScrollView>
             <View style={styles.modalFooter}>
               <TouchableOpacity style={styles.logoutButton} onPress={() => handleLogout(false)}>

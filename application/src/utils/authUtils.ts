@@ -7,9 +7,10 @@ let isLoggedIn = false;
 export const checkUserLoggedIn = async (isLoggingIn = false) => {
   try {
     const userToken = await AsyncStorage.getItem('userToken');
+    const userData = await AsyncStorage.getItem('userData');
     const deviceUUID = await AsyncStorage.getItem('deviceUUID');
 
-    if (!userToken || !deviceUUID) {
+    if (!userToken || !deviceUUID || !userData) {
       return false;
     }
 
@@ -99,7 +100,7 @@ export const loginUser = async (userId: string, password: string): Promise<void>
     await AsyncStorage.setItem('userToken', data.token);
     await AsyncStorage.setItem('loginTime', data.loginTime);
     await AsyncStorage.setItem('userData', JSON.stringify(data.user));
-    
+
     // if (data.user.pushToken) {
     //   await AsyncStorage.setItem('pushToken', data.user.pushToken);
     // } else {
