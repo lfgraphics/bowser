@@ -123,7 +123,6 @@ router.post('/login', async (req, res) => {
             'Verified User': user.verified,
             'Role': roleNames,
             'Bowser': user.bowserId,
-            TripSheet: userTripSheetId,
             'Trip Sheet Id': userTripSheetId || "Not on a trip",
             'Push Notification Token': pushToken || user.pushToken,
         };
