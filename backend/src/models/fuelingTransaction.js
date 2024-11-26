@@ -12,6 +12,8 @@ const fuelingTransactionSchema = new mongoose.Schema({
             message: 'Fueling category must be either Bulk Sale or Attatch or Own'
         }
     },
+    party: { type: String, require: true, default: "Own" },
+    odometer: { type: String },
     tripSheetId: { type: String },
     vehicleNumberPlateImage: { type: String, required: false },
     vehicleNumber: { type: String, required: false },

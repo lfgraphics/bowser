@@ -6,7 +6,7 @@ const mongoose = require('mongoose')
 // Get all users with roles populated
 router.get('/', async (req, res) => {
     try {
-        const users = await User.find().populate('roles').exec();
+        const users = await User.find().populate('roles').sort({ generationTime: -1 }).exec();
         res.status(200).json(users);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch users', details: error });

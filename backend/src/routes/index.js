@@ -15,6 +15,7 @@ const tripSheetRoutes = require('./tripSheet');
 const userRoutes = require('./users');
 const roleRoutes = require('./roles');
 const bowserRoutes = require('./bowsers');
+const updateRoutes = require('./updates');
 
 router.get('/', (req, res) => {
     res.send('landing page');
@@ -34,5 +35,6 @@ router.use('/tripSheet', tripSheetRoutes);
 router.use('/users', userRoutes)
 router.use('/roles', roleRoutes)
 router.use('/bowsers', bowserRoutes)
+router.use('/updates', updateRoutes)
 
 module.exports = router;

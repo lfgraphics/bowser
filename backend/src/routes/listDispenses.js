@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 
 router.get('/', async (req, res) => {
-    const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'fuelingDateTime', order = 'desc', verified, category } = req.query;
+    const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'fuelingDateTime', order = 'desc', verified, category, vehicleNo } = req.query;
     const skip = (page - 1) * limit;
     let filter = {};
 
@@ -25,6 +25,9 @@ router.get('/', async (req, res) => {
 
     if (driverName) {
         filter['driverName'] = { $regex: driverName, $options: 'i' };
+    }
+    if (vehicleNo) {
+        filter['vehicleNumber'] = { $regex: vehicleNo, $options: 'i' };
     }
 
     if (startDate && endDate) {
@@ -56,7 +59,9 @@ router.get('/', async (req, res) => {
             fuelingDateTime: 1,
             gpsLocation: 1,
             verified: 1,
-            category: 1
+            category: 1,
+            party: 1,
+            odometer: 1
         }).skip(skip).limit(Number(limit)).sort({ [sortBy]: sortOrder });
         const totalRecords = await FuelingTransaction.countDocuments();
 
