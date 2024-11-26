@@ -19,6 +19,7 @@ import {
     AlertDialogAction,
     AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
+import { isAuthenticated } from "@/lib/auth";
 
 type Nav = 'Users' | 'Roles';
 
@@ -29,6 +30,35 @@ const UsersList = () => {
     const { toast } = useToast();
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [nav, setNav] = useState<Nav>('Users')
+    const [superAdmin, setSuperAdmin] = useState<boolean>(true);
+
+    const checkAuth = () => {
+        const authenticated = isAuthenticated();
+        if (!authenticated) {
+            window.location.href = '/login';
+        }
+        if (authenticated) {
+            let user = JSON.parse(localStorage.getItem("adminUser")!);
+
+            if (user && user.roles) {
+                const rolesString = user.roles.toString(); // Convert roles to string if it isn't already
+                if (rolesString.includes("Super Admin")) {
+                    setSuperAdmin(true)
+                } else {
+                    setSuperAdmin(false)
+                }
+            } else {
+                console.error("Roles not found in user data.");
+            }
+        }
+    };
+    useEffect(() => {
+        checkAuth();
+    }, []);
+
+    if(!superAdmin){
+        return <p>You do not have permission to view this page <br />Your should ask Super Admin for these actions</p>
+    }
 
 
     useEffect(() => {

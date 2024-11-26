@@ -1,7 +1,7 @@
 import { Bowser, Role, TripSheet, User } from "@/types";
 import axios from "axios";
 
-const BASE_URL = 'http://localhost:8000';  //https://bowser-backend-2cdr.onrender.com  http://localhost:5000
+const BASE_URL = 'https://bowser-backend-2cdr.onrender.com';  //https://bowser-backend-2cdr.onrender.com  http://localhost:5000
 
 export const getUsers = async (): Promise<User[]> => {
     const response = await fetch(`${BASE_URL}/users`);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, User, Check, X } from 'lucide-react';
+import { MapPin, Check, X, User2Icon } from 'lucide-react';
 import { DispensesRecord } from '@/types';
 import Modal from './Modal';
 import Loading from '@/app/loading';
@@ -10,7 +10,8 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { isAuthenticated } from '@/lib/auth';
 
 interface FuelRecordCardProps {
     record?: DispensesRecord;
@@ -19,12 +20,38 @@ interface FuelRecordCardProps {
 const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
     const [showAlert, setShowAlert] = useState<boolean>(false);
     const [alertTitle, setAlertTitle] = useState("");
     const [alertMessage, setAlertMessage] = useState("");
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [editing, setEditing] = useState<boolean>(false);
-    const [updatedRecord, setUpdatedRecord] = useState<DispensesRecord | undefined>(record); // State for updated record
+    const [updatedRecord, setUpdatedRecord] = useState<DispensesRecord | undefined>(record);
+    const [superAdmin, setSuperAdmin] = useState<boolean>(false);
+
+    const checkAuth = () => {
+        const authenticated = isAuthenticated();
+        if (!authenticated) {
+            window.location.href = '/login';
+        }
+        if (authenticated) {
+            let user = JSON.parse(localStorage.getItem("adminUser")!);
+
+            if (user && user.roles) {
+                const rolesString = user.roles.toString();
+                if (rolesString.includes("Super Admin")) {
+                    setSuperAdmin(true)
+                } else {
+                    setSuperAdmin(false)
+                }
+            } else {
+                console.error("Roles not found in user data.");
+            }
+        }
+    };
+    useEffect(() => {
+        checkAuth();
+    }, []);
 
     // Add useEffect to update updatedRecord when record changes
     useEffect(() => {
@@ -101,13 +128,30 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
         }
     };
 
+    const handleDelete = async () => {
+        setLoading(true)
+        try {
+            await axios.delete(`https://bowser-backend-2cdr.onrender.com/listDispenses/delete/${record._id}`); //https://bowser-backend-2cdr.onrender.com
+            setShowAlert(true);
+            setAlertTitle("Success");
+            setAlertMessage("Deleted Successfully");
+            setEditing(false);
+            window.history.back()
+        } catch (error) {
+            console.error('Error deleting Trip Sheet:', error);
+            alert(`Error deleting Trip Sheet: ${error}`);
+        } finally {
+            setLoading(false)
+        }
+    }
+
     return (
         <>
             <Card className="p-4 shadow-lg">
                 {/* Header */}
                 <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
-                        <User className="w-5 h-5" />
+                        <User2Icon className="w-5 h-5" />
                         <span>Vehicle Driver: {editing ? (
                             <Input
                                 value={`${updatedRecord?.driverName} - ${updatedRecord?.driverId}`}
@@ -229,9 +273,26 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                             {editing ? 'Cancel' : 'Edit'}
                         </Button>
                         {editing && (
-                            <Button variant="default" onClick={handleUpdate}>
-                                Save
-                            </Button>
+                            <>
+                                <Button variant="default" onClick={handleUpdate}>
+                                    Save
+                                </Button>
+                                {superAdmin && <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>Delete Trip Sheet</Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Are you sure you want to delete this trip sheet? This action cannot be undone.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    </AlertDialogContent>
+                                </AlertDialog>}
+                            </>
                         )}
                     </div>
                     {record?.allocationAdmin && (

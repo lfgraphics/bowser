@@ -15,7 +15,6 @@ import {
     AlertDialogAction,
     AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-import { Edit } from 'lucide-react';
 import Loading from '@/app/loading';
 import { Checkbox } from '@/components/ui/checkbox';
 import { isAuthenticated } from '@/lib/auth';

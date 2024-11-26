@@ -36,12 +36,13 @@ const VehicleDispensesPage = () => {
     const [totalRecords, setTotalRecords] = useState();
     const [currentPage, setCurrentPage] = useState(1);
     const [category, setCategory] = useState('all');
-    const [filter, setFilter] = useState({ bowserNumber: "", driverName: "", tripSheetId: "", verified: "all" });
+    const [filter, setFilter] = useState({ bowserNumber: "", driverName: "", tripSheetId: "", verified: "all", vehicleNo: "" });
     const [sortBy, setSortBy] = useState("fuelingDateTime");
     const [order, setOrder] = useState("asc");
     const [localBowserNumber, setLocalBowserNumber] = useState("");
     const [localDriverName, setLocalDriverName] = useState("");
     const [localTripSheetId, setLocalTripSheetId] = useState("");
+    const [localVehicleNo, setLocalVehicleNo] = useState("");
     const [limit, setLimit] = useState(20);
     const [loading, setLoading] = useState(true);
     const [verificationStatus, setVerificationStatus] = useState("all");
@@ -82,7 +83,7 @@ const VehicleDispensesPage = () => {
             //     adjustedEndDate.setHours(23, 59, 59, 999);
             // }
 
-            const response = await axios.get("https://bowser-backend-2cdr.onrender.com/listDispenses", { //https://bowser-backend-2cdr.onrender.com
+            const response = await axios.get("http://localhost:5000/listDispenses", { //https://bowser-backend-2cdr.onrender.com
                 params: {
                     page: currentPage,
                     limit: limit,
@@ -91,6 +92,7 @@ const VehicleDispensesPage = () => {
                     bowserNumber: filter.bowserNumber,
                     driverName: filter.driverName,
                     tripSheetId: filter.tripSheetId,
+                    vehicleNo: filter.vehicleNo,
                     verified: verificationStatus,
                     category,
                     // startDate: adjustedStartDate ? adjustedStartDate.toISOString() : undefined,
@@ -193,7 +195,53 @@ const VehicleDispensesPage = () => {
                 <Loading />
             )}
             <div className="bigScreen hidden lg:block">
-                <div className="mb-4 flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                <div className="mb-4 flex flex-col gap-3 justify-between  sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                    {/* Sort By Dropdown */}
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full">
+                            <SelectValue placeholder="Sort By" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="fuelingDateTime">Sort by Fueling Time</SelectItem>
+                            <SelectItem value="vehicleNumber">Sort by Vehicle Number</SelectItem>
+                            <SelectItem value="bowser.regNo">Sort by Bowser Number</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    {/* Order Dropdown */}
+                    <Select value={order} onValueChange={setOrder}>
+                        <SelectTrigger className="flex items-center justify-between border rounded p-2  w-full">
+                            <SelectValue placeholder="Order" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="desc">Descending</SelectItem>
+                            <SelectItem value="asc">Ascending</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select onValueChange={setVerificationStatus}>
+                        <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full">
+                            <SelectValue placeholder="Verification Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="true">Verified</SelectItem>
+                            <SelectItem value="false">Unverified</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select onValueChange={setCategory}>
+                        <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full">
+                            <SelectValue className="text-muted" placeholder="Category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="Own">Own</SelectItem>
+                            <SelectItem value="Attatch">Attatch</SelectItem>
+                            <SelectItem value="Bulk Sale">Bulk Sale</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <div className="flex items-center justify-between min-w-[200px]">Records limit <Input type="number" className="w-20 ml-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
+                </div>
+                <div className="mb-4 flex flex-col justify-between sm:flex-row flex-wrap gap-3 sm:space-x-2 space-y-2 sm:space-y-0">
                     <Input
                         placeholder="Filter by Bowser Number"
                         value={localBowserNumber}
@@ -216,33 +264,6 @@ const VehicleDispensesPage = () => {
                         }}
                         className="w-full sm:w-auto"
                     />
-
-                    {/* Sort By Dropdown */}
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="flex items-center justify-between border rounded p-2">
-                            <SelectValue placeholder="Sort By" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="fuelingDateTime">Sort by Fueling Time</SelectItem>
-                            <SelectItem value="vehicleNumber">Sort by Vehicle Number</SelectItem>
-                            <SelectItem value="bowser.regNo">Sort by Bowser Number</SelectItem>
-                        </SelectContent>
-                    </Select>
-
-                    {/* Order Dropdown */}
-                    <Select value={order} onValueChange={setOrder}>
-                        <SelectTrigger className="flex items-center justify-between border rounded p-2">
-                            <SelectValue placeholder="Order" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="desc">Descending</SelectItem>
-                            <SelectItem value="asc">Ascending</SelectItem>
-                        </SelectContent>
-                    </Select>
-
-                </div>
-
-                <div className="mb-4 flex flex-col justify-between sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
                     {/* <DatePickerWithRange onDateChange={handleDateChange} /> */}
                     <div className="flex items-center justify-between">
                         <Input
@@ -257,28 +278,19 @@ const VehicleDispensesPage = () => {
                             className="w-full sm:w-auto"
                         />
                     </div>
-                    <Select onValueChange={setVerificationStatus}>
-                        <SelectTrigger className="flex items-center justify-between border rounded p-2 w-[140px]">
-                            <SelectValue placeholder="Verification Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="true">Verified</SelectItem>
-                            <SelectItem value="false">Unverified</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Select onValueChange={setCategory}>
-                        <SelectTrigger className="flex items-center justify-between border rounded p-2 w-[120px]">
-                            <SelectValue className="text-muted" placeholder="Fueling Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Own">Own</SelectItem>
-                            <SelectItem value="Attatch">Attatch</SelectItem>
-                            <SelectItem value="Bulk Sale">Bulk Sale</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <div className="flex items-center justify-between">Records limit <Input type="number" className="w-20 ml-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
+                    <div className="flex items-center justify-between">
+                        <Input
+                            placeholder="Filter by Vehicle Number"
+                            value={localVehicleNo}
+                            onChange={(e) => setLocalVehicleNo(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    setFilter({ ...filter, vehicleNo: localVehicleNo });
+                                }
+                            }}
+                            className="w-full sm:w-auto"
+                        />
+                    </div>
                     <div className="flex items-center justify-between text-muted-foreground font-[200]">{records.length} out of {totalRecords} records </div>
                     <Button variant="outline" onClick={toggleSelectAll}>
                         {selectAll ? <ListX size={32} /> : <ListChecks size={32} />}
@@ -288,11 +300,56 @@ const VehicleDispensesPage = () => {
                     </Button>
                 </div>
             </div>
-            <Accordion type="single" collapsible className="block lg:hidden">
+            <Accordion type="single" collapsible className="block lg:hidden smallScreen">
                 <AccordionItem value="item-1">
                     <AccordionTrigger>Filters and sorting</AccordionTrigger>
                     <AccordionContent>
-                        <div className="mb-4 flex flex-col sm:flex-row flex-wrap sm:space-x-2 space-y-2 sm:space-y-0 w-screen">
+                        <div className="mb-4 flex flex-col sm:flex-row flex-wrap sm:space-x-2 space-y-2 sm:space-y-0 w-full">
+                            {/* Sort By Dropdown */}
+                            <Select value={sortBy} onValueChange={setSortBy}>
+                                <SelectTrigger className="flex items-center justify-between border rounded p-2  w-full self-center">
+                                    <SelectValue placeholder="Sort By" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="fuelingDateTime">Sort by Fueling Time</SelectItem>
+                                    <SelectItem value="vehicleNumber">Sort by Vehicle Number</SelectItem>
+                                    <SelectItem value="bowser.regNo">Sort by Bowser Number</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            {/* Order Dropdown */}
+                            <Select value={order} onValueChange={setOrder}>
+                                <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full self-center">
+                                    <SelectValue placeholder="Order" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="desc">Descending</SelectItem>
+                                    <SelectItem value="asc">Ascending</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select onValueChange={setVerificationStatus}>
+                                <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full self-center">
+                                    <SelectValue placeholder="Verification Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="true">Verified</SelectItem>
+                                    <SelectItem value="false">Unverified</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select onValueChange={setCategory}>
+                                <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full">
+                                    <SelectValue className="text-muted" placeholder="Fueling Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="Own">Own</SelectItem>
+                                    <SelectItem value="Attatch">Attatch</SelectItem>
+                                    <SelectItem value="Bulk Sale">Bulk Sale</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="mb-4 flex flex-col gap-3 justify-between sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 flex-wrap">
                             <Input
                                 placeholder="Filter by Bowser Number"
                                 value={localBowserNumber}
@@ -315,69 +372,29 @@ const VehicleDispensesPage = () => {
                                 }}
                                 className="w-full sm:w-auto"
                             />
-
-                            {/* Sort By Dropdown */}
-                            <Select value={sortBy} onValueChange={setSortBy}>
-                                <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full self-center">
-                                    <SelectValue placeholder="Sort By" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="fuelingDateTime">Sort by Fueling Time</SelectItem>
-                                    <SelectItem value="vehicleNumber">Sort by Vehicle Number</SelectItem>
-                                    <SelectItem value="bowser.regNo">Sort by Bowser Number</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            {/* Order Dropdown */}
-                            <Select value={order} onValueChange={setOrder}>
-                                <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full self-center">
-                                    <SelectValue placeholder="Order" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="desc">Descending</SelectItem>
-                                    <SelectItem value="asc">Ascending</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                        </div>
-
-                        <div className="mb-4 flex flex-col justify-between sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 flex-wrap">
-                            {/* <DatePickerWithRange onDateChange={handleDateChange} /> */}
-                            <div className="flex items-center justify-between">
-                                <Input
-                                    placeholder="Filter by Trip Sheet Id/ Number"
-                                    value={localTripSheetId}
-                                    onChange={(e) => setLocalTripSheetId(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") {
-                                            setFilter({ ...filter, tripSheetId: localTripSheetId });
-                                        }
-                                    }}
-                                    className="w-full sm:w-auto"
-                                />
-                            </div>
-                            <Select onValueChange={setVerificationStatus}>
-                                <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full self-center">
-                                    <SelectValue placeholder="Verification Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
-                                    <SelectItem value="true">Verified</SelectItem>
-                                    <SelectItem value="false">Unverified</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Select onValueChange={setCategory}>
-                                <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full">
-                                    <SelectValue className="text-muted" placeholder="Fueling Type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
-                                    <SelectItem value="Own">Own</SelectItem>
-                                    <SelectItem value="Attatch">Attatch</SelectItem>
-                                    <SelectItem value="Bulk Sale">Bulk Sale</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <div className="flex items-center justify-between">Records limit <Input type="number" className="w-20 mx-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
+                            <Input
+                                placeholder="Filter by Vehicle Number"
+                                value={localVehicleNo}
+                                onChange={(e) => setLocalVehicleNo(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        setFilter({ ...filter, vehicleNo: localVehicleNo });
+                                    }
+                                }}
+                                className="w-full sm:w-auto"
+                            />
+                            <Input
+                                placeholder="Filter by Trip Sheet Id/ Number"
+                                value={localTripSheetId}
+                                onChange={(e) => setLocalTripSheetId(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        setFilter({ ...filter, tripSheetId: localTripSheetId });
+                                    }
+                                }}
+                                className="w-full sm:w-auto"
+                            />
+                            <div className="flex items-center justify-between min-w-[200px] max-w-full">Records limit <Input type="number" className="w-20" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
                             <div className="flex items-center justify-between text-gray-300 font-[200]">Total found record{records.length > 1 ? "s" : ""} {records.length} out of {totalRecords} records </div>
                             <Button onClick={exportToExcel} className="w-full sm:w-auto">
                                 Export to Excel
@@ -392,13 +409,15 @@ const VehicleDispensesPage = () => {
                     <TableRow>
                         <TableHead>S N</TableHead>
                         <TableHead>Trip Sheet Id</TableHead>
-                        <TableHead>Fueling Type</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Party/Vendor</TableHead>
                         <TableHead>Fueling Time</TableHead>
                         <TableHead>Bowser No.</TableHead>
                         <TableHead>Bowser Location</TableHead>
                         <TableHead>Driver Name</TableHead>
                         <TableHead>Driver Mob.</TableHead>
                         <TableHead>Vehicle Number</TableHead>
+                        <TableHead>Odo Meter</TableHead>
                         <TableHead>Qty Type</TableHead>
                         <TableHead>Fuel Qty</TableHead>
                         <TableHead>Action</TableHead>
@@ -416,12 +435,14 @@ const VehicleDispensesPage = () => {
                             <TableCell>{index + 1}</TableCell>
                             <TableCell>{record.tripSheetId}</TableCell>
                             <TableCell>{record.category || 'Unspecified'}</TableCell>
+                            <TableCell>{record.party || 'Unspecified'}</TableCell>
                             <TableCell>{record.fuelingDateTime.replace(/\/20(\d{2})/, "/$1")}</TableCell>
                             <TableCell>{record.bowser.regNo}</TableCell>
                             <TableCell>{record.gpsLocation?.substring(0, 15) + "..."}</TableCell>
                             <TableCell>{record.driverName}</TableCell>
                             <TableCell>{record.driverMobile}</TableCell>
                             <TableCell>{record.vehicleNumber}</TableCell>
+                            <TableCell>{record.odometer}</TableCell>
                             <TableCell>{record.quantityType}</TableCell>
                             <TableCell>{record.fuelQuantity}</TableCell>
                             <TableCell className="flex gap-2 items-center">
@@ -437,7 +458,7 @@ const VehicleDispensesPage = () => {
                     ))}
                     {/* Calculate total fuel quantity if filtered by tripSheetId */}
                     <TableRow>
-                        <TableCell colSpan={10} className="text-right font-bold">Total Fuel Quantity:</TableCell>
+                        <TableCell colSpan={12} className="text-right font-bold">Total Fuel Quantity:</TableCell>
                         <TableCell colSpan={2}>
                             {records.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)} L
                         </TableCell>
