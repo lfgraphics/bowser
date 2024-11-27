@@ -95,7 +95,7 @@ router.post('/login', async (req, res) => {
                 phoneNumber: user.phoneNumber,
                 registeredDeviceUUID: user.deviceUUID,
                 attemptedDeviceUUID: deviceUUID,
-                timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+                timestamp: new Date()
             });
 
             await unauthorizedLogin.save();
