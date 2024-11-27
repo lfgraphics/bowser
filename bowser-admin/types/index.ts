@@ -33,8 +33,36 @@ export interface ResponseBowser {
 export interface Bowser {
     _id: string;
     regNo: string;
-    currentTrip: TripSheet
+    odometerReading: string;
+    fuelingMachineID: string;
+    pumpReadingBeforeLoadingStart: string;
+    pumpReadingAfterLoadingEnd: string;
+    chamberDipListBeforeLoadingStart: string[];
+    chamberDipListAfterLoadingEnd: string[];
+    chamberSealList: string[];
+    pumpSlips: PumpSlip[];
+    totalLoadQuantityBySlip: string;
+    totalLoadQuantityByDip: string;
+    currentTrip: TripSheet;
+    trips: Trip[];
 }
+
+export interface PumpSlip {
+    quantity: string;
+    slipPhoto: string;
+    bowserTankChamberID: string;
+}
+
+export interface Trip {
+    tripId: string;
+    settled: boolean;
+}
+
+// export interface Bowser {
+//     _id: string;
+//     regNo: string;
+//     currentTrip: TripSheet
+// }
 
 export interface TripSheet {
     _id?: string;
@@ -54,10 +82,10 @@ export interface TripSheet {
     bowserPumpEndReading?: string;
     proposedDepartureDateTime?: string;
     loadQuantityByDip?: {
-        [key: string]: any; // Adjust this if you have a specific type for load quantities
+        [key: string]: any;
     };
     loadQuantityBySlip?: {
-        [key: string]: any; // Adjust this if you have a specific type for load quantities
+        [key: string]: any;
     };
     chamberWiseDipList?: {
         chamber1?: any;
@@ -75,10 +103,10 @@ export interface TripSheet {
     settelment: {
         dateTime?: string;
         odometerClosing?: {
-            [key: string]: any; // Adjust this if you have a specific type for odometer readings
+            [key: string]: any;
         };
         bowserNewEndReading?: {
-            [key: string]: any; // Adjust this if you have a specific type for end readings
+            [key: string]: any;
         };
         settled: boolean;
     };

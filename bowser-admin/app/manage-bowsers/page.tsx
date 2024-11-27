@@ -1,35 +1,22 @@
 "use client"
 import React, { useEffect, useState } from "react";
 import UsersCard from '@/components/UsersCard';
-import { getBowsers, udpateBowser, deleteBowser, getTripSheets } from '../../lib/api';
+import { getBowsers, getTripSheets } from '../../lib/api';
 import { Button } from "@/components/ui/button";
-import { Check, X } from "lucide-react";
-import RoleSelectionDialog from "@/components/RoleSelectionDialog";
 import { Bowser, TripSheet } from "@/types";
 import Loading from "../loading";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
-import {
-    AlertDialog,
-    AlertDialogTrigger,
-    AlertDialogContent,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogDescription,
-    AlertDialogAction,
-    AlertDialogCancel,
-} from '@/components/ui/alert-dialog';
 import Link from "next/link";
 
 type Nav = 'Users' | 'Roles';
 
 const UsersList = () => {
-    const [bowsers, setBowsers] = useState<Bowser[]>([]);
-    const [tripSheets, setTripSheets] = useState<TripSheet[]>([]);
+    // const [bowsers, setBowsers] = useState<Bowser[]>([]);
+    // const [tripSheets, setTripSheets] = useState<TripSheet[]>([]);
     const [mergedData, setMergedData] = useState<(Bowser & { tripDetails?: TripSheet | null })[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const { toast } = useToast();
-    const [selectBowserId, setSelectBowserId] = useState<string | null>(null);
 
 
     useEffect(() => {
@@ -44,9 +31,6 @@ const UsersList = () => {
                     );
                     return { ...bowser, tripDetails: tripDetails || null };
                 });
-
-                setBowsers(bowserData);
-                setTripSheets(tripSheetData);
                 setMergedData(merged);
                 setLoading(false);
             } catch (err: any) {
@@ -56,32 +40,6 @@ const UsersList = () => {
         };
         fetchData();
     }, []);
-
-    const handleUpdateBowser = async (id: string, data: Bowser) => {
-        try {
-            const updatedBowser = await udpateBowser(id, data);
-            setBowsers((prev) =>
-                prev.map((bowser) =>
-                    bowser._id === id ? { ...bowser, ...updatedBowser } : bowser
-                )
-            );
-            toast({ title: 'Success', description: 'Updated Successfully', variant: "success" });
-        } catch (err: any) {
-            toast({ title: 'Error', description: err.message, variant: "destructive" });
-        }
-    };
-
-    const handleDeletBowser = async () => {
-        if (!selectBowserId) return;
-        try {
-            await deleteBowser(selectBowserId);
-            setBowsers((prev) => prev.filter((bowser) => bowser._id !== selectBowserId));
-        } catch (err: any) {
-            toast({ title: 'Error', description: err.message, variant: "destructive" });
-        } finally {
-            setSelectBowserId(null);
-        }
-    };
 
     return (
         <>
@@ -112,29 +70,6 @@ const UsersList = () => {
                                 <Link href={`/manage-bowsers/edit/${item._id}`}>
                                     <Button variant="default">Edit</Button>
                                 </Link>
-                                <AlertDialog open={selectBowserId === item._id} onOpenChange={(isOpen) => !isOpen && setSelectBowserId(null)}>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="destructive" onClick={() => setSelectBowserId(item._id)}>Delete</Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Are you sure you want to delete this Bowser: {item.regNo}?
-                                                {item.tripDetails ? (
-                                                    <span>
-                                                        Trip: {item.tripDetails.tripSheetId}, Status:{" "}
-                                                        {item.tripDetails.settelment?.settled ? "Settled" : "Unsettled"}
-                                                    </span>
-                                                ) : (
-                                                    "No trip details available"
-                                                )}
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogAction onClick={() => handleDeletBowser()}>Delete</AlertDialogAction>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    </AlertDialogContent>
-                                </AlertDialog>
                             </div>
                         }
                     />

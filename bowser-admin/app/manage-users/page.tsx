@@ -212,7 +212,7 @@ const UsersList = () => {
             {!superAdmin ? <p className="block mx-auto w-max p-3 border rounded-md mt-72 border-foreground scale-150">You do not have permission to view this page<br />Your should ask Super Admin for these actions</p> :
                 <>
                     <Toaster />
-                    <div className="filter-container w-full flex flex-wrap gap-3 justify-around my-3">
+                    {nav === 'Users' && <div className="filter-container w-full flex flex-wrap gap-3 justify-around my-3">
                         {/* Verification Filter */}
                         <div className="flex items-center gap-4 mt-4">
                             <Switch
@@ -273,7 +273,7 @@ const UsersList = () => {
                                 ))}
                             </div>
                         </div>
-                    </div>
+                    </div>}
                     <div className="nav mx-auto mb-4 flex gap-4 bg-muted-foreground bg-opacity-35 w-max p-4 rounded-lg">
                         {(['Users', 'Roles', 'Un Authorized'] as Nav[]).map((option) => (
                             <Button
