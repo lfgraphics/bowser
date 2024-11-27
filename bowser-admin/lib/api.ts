@@ -1,7 +1,7 @@
-import { Bowser, Role, TripSheet, User } from "@/types";
+import { Bowser, Role, TripSheet, UnauthorizedLogin, User } from "@/types";
 import axios from "axios";
 
-const BASE_URL = 'https://bowser-backend-2cdr.onrender.com';  //https://bowser-backend-2cdr.onrender.com  http://localhost:5000
+const BASE_URL = 'http://localhost:5000';  //https://bowser-backend-2cdr.onrender.com  http://localhost:5000
 
 export const getUsers = async (): Promise<User[]> => {
     const response = await fetch(`${BASE_URL}/users`);
@@ -15,6 +15,12 @@ export const getRoles = async (): Promise<Role[]> => {
     return response.json();
 };
 
+export const getUnAuthorizedLogins = async (): Promise<UnauthorizedLogin[]> => {
+    const response = await fetch(`${BASE_URL}/users/un-authorized-logins`);
+    if (!response.ok) throw new Error('Failed to fetch Un Authorized logins or there are no un authorized logins');
+    return response.json();
+};
+
 export const updateUserVerification = async (userId: string, verified: boolean): Promise<User> => {
     const response = await fetch(`${BASE_URL}/users/${userId}/verify`, {
         method: 'PUT',
@@ -25,6 +31,30 @@ export const updateUserVerification = async (userId: string, verified: boolean):
     return response.json();
 };
 
+export const updateUserDevice = async (userId: string, newDeviceUUID: string): Promise<{ message: string }> => {
+    try {
+      const response = await fetch(`${BASE_URL}/users/update-device`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, newDeviceUUID }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update device UUID');
+      }
+
+      const data: { message: string } = await response.json();
+      return data;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(error.message);
+      }
+      throw new Error('An unknown error occurred');
+    }
+  };
+  
+
 export const updateUserRoles = async (userId: string, roles: string[]): Promise<User> => {
     const response = await fetch(`${BASE_URL}/users/${userId}/roles`, {
         method: 'PUT',
@@ -33,6 +63,20 @@ export const updateUserRoles = async (userId: string, roles: string[]): Promise<
     });
     if (!response.ok) throw new Error('Failed to update user roles');
     return response.json();
+};
+
+export const deleteUnAuthorizedRequest = async (reqId: string): Promise<{ message: string }> => {
+    try {
+        const response = await axios.delete<{ message: string }>(`${BASE_URL}/users/un-authorized-request/${reqId}`);
+
+        if (response.status !== 200) {
+            throw new Error('Failed to delete Unauthorized request');
+        }
+
+        return response.data;
+    } catch (error) {
+        throw new Error(error instanceof Error ? error.message : 'Unknown error occurred');
+    }
 };
 
 export const deleteUser = async (userId: string): Promise<void> => {

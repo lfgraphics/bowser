@@ -103,6 +103,17 @@ export interface Role {
         customPermissions: Record<string, any>;
     };
 }
+
+export interface UnauthorizedLogin {
+    _id: string,
+    userId: string,
+    name: string,
+    phoneNumber: string,
+    registeredDeviceUUID: string,
+    attemptedDeviceUUID: string,
+    timestamp: Date,
+}
+
 export interface Vehicle {
     vehicleNo: string;
     driverDetails: Driver
