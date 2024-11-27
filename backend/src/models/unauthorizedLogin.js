@@ -7,7 +7,7 @@ const unauthorizedLoginSchema = new mongoose.Schema({
   phoneNumber: String,
   registeredDeviceUUID: String,
   attemptedDeviceUUID: String,
-  timestamp: Date
+  timestamp: { type: Date, default: Date.now }
 });
 
 module.exports = UsersAndRolesDatabaseConnection.model('UnAuthorizedLogin', unauthorizedLoginSchema, 'UnauthorizedLoginCollection');
