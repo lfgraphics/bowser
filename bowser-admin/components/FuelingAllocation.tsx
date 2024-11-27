@@ -549,7 +549,7 @@ export default function FuelingAllocation() {
                     <CardFooter className="flex justify-between">
                         <Button variant="outline" type="reset" className="w-[40%]" onClick={resetForm}>Clear</Button>
                         {/* //={submitting || isSearching} */}
-                        <Button className="w-[50%]" variant="default" type="submit">
+                        <Button disabled className="w-[50%]" variant="default" type="submit">
                             {/* //={submitting || isSearching} */}
                             Allocate Fueling
                         </Button>
