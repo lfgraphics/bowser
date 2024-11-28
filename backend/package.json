@@ -20,6 +20,7 @@
     "express": "^4.21.0",
     "firebase-admin": "^12.7.0",
     "jsonwebtoken": "^8.5.1",
+    "moment-timezone": "^0.5.46",
     "mongodb": "^6.9.0",
     "mongoose": "^8.7.1",
     "sharp": "^0.33.5",
