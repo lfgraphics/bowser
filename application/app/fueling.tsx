@@ -462,7 +462,7 @@ export default function FuelingScreen() {
   }
   const validateInputs = () => {
     if ((fueling !== "Bulk Sale") && !vehicleNumber) {
-      alert("Vehicle Number is required.");
+      alert("गाड़ी का नंबर डालना ज़रूरी है|");
       vehicleNumberInputRef.current?.measureLayout(
         scrollViewRef.current?.getInnerViewNode(),
         (x, y) => {
@@ -472,11 +472,11 @@ export default function FuelingScreen() {
       return false;
     }
     if (!vehicleNumberPlateImage) {
-      alert("Vehicle number plate image is required.");
+      alert("गाड़ी की नंबर प्लेट की फ़ोटो खीचना ज़रूरी है|");
       return false;
     }
     if (fueling == "Own" && !driverId) {
-      alert("ID/Name is required.");
+      alert("ड्राईवर की आई-डी भरना ज़रूरी है|");
       driverIdInputRef.current?.measureLayout(
         scrollViewRef.current?.getInnerViewNode(),
         (x, y) => {
@@ -486,7 +486,7 @@ export default function FuelingScreen() {
       return false;
     }
     if (!driverMobile) {
-      alert("Mobile Number is required.");
+      alert("ड्राईवर का मोबाइल नंबर भरना ज़रूरी है|");
       driverMobileInputRef.current?.measureLayout(
         scrollViewRef.current?.getInnerViewNode(),
         (x, y) => {
@@ -496,11 +496,11 @@ export default function FuelingScreen() {
       return false;
     }
     if (!fuelMeterImage) {
-      alert("Vehicle number plate image is required.");
+      alert("तेल मीटर की फ़ोटो खीचना ज़रूरी है|");
       return false;
     }
     if (!fuelQuantity || Number(fuelQuantity) < 1) {
-      alert("Fuel Quantity is required.");
+      alert("दिए हुए तेल की मात्रा भरना ज़रूरी है|");
       fuelQuantityInputRef.current?.measureLayout(
         scrollViewRef.current?.getInnerViewNode(),
         (x, y) => {
@@ -518,10 +518,10 @@ export default function FuelingScreen() {
 
       if (!response.ok) {
         if (response.status === 404) {
-          Alert.alert('No vehicle found with the given number');
+          Alert.alert('भरे गए गाड़ी नम्बर की कोई भी ट्रिप नहीं मिली');
           return;
         }
-        throw new Error('Server error');
+        throw new Error('सर्वर एरर');
       }
 
       const vehicles: Vehicle[] = await response.json();
@@ -552,14 +552,14 @@ export default function FuelingScreen() {
         // Fetch data
         const response = await fetch(`${baseUrl}${endpoint}`);
         if (!response.ok) {
-          throw new Error('Failed to fetch trip sheet');
+          throw new Error('ट्रिप शीत नहीं मिली कृपया दोबारा लॉग इनकरें');
         }
 
         const sheets = await response.json();
 
         return sheets.length > 0;
       } catch (error) {
-        console.error('Error fetching unsettled trip sheets:', (error as Error).message);
+        console.error('आप की आई-डी पर कोई भी खुली हुई ट्रिप नहीं मिली:', (error as Error).message);
         return false;
       }
     }
@@ -574,7 +574,7 @@ export default function FuelingScreen() {
       const tripSheetId = userData ? userData['Trip Sheet Id'] : null;
       setTripSheetId(tripSheetId);
     } catch (error) {
-      console.error('Error fetching user data from AsyncStorage:', error);
+      console.error('आप का डाटा नहीं मिल रहा कृपया दोबारा लॉग इन करें:', error);
     }
   };
 
@@ -586,7 +586,7 @@ export default function FuelingScreen() {
       if (tripSheetId) {
         const isValidTrip = await validateTrip();
         if (!isValidTrip) {
-          Alert.alert('Error', 'Your Trip is closed.');
+          Alert.alert('एरर', 'आप की ट्रिप बंद कर दी गई है');
           router.replace('/');
         }
       }
@@ -612,7 +612,7 @@ export default function FuelingScreen() {
                 style={[styles.navButton, fueling === option && styles.activeButton]}
                 onPress={() => setFueling(option)}
               >
-                <Text style={[styles.submitButtonText, { color: `${fueling == option ? colors.card : colors.text}` }]}>{option}</Text>
+                <Text style={[styles.submitButtonText, { color: `${fueling == option ? colors.card : colors.text}` }]}>{option == "Own" ? "अपना" : option == "Attatch" ? "अटैच" : "सेल"}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -623,12 +623,11 @@ export default function FuelingScreen() {
           </View>
           <View style={styles.section}>
             <View style={styles.inputContainer}>
-              <ThemedText>Trip Sheet Number: {tripSheetId}</ThemedText>
+              <ThemedText>ट्रिप शीट नम्बर: {tripSheetId}</ThemedText>
             </View>
             {vehicleNumberPlateImage && (
               <>
                 <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
-                <ThemedText style={styles.imageSizeText}>Size: {vehicleNumberPlateImageSize}</ThemedText>
               </>
             )}
             {!vehicleNumberPlateImage && (
@@ -639,18 +638,18 @@ export default function FuelingScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                   {(fueling == 'Own' || fueling == 'Attatch') && <Ionicons name="car-outline" size={20} color="white" style={{ marginRight: 5 }} />}
                   <ThemedText style={{ color: 'white' }}>
-                    Take {(fueling == 'Own' || fueling == 'Attatch') ? 'Vehicle Number Plate' : 'Saling Point'} Photo
+                    {(fueling == 'Own' || fueling == 'Attatch') ? 'गाड़ी के नम्बर प्लेट की' : 'सेलिंग पॉइंट की'} फ़ोटो खीचें
                   </ThemedText>
                 </View>
               </TouchableOpacity>
             )}
             {fueling !== "Bulk Sale" && <View style={styles.inputContainer}>
-              <ThemedText>Vehicle Number:</ThemedText>
+              <ThemedText>गाड़ी नम्बर:</ThemedText>
               <TextInput
                 ref={vehicleNumberInputRef}
                 onPress={() => !vehicleNumberPlateImage && openNumberPlateCamera()}
                 style={[styles.input, { color: colors.text }]}
-                placeholder={'Enter Vehicle Number:'}
+                placeholder={'5678'}
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                 value={vehicleNumber}
                 onChangeText={(text) => {
@@ -672,12 +671,12 @@ export default function FuelingScreen() {
               />
             </View>}
             {fueling == "Own" && <View style={styles.inputContainer}>
-              <ThemedText>Odo Meter:</ThemedText>
+              <ThemedText>गाड़ी का मीटर:</ThemedText>
               <TextInput
                 ref={odometerInputRef}
                 onPress={() => !vehicleNumberPlateImage && openNumberPlateCamera()}
                 style={[styles.input, { color: colors.text }]}
-                placeholder={'Enter Vehicle Odo Meter:'}
+                placeholder={'4567835'}
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                 value={odometer}
                 onChangeText={(text) => { setOdodmeter(text.toUpperCase()); }}
@@ -688,12 +687,12 @@ export default function FuelingScreen() {
               />
             </View>}
             {fueling !== "Own" && <View style={styles.inputContainer}>
-              <ThemedText>{fueling == "Attatch" ? "Vendor" : "Party"} Name</ThemedText>
+              <ThemedText>{fueling == "Attatch" ? "वेंडर" : "पार्टी"} का नाम:</ThemedText>
               <TextInput
                 // readOnly={fueling == "Own"}
                 ref={partyNameInputRef}
                 style={[styles.input, { color: colors.text }]}
-                placeholder={`Enter ${fueling == "Attatch" ? "Vendor" : "Party"} Name`}
+                placeholder={`रिलायंक/ Flipkart`}
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                 value={partyName}
                 onChangeText={(text) => {
@@ -705,7 +704,7 @@ export default function FuelingScreen() {
               />
             </View>}
             {noVehicleFound && (
-              <ThemedText style={styles.errorText}>No vehicle found with the given number</ThemedText>
+              <ThemedText style={styles.errorText}>भरे गए गाड़ी नम्बर की कोई भी ट्रिप नहीं मिली</ThemedText>
             )}
             {!noVehicleFound && fueling == 'Own' && !(vehicleNumber == "") && <TouchableOpacity
               style={[styles.pickerContainer,]}
@@ -752,11 +751,11 @@ export default function FuelingScreen() {
           <View style={styles.section}>
             {fueling == 'Own' &&
               <View style={styles.inputContainer}>
-                <ThemedText>Driver Id:</ThemedText>
+                <ThemedText>ड्राईवर की आई-डी:</ThemedText>
                 <TextInput
                   ref={driverIdInputRef}
                   style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                  placeholder={`Enter Driver Id`}
+                  placeholder={`0246`}
                   placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                   value={driverId}
                   onChangeText={(text) => {
@@ -778,13 +777,13 @@ export default function FuelingScreen() {
               </View>
             }
             {noDriverFound && (
-              <ThemedText style={styles.errorText}>No driver found with the given ID</ThemedText>
+              <ThemedText style={styles.errorText}>भरे गए आई-डी नम्बर से कोई भी ड्राईवर नहीं मिला</ThemedText>
             )}
             {fueling == 'Own' && !noDriverFound && !(driverId == "") && <TouchableOpacity
               style={[styles.pickerContainer,]}
               onPress={() => setModalVisible(true)}
             >
-              <Text style={{ color: colors.text }}>{selectedDriver || "Select a driver"}</Text>
+              <Text style={{ color: colors.text }}>{selectedDriver || "एक ड्राईवर चुने"}</Text>
             </TouchableOpacity>}
             <Modal
               visible={modalVisible}
@@ -808,11 +807,11 @@ export default function FuelingScreen() {
             </Modal>
 
             <View style={styles.inputContainer}>
-              <ThemedText>{fueling !== "Bulk Sale" ? "Driver" : "Manager"} Name:</ThemedText>
+              <ThemedText>{fueling !== "Bulk Sale" ? "ड्राईवर" : "मेनेजर"} का नाम:</ThemedText>
               <TextInput
                 ref={driverNameInputRef}
                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                placeholder={`Enter ${fueling !== "Bulk Sale" ? "Driver" : "Manager"} Name`}
+                placeholder="जितेन्द्र/ Jitendra"
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                 value={driverName}
                 onChangeText={setDriverName}
@@ -823,13 +822,14 @@ export default function FuelingScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <ThemedText>{fueling !== 'Bulk Sale' ? 'Driver' : 'Manager'} Mobile Number:</ThemedText>
+              <ThemedText>{fueling !== "Bulk Sale" ? "ड्राईवर" : "मेनेजर"} का मोबाइल नम्बर:</ThemedText>
               <TextInput
                 ref={driverMobileInputRef}
                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                placeholder="Enter mobile number"
+                placeholder="1234567890"
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                 keyboardType="phone-pad"
+                maxLength={10}
                 value={driverMobile}
                 onChangeText={setDriverMobile}
                 returnKeyType="next"
@@ -843,7 +843,6 @@ export default function FuelingScreen() {
             {fuelMeterImage && (
               <>
                 <Image source={{ uri: fuelMeterImage }} style={styles.uploadedImage} />
-                <ThemedText style={styles.imageSizeText}>Size: {fuelMeterImageSize}</ThemedText>
               </>
             )}
             {!fuelMeterImage && <TouchableOpacity
@@ -853,31 +852,13 @@ export default function FuelingScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="speedometer-outline" size={20} color="white" style={{ marginRight: 5 }} />
                 <ThemedText style={{ color: 'white' }}>
-                  Take Fuel Meter Photo
-                </ThemedText>
-              </View>
-            </TouchableOpacity>}
-
-            {slipImage && (
-              <>
-                <Image source={{ uri: slipImage }} style={styles.uploadedImage} />
-                <ThemedText style={styles.imageSizeText}>Size: {slipImageSize}</ThemedText>
-              </>
-            )}
-            {!slipImage && <TouchableOpacity
-              onPress={() => slipImage === null ? openSlipCamera() : null}
-              style={[styles.photoButton,]}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="receipt-outline" size={20} color="white" style={{ marginRight: 5 }} />
-                <ThemedText style={{ color: 'white' }}>
-                  Take Slip Photo
+                  तेल मीटर/ पर्चियों की फ़ोटो खीचें
                 </ThemedText>
               </View>
             </TouchableOpacity>}
 
             <View style={styles.inputContainer}>
-              <ThemedText>Fuel Quantity Dispensed:</ThemedText>
+              <ThemedText>तेल की मात्रा:</ThemedText>
               <View style={styles.rowContainer}>
                 {fueling !== 'Bulk Sale' && <Picker
                   style={[
@@ -894,15 +875,15 @@ export default function FuelingScreen() {
                   }}
                   dropdownIconColor={colorScheme === 'dark' ? '#ECEDEE' : '#11181C'}
                 >
-                  <Picker.Item label="Full" value="Full" />
-                  <Picker.Item label="Part" value="Part" />
+                  <Picker.Item label="फुल" value="Full" />
+                  <Picker.Item label="पार्ट" value="Part" />
                 </Picker>}
                 <TextInput
-                  // onFocus={() => {if (!fuelMeterImage) {openFuelMeterCamera()}}}
-                  // onPress={() => !fuelMeterImage && openFuelMeterCamera()}
+                  onFocus={() => {if (!fuelMeterImage) {openFuelMeterCamera()}}}
+                  onPress={() => !fuelMeterImage && openFuelMeterCamera()}
                   ref={fuelQuantityInputRef}
                   style={[styles.input, styles.threeQuarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                  placeholder="Enter fuel quantity"
+                  placeholder="460.96"
                   placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                   keyboardType="numeric"
                   value={fuelQuantity.toString()}
@@ -915,12 +896,11 @@ export default function FuelingScreen() {
                 />
               </View>
               <View style={styles.inputContainer}>
-                <ThemedText>Order by</ThemedText>
+                <ThemedText>आर्डर कर्ता</ThemedText>
                 <TextInput
                   ref={adminIdInputRef}
                   style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                  placeholder="Ordered by"
-                  // 
+                  placeholder="5"
                   placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                   keyboardType="default"
                   value={adminId}
@@ -950,7 +930,7 @@ export default function FuelingScreen() {
             onPress={submitDetails}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-              <ThemedText style={styles.submitButtonText}>Submit</ThemedText>
+              <ThemedText style={styles.submitButtonText}>सबमिट करें</ThemedText>
               <Ionicons name="send-outline" size={20} color="white" />
             </View>
           </TouchableOpacity>
@@ -959,7 +939,7 @@ export default function FuelingScreen() {
             onPress={resetForm}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-              <ThemedText style={[styles.resetButtonText, { color: colors.text }]}>Reset</ThemedText>
+              <ThemedText style={[styles.resetButtonText, { color: colors.text }]}>रिसेट करें</ThemedText>
               <Ionicons name="refresh-outline" size={20} color="white" />
             </View>
           </TouchableOpacity>
@@ -986,7 +966,6 @@ const styles = StyleSheet.create({
   navContainer: {
     paddingVertical: 10,
     borderRadius: 5,
-    // backgroundColor: '#151718',
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginVertical: 20
@@ -1073,7 +1052,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0a7ea4',
     padding: 12,
     borderRadius: 4,
-    marginVertical: 20,
+    marginVertical: 10,
     alignItems: 'center'
   },
   loaderContainer: {

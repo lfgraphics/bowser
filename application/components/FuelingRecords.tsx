@@ -73,7 +73,7 @@ const FuelingRecords: React.FC = () => {
 
     return (
         <ThemedView style={[styles.scrollThemedView,]}>
-            <ThemedText style={[styles.title,]}>Your Fueling Records</ThemedText>
+            <ThemedText style={[styles.title,]}>इस ट्रिप के रिकॉर्ड</ThemedText>
 
             {loading ? (
                 <ActivityIndicator size="large" />
@@ -81,7 +81,7 @@ const FuelingRecords: React.FC = () => {
                 <ScrollView style={styles.scrollThemedView}>
                     {records.length > 0 &&
                         <ThemedText style={[styles.secondaryTitle,]}>
-                            Total Fueled Quantity: {records.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)} L
+                            कुल {records.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)} लीटर तेल दिया
                         </ThemedText>
                     }
                     {records.length > 0 ? (
@@ -98,7 +98,7 @@ const FuelingRecords: React.FC = () => {
                             </ThemedView>
                         ))
                     ) : (
-                        <ThemedText style={[styles.noRecordsText,]}>No records found.</ThemedText>
+                        <ThemedText style={[styles.noRecordsText,]}>कोई भी रिकॉर्ड मौजूद नहीं| एक गाड़ी का रिकॉर्ड ऑनलाइन ना भेजने पर 50 रुपया पेनाल्टी लगाई जाएगी</ThemedText>
                     )}
                 </ScrollView >
             )}
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
         fontSize: 24,
         alignSelf: 'center',
         fontWeight: 'bold',
-        marginBottom: 8,
+        paddingVertical: 8,
     },
     secondaryTitle: {
         fontSize: 18,
@@ -127,6 +127,7 @@ const styles = StyleSheet.create({
     noRecordsText: {
         textAlign: 'center',
         fontSize: 16,
+        color: 'red'
     },
     modalContainer: {
         borderTopEndRadius: 4,

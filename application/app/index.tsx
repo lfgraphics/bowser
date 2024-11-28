@@ -29,7 +29,7 @@ const App = () => {
   const [isOfflineDataModalVisible, setOfflineDataModalVisible] = useState(false);
   const [isOfflineDataLoading, setIsOfflineDataLoading] = useState(false);
   const { colors } = useTheme();
-  const appVersion = 33
+  const appVersion = 34
   const [appurl, setAppUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -347,7 +347,7 @@ const App = () => {
                   style={styles.submitButton}
                   onPress={() => handleSubmitOfflineData(item, index)}
                 >
-                  <Text style={styles.submitButtonText}>Submit</Text>
+                  <Text style={styles.submitButtonText}>सबमिट करें</Text>
                 </TouchableOpacity>
               </View>
             }
@@ -377,7 +377,7 @@ const App = () => {
       return value ? (
         <Image source={{ uri: `${value}` }} style={styles.dataImage} />
       ) : (
-        <Text style={styles.dataValue}>No image</Text>
+        <Text style={styles.dataValue}>कोई फ़ोटो नहीं</Text>
       );
     } else if (key === 'bowserDriver') {
       if (Array.isArray(value)) {
@@ -385,10 +385,10 @@ const App = () => {
           <View style={[{ backgroundColor: colors.card }]}>
             {value.map((driver: any, index: number) => (
               <View key={index} style={styles.bowserDriverItem}>
-                <Text style={styles.dataValue}>Driver {index + 1}:</Text>
-                <Text style={styles.dataValue}>ID: {driver._id}</Text>
-                <Text style={styles.dataValue}>Name: {driver.userName}</Text>
-                <Text style={styles.dataValue}>User ID: {driver.userId}</Text>
+                <Text style={styles.dataValue}>ड्राईवर: {index + 1}:</Text>
+                <Text style={styles.dataValue}>आईडी: {driver._id}</Text>
+                <Text style={styles.dataValue}>नाम: {driver.userName}</Text>
+                <Text style={styles.dataValue}>यूजर आईडी: {driver.userId}</Text>
               </View>
             ))}
           </View>
@@ -397,14 +397,14 @@ const App = () => {
         // Handle case where bowserDriver is a single object
         return (
           <View style={styles.bowserDriverItem}>
-            <Text style={styles.dataValue}>Driver:</Text>
-            <Text style={styles.dataValue}>ID: {value._id}</Text>
-            <Text style={styles.dataValue}>Name: {value.userName}</Text>
-            <Text style={styles.dataValue}>User ID: {value.userId}</Text>
+            <Text style={styles.dataValue}>ड्राईवर:</Text>
+            <Text style={styles.dataValue}>आईडी: {value._id}</Text>
+            <Text style={styles.dataValue}>नाम: {value.userName}</Text>
+            <Text style={styles.dataValue}>यूजर आईडी: {value.userId}</Text>
           </View>
         );
       } else {
-        return <Text style={styles.dataValue}>No bowser driver data</Text>;
+        return <Text style={styles.dataValue}>बौज़र ड्राईवर का डाटा नहीं प्राप्त हुवा</Text>;
       }
     } else if (typeof value === 'object' && value !== null) {
       return <Text style={styles.dataValue}>{JSON.stringify(value)}</Text>;
@@ -412,107 +412,6 @@ const App = () => {
       return <Text style={styles.dataValue}>{String(value ?? 'N/A')}</Text>;
     }
   };
-
-
-  // const handleNotificationAction = (action: string, data: any) => {
-  //   switch (action) {
-  //     case 'call':
-  //       if (data.phoneNumber) {
-  //         Linking.openURL(`tel:${data.phoneNumber}`);
-  //       }
-  //       break;
-  //     case 'openScreen':
-  //       if (data.screenName === 'NotificationFueling') {
-  //         router.push({
-  //           pathname: '/NotificationFueling',
-  //           params: data.params
-  //         });
-  //       }
-  //       break;
-  //     default:
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   const backgroundSubscription = Notifications.addNotificationResponseReceivedListener(response => {
-  //     const data = response.notification.request.content.data;
-  //     if (data.buttons) {
-  //       // Assuming the user tapped the notification, we'll execute the first button action
-  //       const firstButton = data.buttons[0];
-  //       handleNotificationAction(firstButton.action, firstButton);
-  //     }
-  //   });
-
-  //   const foregroundSubscription = Notifications.addNotificationReceivedListener(notification => {
-  //     const { title, body } = notification.request.content;
-  //     const data = notification.request.content.data;
-
-  //     Alert.alert(
-  //       title || 'New Order',
-  //       body || 'You have received a new fueling order.',
-  //       data.buttons?.map((button: any) => ({
-  //         text: button.text,
-  //         onPress: () => handleNotificationAction(button.action, button)
-  //       }))
-  //     );
-  //   });
-
-  //   return () => {
-  //     Notifications.removeNotificationSubscription(backgroundSubscription);
-  //     Notifications.removeNotificationSubscription(foregroundSubscription);
-  //   };
-  // }, []);
-
-  // useEffect(() => {
-  //   const setupPushNotifications = async () => {
-  //     try {
-  //       const token = await registerForPushNotificationsAsync();
-  //       if (token) {
-  //         await AsyncStorage.setItem('pushToken', token);
-
-  //         const userData = await AsyncStorage.getItem('userData');
-  //         if (userData) {
-  //           const parsedUserData = JSON.parse(userData);
-  //           const userId = parsedUserData["User Id"];
-  //           if (!userId) {
-  //             throw new Error('userId is undefined or null');
-  //           }
-
-  //           const API_BASE_URL = 'https://bowser-backend-2cdr.onrender.com';
-  //           const response = await fetch(`${API_BASE_URL}/notifications/register-token`, {
-  //             method: 'POST',
-  //             headers: {
-  //               'Content-Type': 'application/json',
-  //             },
-  //             body: JSON.stringify({ userId, pushToken: token }),
-  //           });
-
-  //           if (!response.ok) {
-  //             const errorText = await response.text();
-  //             console.warn(`Failed to register push token with server: ${errorText}`);
-  //           }
-  //         } else {
-  //           console.warn('User data not found in AsyncStorage');
-  //         }
-  //       } else {
-  //         console.warn('Failed to get push token');
-  //       }
-  //     } catch (error) {
-  //       console.error('Error setting up push notifications:', error);
-  //     }
-  //   };
-
-  //   setupPushNotifications();
-  // }, []);
-
-  // useEffect(() => {
-  //   registerForPushNotificationsAsync().then(token => {
-  //     if (token) {
-  //       AsyncStorage.setItem('pushToken', token);
-  //     }
-  //   });
-  // }, []);
-
 
   if (isLoading) {
     return <View style={styles.container}>
@@ -530,12 +429,12 @@ const App = () => {
   if (!permissionsGranted || !isGPSEnabled) {
     return (
       <View style={[styles.container, { backgroundColor: colors.card }]}>
-        <Text style={styles.errorText}>Please grant necessary permissions and enable GPS to use this app.</Text>
+        <Text style={styles.errorText}>ऐप को संचलित रखने के लिए कृपया जी पी एस को ऑन करें और लोकेशन परमिशन दें|</Text>
         <TouchableOpacity style={styles.button} onPress={requestPermissions}>
-          <Text style={styles.buttonText}>Grant Permissions</Text>
+          <Text style={styles.buttonText}>परमिशन दें</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button} onPress={checkGPSStatus}>
-          <Text style={styles.buttonText}>Check GPS Status</Text>
+          <Text style={styles.buttonText}>जी पी एस चेक करें</Text>
         </TouchableOpacity>
       </View>
     );
@@ -553,18 +452,18 @@ const App = () => {
       <Link style={styles.button} href={'/fueling'}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: 'white' }}>
-            Fueling
+            गाड़ी को तेल दें 
           </Text>
-          <MaterialIcons name="local-gas-station" size={24} color="white" style={{ marginRight: 5 }} />
+          <MaterialIcons name="local-gas-station" size={24} color="white" style={{ marginHorizontal: 10 }} />
         </View>
       </Link>
       <Link disabled style={styles.disabledButton} href={'/notifications'}>
         {/* disabled */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: 'white' }}>
-            Pending Orders
+            ऑर्डर्स चेक करें 
           </Text>
-          <Ionicons name="notifications" size={20} color="white" style={{ marginRight: 5 }} />
+          <Ionicons name="notifications" size={20} color="white" style={{ marginHorizontal: 10 }} />
         </View>
       </Link>
       {
@@ -580,36 +479,36 @@ const App = () => {
         <View style={styles.modalContainer}>
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Profile</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>प्रोफाइल</Text>
             </View>
             <ScrollView style={[styles.modalScrollView, { backgroundColor: colors.card }]}>
               {renderUserData()}
               {offlineDataLength > 0 && (
                 <>
-                  <Text style={{ color: colors.text }}>{offlineDataLength ? offlineDataLength : "no offiline data"}</Text>
+                  <Text style={{ color: colors.text }}>{offlineDataLength ? offlineDataLength : "कोई भी ऑफलाइन डाटा नहीं"}</Text>
                   <TouchableOpacity
                     style={styles.offlineDataButton}
                     onPress={() => setOfflineDataModalVisible(true)}
                   >
                     <Text style={styles.offlineDataButtonText}>
-                      View Offline Data ({offlineDataLength})
+                      ऑफलाइन डाटा देखें ({offlineDataLength})
                     </Text>
                   </TouchableOpacity>
                 </>
               )}
-              {appurl && <Link style={styles.button} href={appurl}><Text style={{ color: colors.text }}>Update app</Text>
+              {appurl && <Link style={styles.button} href={appurl}><Text style={{ color: colors.text }}>ऐप अपडेट करें</Text>
               </Link>}
             </ScrollView>
             <View style={styles.modalFooter}>
               <TouchableOpacity style={styles.logoutButton} onPress={() => handleLogout(false)}>
                 <Ionicons name="log-out-outline" size={24} color="white" />
-                <Text style={styles.logoutButtonText}>Logout</Text>
+                <Text style={styles.logoutButtonText}>लॉगआउट करें</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setProfileModalVisible(false)}
               >
-                <Text style={styles.closeButtonText}>Close</Text>
+                <Text style={styles.closeButtonText}>बंद करें</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -624,13 +523,13 @@ const App = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Offline Data</Text>
+            <Text style={styles.modalTitle}>ऑफलाइन रिकॉर्ड</Text>
             {renderOfflineData()}
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setOfflineDataModalVisible(false)}
             >
-              <Text style={styles.closeButtonText}>Close</Text>
+              <Text style={styles.closeButtonText}>बंद करें</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -663,7 +562,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   button: {
-    width: '100%',
+    width: '70%',
     padding: 15,
     marginVertical: 10,
     backgroundColor: '#0a7ea4',
@@ -674,7 +573,7 @@ const styles = StyleSheet.create({
     color: 'white'
   },
   disabledButton: {
-    width: '100%',
+    width: '70%',
     padding: 15,
     marginVertical: 10,
     backgroundColor: 'gray',

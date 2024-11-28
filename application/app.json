@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "newArchEnabled": true
+      "newArchEnabled": true,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "newArchEnabled": true,
@@ -22,6 +25,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "runtimeVersion": "1.0.0",
       "package": "com.itplfirebase.bowsersdispensing"
     },
     "web": {
@@ -48,7 +52,11 @@
       "iosDisplayInForeground": true,
       "androidMode": "default",
       "androidCollapsedTitle": "New Order"
+    },
+    "updates": {
+      "enabled": true,
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/ee680cf8-bd87-4639-b3fa-f0e023f3036b"
     }
-    // "newArchEnabled": true
   }
 }
