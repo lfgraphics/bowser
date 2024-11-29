@@ -20,7 +20,7 @@ const fuelingTransactionSchema = new mongoose.Schema({
     driverId: { type: String, required: false },
     driverName: { type: String, required: false },
     driverMobile: { type: String, required: false },
-    fuelMeterImage: { type: String, required: false },
+    fuelMeterImage: { type: [String], required: true },
     slipImage: { type: String, required: false },
     quantityType: {
         type: String,
@@ -42,7 +42,7 @@ const fuelingTransactionSchema = new mongoose.Schema({
             message: "Gps location can't be blank"
         }
     },
-    fuelingDateTime: { type: String, required: false },
+    fuelingDateTime: { type: Date, required: false },
     bowser: {
         regNo: { type: String, require: false },
         driver: {

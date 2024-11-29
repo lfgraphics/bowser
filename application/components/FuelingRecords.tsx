@@ -9,7 +9,7 @@ import { ThemedView } from './ThemedView';
 
 interface DispensesRecord {
     _id: string;
-    fuelingDateTime: string;
+    fuelingDateTime: Date;
     vehicleNumber: string;
     fuelQuantity: string;
     bowser: {
@@ -74,27 +74,26 @@ const FuelingRecords: React.FC = () => {
     return (
         <ThemedView style={[styles.scrollThemedView,]}>
             <ThemedText style={[styles.title,]}>इस ट्रिप के रिकॉर्ड</ThemedText>
-
+            {records.length > 0 &&
+                <ThemedText style={[styles.secondaryTitle,]}>
+                    कुल {records.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)} लीटर तेल दिया
+                </ThemedText>
+            }
             {loading ? (
                 <ActivityIndicator size="large" />
             ) : (
                 <ScrollView style={styles.scrollThemedView}>
-                    {records.length > 0 &&
-                        <ThemedText style={[styles.secondaryTitle,]}>
-                            कुल {records.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)} लीटर तेल दिया
-                        </ThemedText>
-                    }
                     {records.length > 0 ? (
                         records.map((record) => (
                             <ThemedView style={[styles.modalItem,]} key={record._id}>
-                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Date:</ThemedText> {record.fuelingDateTime.split(' ')[0].replace(',', '')}</ThemedText>
-                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Category:</ThemedText> {record.category}</ThemedText>
-                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>party:</ThemedText> {record.party}</ThemedText>
-                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Vehicle No.:</ThemedText> {record.vehicleNumber}</ThemedText>
-                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Manager/Driver Name:</ThemedText> {record.driverName}</ThemedText>
-                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Fuel Quantity:</ThemedText> {record.fuelQuantity}</ThemedText>
-                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>GPS Location:</ThemedText> {record.gpsLocation}</ThemedText>
-                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>Verified:</ThemedText> {record.verified ? "Yes" : "No"}</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>तारीख़:</ThemedText> {`${new Date(record.fuelingDateTime).toISOString().split('T')[0].split('-').reverse().map((v, i) => i === 2 ? v.slice(-2) : v).join('-')}`}</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>कैटेगरी:</ThemedText> {record.category}</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>{record.category == "Bulk Sale" ? "पार्टी" : "वेंडर"}:</ThemedText> {record.party}</ThemedText>
+                                {record.category !== "Bulk Sale" && <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>गाड़ी नम्बर:</ThemedText> {record.vehicleNumber}</ThemedText>}
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>मैनेजर/ड्राईवर का नाम:</ThemedText> {record.driverName}</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>तेल दिया:</ThemedText> {record.fuelQuantity} लीटर</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>तेल देने की जगह:</ThemedText> {record.gpsLocation}</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>रिकॉर्ड सत्यापित हुआ:</ThemedText> {record.verified ? "हाँ" : "नहीं"}</ThemedText>
                             </ThemedView>
                         ))
                     ) : (

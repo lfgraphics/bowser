@@ -19,7 +19,7 @@ export default function FuelingScreen() {
   const colorScheme = useColorScheme();
   const { colors } = useTheme();
   const [vehicleNumberPlateImage, setVehicleNumberPlateImage] = useState<string | null>(null);
-  const [fuelMeterImage, setFuelMeterImage] = useState<string | null>(null);
+  const [fuelMeterImage, setFuelMeterImage] = useState<string[] | null>(null);
   const [slipImage, setSlipImage] = useState<string | null>(null);
   const [vehicleNumber, setVehicleNumber] = useState('');
   const [odometer, setOdodmeter] = useState('');
@@ -39,9 +39,6 @@ export default function FuelingScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [quantityType, setQuantityType] = useState<'Full' | 'Part'>('Part');
-  const [vehicleNumberPlateImageSize, setVehicleNumberPlateImageSize] = useState<string>('');
-  const [fuelMeterImageSize, setFuelMeterImageSize] = useState<string>('');
-  const [slipImageSize, setSlipImageSize] = useState<string>('');
   const [isOnline, setIsOnline] = useState(true);
   const [foundVehicles, setFoundVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<string>('');
@@ -67,6 +64,18 @@ export default function FuelingScreen() {
     { Name: "Select a driver", ITPLId: "placeholder" },
     ...foundDrivers
   ];
+  const [imageModalVisible, setImageModalVisible] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const openModal = (image: string) => {
+    setSelectedImage(image);
+    setImageModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setImageModalVisible(false);
+    setSelectedImage(null);
+  };
 
   // function declarations---->
   // startup function
@@ -99,19 +108,6 @@ export default function FuelingScreen() {
       console.error("Error getting location or city:", error);
       return { error: "Unable to retrieve location. Please check your internet connection." };
     }
-  };
-
-  const fulingTime = () => {
-    const currentDateTime = new Date().toLocaleString();
-    setFuelingDateTime(currentDateTime);
-    return currentDateTime;
-  }
-  const calculateBase64Size = (base64String: string): string => {
-    const stringLength = base64String.length;
-    const sizeInBytes = (stringLength * (3 / 4)) - (base64String.endsWith('==') ? 2 : base64String.endsWith('=') ? 1 : 0);
-    const sizeInKB = sizeInBytes / 1024;
-    const sizeInMB = sizeInKB / 1024;
-    return `${sizeInKB.toFixed(2)} KB (${sizeInMB.toFixed(2)} MB)`;
   };
 
   const submitDetails = async () => {
@@ -148,7 +144,6 @@ export default function FuelingScreen() {
   }
 
   const submitFormData = async () => {
-    let currentFuelingDateTime = fuelingDateTime;
     let currentGpsLocation = gpsLocation;
     const userDataString = await AsyncStorage.getItem('userData');
     const userData = userDataString ? JSON.parse(userDataString) : null;
@@ -158,7 +153,6 @@ export default function FuelingScreen() {
       return;
     }
 
-    currentFuelingDateTime = await fulingTime();
     const locationResult = await location();
 
     if (typeof locationResult === 'string') {
@@ -186,7 +180,7 @@ export default function FuelingScreen() {
       quantityType,
       fuelQuantity,
       gpsLocation: currentGpsLocation,
-      fuelingDateTime: currentFuelingDateTime,
+      fuelingDateTime: new Date(),
       bowser: {
         regNo: userData.Bowser ? userData.Bowser : '',
         driver: {
@@ -318,7 +312,7 @@ export default function FuelingScreen() {
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       quality: 1,
     });
@@ -326,13 +320,9 @@ export default function FuelingScreen() {
     if (!result.canceled && result.assets[0].uri) {
       const compressedImage = await compressImage(result.assets[0].uri);
       setVehicleNumberPlateImage(compressedImage);
-      setVehicleNumberPlateImageSize(calculateBase64Size(compressedImage));
     }
   };
   const openFuelMeterCamera = async () => {
-    if (fuelMeterImage) {
-      return;
-    }
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
 
     if (permissionResult.granted === false) {
@@ -341,38 +331,14 @@ export default function FuelingScreen() {
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       quality: 1,
     });
 
     if (!result.canceled && result.assets[0].uri) {
       const compressedImage = await compressImage(result.assets[0].uri);
-      setFuelMeterImage(compressedImage);
-      setFuelMeterImageSize(calculateBase64Size(compressedImage));
-    }
-  };
-  const openSlipCamera = async () => {
-    if (slipImage) {
-      return;
-    }
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-
-    if (permissionResult.granted === false) {
-      alert("Camera permission is required!");
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 1,
-    });
-
-    if (!result.canceled && result.assets[0].uri) {
-      const compressedImage = await compressImage(result.assets[0].uri);
-      setSlipImage(compressedImage);
-      setSlipImageSize(calculateBase64Size(compressedImage));
+      setFuelMeterImage(prevImages => prevImages ? [...prevImages, compressedImage] : [compressedImage]);
     }
   };
   const searchDriverById = async (idNumber: string) => {
@@ -625,11 +591,9 @@ export default function FuelingScreen() {
             <View style={styles.inputContainer}>
               <ThemedText>ट्रिप शीट नम्बर: {tripSheetId}</ThemedText>
             </View>
-            {vehicleNumberPlateImage && (
-              <>
-                <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
-              </>
-            )}
+            {vehicleNumberPlateImage &&
+              <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
+            }
             {!vehicleNumberPlateImage && (
               <TouchableOpacity
                 onPress={() => vehicleNumberPlateImage === null ? openNumberPlateCamera() : null}
@@ -840,13 +804,16 @@ export default function FuelingScreen() {
           </View>
 
           <View style={styles.section}>
-            {fuelMeterImage && (
-              <>
-                <Image source={{ uri: fuelMeterImage }} style={styles.uploadedImage} />
-              </>
-            )}
-            {!fuelMeterImage && <TouchableOpacity
-              onPress={() => fuelMeterImage === null ? openFuelMeterCamera() : null}
+            <View style={styles.grid}>
+              {fuelMeterImage &&
+                fuelMeterImage.map((image, index) => (
+                  <TouchableOpacity key={index} onPress={() => openModal(image)} style={styles.gridItem}>
+                  <Image source={{ uri: image }} style={styles.gridImage} />
+                </TouchableOpacity>
+                ))}
+            </View>
+            <TouchableOpacity
+              onPress={() => openFuelMeterCamera()}
               style={[styles.photoButton,]}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
@@ -855,7 +822,7 @@ export default function FuelingScreen() {
                   तेल मीटर/ पर्चियों की फ़ोटो खीचें
                 </ThemedText>
               </View>
-            </TouchableOpacity>}
+            </TouchableOpacity>
 
             <View style={styles.inputContainer}>
               <ThemedText>तेल की मात्रा:</ThemedText>
@@ -879,7 +846,7 @@ export default function FuelingScreen() {
                   <Picker.Item label="पार्ट" value="Part" />
                 </Picker>}
                 <TextInput
-                  onFocus={() => {if (!fuelMeterImage) {openFuelMeterCamera()}}}
+                  onFocus={() => { if (!fuelMeterImage) { openFuelMeterCamera() } }}
                   onPress={() => !fuelMeterImage && openFuelMeterCamera()}
                   ref={fuelQuantityInputRef}
                   style={[styles.input, styles.threeQuarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
@@ -955,6 +922,19 @@ export default function FuelingScreen() {
           <ActivityIndicator size="large" color="#0a7ea4" />
         </View>
       )}
+      {/* Modal for larger image view */}
+      <Modal visible={imageModalVisible} transparent={true} onRequestClose={closeModal}>
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={styles.modalBackground}>
+            <TouchableOpacity onPress={closeModal} style={styles.imageModelcloseButton}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+            {selectedImage !== null && (
+              <Image source={{ uri: selectedImage }} style={styles.fullImage} />
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -962,6 +942,53 @@ export default function FuelingScreen() {
 const styles = StyleSheet.create({
   main: {
     backgroundColor: 'dark',
+  },
+  grid: {
+    width: "100%",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap:1,
+  },
+  gridItem: {
+    width: '32%', // Slightly less than 33% to allow for some spacing
+    marginBottom: 10,
+  },
+  gridImage: {
+    width: '100%', // Make sure the image fills its container
+    aspectRatio: 1,
+    borderWidth: 1,
+    resizeMode: 'cover',
+    borderRadius: 4,
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)', // Semi-transparent background
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalContainer: {
+    width: '90%',
+    height: '80%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageModelcloseButton: {
+    paddingVertical: 10,
+    paddingHorizontal:150,
+    borderRadius: 5,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  fullImage: {
+    width: '100%',
+    height: '90%',
+    resizeMode: 'contain', // Keeps aspect ratio while showing the image
   },
   navContainer: {
     paddingVertical: 10,
@@ -1006,7 +1033,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   section: {
-    marginBottom: 8,
+    marginBottom: 0,
   },
   inputContainer: {
     marginBottom: 8,

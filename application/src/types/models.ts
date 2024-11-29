@@ -84,12 +84,12 @@ export interface FormData {
     driverName: string;
     driverId: string;
     driverMobile: string;
-    fuelMeterImage: string | null;
+    fuelMeterImage: string[] | null;
     slipImage: string | null;
     fuelQuantity: string;
     quantityType: 'Full' | 'Part' | 'N/A';
     gpsLocation: string;
-    fuelingDateTime: string;
+    fuelingDateTime: Date;
     bowser: {
         regNo: string,
         driver: {
