@@ -29,7 +29,7 @@ const App = () => {
   const [isOfflineDataModalVisible, setOfflineDataModalVisible] = useState(false);
   const [isOfflineDataLoading, setIsOfflineDataLoading] = useState(false);
   const { colors } = useTheme();
-  const appVersion = 34
+  const appVersion = 37
   const [appurl, setAppUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -49,13 +49,12 @@ const App = () => {
       setIsOnline(state.isConnected ?? false);
     });
 
-    showUpdateLink()
-
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     const initializeApp = async () => {
+      showUpdateLink()
       try {
         await syncOfflineData();
 
@@ -452,7 +451,7 @@ const App = () => {
       <Link style={styles.button} href={'/fueling'}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: 'white' }}>
-            गाड़ी को तेल दें 
+            गाड़ी को तेल दें
           </Text>
           <MaterialIcons name="local-gas-station" size={24} color="white" style={{ marginHorizontal: 10 }} />
         </View>
@@ -461,7 +460,7 @@ const App = () => {
         {/* disabled */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: 'white' }}>
-            ऑर्डर्स चेक करें 
+            ऑर्डर्स चेक करें
           </Text>
           <Ionicons name="notifications" size={20} color="white" style={{ marginHorizontal: 10 }} />
         </View>
@@ -496,8 +495,10 @@ const App = () => {
                   </TouchableOpacity>
                 </>
               )}
-              {appurl && <Link style={styles.button} href={appurl}><Text style={{ color: colors.text }}>ऐप अपडेट करें</Text>
-              </Link>}
+              {appurl &&
+                <View style={styles.modalContainer}>
+                  <Link style={styles.button} href={appurl}><Text style={{ color: colors.text }}>ऐप अपडेट करें</Text></Link>
+                </View>}
             </ScrollView>
             <View style={styles.modalFooter}>
               <TouchableOpacity style={styles.logoutButton} onPress={() => handleLogout(false)}>
