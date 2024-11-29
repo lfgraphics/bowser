@@ -195,12 +195,55 @@ router.patch('/update/:id', async (req, res) => {
             return res.status(404).json({ heading: "Failed", message: 'Record not found' });
         }
 
-        res.json({ heading: "Success!", message: 'Record updated successfully', updatedRecord }); // Send the updated record and a success message back to the client
+        res.status(200).json({ heading: "Success!", message: 'Record updated successfully', updatedRecord }); // Send the updated record and a success message back to the client
     } catch (error) {
         console.error('Error updating record:', error);
         res.status(500).json({ heading: "Failed!", message: 'Internal server error' });
     }
 });
+router.patch('/verify/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const updatedRecord = await FuelingTransaction.findByIdAndUpdate(id, { verified: true });
+
+        if (!updatedRecord) {
+            return res.status(404).json({ heading: "Failed", message: 'Record not found' });
+        }
+
+        res.status(200).json({ heading: "Success!", message: 'Record verified successfully' });
+    } catch (error) {
+        console.error('Error updating record:', error);
+        res.status(500).json({ heading: "Failed!", message: 'Internal server error' });
+    }
+});
+router.post('/verify', async (req, res) => {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ heading: "Failed!", message: "Invalid or empty ids array" });
+    }
+
+    try {
+        const result = await FuelingTransaction.updateMany(
+            { _id: { $in: ids } },
+            { $set: { verified: true } }
+        );
+
+        if (result.modifiedCount === 0) {
+            return res.status(404).json({ heading: "Failed!", message: "No records found to update" });
+        }
+
+        res.json({
+            heading: "Success!",
+            message: `${result.modifiedCount} record(s) verified successfully`,
+            result
+        });
+    } catch (error) {
+        console.error('Error updating records:', error);
+        res.status(500).json({ heading: "Failed!", message: 'Internal server error' });
+    }
+});
+
 
 router.delete('/delete/:id', async (req, res) => {
     const id = req.params.id;

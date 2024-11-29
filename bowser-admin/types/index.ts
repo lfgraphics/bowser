@@ -148,7 +148,7 @@ export interface Vehicle {
 }
 
 export interface DispensesRecord {
-    _id: mongoose.Schema.Types.ObjectId;
+    _id: string;
     orderId: mongoose.Schema.Types.ObjectId,
     category: string;
     party: string;

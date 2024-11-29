@@ -1,7 +1,7 @@
 import { Bowser, Role, TripSheet, UnauthorizedLogin, User } from "@/types";
 import axios from "axios";
 
-const BASE_URL = 'https://bowser-backend-2cdr.onrender.com';  //https://bowser-backend-2cdr.onrender.com  http://localhost:5000
+export const BASE_URL = 'https://bowser-backend-2cdr.onrender.com';  //https://bowser-backend-2cdr.onrender.com  http://localhost:5000
 
 // Users and Roles Management
 export const getUsers = async (): Promise<User[]> => {

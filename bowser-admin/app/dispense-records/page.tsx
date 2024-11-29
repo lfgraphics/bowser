@@ -29,6 +29,9 @@ import Link from "next/link";
 import { isAuthenticated } from "@/lib/auth";
 import Loading from "../loading";
 import { Check, Eye, ListChecks, ListX, X } from "lucide-react";
+import { BASE_URL } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 const VehicleDispensesPage = () => {
     const [records, setRecords] = useState<DispensesRecord[]>([]);
@@ -38,7 +41,7 @@ const VehicleDispensesPage = () => {
     const [category, setCategory] = useState('all');
     const [filter, setFilter] = useState({ bowserNumber: "", driverName: "", tripSheetId: "", verified: "all", vehicleNo: "" });
     const [sortBy, setSortBy] = useState("fuelingDateTime");
-    const [order, setOrder] = useState("asc");
+    const [order, setOrder] = useState("desc");
     const [localBowserNumber, setLocalBowserNumber] = useState("");
     const [localDriverName, setLocalDriverName] = useState("");
     const [localTripSheetId, setLocalTripSheetId] = useState("");
@@ -46,8 +49,9 @@ const VehicleDispensesPage = () => {
     const [limit, setLimit] = useState(20);
     const [loading, setLoading] = useState(true);
     const [verificationStatus, setVerificationStatus] = useState("all");
-    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set()); // Track selected rows
-    const [selectAll, setSelectAll] = useState(false); // Track if all rows are selected
+    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+    const [selectAll, setSelectAll] = useState(false);
+    const { toast } = useToast();
 
     const checkAuth = () => {
         const authenticated = isAuthenticated();
@@ -67,22 +71,6 @@ const VehicleDispensesPage = () => {
     const fetchRecords = async () => {
         setLoading(true);
         try {
-            // const dateFilter = getBackendDateFilter(); // Function to get the date range filter
-
-            // let adjustedStartDate, adjustedEndDate;
-
-            // if (selectedDateRange?.from) {
-            //     // Set startDate to the beginning of the day
-            //     adjustedStartDate = new Date(selectedDateRange.from);
-            //     adjustedStartDate.setHours(0, 0, 0, 0);
-            // }
-
-            // if (selectedDateRange?.to) {
-            //     // Set endDate to the end of the day
-            //     adjustedEndDate = new Date(selectedDateRange.to);
-            //     adjustedEndDate.setHours(23, 59, 59, 999);
-            // }
-
             const response = await axios.get("https://bowser-backend-2cdr.onrender.com/listDispenses", { //https://bowser-backend-2cdr.onrender.com
                 params: {
                     page: currentPage,
@@ -95,8 +83,6 @@ const VehicleDispensesPage = () => {
                     vehicleNo: filter.vehicleNo,
                     verified: verificationStatus,
                     category,
-                    // startDate: adjustedStartDate ? adjustedStartDate.toISOString() : undefined,
-                    // endDate: adjustedEndDate ? adjustedEndDate.toISOString() : undefined,
                 },
             });
 
@@ -189,11 +175,66 @@ const VehicleDispensesPage = () => {
         setSelectAll(!selectAll); // Toggle the select all state
     };
 
+    const verifyOne = async (id: string) => {
+        try {
+            let response = await axios.patch(`${BASE_URL}/listDispenses/verify/${id}`)
+            if (response.status == 200) {
+                setRecords((prevRecords) =>
+                    prevRecords.map((record) =>
+                        record._id === id ? { ...record, verified: true } : record
+                    )
+                );
+                toast({ title: response.data.heading, description: response.data.message, variant: "success" });
+            }
+        } catch (err) {
+            if (err instanceof Error) {
+                toast({ title: "Error", description: err.message, variant: "destructive" });
+            } else {
+                toast({ title: "Error", description: "An unknown error occurred", variant: "destructive" });
+            }
+        }
+    }
+
+    const verifyMultiple = async () => {
+        if (selectedRows.size === 0) {
+            return;
+        }
+
+        const idsToVerify = Array.from(selectedRows).filter((id) => {
+            const record = records.find((r) => r._id === id);
+            return record && !record.verified;
+        });
+
+        if (idsToVerify.length === 0) {
+            alert('no data to verify')
+            return;
+        }
+
+        try {
+            let response = await axios.post(`${BASE_URL}/listDispenses/verify/`, { ids: idsToVerify });
+            if (response.status === 200) {
+                setRecords((prevRecords) =>
+                    prevRecords.map((record) =>
+                        idsToVerify.includes(record._id) ? { ...record, verified: true } : record
+                    )
+                );
+                toast({ title: response.data.heading, description: response.data.message, variant: "success" });
+            }
+        } catch (err) {
+            if (err instanceof Error) {
+                toast({ title: "Error", description: err.message, variant: "destructive" });
+            } else {
+                toast({ title: "Error", description: "An unknown error occurred", variant: "destructive" });
+            }
+        }
+    };
+
     return (
         <div>
             {(loading || records.length < 1) && (
                 <Loading />
             )}
+            <Toaster />
             <div className="bigScreen hidden lg:block">
                 <div className="mb-4 flex flex-col gap-3 justify-between  sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
                     {/* Sort By Dropdown */}
@@ -294,6 +335,12 @@ const VehicleDispensesPage = () => {
                     <div className="flex items-center justify-between text-muted-foreground font-[200]">{records.length} out of {totalRecords} records </div>
                     <Button variant="outline" onClick={toggleSelectAll}>
                         {selectAll ? <ListX size={32} /> : <ListChecks size={32} />}
+                    </Button>
+                    <Button disabled={!(selectedRows.size > 0)} variant="outline" onClick={verifyMultiple}>
+                        Verify Selected Records
+                    </Button>
+                    <Button disabled variant="outline" onClick={verifyMultiple}>
+                        Post to tally
                     </Button>
                     <Button onClick={exportToExcel} className="w-full sm:w-auto">
                         Export to Excel
@@ -429,14 +476,19 @@ const VehicleDispensesPage = () => {
                     {records.length > 0 && records.map((record, index) => (
                         <TableRow
                             key={index}
-                            onClick={() => toggleRowSelection(`${record._id}`)}
+                            onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                const target = e.target as HTMLElement;
+                                if (target.tagName !== 'BUTTON') {
+                                    toggleRowSelection(`${record._id}`);
+                                }
+                            }}
                             className={selectedRows.has(`${record._id}`) ? "bg-blue-200 hover:bg-blue-100 text-black" : ""}
                         >
                             <TableCell>{index + 1}</TableCell>
                             <TableCell>{record.tripSheetId}</TableCell>
-                            <TableCell>{record.category || 'Unspecified'}</TableCell>
-                            <TableCell>{record.party || 'Unspecified'}</TableCell>
-                            <TableCell>{record.fuelingDateTime.replace(/\/20(\d{2})/, "/$1")}</TableCell>
+                            <TableCell>{record.category}</TableCell>
+                            <TableCell>{record.party}</TableCell>
+                            <TableCell>{`${new Date(record.fuelingDateTime).toISOString().split('T')[0].split('-').reverse().map((v, i) => i === 2 ? v.slice(-2) : v).join('-')}, ${new Date(record.fuelingDateTime).toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })}`}</TableCell>
                             <TableCell>{record.bowser.regNo}</TableCell>
                             <TableCell>{record.gpsLocation?.substring(0, 15) + "..."}</TableCell>
                             <TableCell>{record.driverName}</TableCell>
@@ -452,8 +504,9 @@ const VehicleDispensesPage = () => {
                                     </Button>
                                 </Link>
                             </TableCell>
-                            <TableCell>{record.verified ? <Check /> : <X />}</TableCell>
-                            <TableCell>{record.posted ? <Check /> : <X />}</TableCell>
+                            <TableCell>{record.verified ? <Check /> : <Button onClick={() => { verifyOne(String(record._id)) }} variant={selectedRows.has(`${record._id}`) ? "secondary" : "outline"}>Verify</Button>}</TableCell>
+                            {/* <X /> */}
+                            <TableCell>{record.posted ? <Check /> : <Button disabled onClick={() => { verifyOne(String(record._id)) }} variant={selectedRows.has(`${record._id}`) ? "secondary" : "outline"}>Post</Button>}</TableCell>
                         </TableRow>
                     ))}
                     {/* Calculate total fuel quantity if filtered by tripSheetId */}
@@ -484,7 +537,7 @@ const VehicleDispensesPage = () => {
                     Next
                 </Button>
             </div>
-        </div>
+        </div >
     );
 };
 
