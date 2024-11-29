@@ -108,8 +108,6 @@ async function syncDriversData() {
   const localData = await localCollection.find({ Name: { $regex: 'ITPL', $options: 'i' } }, { projection: { _id: 1, Name: 1, ITPLID: 1, MobileNo: 1 } }).toArray();
   console.log("Fetched drivers data from Local:", localData.length, "documents.");
 
-  const localDataMap = new Map(localData.map(doc => [doc._id.toString(), doc]));
-
   // Step 2: Prepare data for insertion and updates
   const newDocumentsToAtlas = [];
   const updateMobileInLocal = [];
@@ -183,8 +181,6 @@ async function syncVechiclesData() {
   const localData = await localCollection.find({ AssetsType: { $regex: 'Own', $options: 'i' } }, { projection: { _id: 1, VehicleNo: 1, AssetsType: 1 } }).toArray();
   console.log("Fetched vehicles data from Local:", localData.length, "documents.");
 
-  const localDataMap = new Map(localData.map(doc => [doc._id.toString(), doc]));
-
   // Step 2: Prepare new documents to insert into Atlas
   const newDocumentsToAtlas = [];
 
@@ -203,25 +199,6 @@ async function syncVechiclesData() {
     console.log('Nothing new to sync')
   }
 }
-
-// async function deleteOtherFieldsInAtlas() {
-//   const atlasCollection = atlasClient.db('TransportData').collection('VehiclesCollection');
-//   const documents = await atlasCollection.find({}, { projection: { _id: 1, VehicleNo: 1, AssetsType: 1 } }).toArray();
-
-//   const bulkOps = documents.map(doc => ({
-//     updateOne: {
-//       filter: { _id: doc._id },
-//       update: { $set: { VehicleNo: doc.VehicleNo, AssetsType: doc.AssetsType }, $unset: Object.keys(doc).filter(key => !['_id', 'VehicleNo', 'AssetsType'].includes(key)).reduce((acc, key) => { acc[key] = ''; return acc; }, {}) }
-//     }
-//   }));
-
-//   console.log(bulkOps.length)
-
-//   // if (bulkOps.length > 0) {
-//   //   await localCollection.bulkWrite(bulkOps);
-//   //   console.log(`Updated ${bulkOps.length} documents in Local to delete all other fields except _id, VehicleNo, and AssetsType.`);
-//   // }
-// }
 
 // Functions calls
 async function main() {
