@@ -511,7 +511,7 @@ export default function FuelingScreen() {
   const validateTrip = async (): Promise<boolean> => {
     if (isOnline && tripSheetId) {
       try {
-        const baseUrl = 'http://192.168.137.1:5000' //'http://192.168.137.1:5000'; //https://bowser-backend-2cdr.onrender.com
+        const baseUrl = 'https://bowser-backend-2cdr.onrender.com' //'http://192.168.137.1:5000'; //https://bowser-backend-2cdr.onrender.com
         const endpoint = `/tripSheet/all?tripSheetId=${tripSheetId}&unsettled=true`;
 
         // Fetch data
