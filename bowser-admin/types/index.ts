@@ -66,8 +66,8 @@ export interface Trip {
 
 export interface TripSheet {
     _id?: string;
-    tripSheetId: string;
-    tripSheetGenerationDateTime: string;
+    tripSheetId: number;
+    tripSheetGenerationDateTime?: Date;
     bowserDriver: {
         handOverDate: string;
         name: string;

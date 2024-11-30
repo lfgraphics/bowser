@@ -6,14 +6,41 @@ const User = require('../models/user');
 const Bowser = require('../models/bowser');
 
 router.post('/create', async (req, res) => {
-    let tripSheetId = req.body.tripSheetId
-    if (!tripSheetId || typeof tripSheetId !== 'string') {
+    let tripSheetId = req.body.tripSheetId;
+
+    if (!tripSheetId) {
         console.error("Invalid tripSheetId:", tripSheetId);
-        res.status(400).json({ message: 'Invalid tripSheetId' });
-        throw new Error("tripSheetId cannot be null or undefined");
+        return res.status(400).json({ message: 'Invalid tripSheetId' });
     }
+
     try {
+        // Extract the bowser registration number from the request
+        const newSheetBowser = req.body.bowser.regNo;
+
+        if (!newSheetBowser) {
+            return res.status(400).json({ message: 'Bowser registration number is required.' });
+        }
+
+        // Find the Bowser document using the registration number
+        const bowser = await Bowser.findOne({ regNo: newSheetBowser });
+
+        if (bowser && bowser.currentTrip) {
+            // If currentTrip exists, check if the trip is settled
+            const currentTrip = await TripSheet.findById(bowser.currentTrip);
+
+            if (currentTrip && !currentTrip.settelment.settled) {
+                // If the current trip is not settled, return an error
+                return res.status(405).json({
+                    title: "Error",
+                    message: `This bowser is currently on an unsettled trip. First settle the existing unsettled trip: (${currentTrip.tripSheetId}) then create a new one.`
+                });
+            }
+        }
+
+        // Create a new TripSheet instance
         const newSheet = new TripSheet(req.body);
+
+        // Define save options
         const saveOptions = {
             writeConcern: {
                 w: 'majority',
@@ -21,30 +48,36 @@ router.post('/create', async (req, res) => {
             }
         };
 
+        // Save the new TripSheet with a timeout promise
         const savePromise = newSheet.save(saveOptions);
         const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Save operation timed out')), 35000)
         );
 
+        // Await the result of either save or timeout
         await Promise.race([savePromise, timeoutPromise]);
 
-        const bowserDriverId = req.body.bowserDriver[0].id;
-        const bowserRegNo = req.body.bowser.regNo;
-        await User.findOneAndUpdate(
-            { userId: bowserDriverId },
-            { $set: { bowserId: bowserRegNo } },
-            { new: true, upsert: true }
-        );
+        // Update the bowser driver information
+        const bowserDriverId = req.body.bowserDriver[0]?.id;
+        if (bowserDriverId) {
+            await User.findOneAndUpdate(
+                { userId: bowserDriverId },
+                { $set: { bowserId: newSheetBowser } },
+                { new: true, upsert: true }
+            );
+        }
 
+        // Update the Bowser with the new trip information
         const updatedBowser = await Bowser.findOneAndUpdate(
-            { regNo: bowserRegNo },
+            { regNo: newSheetBowser },
             { $set: { currentTrip: newSheet._id } },
             { new: true }
         );
 
         if (!updatedBowser) {
-            console.warn(`No bowser found with regNo: ${bowserRegNo}`);
+            console.warn(`No bowser found with regNo: ${newSheetBowser}`);
         }
+
         res.status(200).json({ message: 'Trip Sheet created successfully' });
     } catch (err) {
         console.error('Error creating Trip Sheet:', err);
@@ -66,7 +99,7 @@ router.post('/create', async (req, res) => {
             });
         }
     }
-})
+});
 
 router.get('/all', async (req, res) => {
     const { driverName, bowserRegNo, tripSheetId, unsettled, sortField, sortOrder } = req.query;

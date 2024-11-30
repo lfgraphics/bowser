@@ -18,6 +18,7 @@ import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { TripSheet, Filters, Sort } from '@/types/index';
 import { isAuthenticated } from '@/lib/auth';
+import { BASE_URL } from '@/lib/api';
 
 
 const TripSheetPage = () => {
@@ -39,7 +40,7 @@ const TripSheetPage = () => {
         tripSheetId: '',
         unsettled: false,
     });
-    const [sort, setSort] = useState<Sort>({ field: '', order: 'desc' });
+    const [sort, setSort] = useState<Sort>({ field: 'tripSheetGenerationDateTime', order: 'desc' });
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
 
@@ -50,7 +51,7 @@ const TripSheetPage = () => {
     const loadSheets = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('https://bowser-backend-2cdr.onrender.com/tripsheet/all', {
+            const response = await axios.get(`${BASE_URL}/tripsheet/all`, {
                 params: { ...filters, sortField: sort.field, sortOrder: sort.order },
             });
             setSheets(response.data);
@@ -103,6 +104,7 @@ const TripSheetPage = () => {
             <Table className="w-full">
                 <TableHeader>
                     <TableRow>
+                        <TableHead>SN</TableHead>
                         <TableHead onClick={() => setSort({ field: 'tripSheetId', order: sort.order === 'asc' ? 'desc' : 'asc' })}>
                             <div className='flex gap-3'>Trip Sheet ID {sort.order === "asc" ? <ArrowUp10 /> : <ArrowDown01 />}</div>
                         </TableHead>
@@ -123,10 +125,11 @@ const TripSheetPage = () => {
                             <TableCell colSpan={6} className="text-center">No records found</TableCell>
                         </TableRow>
                     ) : (
-                        sheets.map((sheet) => (
+                        sheets.map((sheet, index) => (
                             <TableRow key={sheet._id}>
+                                <TableCell>{index + 1}</TableCell>
                                 <TableCell>{sheet.tripSheetId}</TableCell>
-                                <TableCell>{sheet.tripSheetGenerationDateTime}</TableCell>
+                                <TableCell>{`${new Date(sheet.tripSheetGenerationDateTime!).toISOString().split('T')[0].split('-').reverse().map((v, i) => i === 2 ? v.slice(-2) : v).join('-')}, ${new Date(sheet.tripSheetGenerationDateTime!).toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })}`}</TableCell>
                                 <TableCell>{sheet.bowserDriver[0].name}</TableCell>
                                 <TableCell>{sheet.bowserDriver[0].id}</TableCell>
                                 <TableCell>{sheet.bowser.regNo}</TableCell>

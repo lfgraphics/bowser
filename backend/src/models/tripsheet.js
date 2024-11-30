@@ -1,16 +1,10 @@
 const mongoose = require('mongoose');
+const moment = require("moment-timezone");
 const { bowsersDatabaseConnection } = require('../../config/database');
 
 const tripSheetSchema = new mongoose.Schema({
-    tripSheetId: { type: String, required: true, unique: true },
-    tripSheetGenerationDateTime: {
-        type: String,
-        default: () => {
-            const date = new Date();
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' };
-            return date.toLocaleDateString('en-IN', options);
-        }
-    },
+    tripSheetId: { type: Number, required: true, unique: true },
+    tripSheetGenerationDateTime: { type: Date, default: () => moment().tz("Asia/Kolkata").toDate() },
     bowserDriver: [
         {
             handOverDate: String,

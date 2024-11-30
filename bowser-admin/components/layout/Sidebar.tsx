@@ -27,14 +27,14 @@ export function Sidebar() {
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger>
           <Button
-            variant="ghost"
-            className="fixed top-4 left-4"
+            variant="secondary"
+            className="fixed top-4 left-4 z-30"
             onClick={toggleSidebar}
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="fixed top-0 left-0 z-10 h-full w-60 shadow bg-background">
+        <SheetContent side="left" className="fixed top-0 left-0 z-40 h-full w-60 shadow bg-background">
           <SheetHeader>
             <SheetTitle>Bowser Admin</SheetTitle>
           </SheetHeader>

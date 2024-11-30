@@ -17,6 +17,7 @@ import Loading from '@/app/loading';
 import { isAuthenticated } from '@/lib/auth';
 import { SearchModal } from '@/components/SearchModal';
 import { searchItems } from '@/utils/searchUtils';
+import { BASE_URL } from '@/lib/api';
 
 const TripSheetCreationPage: React.FC = () => {
     const checkAuth = () => {
@@ -28,10 +29,7 @@ const TripSheetCreationPage: React.FC = () => {
     useEffect(() => {
         checkAuth();
     }, []);
-    const [tripSheetId, setTripSheetId] = useState<string>('');
-    const [tripSheetGenerationDateTime, setTripSheetGenerationDateTime] = useState<string>(
-        new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
-    );
+    const [tripSheetId, setTripSheetId] = useState<number>(0);
     const [bowserDriver, setBowserDriver] = useState<{ handOverDate: string; name: string; id: string; phoneNo: string }[]>([
         { handOverDate: '', name: '', id: '', phoneNo: '' },
     ]);
@@ -60,8 +58,7 @@ const TripSheetCreationPage: React.FC = () => {
     });
 
     const resetForm = () => {
-        setTripSheetId('');
-        setTripSheetGenerationDateTime(new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
+        setTripSheetId(0);
         setBowserDriver([{ handOverDate: '', name: '', id: '', phoneNo: '' }]);
         setBowserRegNo('');
         setBowserOdometerStartReading(undefined);
@@ -74,17 +71,13 @@ const TripSheetCreationPage: React.FC = () => {
 
     const createTripSheet = async (tripSheet: TripSheet) => {
         try {
-            const response = await fetch('https://bowser-backend-2cdr.onrender.com/tripSheet/create', { //https://bowser-backend-2cdr.onrender.com http://localhost:5000
+            const response = await fetch(`${BASE_URL}/tripSheet/create`, { //https://bowser-backend-2cdr.onrender.com http://localhost:5000
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(tripSheet),
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to create Trip Sheet\n' + response.text);
-            }
 
             const result = await response.json();
             setAlertMessage(result.message);
@@ -100,7 +93,6 @@ const TripSheetCreationPage: React.FC = () => {
         try {
             const newTripSheet: TripSheet = {
                 tripSheetId,
-                tripSheetGenerationDateTime,
                 bowserDriver,
                 bowser: { regNo: bowserRegNo },
                 bowserOdometerStartReading,
@@ -127,7 +119,7 @@ const TripSheetCreationPage: React.FC = () => {
         setLoading(true);
         try {
             const response: ResponseBowser[] = await searchItems<ResponseBowser>(
-                'https://bowser-backend-2cdr.onrender.com/searchBowserDetails', //https://bowser-backend-2cdr.onrender.com
+                `${BASE_URL}/searchBowserDetails`, //https://bowser-backend-2cdr.onrender.com
                 regNo,
                 `No proper details found with the given regNo ${regNo}`
             );
@@ -159,7 +151,7 @@ const TripSheetCreationPage: React.FC = () => {
         setLoading(true);
         try {
             const drivers = await searchItems<User>(
-                'https://bowser-backend-2cdr.onrender.com/searchDriver/bowser-drivers', //https://bowser-backend-2cdr.onrender.com
+                `${BASE_URL}/searchDriver/bowser-drivers`, //https://bowser-backend-2cdr.onrender.com
                 userId,
                 'No driver found with the given ID'
             );
@@ -197,8 +189,9 @@ const TripSheetCreationPage: React.FC = () => {
             <div className="mb-4">
                 <Label>Trip Sheet ID</Label>
                 <Input
+                    type='number'
                     value={tripSheetId}
-                    onChange={(e) => setTripSheetId(e.target.value)}
+                    onChange={(e) => setTripSheetId(Number(e.target.value))}
                     placeholder="Enter TripSheet ID"
                 />
             </div>

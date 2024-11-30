@@ -230,12 +230,12 @@ const VehicleDispensesPage = () => {
     };
 
     return (
-        <div>
+        <div className="relative">
             {(loading || records.length < 1) && (
                 <Loading />
             )}
             <Toaster />
-            <div className="bigScreen hidden lg:block">
+            <div className="bigScreen bg-background z-10 hidden lg:block sticky top-0 py-3">
                 <div className="mb-4 flex flex-col gap-3 justify-between  sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
                     {/* Sort By Dropdown */}
                     <Select value={sortBy} onValueChange={setSortBy}>
@@ -347,7 +347,7 @@ const VehicleDispensesPage = () => {
                     </Button>
                 </div>
             </div>
-            <Accordion type="single" collapsible className="block lg:hidden smallScreen">
+            <Accordion type="single" collapsible className="block lg:hidden smallScreen bg-background z-10 top-0 py-2">
                 <AccordionItem value="item-1">
                     <AccordionTrigger>Filters and sorting</AccordionTrigger>
                     <AccordionContent>
