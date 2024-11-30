@@ -159,7 +159,7 @@ export interface DispensesRecord {
     driverName: string,
     driverId: string,
     driverMobile: string,
-    fuelMeterImage: string,
+    fuelMeterImage: string[],
     slipImage: string,
     fuelQuantity: string,
     quantityType: string,

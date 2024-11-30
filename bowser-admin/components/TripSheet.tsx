@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { TripSheet, Filters, Sort } from '@/types/index';
 import { isAuthenticated } from '@/lib/auth';
 import { BASE_URL } from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 
 
 const TripSheetPage = () => {
@@ -129,7 +130,7 @@ const TripSheetPage = () => {
                             <TableRow key={sheet._id}>
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>{sheet.tripSheetId}</TableCell>
-                                <TableCell>{`${new Date(sheet.tripSheetGenerationDateTime!).toISOString().split('T')[0].split('-').reverse().map((v, i) => i === 2 ? v.slice(-2) : v).join('-')}, ${new Date(sheet.tripSheetGenerationDateTime!).toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })}`}</TableCell>
+                                <TableCell>{`${formatDate(sheet.tripSheetGenerationDateTime!)}`}</TableCell>
                                 <TableCell>{sheet.bowserDriver[0].name}</TableCell>
                                 <TableCell>{sheet.bowserDriver[0].id}</TableCell>
                                 <TableCell>{sheet.bowser.regNo}</TableCell>

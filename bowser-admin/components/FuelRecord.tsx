@@ -12,6 +12,8 @@ import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { isAuthenticated } from '@/lib/auth';
+import { BASE_URL } from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 
 interface FuelRecordCardProps {
     record?: DispensesRecord;
@@ -57,10 +59,6 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
     useEffect(() => {
         setUpdatedRecord(record);
     }, [record]);
-
-    if (!record || loading) {
-        return <Loading />;
-    }
 
     // Function to handle image click
     const openImageModal = (image: string) => {
@@ -112,7 +110,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
         }
 
         try {
-            let response = await axios.patch(`https://bowser-backend-2cdr.onrender.com/listDispenses/update/${record._id}`, updatedFields); // https://bowser-backend-2cdr.onrender.com/listDispenses/update
+            let response = await axios.patch(`${BASE_URL}/listDispenses/update/${record._id}`, updatedFields); // https://bowser-backend-2cdr.onrender.com/listDispenses/update
             setShowAlert(true)
             setAlertTitle(response.data.heading)
             setAlertMessage(response.data.message)
@@ -131,7 +129,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
     const handleDelete = async () => {
         setLoading(true)
         try {
-            await axios.delete(`https://bowser-backend-2cdr.onrender.com/listDispenses/delete/${record._id}`); //https://bowser-backend-2cdr.onrender.com
+            await axios.delete(`${BASE_URL}/listDispenses/delete/${record._id}`); //https://bowser-backend-2cdr.onrender.com
             setShowAlert(true);
             setAlertTitle("Success");
             setAlertMessage("Deleted Successfully");
@@ -147,7 +145,8 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
 
     return (
         <>
-            <Card className="p-4 shadow-lg">
+            {loading && <Loading />}
+            <Card className="p-4 shadow-lg mt-4">
                 {/* Header */}
                 <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
@@ -168,102 +167,111 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
 
                 {/* Content */}
                 <CardContent>
-                    <div className="mb-4">
-                        <h2 className="text-md font-semibold">Vehicle Details</h2>
-                        <p className="text-sm text-foreground"><strong>Vehicle Number:</strong> {editing ? (
-                            <Input
-                                value={updatedRecord?.vehicleNumber}
-                                onChange={(e) => {
-                                    setUpdatedRecord({ ...updatedRecord, vehicleNumber: e.target.value });
-                                }}
-                            />
-                        ) : (
-                            updatedRecord?.vehicleNumber
-                        )}</p>
-                        <div className="flex space-x-4 mt-2">
-                            <img className="w-32 h-32 object-cover rounded-md" src={`${record?.vehicleNumberPlateImage}`} alt="Vehicle Plate"
-                                onClick={() => openImageModal(record?.vehicleNumberPlateImage || '')}
-                            />
-                        </div>
-                    </div>
+                    {(updatedRecord || record) &&
+                        <>
+                            <div className="mb-4">
+                                <h2 className="text-md font-semibold">Vehicle Details</h2>
+                                <p className="text-sm text-foreground"><strong>Vehicle Number:</strong> {editing ? (
+                                    <Input
+                                        value={updatedRecord?.vehicleNumber}
+                                        onChange={(e) => {
+                                            setUpdatedRecord({ ...updatedRecord, vehicleNumber: e.target.value });
+                                        }}
+                                    />
+                                ) : (
+                                    updatedRecord?.vehicleNumber
+                                )}</p>
+                                <div className="flex space-x-4 mt-2">
+                                    <img className="w-32 h-32 object-cover rounded-md" src={`${record?.vehicleNumberPlateImage}`} alt="Vehicle Plate"
+                                        onClick={() => openImageModal(record?.vehicleNumberPlateImage || '')}
+                                    />
+                                </div>
+                            </div>
 
-                    <div className="mb-4">
-                        <h2 className="text-md font-semibold">Fueling Details</h2>
-                        <p className="text-sm text-gray-600"><strong>Quantity:</strong> {editing ? (
-                            <Input
-                                value={updatedRecord?.fuelQuantity}
-                                onChange={(e) => {
-                                    setUpdatedRecord({ ...updatedRecord, fuelQuantity: e.target.value });
-                                }}
-                            />
-                        ) : (
-                            `${updatedRecord?.fuelQuantity} Liter - ${updatedRecord?.quantityType}`
-                        )}</p>
-                        <p className="text-sm text-gray-600"><strong>Date & Time:</strong> {record?.fuelingDateTime}</p>
-                        <h2 className="text-md font-semibold">Bowser Details</h2>
-                        <p className="text-sm text-gray-600"><strong>Registration Number:</strong> {record?.bowser.regNo || "Not Registered"}</p>
-                        <p className="text-sm text-gray-600"><strong>Driver:</strong> {record?.bowser.driver.name}</p>
-                        <p className="text-sm text-gray-600"><strong>Phone:</strong> {record?.bowser.driver.phoneNo}</p>
-                    </div>
+                            <div className="mb-4">
+                                <h2 className="text-md font-semibold">Fueling Details</h2>
+                                <p className="text-sm text-gray-600"><strong>Quantity:</strong> {editing ? (
+                                    <Input
+                                        value={updatedRecord?.fuelQuantity}
+                                        onChange={(e) => {
+                                            setUpdatedRecord({ ...updatedRecord, fuelQuantity: e.target.value });
+                                        }}
+                                    />
+                                ) : (
+                                    `${updatedRecord?.fuelQuantity} Liter - ${updatedRecord?.quantityType}`
+                                )}</p>
+                                <p className="text-sm text-gray-600"><strong>Date & Time:</strong> {formatDate(record?.fuelingDateTime)}</p>
+                                <h2 className="text-md font-semibold">Bowser Details</h2>
+                                <p className="text-sm text-gray-600"><strong>Registration Number:</strong> {record?.bowser.regNo || "Not Registered"}</p>
+                                <p className="text-sm text-gray-600"><strong>Driver:</strong> {record?.bowser.driver.name}</p>
+                                <p className="text-sm text-gray-600"><strong>Phone:</strong> {record?.bowser.driver.phoneNo}</p>
+                            </div>
 
-                    <div className="mb-4">
-                        <h2 className="text-md font-semibold">Location</h2>
-                        <p className="text-sm text-gray-600 flex items-center">
-                            <MapPin className="w-4 h-4 mr-1" />
-                            {editing ? (
-                                <Input
-                                    value={updatedRecord?.gpsLocation}
-                                    onChange={(e) => {
-                                        setUpdatedRecord({ ...updatedRecord, gpsLocation: e.target.value });
-                                    }}
-                                />
-                            ) : (
-                                updatedRecord?.gpsLocation
-                            )}
-                        </p>
-                    </div>
-                    <div className="flex space-x-4">
-                        <div>
-                            <h2 className="text-md font-semibold">Fuel Meter Image</h2>
-                            <img
-                                src={record?.fuelMeterImage}
-                                alt="Fuel Meter"
-                                className="w-32 h-32 object-cover rounded-md"
-                                onClick={() => openImageModal(record.fuelMeterImage)}
-                            />
-                        </div>
-                        <div>
-                            <h2 className="text-md font-semibold">Slip Image</h2>
-                            <img
-                                src={record?.slipImage}
-                                alt="Slip"
-                                className="w-32 h-32 object-cover rounded-md"
-                                onClick={() => openImageModal(record.slipImage)}
-                            />
-                        </div></div>
+                            <div className="mb-4">
+                                <h2 className="text-md font-semibold">Location</h2>
+                                <p className="text-sm text-gray-600 flex items-center">
+                                    <MapPin className="w-4 h-4 mr-1" />
+                                    {editing ? (
+                                        <Input
+                                            value={updatedRecord?.gpsLocation}
+                                            onChange={(e) => {
+                                                setUpdatedRecord({ ...updatedRecord, gpsLocation: e.target.value });
+                                            }}
+                                        />
+                                    ) : (
+                                        updatedRecord?.gpsLocation
+                                    )}
+                                </p>
+                            </div>
+                            <div className="flex space-x-4">
+                                <div>
+                                    <h2 className="text-md font-semibold">Fuel Meter Image</h2>
+                                    <div className="flex gap-3">
+                                        {record?.fuelMeterImage.map((img, index) => (
+                                            <img
+                                                key={index}
+                                                src={img}
+                                                alt="Fuel Meter"
+                                                className="w-32 h-32 object-cover rounded-md"
+                                                onClick={() => openImageModal(img)}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2 className="text-md font-semibold">Slip Image</h2>
+                                    {record?.slipImage && <img
+                                        src={record?.slipImage}
+                                        alt="Slip"
+                                        className="w-32 h-32 object-cover rounded-md"
+                                        onClick={() => openImageModal(record.slipImage)}
+                                    />}
+                                </div></div>
 
-                    <div className="recordVerificationStatus mt-6 flex items-center">
-                        <Label htmlFor="verification" >Record Verification Status: </Label>{editing ? (
-                            <Checkbox
-                                id='verification'
-                                className='ml-3'
-                                checked={updatedRecord?.verified}
-                                onCheckedChange={(checked) => {
-                                    setUpdatedRecord({ ...updatedRecord, verified: checked });
-                                }}
-                            />
-                        ) : (
-                            updatedRecord?.verified ? (
-                                <Badge variant="succes" className="ml-2 flex items-center h-6 w-28">
-                                    <Check className="w-4 h-4 mr-1" /> Verified
-                                </Badge>
-                            ) : (
-                                <Badge variant="destructive" className="ml-2 flex items-center h-6 w-28">
-                                    <X className="w-4 h-4 mr-1" /> Not Verified
-                                </Badge>
-                            )
-                        )}
-                    </div>
+                            <div className="recordVerificationStatus mt-6 flex items-center">
+                                <Label htmlFor="verification" >Record Verification Status: </Label>{editing ? (
+                                    <Checkbox
+                                        id='verification'
+                                        className='ml-3'
+                                        checked={updatedRecord?.verified}
+                                        onCheckedChange={(checked) => {
+                                            setUpdatedRecord({ ...updatedRecord, verified: checked });
+                                        }}
+                                    />
+                                ) : (
+                                    updatedRecord?.verified ? (
+                                        <Badge variant="succes" className="ml-2 flex items-center h-6 w-28">
+                                            <Check className="w-4 h-4 mr-1" /> Verified
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="destructive" className="ml-2 flex items-center h-6 w-28">
+                                            <X className="w-4 h-4 mr-1" /> Not Verified
+                                        </Badge>
+                                    )
+                                )}
+                            </div>
+                        </>
+                    }
                 </CardContent>
 
                 {/* Footer */}
@@ -279,7 +287,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                 </Button>
                                 {superAdmin && <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                                     <AlertDialogTrigger asChild>
-                                        <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>Delete Trip Sheet</Button>
+                                        <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>Delete this record</Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogHeader>

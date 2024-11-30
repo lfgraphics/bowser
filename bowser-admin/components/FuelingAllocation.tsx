@@ -23,6 +23,7 @@ import { searchItems } from '@/utils/searchUtils'
 import { Vehicle } from "@/types"
 import { ObjectId } from "mongoose"
 import Loading from "@/app/loading"
+import { BASE_URL } from "@/lib/api"
 
 export default function FuelingAllocation() {
     const [isSearching, setIsSearching] = useState(false);
@@ -95,7 +96,7 @@ export default function FuelingAllocation() {
         setIsSearching(true);
         try {
             const response: ResponseBowser[] = await searchItems<ResponseBowser>(
-                'https://bowser-backend-2cdr.onrender.com/searchBowserDetails/trip', //https://bowser-backend-2cdr.onrender.com
+                `${BASE_URL}/searchBowserDetails/trip`, //https://bowser-backend-2cdr.onrender.com
                 regNo,
                 `No proper details found with the given regNo ${regNo}`
             );
@@ -380,7 +381,7 @@ export default function FuelingAllocation() {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="flex items-center justify-center min-h-full bg-background py-4">
             {(submitting || isSearching) && (
                 <Loading />
             )}

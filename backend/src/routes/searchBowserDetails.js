@@ -37,7 +37,10 @@ router.get('/trip/:tripSheetId', async (req, res) => {
     const tripSheetId = req.params.tripSheetId;
 
     try {
-        const trip = await TripSheet.findOne({ tripSheetId: { $regex: tripSheetId, $options: 'i' } });
+        const trip = await TripSheet.findOne({
+            tripSheetId: Number(tripSheetId),
+            'settelment.settled': false
+        });
 
         if (!trip) {
             return res.status(404).json({ message: 'No trip found with the given tripSheetId' });

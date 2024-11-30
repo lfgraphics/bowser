@@ -33,6 +33,7 @@ import { Check, Eye, ListChecks, ListX, X } from "lucide-react";
 import { BASE_URL } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import { formatDate } from "@/lib/utils";
 
 const VehicleDispensesPage = () => {
     const [records, setRecords] = useState<DispensesRecord[]>([]);
@@ -462,8 +463,8 @@ const VehicleDispensesPage = () => {
                         <TableHead>Fueling Time</TableHead>
                         <TableHead>Bowser No.</TableHead>
                         <TableHead>Bowser Location</TableHead>
-                        <TableHead>Driver Name</TableHead>
-                        <TableHead>Driver Mob.</TableHead>
+                        <TableHead>Driver/Manager</TableHead>
+                        <TableHead>Phone No.</TableHead>
                         <TableHead>Vehicle Number</TableHead>
                         <TableHead>Odo Meter</TableHead>
                         <TableHead>Qty Type</TableHead>
@@ -489,7 +490,7 @@ const VehicleDispensesPage = () => {
                             <TableCell>{record.tripSheetId}</TableCell>
                             <TableCell>{record.category}</TableCell>
                             <TableCell>{record.party}</TableCell>
-                            <TableCell>{`${new Date(record.fuelingDateTime).toISOString().split('T')[0].split('-').reverse().map((v, i) => i === 2 ? v.slice(-2) : v).join('-')}, ${new Date(record.fuelingDateTime).toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })}`}</TableCell>
+                            <TableCell>{`${formatDate(record.fuelingDateTime)}`}</TableCell>
                             <TableCell>{record.bowser.regNo}</TableCell>
                             <TableCell>{record.gpsLocation?.substring(0, 15) + "..."}</TableCell>
                             <TableCell>{record.driverName}</TableCell>
