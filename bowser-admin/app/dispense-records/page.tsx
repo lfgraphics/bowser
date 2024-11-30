@@ -9,6 +9,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
+    TableCaption
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -235,7 +236,7 @@ const VehicleDispensesPage = () => {
                 <Loading />
             )}
             <Toaster />
-            <div className="bigScreen bg-background z-10 hidden lg:block sticky top-0 py-3">
+            <div className="bigScreen bg-background z-10 hidden lg:block sticky top-0 pt-[60px] pb-2">
                 <div className="mb-4 flex flex-col gap-3 justify-between  sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
                     {/* Sort By Dropdown */}
                     <Select value={sortBy} onValueChange={setSortBy}>
@@ -472,7 +473,7 @@ const VehicleDispensesPage = () => {
                         <TableHead>Posted</TableHead>
                     </TableRow>
                 </TableHeader>
-                <TableBody>
+                <TableBody className="h-[50%] overflow-y-scroll">
                     {records.length > 0 && records.map((record, index) => (
                         <TableRow
                             key={index}
@@ -518,25 +519,26 @@ const VehicleDispensesPage = () => {
                         <TableCell colSpan={2} className="text-right font-bold"></TableCell>
                     </TableRow>
                 </TableBody>
+                <TableCaption>
+                    <div className="flex justify-between mt-4">
+                        <Button
+                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                        >
+                            Previous
+                        </Button>
+                        <span>
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <Button
+                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </TableCaption>
             </Table>
-
-            <div className="flex justify-between mt-4">
-                <Button
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                >
-                    Previous
-                </Button>
-                <span>
-                    Page {currentPage} of {totalPages}
-                </span>
-                <Button
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                >
-                    Next
-                </Button>
-            </div>
         </div >
     );
 };

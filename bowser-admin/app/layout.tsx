@@ -38,8 +38,8 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {isAuth && <Sidebar />}
-          <div className={`min-h-screen`}>
-            <main className="p-4 md:p-8 pt-14">
+          <div className={`min-h-full`}>
+            <main className="px-4 pb-4 md:px-8 md:pb-8">
               {children}
             </main>
           </div>
