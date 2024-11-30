@@ -79,7 +79,7 @@ export interface FormData {
     odometer: string;
     orderId?: string;
     vehicleNumberPlateImage: string | null;
-    tripSheetId: string,
+    tripSheetId: number,
     vehicleNumber: string;
     driverName: string;
     driverId: string;

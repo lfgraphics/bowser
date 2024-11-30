@@ -107,9 +107,8 @@ router.get('/all', async (req, res) => {
 
     if (driverName) query['bowserDriver.name'] = { $regex: driverName, $options: 'i' };
     if (bowserRegNo) query['bowser.regNo'] = { $regex: bowserRegNo, $options: 'i' };
-    if (tripSheetId) query['tripSheetId'] = { $regex: tripSheetId, $options: 'i' };
+    if (tripSheetId) query['tripSheetId'] = tripSheetId;
     if (unsettled === 'true') query['settelment.settled'] = false;
-
     try {
         let sortOptions = {};
         if (sortField) {

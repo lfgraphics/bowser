@@ -30,8 +30,7 @@ export default function FuelingScreen() {
   const [driverMobile, setDriverMobile] = useState('');
   const [fuelQuantity, setFuelQuantity] = useState<string>('');
   const [gpsLocation, setGpsLocation] = useState('');
-  const [fuelingDateTime, setFuelingDateTime] = useState('');
-  const [tripSheetId, setTripSheetId] = useState('');
+  const [tripSheetId, setTripSheetId] = useState<number>(0);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [foundDrivers, setFoundDrivers] = useState<Driver[]>([]);
   const [selectedDriver, setSelectedDriver] = useState<string>('');
@@ -512,8 +511,8 @@ export default function FuelingScreen() {
   const validateTrip = async (): Promise<boolean> => {
     if (isOnline && tripSheetId) {
       try {
-        const baseUrl = 'https://bowser-backend-2cdr.onrender.com' //'http://192.168.137.1:5000';
-        const endpoint = `/tripSheet/all?tripSheetId=${encodeURIComponent(tripSheetId)}&unsettled=true`;
+        const baseUrl = 'http://192.168.137.1:5000' //'http://192.168.137.1:5000'; //https://bowser-backend-2cdr.onrender.com
+        const endpoint = `/tripSheet/all?tripSheetId=${tripSheetId}&unsettled=true`;
 
         // Fetch data
         const response = await fetch(`${baseUrl}${endpoint}`);
@@ -538,7 +537,7 @@ export default function FuelingScreen() {
       const userDataString = await AsyncStorage.getItem('userData');
       const userData = userDataString ? JSON.parse(userDataString) : null;
       const tripSheetId = userData ? userData['Trip Sheet Id'] : null;
-      setTripSheetId(tripSheetId);
+      setTripSheetId(Number(tripSheetId));
     } catch (error) {
       console.error('आप का डाटा नहीं मिल रहा कृपया दोबारा लॉग इन करें:', error);
     }
@@ -589,7 +588,7 @@ export default function FuelingScreen() {
           </View>
           <View style={styles.section}>
             <View style={styles.inputContainer}>
-              <ThemedText>ट्रिप शीट नम्बर: {tripSheetId}</ThemedText>
+              <ThemedText>ट्रिप शीट नम्बर: {String(tripSheetId)}</ThemedText>
             </View>
             {vehicleNumberPlateImage &&
               <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
@@ -808,8 +807,8 @@ export default function FuelingScreen() {
               {fuelMeterImage &&
                 fuelMeterImage.map((image, index) => (
                   <TouchableOpacity key={index} onPress={() => openModal(image)} style={styles.gridItem}>
-                  <Image source={{ uri: image }} style={styles.gridImage} />
-                </TouchableOpacity>
+                    <Image source={{ uri: image }} style={styles.gridImage} />
+                  </TouchableOpacity>
                 ))}
             </View>
             <TouchableOpacity
@@ -948,7 +947,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap:1,
+    gap: 1,
   },
   gridItem: {
     width: '32%', // Slightly less than 33% to allow for some spacing
@@ -978,7 +977,7 @@ const styles = StyleSheet.create({
   },
   imageModelcloseButton: {
     paddingVertical: 10,
-    paddingHorizontal:150,
+    paddingHorizontal: 150,
     borderRadius: 5,
   },
   closeButtonText: {
