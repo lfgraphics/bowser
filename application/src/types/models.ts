@@ -11,11 +11,20 @@ export interface Driver {
 export type FuelingTypes = 'Own' | 'Attatch' | 'Bulk Sale'
 
 export interface Vehicle {
-    vehicleNo: string;
-    type: string;
-    capacity: number;
-    lastMaintenanceDate: Date;
-    driverDetails: Driver;
+    VehicleNo: string;
+    tripDetails: TripDetails;
+}
+
+export interface VehicleDriver {
+    id: string,
+    Name: string,
+    MobileNo: string,
+}
+
+export interface TripDetails {
+    id: string,
+    driver: VehicleDriver
+    open: boolean
 }
 
 export type BowserDriver = {

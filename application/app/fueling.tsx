@@ -479,7 +479,8 @@ export default function FuelingScreen() {
   const searchVehicleByNumber = async (vehicleNumber: string) => {
     setIsSearchingVehicle(true);
     try {
-      const response = await fetch(`https://bowser-backend-2cdr.onrender.com/searchVehicleNumber/${vehicleNumber}`);
+      // https://bowser-backend-2cdr.onrender.com
+      const response = await fetch(`http://192.168.137.1:5000/searchVehicleNumber/${vehicleNumber}`);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -490,9 +491,6 @@ export default function FuelingScreen() {
       }
 
       const vehicles: Vehicle[] = await response.json();
-      let foundDrivers: Driver[] = [];
-      vehicles.map((vc) => { foundDrivers.push(vc.driverDetails) })
-      setFoundDrivers(foundDrivers)
       setFoundVehicles(vehicles);
       setNoVehicleFound(false);
 
@@ -528,6 +526,7 @@ export default function FuelingScreen() {
         return false;
       }
     }
+    if (!isOnline) return true
     return false;
   };
 
@@ -694,17 +693,23 @@ export default function FuelingScreen() {
                     <TouchableOpacity
                       style={[styles.vehicleItem, { backgroundColor: colors.card }]}
                       onPress={() => {
-                        setSelectedVehicle(item.vehicleNo);
-                        setVehicleNumber(item.vehicleNo);
-                        handleDriverSelection(item.driverDetails?.Name || 'Unknown Driver'); // Defensive check
-                        setFoundDrivers([item.driverDetails || { Name: 'Unknown Driver' }]); // Defensive check
+                        setSelectedVehicle(item.VehicleNo);
+                        setVehicleNumber(item.VehicleNo);
+                        setDriverId(item.tripDetails.driver.id || "no id found")
+                        if (item.tripDetails.driver.MobileNo) {
+                          setDriverMobile(item.tripDetails.driver.MobileNo)
+                        } else {
+                          setDriverMobile('');
+                          setDriverMobileNotFound(true);
+                        }
+                        setDriverName(item.tripDetails.driver.Name)
                         setVehicleModalVisible(false);
                       }}
                     >
-                      <Text style={{ color: colors.text }}>{item.vehicleNo}</Text>
+                      <Text style={{ color: colors.text }}>{item.VehicleNo}</Text>
                     </TouchableOpacity>
                   )}
-                  keyExtractor={(item) => item.vehicleNo} // Fixed: Ensure key extraction matches the data model case
+                  keyExtractor={(item) => item.VehicleNo} // Fixed: Ensure key extraction matches the data model case
                 />
 
               </View>

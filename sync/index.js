@@ -7,11 +7,11 @@ const atlasUri = process.env.atlasUri;
 const localDbName = "TransappDataHub";
 const localTripCollectionName = "TripDataCollection";
 const atlasTransportDbName = "TransportData";
-const atlasTripCollectionName = "TripDataCollection";
+const atlasTripCollectionName = "VehiclesCollection";
 const localTripFilter = {
   $and: [
     { $or: [{ "TallyLoadDetail.UnloadingDate": { $exists: false } }, { "TallyLoadDetail.UnloadingDate": null }] },
-    { "EndDate": { $exists: false } },
+    { $or: [{ "EndDate": { $exists: false } }] },
     { "TallyLoadDetail.LoadingDate": { $gte: new Date("2024-07-01T00:00:00Z") } },
     { "TallyLoadDetail.Goods": { $ne: "HSD" } }
   ]
@@ -37,64 +37,6 @@ async function closeConnections() {
 }
 
 // Client functions defination
-// trip
-async function syncTripData() {
-  const localCollection = localClient.db(localDbName).collection(localTripCollectionName);
-  const atlasCollection = atlasClient.db(atlasTransportDbName).collection(atlasTripCollectionName);
-
-  // Step 1: Fetch all data from Atlas
-  const atlasData = await atlasCollection.find().toArray();
-  console.log("Fetched trips data from Atlas:", atlasData.length, "documents.");
-
-  const atlasIds = atlasData.map(doc => doc._id.toString());
-
-  // Step 2: Fetch local data with specific filter (documents without EndDate or UnloadingDate)
-  const localData = await localCollection.find(localTripFilter, { projection: { StartDriver: 1, VehicleNo: 1, _id: 1, 'TallyLoadDetail.UnloadingDate': 1, 'TallyLoadDetail.LoadingDate': 1, EndDate: 1, 'TallyLoadDetail.Goods': 1 } }).toArray();
-  console.log("Fetched trips data from local:", localData.length, "documents.");
-
-  // Step 3: Identify documents in local with EndDate or UnloadingDate to remove from Atlas
-  const docsToRemoveFromLocal = localData.filter(localDoc => localDoc.EndDate || localDoc.TallyLoadDetail.UnloadingDate);
-  const removeIdsFromLocal = docsToRemoveFromLocal.map(doc => doc._id.toString());
-
-  // Identify documents to remove from Atlas (documents not in local data or in local with EndDate/UnloadingDate)
-  const docsToRemove = atlasData.filter(atlasDoc => {
-    const localDocExists = localData.some(localDoc => localDoc._id.toString() === atlasDoc._id.toString());
-    return !localDocExists || removeIdsFromLocal.includes(atlasDoc._id.toString());
-  });
-  const removeIds = docsToRemove.map(doc => doc._id);
-
-  // Step 4: Identify documents to add to Atlas (in local, meeting criteria, but not in Atlas)
-  const docsToAdd = localData
-    .filter(localDoc => !atlasIds.includes(localDoc._id.toString()))
-    .map(({ StartDriver, VehicleNo, _id }) => ({ StartDriver, VehicleNo, _id })); // Only include specified fields
-
-  // Perform the operations on Atlas
-  // Step 5: Perform the operations on Atlas
-  let deleteResult
-  if (removeIds.length > 0) {
-    deleteResult = await atlasCollection.deleteMany({ _id: { $in: removeIds } });
-    console.log(`Deleted ${deleteResult?.deletedCount} documents from Atlas.`);
-  } else {
-    console.log("Nothing to delete from Atlas.");
-  }
-
-  let insertResult
-  if (docsToAdd.length > 0) {
-    insertResult = await atlasCollection.insertMany(docsToAdd);
-    console.log(`Inserted ${insertResult?.insertedCount} new documents into Atlas.`);
-  } else {
-    console.log("Nothing to add to Atlas.");
-  }
-
-  // Return the results of the sync operation
-  deleteResult?.deletedCount !== undefined && console.log(`Deleted ${deleteResult.deletedCount} documents from Atlas.`);
-  insertResult?.insertedCount !== undefined && console.log(`Inserted ${insertResult.insertedCount} new documents into Atlas.`);
-  return {
-    deletedCount: deleteResult?.deletedCount !== undefined ? deleteResult.deletedCount : 0,
-    insertedCount: insertResult?.insertedCount !== undefined ? insertResult.insertedCount : 0
-  };
-}
-
 async function syncDriversData() {
   const localCollection = localClient.db('TransappDataHub').collection('VehicleDriverCollection');
   const atlasCollection = atlasClient.db('TransportData').collection('DriversCollection');
@@ -178,7 +120,7 @@ async function syncVechiclesData() {
 
   const atlasDataMap = new Map(atlasData.map(doc => [doc._id.toString(), doc]));
 
-  const localData = await localCollection.find({ AssetsType: { $regex: 'Own', $options: 'i' } }, { projection: { _id: 1, VehicleNo: 1, AssetsType: 1 } }).toArray();
+  const localData = await localCollection.find({ AssetsType: { $regex: 'Own', $options: 'i' } }, { projection: { _id: 1, VehicleNo: 1 } }).toArray();
   console.log("Fetched vehicles data from Local:", localData.length, "documents.");
 
   // Step 2: Prepare new documents to insert into Atlas
@@ -200,15 +142,129 @@ async function syncVechiclesData() {
   }
 }
 
+async function syncTripData() {
+  const localCollection = localClient.db(localDbName).collection(localTripCollectionName);
+  const atlasCollection = atlasClient.db(atlasTransportDbName).collection(atlasTripCollectionName);
+
+  let openedTrips = [];
+  let updatedTrips = [];
+  let closedTrips = [];
+  let noUpdatesNeeded = 0;
+
+  // Step 1: Fetch all vehicle data from Atlas
+  const atlasVehicles = await atlasCollection.find().toArray();
+  console.log(`Fetched ${atlasVehicles.length} vehicles from Atlas.`);
+
+  // Step 2: Fetch filtered trip data from Local
+  const localTrips = await localCollection.find(localTripFilter, {
+    projection: { _id: 1, VehicleNo: 1, StartDriver: 1 },
+  }).toArray();
+  console.log(`Fetched ${localTrips.length} trips from Local.`);
+
+  for (const vehicle of atlasVehicles) {
+    const matchingTrips = localTrips.filter(trip => trip.VehicleNo === vehicle.VehicleNo);
+
+    if (matchingTrips.length > 0) {
+      const openTrip = matchingTrips.find(trip => !trip.EndDate); // Check if any trip is open
+
+      if (openTrip) {
+        const driverIdFromTrip = openTrip.StartDriver; // StartDriver field
+
+        // Regex to match both "ITPL" IDs and numeric-only IDs
+        const driverMatch = driverIdFromTrip.match(
+          /(.*?)(?:\s*[-(]?\s*(ITPL\d+|\d+)[)-]?)$/i
+        );
+
+        let tripDetails;
+
+        if (driverMatch) {
+          // Extracted Name and ID
+          const driverName = driverMatch[1].trim();
+          const id = driverMatch[2]?.toUpperCase();
+
+          tripDetails = {
+            id: openTrip._id, // Local trip ID
+            driver: {
+              id: id, // Extracted ID
+              Name: driverName, // Extracted driver name
+            },
+            open: true, // Trip is open
+          };
+        } else {
+          // No valid ID found: Use StartDriver as the Name and omit the ID
+          tripDetails = {
+            id: openTrip._id, // Local trip ID
+            driver: {
+              Name: driverIdFromTrip, // Use full StartDriver value
+            },
+            open: true, // Trip is open
+          };
+        }
+
+        // Check if the trip details already match the new data
+        const currentTripDetails = vehicle.tripDetails || {};
+        const isTripDetailsSame =
+          // currentTripDetails.id === tripDetails.id &&
+          currentTripDetails.open === tripDetails.open &&
+          currentTripDetails.driver?.id === tripDetails.driver?.id &&
+          currentTripDetails.driver?.Name === tripDetails.driver.Name;
+
+        if (isTripDetailsSame) {
+          noUpdatesNeeded++;
+          continue; // Skip updates if details are identical
+        }
+
+        // Update the trip details
+        try {
+          await atlasCollection.updateOne(
+            { _id: vehicle._id },
+            { $set: { tripDetails } }
+          );
+          if (!currentTripDetails.open && tripDetails.open) {
+            openedTrips.push(vehicle.VehicleNo); // Log trips opened
+          } else {
+            updatedTrips.push(vehicle.VehicleNo); // Log trips with updated details
+          }
+        } catch (error) {
+          console.log(`Error updating vehicle ${vehicle.VehicleNo}:`, error);
+        }
+      }
+    } else {
+      // No open trips found or trip is closed
+      if (vehicle.tripDetails?.open) {
+        try {
+          await atlasCollection.updateOne(
+            { _id: vehicle._id },
+            { $set: { "tripDetails.open": false } }
+          );
+          closedTrips.push(vehicle.VehicleNo); // Log trips closed
+        } catch (error) {
+          console.log(`Error closing trip for vehicle ${vehicle.VehicleNo}:`, error);
+        }
+      } else {
+        noUpdatesNeeded++;
+      }
+    }
+  }
+
+  // Log summary of changes
+  console.log(`${openedTrips.length} trips opened.`);
+  console.log(`${updatedTrips.length} vehicles updated with new trip details.`);
+  console.log(`${closedTrips.length} trips closed.`);
+  if (noUpdatesNeeded > 0) {
+    console.log(`${noUpdatesNeeded} vehicles required no updates.`);
+  }
+}
+
 // Functions calls
 async function main() {
   await connectToDatabases(); // Establish connections
 
   try {
-    await syncTripData(); //const tripSyncResult = 
     // console.log("Sync operation completed:", tripSyncResult);
-    await syncDriversData(); //const driverSyncResult = 
-    await syncVechiclesData(); //const vehicleSyncResult = 
+    // await syncDriversData(); //const driverSyncResult = 
+    // await syncVechiclesData(); //const vehicleSyncResult = 
+    await syncTripData(); //const tripSyncResult = 
     // deleteOtherFieldsInAtlas()
   } catch (error) {
     console.error("Sync operation failed:", error);
