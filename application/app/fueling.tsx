@@ -479,8 +479,8 @@ export default function FuelingScreen() {
   const searchVehicleByNumber = async (vehicleNumber: string) => {
     setIsSearchingVehicle(true);
     try {
-      // https://bowser-backend-2cdr.onrender.com
-      const response = await fetch(`http://192.168.137.1:5000/searchVehicleNumber/${vehicleNumber}`);
+      // https://bowser-backend-2cdr.onrender.com //http://192.168.137.1:5000
+      const response = await fetch(`https://bowser-backend-2cdr.onrender.com/searchVehicleNumber/${vehicleNumber}`);
 
       if (!response.ok) {
         if (response.status === 404) {
