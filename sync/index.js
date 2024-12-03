@@ -8,11 +8,16 @@ const localDbName = "TransappDataHub";
 const localTripCollectionName = "TripDataCollection";
 const atlasTransportDbName = "TransportData";
 const atlasTripCollectionName = "VehiclesCollection";
+
+const now = new Date();
+const past30Days = new Date(now);
+past30Days.setDate(now.getDate() - 65);
+
 const localTripFilter = {
   $and: [
-    { $or: [{ "TallyLoadDetail.UnloadingDate": { $exists: false } }, { "TallyLoadDetail.UnloadingDate": null }] },
+    { $or: [{ "TallyLoadDetail.UnloadingDate": { $exists: false } }, { "TallyLoadDetail.UnloadingDate": { $ne: null } }] },
     { $or: [{ "EndDate": { $exists: false } }] },
-    { "TallyLoadDetail.LoadingDate": { $gte: new Date("2024-07-01T00:00:00Z") } },
+    { "TallyLoadDetail.LoadingDate": { $gte: past30Days, $lte: now } },
     { "TallyLoadDetail.Goods": { $ne: "HSD" } }
   ]
 };
@@ -157,7 +162,7 @@ async function syncTripData() {
 
   // Step 2: Fetch filtered trip data from Local
   const localTrips = await localCollection.find(localTripFilter, {
-    projection: { _id: 1, VehicleNo: 1, StartDriver: 1 },
+    projection: { _id: 1, VehicleNo: 1, StartDriver: 1, StartDate: 1 },
   }).toArray();
   console.log(`Fetched ${localTrips.length} trips from Local.`);
 
@@ -165,69 +170,70 @@ async function syncTripData() {
     const matchingTrips = localTrips.filter(trip => trip.VehicleNo === vehicle.VehicleNo);
 
     if (matchingTrips.length > 0) {
-      const openTrip = matchingTrips.find(trip => !trip.EndDate); // Check if any trip is open
+      // Step 3: Handle multiple open trips by sorting and picking the latest
+      const sortedTrips = matchingTrips.sort((a, b) => new Date(b.StartDate) - new Date(a.StartDate));
+      const latestTrip = sortedTrips[0];
 
-      if (openTrip) {
-        const driverIdFromTrip = openTrip.StartDriver; // StartDriver field
+      const driverIdFromTrip = latestTrip.StartDriver; // StartDriver field
 
-        // Regex to match both "ITPL" IDs and numeric-only IDs
-        const driverMatch = driverIdFromTrip.match(
-          /(.*?)(?:\s*[-(]?\s*(ITPL\d+|\d+)[)-]?)$/i
+      // Regex to match both "ITPL" IDs and numeric-only IDs
+      const driverMatch = driverIdFromTrip.match(
+        /(.*?)(?:\s*[-(]?\s*(ITPL\d+|\d+)[)-]?)$/i
+      );
+
+      let tripDetails;
+
+      if (driverMatch) {
+        // Extracted Name and ID
+        const driverName = driverMatch[1].trim();
+        const id = driverMatch[2]?.toUpperCase();
+
+        tripDetails = {
+          id: latestTrip._id, // Local trip ID
+          driver: {
+            id: id, // Extracted ID
+            Name: driverName, // Extracted driver name
+            MobileNo: null, // Leave MobileNo blank
+          },
+          open: true, // Trip is open
+        };
+      } else {
+        // No valid ID found: Use StartDriver as the Name and omit the ID
+        tripDetails = {
+          id: latestTrip._id, // Local trip ID
+          driver: {
+            Name: driverIdFromTrip, // Use full StartDriver value
+            MobileNo: null, // Leave MobileNo blank
+          },
+          open: true, // Trip is open
+        };
+      }
+
+      // Check if the trip details already match the new data
+      const currentTripDetails = vehicle.tripDetails || {};
+      const isTripDetailsSame =
+        currentTripDetails.open === tripDetails.open &&
+        currentTripDetails.driver?.id === tripDetails.driver?.id &&
+        currentTripDetails.driver?.Name === tripDetails.driver.Name;
+
+      if (isTripDetailsSame) {
+        noUpdatesNeeded++;
+        continue; // Skip updates if details are identical
+      }
+
+      // Update the trip details
+      try {
+        await atlasCollection.updateOne(
+          { _id: vehicle._id },
+          { $set: { tripDetails } }
         );
-
-        let tripDetails;
-
-        if (driverMatch) {
-          // Extracted Name and ID
-          const driverName = driverMatch[1].trim();
-          const id = driverMatch[2]?.toUpperCase();
-
-          tripDetails = {
-            id: openTrip._id, // Local trip ID
-            driver: {
-              id: id, // Extracted ID
-              Name: driverName, // Extracted driver name
-            },
-            open: true, // Trip is open
-          };
+        if (!currentTripDetails.open && tripDetails.open) {
+          openedTrips.push(vehicle.VehicleNo); // Log trips opened
         } else {
-          // No valid ID found: Use StartDriver as the Name and omit the ID
-          tripDetails = {
-            id: openTrip._id, // Local trip ID
-            driver: {
-              Name: driverIdFromTrip, // Use full StartDriver value
-            },
-            open: true, // Trip is open
-          };
+          updatedTrips.push(vehicle.VehicleNo); // Log trips with updated details
         }
-
-        // Check if the trip details already match the new data
-        const currentTripDetails = vehicle.tripDetails || {};
-        const isTripDetailsSame =
-          // currentTripDetails.id === tripDetails.id &&
-          currentTripDetails.open === tripDetails.open &&
-          currentTripDetails.driver?.id === tripDetails.driver?.id &&
-          currentTripDetails.driver?.Name === tripDetails.driver.Name;
-
-        if (isTripDetailsSame) {
-          noUpdatesNeeded++;
-          continue; // Skip updates if details are identical
-        }
-
-        // Update the trip details
-        try {
-          await atlasCollection.updateOne(
-            { _id: vehicle._id },
-            { $set: { tripDetails } }
-          );
-          if (!currentTripDetails.open && tripDetails.open) {
-            openedTrips.push(vehicle.VehicleNo); // Log trips opened
-          } else {
-            updatedTrips.push(vehicle.VehicleNo); // Log trips with updated details
-          }
-        } catch (error) {
-          console.log(`Error updating vehicle ${vehicle.VehicleNo}:`, error);
-        }
+      } catch (error) {
+        console.log(`Error updating vehicle ${vehicle.VehicleNo}:`, error);
       }
     } else {
       // No open trips found or trip is closed
@@ -256,14 +262,15 @@ async function syncTripData() {
   }
 }
 
+
 // Functions calls
 async function main() {
   await connectToDatabases(); // Establish connections
 
   try {
     // console.log("Sync operation completed:", tripSyncResult);
-    // await syncDriversData(); //const driverSyncResult = 
-    // await syncVechiclesData(); //const vehicleSyncResult = 
+    await syncDriversData(); //const driverSyncResult = 
+    await syncVechiclesData(); //const vehicleSyncResult = 
     await syncTripData(); //const tripSyncResult = 
     // deleteOtherFieldsInAtlas()
   } catch (error) {

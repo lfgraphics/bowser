@@ -9,8 +9,7 @@ router.get('/:vehicleNumber', async (req, res) => {
 
     try {
         const vehicles = await Vehicle.find({
-            VehicleNo: { $regex: vehicleNumber, $options: 'i' },
-            'tripDetails.open': true
+            VehicleNo: { $regex: vehicleNumber, $options: 'i' }
         }).exec();
 
         if (vehicles.length === 0) {
