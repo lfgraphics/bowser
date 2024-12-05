@@ -262,12 +262,99 @@ async function syncTripData() {
   }
 }
 
+async function cleanUpVehicleDriverCollection() {
+  const localCollection = localClient.db('TransappDataHub').collection('VehicleDriverCollection');
+  const tempCollection = localClient.db('TransappDataHub').collection('VehicleDriverCollection_temp');
+
+  try {
+    // Run the aggregation pipeline
+    const result = await localCollection.aggregate([
+      {
+        $group: {
+          _id: "$Name",
+          docs: { $push: "$$ROOT" } // Collect all documents with the same Name
+        }
+      },
+      {
+        $project: {
+          docToKeep: {
+            $let: {
+              vars: {
+                filteredDocs: {
+                  $filter: {
+                    input: "$docs",
+                    as: "doc",
+                    cond: {
+                      $or: [
+                        {
+                          $gt: [
+                            {
+                              $size: {
+                                $ifNull: [
+                                  {
+                                    $cond: {
+                                      if: { $isArray: "$$doc.MobileNo" },
+                                      then: "$$doc.MobileNo",
+                                      else: [{ $ifNull: ["$$doc.MobileNo", {}] }] // Ensure that a non-array MobileNo is wrapped in an array
+                                    }
+                                  },
+                                  []
+                                ]
+                              }
+                            },
+                            0
+                          ]
+                        }, // Ensure MobileNo is an array
+                        { $ne: ["$$doc.ITPLId", null] } // ITPLId is not null
+                      ]
+                    }
+                  }
+                }
+              },
+              in: {
+                $cond: {
+                  if: { $gt: [{ $size: "$$filteredDocs" }, 0] },
+                  then: { $arrayElemAt: ["$$filteredDocs", 0] },
+                  else: { $arrayElemAt: ["$docs", 0] }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        $replaceRoot: {
+          newRoot: "$docToKeep"
+        }
+      }
+    ]).toArray();
+
+    // Insert the filtered documents into the temporary collection
+    if (result.length > 0) {
+      await tempCollection.insertMany(result);
+      console.log("Filtered documents inserted into temporary collection.");
+    }
+
+    // Replace the original collection with the temporary collection
+    await localCollection.deleteMany({});
+    await localCollection.insertMany(await tempCollection.find().toArray());
+    console.log("Original collection replaced with filtered documents.");
+
+    // Drop the temporary collection
+    await tempCollection.drop();
+    console.log("Temporary collection dropped.");
+  } catch (err) {
+    console.error("Error running the cleanup task:", err);
+  }
+}
+
 
 // Functions calls
 async function main() {
   await connectToDatabases(); // Establish connections
 
   try {
+    // await cleanUpVehicleDriverCollection()
     // console.log("Sync operation completed:", tripSyncResult);
     await syncDriversData(); //const driverSyncResult = 
     await syncVechiclesData(); //const vehicleSyncResult = 
