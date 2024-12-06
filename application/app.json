@@ -27,7 +27,7 @@
       },
       "runtimeVersion": "1.0.0",
       "package": "com.itplfirebase.bowsersdispensing",
-      "googleServicesFile":"./bowser-drivers-firebase-adminsdk-vzxf0-7e871b9a5a.json"
+      "googleServicesFile":"./google-services.json"
     },
     "web": {
       "bundler": "metro",
