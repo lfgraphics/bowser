@@ -62,3 +62,4 @@ expo-env.d.ts
 *.swp
 *.swo
 bowser-drivers-firebase-adminsdk-vzxf0-7e871b9a5a.json
+google-services.json
