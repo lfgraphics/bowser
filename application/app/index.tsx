@@ -31,7 +31,7 @@ export default function App() {
   const [isOfflineDataModalVisible, setOfflineDataModalVisible] = useState(false);
   const [isOfflineDataLoading, setIsOfflineDataLoading] = useState(false);
   const { colors } = useTheme();
-  const appVersion = 40
+  const appVersion = 41
   const [appurl, setAppUrl] = useState<string | null>(null);
 
   let showUpdateLink = async () => {

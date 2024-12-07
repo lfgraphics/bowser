@@ -155,7 +155,7 @@ export default function FuelingAllocation() {
                     title: "Select a Vehicle",
                     items: vehicles,
                     onSelect: handleVehicleSelection,
-                    renderItem: (vehicle) => `${vehicle.VehicleNo} - ${vehicle.tripDetails.driver.Name}`,
+                    renderItem: (vehicle) => `${vehicle.VehicleNo} - ${vehicle.tripDetails.driver?.Name}`,
                     keyExtractor: (vehicle) => vehicle.VehicleNo,
                 });
             }
