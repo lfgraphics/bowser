@@ -88,9 +88,9 @@ const FuelingRecords: React.FC = () => {
                             <ThemedView style={[styles.modalItem,]} key={record._id}>
                                 <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>तारीख़:</ThemedText> {`${new Date(record.fuelingDateTime).toISOString().split('T')[0].split('-').reverse().map((v, i) => i === 2 ? v.slice(-2) : v).join('-')}`}</ThemedText>
                                 <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>कैटेगरी:</ThemedText> {record.category}</ThemedText>
-                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>{record.category == "Bulk Sale" ? "पार्टी" : "वेंडर"}:</ThemedText> {record.party}</ThemedText>
+                                {!(record.category == "Own") && <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>{record.category == "Bulk Sale" ? "पार्टी" : "वेंडर"}:</ThemedText> {record.party}</ThemedText>}
                                 {record.category !== "Bulk Sale" && <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>गाड़ी नम्बर:</ThemedText> {record.vehicleNumber}</ThemedText>}
-                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>मैनेजर/ड्राईवर का नाम:</ThemedText> {record.driverName}</ThemedText>
+                                <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>{record.category === "Bulk Sale" ? "मैनेजर" : "ड्राईवर"} का नाम:</ThemedText> {record.driverName}</ThemedText>
                                 <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>तेल दिया:</ThemedText> {record.fuelQuantity} लीटर</ThemedText>
                                 <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>तेल देने की जगह:</ThemedText> {record.gpsLocation}</ThemedText>
                                 <ThemedText style={[styles.modalText,]}><ThemedText style={styles.label}>रिकॉर्ड सत्यापित हुआ:</ThemedText> {record.verified ? "हाँ" : "नहीं"}</ThemedText>

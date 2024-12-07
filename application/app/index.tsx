@@ -15,7 +15,6 @@ import FuelingRecords from '@/components/FuelingRecords';
 import { useTheme } from '@react-navigation/native';
 import { getAppUpdate } from '@/src/utils/helpers'
 import registerNNPushToken, { unregisterIndieDevice } from 'native-notify';
-// import * as Notifications from 'expo-notifications';
 
 export default function App() {
   registerNNPushToken(25239, 'FWwj7ZcRXQi7FsC4ZHQlsi');
@@ -34,21 +33,6 @@ export default function App() {
   const { colors } = useTheme();
   const appVersion = 38
   const [appurl, setAppUrl] = useState<string | null>(null);
-
-
-  useEffect(() => {
-    checkUserLoggedIn();
-  }, []);
-
-  // useEffect(() => {
-  //   const getPushToken = async () => {
-  //     const loggedIn = await checkUserLoggedIn()
-  //     if (loggedIn) {
-  //       const token = (await Notifications.getDevicePushTokenAsync()).data;
-  //       console.log(token)
-  //     }
-  //   }
-  // }, [])
 
   let showUpdateLink = async () => {
     let appPushsOnDb: AppUpdates[] = await getAppUpdate()
@@ -332,7 +316,6 @@ export default function App() {
     return (
       <View style={[styles.modalBody, { backgroundColor: colors.card }]}>
         {Object.entries(userData)
-          .filter(([key]) => key !== '_id') // && key !== 'Push Notification Token'
           .map(([key, value]) => (
             <View key={key} style={styles.dataRow}>
               <Text style={[styles.dataKey, { color: colors.text }]}>{key.charAt(0).toUpperCase() + key.slice(1)}: </Text>

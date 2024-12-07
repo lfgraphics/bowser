@@ -98,7 +98,6 @@ export interface FormData {
     driverId: string;
     driverMobile: string;
     fuelMeterImage: string[] | null;
-    slipImage: string | null;
     fuelQuantity: string;
     quantityType: 'Full' | 'Part' | 'N/A';
     gpsLocation: string;
@@ -107,7 +106,6 @@ export interface FormData {
         regNo: string,
         driver: {
             name: string;
-            id: string;
             phoneNo: string;
         }
     };

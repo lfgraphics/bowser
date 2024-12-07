@@ -175,7 +175,6 @@ export default function FuelingScreen() {
       driverId: driverId.toUpperCase(),
       driverMobile,
       fuelMeterImage,
-      slipImage,
       quantityType,
       fuelQuantity,
       gpsLocation: currentGpsLocation,
@@ -184,7 +183,6 @@ export default function FuelingScreen() {
         regNo: userData.Bowser ? userData.Bowser : '',
         driver: {
           name: userData.Name,
-          id: userData['User Id'],
           phoneNo: userData['Phone Number']
         }
       },

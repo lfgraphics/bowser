@@ -1,12 +1,9 @@
 import * as React from 'react';
 import { Image, StyleSheet, TextInput, TouchableOpacity, useColorScheme, ScrollView, View, ActivityIndicator, Button, Alert, Modal, FlatList, BackHandler } from 'react-native';
-import { useState, useRef, useEffect, Dispatch, SetStateAction, } from 'react';
-import * as ImagePicker from 'expo-image-picker';
+import { useState, useRef, } from 'react';
 import * as Location from 'expo-location';
-import * as FileSystem from 'expo-file-system';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import * as ImageManipulator from 'expo-image-manipulator';
 import { useRoute, useTheme } from '@react-navigation/native';
 import { FormData, FuelingTypes } from '@/src/types/models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -50,25 +47,19 @@ const NotificationFuelingScreen = () => {
         driverName = 'N/A',
         quantityType = 'N/A',
         quantity = 'N/A',
-        bowser,
         allocationAdminName,
         allocationAdminId
     } = route.params as RouteParams;
-
-    const properties = { allocationAdminName }
-    console.log("params:", properties)
     // declare state variables---->
     const colorScheme = useColorScheme();
     const [vehicleNumberPlateImage, setVehicleNumberPlateImage] = useState<string | null>(null);
     const [fuelMeterImage, setFuelMeterImage] = useState<string[] | null>(null);
     const [odometer, setOdodmeter] = useState('');
-    const [slipImage, setSlipImage] = useState<string | null>(null);
     const [fuelQuantity, setFuelQuantity] = useState<string>(quantity);
     const [driverMobileNo, setDriverMobileNo] = useState(driverMobile);
     const [gpsLocation, setGpsLocation] = useState('');
     const [fuelingDateTime, setFuelingDateTime] = useState<Date>(new Date());
     const [formSubmitting, setFormSubmitting] = useState(false);
-    const [slipImageSize, setSlipImageSize] = useState<string>('');
     const [isOnline, setIsOnline] = useState(true);
     const [imageModalVisible, setImageModalVisible] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -165,7 +156,6 @@ const NotificationFuelingScreen = () => {
                 driverId: driverId.toUpperCase(),
                 driverMobile,
                 fuelMeterImage,
-                slipImage,
                 quantityType,
                 fuelQuantity,
                 gpsLocation: currentGpsLocation,
@@ -174,7 +164,6 @@ const NotificationFuelingScreen = () => {
                     regNo: userData.Bowser ? userData.Bowser : '',
                     driver: {
                         name: userData.Name,
-                        id: userData['User Id'],
                         phoneNo: userData['Phone Number']
                     }
                 },

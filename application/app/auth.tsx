@@ -7,16 +7,13 @@ import { useTheme } from '@react-navigation/native';
 import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { registerIndieID, unregisterIndieDevice } from 'native-notify';
-// import { registerForPushNotificationsAsync, registerPushTokenWithServer } from '@/app/utils/notifications';
+import { checkAndRegisterDevice } from '@/src/utils/authUtils';
 
 export default function AuthScreen() {
-
   const router = useRouter();
   const { colors } = useTheme();
   const colorScheme = useColorScheme();
   const [isLogin, setIsLogin] = useState(true);
-  const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [name, setName] = useState('');
@@ -24,7 +21,6 @@ export default function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   const scrollViewRef = useRef<ScrollView>(null);
-  const userIdInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
   const phoneNumberInputRef = useRef<TextInput>(null);
   const nameInputRef = useRef<TextInput>(null);
@@ -44,7 +40,6 @@ export default function AuthScreen() {
       }
 
       const body = JSON.stringify({
-        // userId,
         password,
         deviceUUID,
         phoneNumber,
@@ -53,10 +48,8 @@ export default function AuthScreen() {
         ...(await AsyncStorage.getItem('pushToken')) ? { pushToken: await AsyncStorage.getItem('pushToken') } : {},
       });
 
-      isLogin && registerIndieID(phoneNumber, 25239, 'FWwj7ZcRXQi7FsC4ZHQlsi');
-
       const endpoint = isLogin ? 'login' : 'signup';
-      const response = await fetch(`http://192.168.137.1:5000/auth/${endpoint}`, { //https://bowser-backend-2cdr.onrender.com  //http://192.168.137.1:5000
+      const response = await fetch(`https://bowser-backend-2cdr.onrender.com/auth/${endpoint}`, { //https://bowser-backend-2cdr.onrender.com  //http://192.168.137.1:5000
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,14 +92,8 @@ export default function AuthScreen() {
           if (data.user) {
             await AsyncStorage.setItem('userData', JSON.stringify(data.user));
           }
-
-          // Register push token every time after successful login
-          // const localPushToken = await registerForPushNotificationsAsync();
-          // if (localPushToken) {
-          //   await AsyncStorage.setItem('pushToken', localPushToken);
-          //   await registerPushTokenWithServer(data.user['User Id'], localPushToken);
-          // }
-          router.replace('/'); // Navigate to index page
+          checkAndRegisterDevice(phoneNumber);
+          router.replace('/');
         } catch (storageError) {
           console.error('Error saving to AsyncStorage:', storageError);
           Alert.alert("Storage Error", "Failed to save user data. Please try again.", [{ text: "OK" }]);
@@ -184,38 +171,21 @@ export default function AuthScreen() {
           <Text style={[styles.title, { color: colors.text }]}>{isLogin ? 'Login' : 'Sign Up'}</Text>
 
           <View style={styles.section}>
-            {/* <View style={styles.inputContainer}>
-              <Text style={{ color: colors.text }}>User ID:</Text>
-              <TextInput
-                ref={userIdInputRef}
-                style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                placeholder="Enter user ID"
-                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                value={userId}
-                onChangeText={setUserId}
-                returnKeyType="next"
-                onSubmitEditing={() => passwordInputRef.current?.focus()}
-                blurOnSubmit={false}
-              />
-            </View> */}
-
             {!isLogin && (
-              <>
-                <View style={styles.inputContainer}>
-                  <Text style={{ color: colors.text }}>Name:</Text>
-                  <TextInput
-                    ref={nameInputRef}
-                    style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                    placeholder="Enter your name"
-                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                    value={name}
-                    onChangeText={setName}
-                    returnKeyType="next"
-                    onSubmitEditing={() => phoneNumberInputRef.current?.focus()}
-                    blurOnSubmit={true}
-                  />
-                </View>
-              </>
+              <View style={styles.inputContainer}>
+                <Text style={{ color: colors.text }}>Name:</Text>
+                <TextInput
+                  ref={nameInputRef}
+                  style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                  placeholder="Enter your name"
+                  placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                  value={name}
+                  onChangeText={setName}
+                  returnKeyType="next"
+                  onSubmitEditing={() => phoneNumberInputRef.current?.focus()}
+                  blurOnSubmit={true}
+                />
+              </View>
             )}
             <View style={styles.inputContainer}>
               <Text style={{ color: colors.text }}>Phone Number:</Text>
@@ -232,32 +202,32 @@ export default function AuthScreen() {
                 blurOnSubmit={false}
               />
             </View>
-          </View>
-          <View style={styles.inputContainer}>
-            <Text style={{ color: colors.text }}>Password:</Text>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                ref={passwordInputRef}
-                style={[styles.input, styles.passwordInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                placeholder="Enter password"
-                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                returnKeyType={isLogin ? "done" : "next"}
-                onSubmitEditing={() => handleAuth()}
-                blurOnSubmit={isLogin}
-              />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <Ionicons
-                  name={showPassword ? 'eye-off' : 'eye'}
-                  size={24}
-                  color={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+            <View style={styles.inputContainer}>
+              <Text style={{ color: colors.text }}>Password:</Text>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  ref={passwordInputRef}
+                  style={[styles.input, styles.passwordInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                  placeholder="Enter password"
+                  placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  returnKeyType={isLogin ? "done" : "next"}
+                  onSubmitEditing={() => handleAuth()}
+                  blurOnSubmit={isLogin}
                 />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off' : 'eye'}
+                    size={24}
+                    color={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
 
