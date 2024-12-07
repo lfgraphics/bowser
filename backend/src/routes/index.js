@@ -3,7 +3,7 @@ const router = express.Router();
 
 const fuelingTransactionRouts = require('./addFuelingTransaction');
 const searchDriverRoutes = require('./searchDriver');
-const imageProcessingRoutes = require('./imageProcessing');
+// const imageProcessingRoutes = require('./imageProcessing');
 const authRoutes = require('./auth');
 const fuelingOrdersRoutes = require('./fuelingOrders');
 const allocateFuelingRoutes = require('./addFuelingAllocation');
@@ -23,7 +23,7 @@ router.get('/', (req, res) => {
 
 router.use('/addFuelingTransaction', fuelingTransactionRouts);
 router.use('/searchDriver', searchDriverRoutes);
-router.use('/imageprocessing', imageProcessingRoutes);
+// router.use('/imageprocessing', imageProcessingRoutes);
 router.use('/auth', authRoutes);
 router.use('/fuelingOrders', fuelingOrdersRoutes);
 router.use('/allocateFueling', allocateFuelingRoutes);

@@ -1,8 +1,11 @@
 const mongoose = require('mongoose');
+const moment = require("moment-timezone");
 const { bowsersDatabaseConnection } = require('../../config/database');
 
 const fuelingOrderSchema = new mongoose.Schema({
   vehicleNumber: { type: String, required: true },
+  category: { type: String, required: true },
+  partyName: { type: String, required: false },
   driverId: { type: String, required: true },
   driverName: { type: String, required: true },
   driverMobile: { type: String },
@@ -16,7 +19,6 @@ const fuelingOrderSchema = new mongoose.Schema({
     regNo: { type: String, },
     driver: {
       name: { type: String, },
-      id: { type: String, required: true },
       phoneNo: { type: String, },
     }
   },
@@ -24,7 +26,7 @@ const fuelingOrderSchema = new mongoose.Schema({
     name: { type: String, required: true },
     id: { type: String, required: true },
   },
-  createdAt: { type: String, default: () => new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) }
+  createdAt: { type: Date, default: () => moment().tz("Asia/Kolkata").toDate() },
 });
 
 // Validate the quantityType

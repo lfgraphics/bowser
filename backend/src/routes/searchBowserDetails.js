@@ -2,8 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Bowser = require('../models/bowser');
 const TripSheet = require('../models/tripsheet');
-// const mongoose = require('mongoose');
-
 
 router.get('/:regNo', async (req, res) => {
     const regNo = req.params.regNo;
@@ -33,12 +31,13 @@ router.get('/:regNo', async (req, res) => {
     }
 });
 
-router.get('/trip/:tripSheetId', async (req, res) => {
-    const tripSheetId = req.params.tripSheetId;
+router.get('/trip/:bowser', async (req, res) => {
+    const bowser = req.params.bowser;
+    console.log(bowser)
 
     try {
         const trip = await TripSheet.findOne({
-            tripSheetId: Number(tripSheetId),
+            'bowser.regNo': { $regex: bowser, $options: "i" },
             'settelment.settled': false
         });
 
@@ -63,22 +62,8 @@ router.get('/trip/:tripSheetId', async (req, res) => {
             // If no drivers have handOverDate, select the first one (if any)
             selectedDriver = trip.bowserDriver[0];
         }
-
-        // Prepare the response with bowser regNo and driver details in the required format
-        const bowserDetails = [
-            {
-                tripSheetId: trip.tripSheetId,
-                regNo: bowserRegNo,
-                _id: trip._id,
-                bowserDriver: selectedDriver ? {
-                    handOverDate: selectedDriver.handOverDate,
-                    name: selectedDriver.name,
-                    id: selectedDriver.id,
-                    phoneNo: selectedDriver.phoneNo
-                } : { message: 'Driver details not found for this bowser' }
-            }
-        ];
-        res.status(200).json({ bowserDetails });
+        
+        res.status(200).json([trip]);
 
     } catch (err) {
         console.error('Error searching for trip or bowser details:', err);

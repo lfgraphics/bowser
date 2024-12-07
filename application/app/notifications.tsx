@@ -37,10 +37,10 @@ export default function NotificationsScreen() {
             setError(null);
             const userDataString = await AsyncStorage.getItem('userData');
             let userData = userDataString && JSON.parse(userDataString);
-            if (!userData || !userData['User Id']) {
+            if (!userData || !userData['Phone Number']) {
                 throw new Error('User data not found. Please log in again.');
             }
-            const url = `https://bowser-backend-2cdr.onrender.com/fuelingOrders/${userData['User Id']}`; //https://bowser-backend-2cdr.onrender.com //http://192.168.137.1:5000
+            const url = `https://bowser-backend-2cdr.onrender.com/fuelingOrders/${userData['Phone Number']}`; //https://bowser-backend-2cdr.onrender.com //http://192.168.137.1:5000
             const response = await axios.get<ServerResponse>(url);
             setNotificationsData(response.data.orders);
         } catch (err) {
@@ -83,6 +83,8 @@ export default function NotificationsScreen() {
                 notificationsData.map((data) => (
                     <ThemedView style={{ marginBottom: 10 }} key={data._id}>
                         <FuelNotification
+                            category={data.category}
+                            party={data.party}
                             vehicleNumber={data.vehicleNumber}
                             driverId={data.driverId}
                             driverMobile={data.driverMobile || ''}
@@ -102,7 +104,7 @@ export default function NotificationsScreen() {
             ) : (
                 <ThemedText style={styles.noNotifications}>No Pending Orders Available</ThemedText>
             )}
-            <ThemedView style={{ height: 40 }} />
+            {/* <ThemedView style={{ height: 40 }} /> */}
         </ScrollView>
     );
 }

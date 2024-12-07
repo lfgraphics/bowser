@@ -7,14 +7,13 @@ import { useTheme } from '@react-navigation/native';
 import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-// import { registerForPushNotificationsAsync, registerPushTokenWithServer } from '@/app/utils/notifications';
+import { checkAndRegisterDevice } from '@/src/utils/authUtils';
 
 export default function AuthScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const colorScheme = useColorScheme();
   const [isLogin, setIsLogin] = useState(true);
-  const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [name, setName] = useState('');
@@ -22,7 +21,6 @@ export default function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   const scrollViewRef = useRef<ScrollView>(null);
-  const userIdInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
   const phoneNumberInputRef = useRef<TextInput>(null);
   const nameInputRef = useRef<TextInput>(null);
@@ -42,10 +40,9 @@ export default function AuthScreen() {
       }
 
       const body = JSON.stringify({
-        userId,
         password,
         deviceUUID,
-        phoneNumber: isLogin ? undefined : phoneNumber,
+        phoneNumber,
         name: isLogin ? undefined : name,
         appName: 'Bowsers Fueling',
         ...(await AsyncStorage.getItem('pushToken')) ? { pushToken: await AsyncStorage.getItem('pushToken') } : {},
@@ -95,14 +92,8 @@ export default function AuthScreen() {
           if (data.user) {
             await AsyncStorage.setItem('userData', JSON.stringify(data.user));
           }
-
-          // Register push token every time after successful login
-          // const localPushToken = await registerForPushNotificationsAsync();
-          // if (localPushToken) {
-          //   await AsyncStorage.setItem('pushToken', localPushToken);
-          //   await registerPushTokenWithServer(data.user['User Id'], localPushToken);
-          // }
-          router.replace('/'); // Navigate to index page
+          checkAndRegisterDevice(phoneNumber);
+          router.replace('/');
         } catch (storageError) {
           console.error('Error saving to AsyncStorage:', storageError);
           Alert.alert("Storage Error", "Failed to save user data. Please try again.", [{ text: "OK" }]);
@@ -128,11 +119,6 @@ export default function AuthScreen() {
   };
 
   const validateInputs = () => {
-    if (!userId) {
-      alert("User ID is required.");
-      userIdInputRef.current?.focus();
-      return false;
-    }
     if (!password) {
       alert("Password is required.");
       passwordInputRef.current?.focus();
@@ -149,17 +135,6 @@ export default function AuthScreen() {
         nameInputRef.current?.focus();
         return false;
       }
-    }
-    // Check if User ID is alphanumeric (contains only letters and numbers)
-    const isValidUserId = /^[a-zA-Z0-9]+$/; // Example: "johnDoe123" is valid, "!@#$" is not
-    if (!isValidUserId.test(userId)) {
-      Alert.alert(
-        "Enter Correct Details",
-        "Invalid User ID format. User ID should only contain letters and numbers.",
-        [{ text: "Okay", onPress: () => userIdInputRef.current?.focus() }],
-        { cancelable: false }
-      );
-      return false;
     }
 
     // Check if Phone Number is in the format +1234567890 (optional + and 10-13 digits)
@@ -196,21 +171,37 @@ export default function AuthScreen() {
           <Text style={[styles.title, { color: colors.text }]}>{isLogin ? 'Login' : 'Sign Up'}</Text>
 
           <View style={styles.section}>
+            {!isLogin && (
+              <View style={styles.inputContainer}>
+                <Text style={{ color: colors.text }}>Name:</Text>
+                <TextInput
+                  ref={nameInputRef}
+                  style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                  placeholder="Enter your name"
+                  placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                  value={name}
+                  onChangeText={setName}
+                  returnKeyType="next"
+                  onSubmitEditing={() => phoneNumberInputRef.current?.focus()}
+                  blurOnSubmit={true}
+                />
+              </View>
+            )}
             <View style={styles.inputContainer}>
-              <Text style={{ color: colors.text }}>User ID:</Text>
+              <Text style={{ color: colors.text }}>Phone Number:</Text>
               <TextInput
-                ref={userIdInputRef}
+                ref={phoneNumberInputRef}
                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                placeholder="Enter user ID"
+                placeholder="Enter phone number"
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                value={userId}
-                onChangeText={setUserId}
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
                 returnKeyType="next"
                 onSubmitEditing={() => passwordInputRef.current?.focus()}
                 blurOnSubmit={false}
               />
             </View>
-
             <View style={styles.inputContainer}>
               <Text style={{ color: colors.text }}>Password:</Text>
               <View style={styles.passwordContainer}>
@@ -223,7 +214,7 @@ export default function AuthScreen() {
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
                   returnKeyType={isLogin ? "done" : "next"}
-                  onSubmitEditing={() => isLogin ? handleAuth() : phoneNumberInputRef.current?.focus()}
+                  onSubmitEditing={() => handleAuth()}
                   blurOnSubmit={isLogin}
                 />
                 <TouchableOpacity
@@ -238,41 +229,6 @@ export default function AuthScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-
-            {!isLogin && (
-              <>
-                <View style={styles.inputContainer}>
-                  <Text style={{ color: colors.text }}>Phone Number:</Text>
-                  <TextInput
-                    ref={phoneNumberInputRef}
-                    style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                    placeholder="Enter phone number"
-                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                    value={phoneNumber}
-                    onChangeText={setPhoneNumber}
-                    keyboardType="phone-pad"
-                    returnKeyType="next"
-                    onSubmitEditing={() => nameInputRef.current?.focus()}
-                    blurOnSubmit={false}
-                  />
-                </View>
-
-                <View style={styles.inputContainer}>
-                  <Text style={{ color: colors.text }}>Name:</Text>
-                  <TextInput
-                    ref={nameInputRef}
-                    style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                    placeholder="Enter your name"
-                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                    value={name}
-                    onChangeText={setName}
-                    returnKeyType="next"
-                    onSubmitEditing={() => handleAuth}
-                    blurOnSubmit={true}
-                  />
-                </View>
-              </>
-            )}
           </View>
 
           <TouchableOpacity

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { isAuthenticated, getCurrentUser } from "@/lib/auth"
-import { Driver, ResponseBowser, User } from "@/types"
+import { Driver, FuelingTypes, ResponseBowser, User } from "@/types"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select"
 import {
     AlertDialog,
@@ -21,7 +21,6 @@ import {
 import { SearchModal } from "@/components/SearchModal"
 import { searchItems } from '@/utils/searchUtils'
 import { Vehicle } from "@/types"
-import { ObjectId } from "mongoose"
 import Loading from "@/app/loading"
 import { BASE_URL } from "@/lib/api"
 
@@ -38,7 +37,7 @@ export default function FuelingAllocation() {
     const [bowserDriverId, setBowserDriverId] = useState("")
     const [bowserRegNo, setBowserRegNo] = useState("")
     const [tripSheetId, setTripSheetId] = useState("")
-    const [bowserDriverMongoId, setBowserDriverMongoId] = useState<ObjectId>()
+    const [bowserDriverMobile, setBowserDriverMobile] = useState<string>("")
     const [alertDialogOpen, setAlertDialogOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
     const [searchModalConfig, setSearchModalConfig] = useState<{
@@ -57,6 +56,7 @@ export default function FuelingAllocation() {
         keyExtractor: () => "",
     });
     const [driverMobileNotFound, setDriverMobileNotFound] = useState(false);
+    const [fueling, setFueling] = useState<FuelingTypes>('Own')
 
     const checkAuth = () => {
         const authenticated = isAuthenticated();
@@ -92,22 +92,23 @@ export default function FuelingAllocation() {
             setIsSearching(false);
         }
     }
-    const searchBowser = async (regNo: string) => {
+    const searchBowser = async (bowser: string) => {
         setIsSearching(true);
         try {
             const response: ResponseBowser[] = await searchItems<ResponseBowser>(
                 `${BASE_URL}/searchBowserDetails/trip`, //https://bowser-backend-2cdr.onrender.com
-                regNo,
-                `No proper details found with the given regNo ${regNo}`
+                bowser,
+                `No proper details found with the given regNo ${bowser}`
             );
-            if (response.bowserDetails.length > 0) {
+            console.log(response)
+            if (response.length > 0) {
                 setSearchModalConfig({
                     isOpen: true,
                     title: "Select a Bowser",
-                    items: response.bowserDetails,
+                    items: response,
                     onSelect: handleBowserSelection,
-                    renderItem: (bowser) => `${bowser.tripSheetId} : Bowser: ${bowser.regNo}\nDriver: ${bowser.bowserDriver.name} (${bowser.bowserDriver.id})`,
-                    keyExtractor: (bowser) => bowser.regNo,
+                    renderItem: (trip) => `${trip.tripSheetId} : Bowser: ${trip.bowser.regNo}\nDriver: ${trip.bowserDriver[0]?.name} (${trip.bowserDriver[0]?.id})`,
+                    keyExtractor: (trip) => trip.bowser.regNo,
                 });
             }
         } catch (error) {
@@ -154,7 +155,7 @@ export default function FuelingAllocation() {
                     title: "Select a Vehicle",
                     items: vehicles,
                     onSelect: handleVehicleSelection,
-                    renderItem: (vehicle) => `${vehicle.vehicleNo} - ${vehicle.driverDetails?.Name}`,
+                    renderItem: (vehicle) => `${vehicle.VehicleNo} - ${vehicle.tripDetails.driver.Name}`,
                     keyExtractor: (vehicle) => vehicle.VehicleNo,
                 });
             }
@@ -202,9 +203,9 @@ export default function FuelingAllocation() {
         if (bowser) {
             setTripSheetId(bowser.tripSheetId);
             setBowserRegNo(bowser.regNo);
-            setBowserDriverId(bowser.bowserDriver?.id || '');
-            setBowserDriverName(bowser.bowserDriver?.name || '');
-            setBowserDriverMongoId(bowser.bowserDriver?._id);
+            setBowserDriverId(bowser.bowserDriver[0]?.id || '');
+            setBowserDriverName(bowser.bowserDriver[0]?.name || '');
+            setBowserDriverMobile(bowser.bowserDriver[0]?.phoneNo);
         }
     }
 
@@ -218,28 +219,23 @@ export default function FuelingAllocation() {
     }
 
     const handleVehicleSelection = (vehicle: Vehicle) => {
-        setVehicleNumber(vehicle.vehicleNo);
-        if (vehicle.driverDetails) {
-            const idMatch = vehicle.driverDetails.Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
-            let cleanName = vehicle.driverDetails.Name.trim();
+        setVehicleNumber(vehicle.VehicleNo);
+        if (vehicle.tripDetails) {
+            const idMatch = vehicle.tripDetails.driver.Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
+            let cleanName = vehicle.tripDetails.driver.Name.trim();
             let recognizedId = '';
             if (idMatch) {
                 recognizedId = idMatch[0].replace(/[()]/g, '').toUpperCase();
                 cleanName = cleanName.replace(/(?:\s*[-\s]\s*|\s*\(|\)\s*)(?:ITPL-?\d+|\(ITPL-?\d+\))/i, '').trim();
             }
 
-            setDriverId(recognizedId || vehicle.driverDetails.ITPLId || cleanName);
+            setDriverId(recognizedId || vehicle.tripDetails.driver.id || cleanName);
             setDriverName(cleanName);
 
-            if (vehicle.driverDetails.MobileNo && vehicle.driverDetails.MobileNo.length > 0) {
-                const lastUsedNumber = vehicle.driverDetails.MobileNo.find(num => num.LastUsed);
-                const defaultNumber = vehicle.driverDetails.MobileNo.find(num => num.IsDefaultNumber);
-                const firstNumber = vehicle.driverDetails.MobileNo[0];
-                const mobileNumber = (lastUsedNumber || defaultNumber || firstNumber)?.MobileNo || '';
-
-                setDriverId(vehicle.driverDetails.ITPLId || '');
-                setDriverName(vehicle.driverDetails.Name);
-                setDriverMobile(mobileNumber);
+            if (vehicle.tripDetails.driver.MobileNo) {
+                setDriverId(vehicle.tripDetails.driver.id || '');
+                setDriverName(vehicle.tripDetails.driver.Name);
+                setDriverMobile(vehicle.tripDetails.driver.MobileNo);
                 setDriverMobileNotFound(false);
             } else {
                 setDriverMobile('');
@@ -297,6 +293,7 @@ export default function FuelingAllocation() {
         }
 
         const allocationData = {
+            category: fueling,
             vehicleNumber,
             tripSheetId,
             driverId,
@@ -309,15 +306,10 @@ export default function FuelingAllocation() {
                 driver: {
                     name: bowserDriverName,
                     id: bowserDriverId,
-                    phoneNo: driverMobile
+                    phoneNo: bowserDriverMobile
                 }
             },
-            bowserDriver: {
-                _id: bowserDriverMongoId,
-                name: bowserDriverName,
-            },
             allocationAdmin: {
-                _id: currentUser._id,
                 name: currentUser.name,
                 id: currentUser.userId,
             },
@@ -385,13 +377,26 @@ export default function FuelingAllocation() {
             {(submitting || isSearching) && (
                 <Loading />
             )}
-            <Card className="w-[450px]">
+            <Card className="w-[450px] bg-">
                 <CardHeader>
                     <CardTitle>Fuel Allocation</CardTitle>
                     <CardDescription>Allocate fueling requirements</CardDescription>
                 </CardHeader>
                 <form onSubmit={handleSubmit}>
                     <CardContent>
+                        {/* Nav for diffrent type */}
+                        <div className="px-4 rounded-md flex justify-around my-6 bg-card">
+                            {(['Own', 'Attatch', 'Bulk Sale'] as FuelingTypes[]).map((option) => (
+                                <Button
+                                    type="button"
+                                    key={option}
+                                    variant={fueling === option ? "default" : "outline"}
+                                    onClick={() => setFueling(option)}
+                                >
+                                    {option}
+                                </Button>
+                            ))}
+                        </div>
                         <div className="grid w-full items-center gap-4">
                             <div className="flex flex-col space-y-1.5">
                                 <Label htmlFor="vehicleNumber">Vehicle Number</Label>
@@ -548,10 +553,8 @@ export default function FuelingAllocation() {
                         </div>
                     </CardContent>
                     <CardFooter className="flex justify-between">
-                        <Button variant="outline" type="reset" className="w-[40%]" onClick={resetForm}>Clear</Button>
-                        {/* //={submitting || isSearching} */}
-                        <Button disabled className="w-[50%]" variant="default" type="submit">
-                            {/* //={submitting || isSearching} */}
+                        <Button disabled={submitting || isSearching} variant="outline" type="reset" className="w-[40%]" onClick={resetForm}>Clear</Button>
+                        <Button disabled={submitting || isSearching} className="w-[50%]" variant="default" type="submit">
                             Allocate Fueling
                         </Button>
                     </CardFooter>

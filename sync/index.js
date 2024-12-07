@@ -351,19 +351,62 @@ async function cleanUpVehicleDriverCollection() {
 
 // Functions calls
 async function main() {
-  await connectToDatabases(); // Establish connections
+  await connectToDatabases();
 
   try {
-    // await cleanUpVehicleDriverCollection()
-    // console.log("Sync operation completed:", tripSyncResult);
-    await syncDriversData(); //const driverSyncResult = 
-    await syncVechiclesData(); //const vehicleSyncResult = 
-    await syncTripData(); //const tripSyncResult = 
-    // deleteOtherFieldsInAtlas()
+      while (true) {
+          const now = new Date();
+          const currentHour = now.getHours();
+
+          // Check if the current time falls within the allowed range
+          if (currentHour >= 9 && currentHour <= 23 && (currentHour - 9) % 2 === 0) {
+              console.log(`Starting sync operations at ${now.toLocaleTimeString()}`);
+
+              // Individual try-catch for each function to ensure all operations log errors separately
+              try {
+                  console.log("------------Syncing driver data...------------");
+                  await syncDriversData();
+                  console.log("------------Driver data sync completed successfully.------------");
+              } catch (error) {
+                  console.error("~~~~~~~~~~~~~~~Error syncing driver data:", error);
+              }
+
+              try {
+                  console.log("------------Syncing vehicle data...------------");
+                  await syncVechiclesData();
+                  console.log("------------Vehicle data sync completed successfully.------------");
+              } catch (error) {
+                  console.error("~~~~~~~~~~~~~~~Error syncing vehicle data:", error);
+              }
+
+              try {
+                  console.log("------------Syncing trip data...------------");
+                  await syncTripData();
+                  console.log("------------Trip data sync completed successfully.------------");
+              } catch (error) {
+                  console.error("~~~~~~~~~~~~~~~Error syncing trip data:", error);
+              }
+
+              console.log(`..................Sync operations completed at ${new Date().toLocaleTimeString()}..................`);
+
+              // Wait until the next 2-hour window
+              const nextHour = currentHour + 2;
+              const nextRun = new Date(now);
+              nextRun.setHours(nextHour, 0, 0, 0);
+              const waitTime = nextRun - new Date();
+              console.log(`Waiting until ${nextRun.toLocaleTimeString()} for the next run.`);
+              await new Promise(resolve => setTimeout(resolve, waitTime));
+          } else {
+              // Wait for 1 minute and re-check the time if outside the range
+              console.log(`Not in sync window (${now.toLocaleTimeString()}). Checking again in 1 minute.`);
+              await new Promise(resolve => setTimeout(resolve, 60000));
+          }
+      }
   } catch (error) {
-    console.error("Sync operation failed:", error);
+      console.error("An error occurred in the main loop:", error);
   } finally {
-    await closeConnections(); // Close connections at the end
+      await closeConnections();
+      console.log("Connections closed. Exiting script.");
   }
 }
 

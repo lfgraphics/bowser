@@ -36,6 +36,8 @@ export type FuelingOrderData = {
     _id: string;
     bowserDriver: BowserDriver;
     driverId: string;
+    party: string;
+    category: FuelingTypes;
     driverMobile?: string;
     driverName: string;
     fuelQuantity: number;
@@ -56,6 +58,8 @@ export type FuelingOrderData = {
 };
 
 export interface FuelNotificationProps {
+    category: FuelingTypes;
+    party: string;
     orderId: string;
     vehicleNumber: string;
     driverId: string;
@@ -94,7 +98,6 @@ export interface FormData {
     driverId: string;
     driverMobile: string;
     fuelMeterImage: string[] | null;
-    slipImage: string | null;
     fuelQuantity: string;
     quantityType: 'Full' | 'Part' | 'N/A';
     gpsLocation: string;
@@ -103,7 +106,6 @@ export interface FormData {
         regNo: string,
         driver: {
             name: string;
-            id: string;
             phoneNo: string;
         }
     };

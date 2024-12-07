@@ -26,8 +26,12 @@
         "backgroundColor": "#ffffff"
       },
       "runtimeVersion": "1.0.0",
+<<<<<<< HEAD
       "package": "com.itplfirebase.bowsersdispensing",
       "googleServicesFile":"./google-services.json"
+=======
+      "package": "com.itplfirebase.bowsersdispensing"
+>>>>>>> recovered
     },
     "web": {
       "bundler": "metro",

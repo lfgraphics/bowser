@@ -5,15 +5,19 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { FuelNotificationProps } from '../src/types/models';
 import { useState } from 'react';
-import NotificationFuelingScreen from '@/app/NotificationFueling';
+import { router } from 'expo-router';
+// import NotificationFuelingScreen from '@/app/NotificationFueling';
 import { ThemedView } from './ThemedView';
 import { ThemedText } from './ThemedText';
+import { setParams } from 'expo-router/build/global-state/routing';
 
 type RootStackParamList = {
   NotificationFueling: FuelNotificationProps;
 };
 
 const FuelNotification: React.FC<FuelNotificationProps> = ({
+  category,
+  party,
   orderId,
   vehicleNumber,
   driverId,
@@ -37,23 +41,16 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
   };
 
   const handleGiveFuel = () => {
-    navigation.navigate('NotificationFueling', {
-      orderId,
-      vehicleNumber,
-      driverId,
-      driverMobile,
-      driverName,
-      quantityType,
-      quantity,
-      bowser,
-      allocationAdmin
-    });
+    router.navigate(`/NotificationFueling?category=${category}&party=${party}&orderId=${orderId}&vehicleNumber=${vehicleNumber}&driverId=${driverId}&driverMobile=${driverMobile}&driverName=${driverName}&quantityType=${quantityType}&quantity=${quantity}&bowser=${bowser}&allocationAdminId=${allocationAdmin.id}&allocationAdminName=${allocationAdmin.name}`);
   };
 
   return (
     <>
-      {notificationFuelingVisible ? (
+      {/* {notificationFuelingVisible ? (
         <NotificationFuelingScreen
+          party={party}
+          category={category}
+          odometer={""}
           orderId={orderId}
           vehicleNumber={vehicleNumber}
           driverId={driverId}
@@ -63,30 +60,29 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
           quantityType={quantityType}
           bowser={bowser}
           allocationAdmin={allocationAdmin}
-          setNotificationFuelingVisible={setNotificationFuelingVisible} // Pass callback to hide screen
         />
-      ) : (
-        <ThemedView style={[styles.container, { backgroundColor: colors.card }]}>
-          <ThemedText style={[styles.vehicleNumber, { color: colors.text }]}>{vehicleNumber}</ThemedText>
-          {driverMobile && <ThemedText style={[styles.detail, { color: colors.text }]}>Mobile No.: {driverMobile}</ThemedText>}
-          {driverName && <ThemedText style={[styles.detail, { color: colors.text }]}>Driver Name: {driverName}</ThemedText>}
-          <ThemedText style={[styles.detail, { color: colors.text }]}>Fueling: {quantityType}</ThemedText>
-          {quantity && <ThemedText style={[styles.detail, { color: colors.text }]}>Quantity: {quantity}</ThemedText>}
-          <ThemedView style={styles.buttonContainer}>
-            {driverMobile && (
-              <TouchableOpacity style={styles.button} onPress={handleCallDriver}>
-                <Ionicons name="call" size={32} color={'white'} />
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity style={[styles.button, styles.disabledButton]}>
-              <Ionicons name="location" size={32} color={'white'} />
+      ) : ( */}
+      <ThemedView style={[styles.container, { backgroundColor: colors.card }]}>
+        <ThemedText style={[styles.vehicleNumber, { color: colors.text }]}>{vehicleNumber}</ThemedText>
+        {driverMobile && <ThemedText style={[styles.detail, { color: colors.text }]}>Mobile No.: {driverMobile}</ThemedText>}
+        {driverName && <ThemedText style={[styles.detail, { color: colors.text }]}>Driver Name: {driverName}</ThemedText>}
+        <ThemedText style={[styles.detail, { color: colors.text }]}>Fueling: {quantityType}</ThemedText>
+        {quantity && <ThemedText style={[styles.detail, { color: colors.text }]}>Quantity: {quantity}</ThemedText>}
+        <ThemedView style={styles.buttonContainer}>
+          {driverMobile && (
+            <TouchableOpacity style={styles.button} onPress={handleCallDriver}>
+              <Ionicons name="call" size={32} color={'white'} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={handleGiveFuel}>
-              <MaterialIcons name="local-gas-station" size={24} color={'white'} />
-            </TouchableOpacity>
-          </ThemedView>
+          )}
+          <TouchableOpacity style={[styles.button, styles.disabledButton]}>
+            <Ionicons name="location" size={32} color={'white'} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={handleGiveFuel}>
+            <MaterialIcons name="local-gas-station" size={24} color={'white'} />
+          </TouchableOpacity>
         </ThemedView>
-      )}
+      </ThemedView>
+      {/* // )} */}
     </>
   );
 };

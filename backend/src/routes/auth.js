@@ -57,10 +57,10 @@ router.post('/signup', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     try {
-        const { userId, password, deviceUUID, appName, pushToken } = req.body;
+        const { phoneNumber, password, deviceUUID, appName } = req.body;
 
         // Find user
-        const user = await User.findOne({ userId });
+        const user = await User.findOne({ phoneNumber });
 
         if (!user) {
             return res.status(400).json({ message: 'User not found' });
@@ -102,10 +102,10 @@ router.post('/login', async (req, res) => {
             return res.status(403).json({ message: 'You are loggin in from a diffrent device\nContact admin to approve this device' });
         }
 
-        const token = jwt.sign({ userId: user.userId, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ phoneNumber: user.phoneNumber, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
         const loginTime = new Date().toISOString();
 
-        const userTripSheets = await TripSheet.find({ 'bowserDriver.id': user.userId })
+        const userTripSheets = await TripSheet.find({ 'bowserDriver.phoneNo': user.phoneNumber })
             .select('tripSheetId')
             .where('settelment.settled', false);
 
@@ -116,35 +116,13 @@ router.post('/login', async (req, res) => {
         const userTripSheetId = userTripSheets[0].tripSheetId;
 
         const userData = {
-            _id: user._id,
-            'User Id': user.userId,
             'Name': user.name,
             'Phone Number': user.phoneNumber,
             'Verified User': user.verified,
             'Role': roleNames,
             'Bowser': user.bowserId,
             'Trip Sheet Id': userTripSheetId || "Not on a trip",
-            'Push Notification Token': pushToken || user.pushToken,
         };
-
-        if (pushToken) {
-            user.pushToken = pushToken;
-            await user.save();
-        } else {
-            // Check if the user already has a push token
-            if (user.pushToken) {
-                // Save existing push token to AsyncStorage
-                res.json({
-                    message: 'Login successful',
-                    token,
-                    loginTime,
-                    // bowserId,
-                    verified: user.verified,
-                    user: userData,
-                    pushToken: user.pushToken
-                });
-            }
-        }
 
         res.json({
             message: 'Login successful',
@@ -175,7 +153,7 @@ router.post('/verify-token', async (req, res) => {
             if (!isTokenValid(decoded)) {
                 return res.status(401).json({ valid: false, message: 'Token expired' });
             }
-            const user = await User.findOne({ userId: decoded.userId });
+            const user = await User.findOne({ phoneNumber: decoded.phoneNumber });
 
             if (!user) {
                 return res.status(404).json({ valid: false, message: 'User not found' });

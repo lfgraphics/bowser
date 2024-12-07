@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const axios = require("axios")
 // const FuelingTransaction = require('../models/fuelingTransaction');
 // const mongoose = require('mongoose');
 // const User = require('../models/user');
@@ -8,12 +9,13 @@ const fuelingOrders = require('../models/fuelingOrders');
 // let expo = new Expo();
 
 router.post('/', async (req, res) => {
-    let newFuelingOrder, bowserDriverUser, notificationPayload, pushTokenMissing = false;
+    let newFuelingOrder;
     let notificationSent = false;
     console.log(req.body)
 
     try {
         const {
+            category,
             vehicleNumber,
             driverId,
             driverName,
@@ -24,8 +26,8 @@ router.post('/', async (req, res) => {
             allocationAdmin,
         } = req.body;
 
-
         newFuelingOrder = new fuelingOrders({
+            category,
             vehicleNumber,
             driverId,
             driverName,
@@ -36,7 +38,6 @@ router.post('/', async (req, res) => {
                 regNo: bowser.regNo,
                 driver: {
                     name: bowser.driver.name,
-                    id: bowser.driver.id,
                     phoneNo: bowser.driver.phoneNo
                 }
             },
@@ -45,82 +46,52 @@ router.post('/', async (req, res) => {
                 id: allocationAdmin.id,
             },
         });
-
-        // Fetch bowser driver's push token
-        // try {
-        //     bowserDriverUser = await User.findOne({ userId: bowser.driver.id });
-        //     if (!bowserDriverUser || !bowserDriverUser.pushToken) {
-        //         console.warn('Bowser driver not found or push token not registered');
-        //         pushTokenMissing = true;
-        //     }
-        // } catch (error) {
-        //     console.error("Error fetching bowser driver:", error);
-        //     throw new Error("Failed to fetch bowser driver information");
-        // }
-
-        // Prepare notification payload
-        // try {
-        //     if (bowserDriverUser && bowserDriverUser.pushToken) {
-        //         notificationPayload = {
-        //             to: bowserDriverUser.pushToken,
-        //             sound: 'default',
-        //             title: 'New Fueling Order',
-        //             body: `New order for you\nVehicle Number: ${vehicleNumber}\nDriver: ${driverName}\nAllocated by ${allocationAdmin.userName} (${allocationAdmin.userId})`,
-        //             data: {
-        //                 orderId: newFuelingOrder._id.toString(),
-        //                 vehicleNumber: vehicleNumber,
-        //                 driverName: driverName,
-        //                 driverId: driverId,
-        //                 driverMobile: driverMobile,
-        //                 quantityType: quantityType,
-        //                 fuelQuantity: fuelQuantity,
-        //                 allocationAdminName: allocationAdmin.userName,
-        //                 allocationAdminId: allocationAdmin.userId,
-        //                 buttons: [
-        //                     {
-        //                         text: "Call Driver",
-        //                         action: "call",
-        //                         phoneNumber: driverMobile
-        //                     },
-        //                     {
-        //                         text: "Fuel",
-        //                         action: "openScreen",
-        //                         screenName: "NotificationFueling",
-        //                         params: {
-        //                             orderId: newFuelingOrder._id.toString(),
-        //                             vehicleNumber: vehicleNumber,
-        //                             driverName: driverName,
-        //                             driverId: driverId,
-        //                             driverMobile: driverMobile,
-        //                             quantityType: quantityType,
-        //                             fuelQuantity: fuelQuantity,
-        //                             allocationAdminName: allocationAdmin.userName,
-        //                             allocationAdminId: allocationAdmin.userId
-        //                         }
-        //                     }
-        //                 ]
-        //             }
-        //         };
-        //     }
-        // } catch (error) {
-        //     console.error("Error preparing notification payload:", error);
-        //     // No need to throw an error here, just skip sending notification
-        // }
-
-        // Send push notification
-        // try {
-        //     if (bowserDriverUser && Expo.isExpoPushToken(bowserDriverUser.pushToken)) {
-        //         const chunks = expo.chunkPushNotifications([notificationPayload]);
-        //         await Promise.all(chunks.map(chunk => expo.sendPushNotificationsAsync(chunk)));
-        //         notificationSent = true; // Mark notification as sent
-        //     } else {
-        //         console.error('Invalid push token or token missing');
-        //     }
-        // } catch (error) {
-        //     console.error("Error sending push notification:", error);
-        //     // Log the error but still return success for order allocation
-        // }
-
+        try {
+            let sentNotificationResponse = await axios.post(`https://app.nativenotify.com/api/indie/notification`, {
+                subID: newFuelingOrder.bowser.driver.phoneNo,
+                appId: 25239,
+                appToken: 'FWwj7ZcRXQi7FsC4ZHQlsi',
+                title: 'New Fueling Order',
+                message: `Vehicle Number: ${vehicleNumber}\nDriver: ${driverName}\nAllocated by ${allocationAdmin.name} (${allocationAdmin.id})`,
+                pushData: `{
+                    vehicleNumber: ${vehicleNumber},
+                    driverName: ${driverName},
+                    driverId: ${driverId},
+                    driverMobile: ${driverMobile},
+                    quantityType: ${quantityType},
+                    fuelQuantity: ${fuelQuantity},
+                    allocationAdminName: ${allocationAdmin.name},
+                    allocationAdminId: ${allocationAdmin.id},
+                    buttons: [
+                        {
+                            text: "Call Driver",
+                            action: "call",
+                            phoneNumber: ${driverMobile}
+                        },
+                        {
+                            text: "Fuel",
+                            action: "openScreen",
+                            screenName: "NotificationFueling",
+                            params: 
+                                category: ${category},
+                                vehicleNumber: ${vehicleNumber},
+                                driverName: ${driverName},
+                                driverId: ${driverId},
+                                driverMobile: ${driverMobile},
+                                quantityType: ${quantityType},
+                                fuelQuantity: ${fuelQuantity},
+                                allocationAdminName: ${allocationAdmin.name},
+                                allocationAdminId: ${allocationAdmin.id}
+                            }
+                        }
+                    ]
+                }`
+            });
+            console.log(sentNotificationResponse.statusText)
+            if (sentNotificationResponse.statusText == "Created") notificationSent = true;
+        } catch (error) {
+            console.log(error)
+        }
         // Create and save new FuelingOrder
         try {
             console.log("New Fueling Order:", newFuelingOrder);

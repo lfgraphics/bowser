@@ -1,7 +1,8 @@
 // import { registerForPushNotificationsAsync } from '@/app/utils/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { registerIndieID } from 'native-notify';
 import { Alert } from 'react-native';
-// This is a placeholder implementation. Replace with your actual authentication logic.
+import * as Notifications from 'expo-notifications';
 let isLoggedIn = false;
 
 export const checkUserLoggedIn = async (isLoggingIn = false) => {
@@ -130,3 +131,43 @@ export const logoutUser = async (): Promise<void> => {
   // Implement your logout logic here
   isLoggedIn = false;
 };
+
+
+async function getPushNotificationToken() {
+  const { data } = await Notifications.getExpoPushTokenAsync();
+  console.log("expoToken", data);  // This will be the new Expo push token
+  return data;  // Return the Expo push token
+}
+
+async function getNativeNotifyExpoToken(phoneNumber: string) {
+  const response = await fetch(`https://app.nativenotify.com/api/expo/indie/sub/25239/FWwj7ZcRXQi7FsC4ZHQlsi/${phoneNumber}`);
+  const data = await response.json();
+  console.log("Parsed Response Body:", data);
+
+  // Check if the response contains the expo token
+  const storedExpoToken = data[0]?.expo_android_token ? data[0].expo_android_token[0] : null;
+  return storedExpoToken;  // Return the stored Expo token from NativeNotify
+}
+
+export async function checkAndRegisterDevice(phoneNumber: string) {
+  try {
+    // Step 1: Get the current device's Expo push token
+    const currentExpoToken = await getPushNotificationToken();
+
+    // Step 2: Get the Expo token already registered with NativeNotify
+    const registeredExpoToken = await getNativeNotifyExpoToken(phoneNumber);
+
+    // Step 3: Check if the tokens are different
+    if (currentExpoToken !== registeredExpoToken) {
+      // If tokens are different, register the device with Indie ID
+      await registerIndieID(phoneNumber, 25239, 'FWwj7ZcRXQi7FsC4ZHQlsi');
+      Alert.alert("Success", "Login Successful and device is ready to receive push notifications");
+    } else {
+      // If tokens are the same, skip registration
+      Alert.alert("Device already registered", "No need to register again, Expo token is the same.");
+    }
+  } catch (error) {
+    // Handle any errors
+    Alert.alert("Errors registering push notifications", `${error instanceof Error ? error.message : error}`);
+  }
+}
