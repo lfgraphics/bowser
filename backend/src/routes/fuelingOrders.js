@@ -3,15 +3,15 @@ const router = express.Router();
 const FuelingTransaction = require('../models/fuelingTransaction');
 const FuelingOrder = require('../models/fuelingOrders');
 
-router.get('/:userId', async (req, res) => {
+router.get('/:phoneNo', async (req, res) => {
     try {
-        const { userId } = req.params;
+        const { phoneNo } = req.params;
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const limit = parseInt(req.query.limit) || 20;
         const skip = (page - 1) * limit;
 
         // Get all order IDs for the user
-        const userOrders = await FuelingOrder.find({ 'bowser.driver.id': userId }); //, '_id'
+        const userOrders = await FuelingOrder.find({ 'bowser.driver.phoneNo': phoneNo }); //, '_id'
         const userOrderIds = userOrders.map(order => order._id);
 
         // Find completed orders

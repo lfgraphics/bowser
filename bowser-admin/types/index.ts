@@ -23,11 +23,12 @@ export interface ResponseBowser {
     tripSheetId: string,
     regNo: string;
     _id: string;
-    bowserDriver: {
-        _id: mongoose.Schema.Types.ObjectId;
+    bowserDriver: Array<{
         id: string;
         name: string;
-    };
+        phoneNo: string;
+    }>
+    ;
 }
 
 export interface Bowser {
@@ -143,8 +144,17 @@ export interface UnauthorizedLogin {
 }
 
 export interface Vehicle {
-    vehicleNo: string;
-    driverDetails: Driver
+    VehicleNo: string;
+    tripDetails: {
+        driver: TripDriver
+        open: boolean
+    }
+}
+
+export interface TripDriver {
+    Name: string;
+    id: string | null;
+    MobileNo?: string;
 }
 
 export interface DispensesRecord {
@@ -193,3 +203,5 @@ export interface Sort {
     field: string;
     order: 'asc' | 'desc';
 }
+
+export type FuelingTypes = 'Own' | 'Attatch' | 'Bulk Sale'

@@ -9,7 +9,6 @@ const tripSheetSchema = new mongoose.Schema({
         {
             handOverDate: String,
             name: String,
-            id: String,
             _id: false,
             phoneNo: String,
         }
