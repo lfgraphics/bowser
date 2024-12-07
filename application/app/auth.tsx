@@ -7,9 +7,11 @@ import { useTheme } from '@react-navigation/native';
 import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { registerIndieID, unregisterIndieDevice } from 'native-notify';
 // import { registerForPushNotificationsAsync, registerPushTokenWithServer } from '@/app/utils/notifications';
 
 export default function AuthScreen() {
+
   const router = useRouter();
   const { colors } = useTheme();
   const colorScheme = useColorScheme();
@@ -42,17 +44,19 @@ export default function AuthScreen() {
       }
 
       const body = JSON.stringify({
-        userId,
+        // userId,
         password,
         deviceUUID,
-        phoneNumber: isLogin ? undefined : phoneNumber,
+        phoneNumber,
         name: isLogin ? undefined : name,
         appName: 'Bowsers Fueling',
         ...(await AsyncStorage.getItem('pushToken')) ? { pushToken: await AsyncStorage.getItem('pushToken') } : {},
       });
 
+      isLogin && registerIndieID(phoneNumber, 25239, 'FWwj7ZcRXQi7FsC4ZHQlsi');
+
       const endpoint = isLogin ? 'login' : 'signup';
-      const response = await fetch(`https://bowser-backend-2cdr.onrender.com/auth/${endpoint}`, { //https://bowser-backend-2cdr.onrender.com  //http://192.168.137.1:5000
+      const response = await fetch(`http://192.168.137.1:5000/auth/${endpoint}`, { //https://bowser-backend-2cdr.onrender.com  //http://192.168.137.1:5000
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -128,11 +132,6 @@ export default function AuthScreen() {
   };
 
   const validateInputs = () => {
-    if (!userId) {
-      alert("User ID is required.");
-      userIdInputRef.current?.focus();
-      return false;
-    }
     if (!password) {
       alert("Password is required.");
       passwordInputRef.current?.focus();
@@ -149,17 +148,6 @@ export default function AuthScreen() {
         nameInputRef.current?.focus();
         return false;
       }
-    }
-    // Check if User ID is alphanumeric (contains only letters and numbers)
-    const isValidUserId = /^[a-zA-Z0-9]+$/; // Example: "johnDoe123" is valid, "!@#$" is not
-    if (!isValidUserId.test(userId)) {
-      Alert.alert(
-        "Enter Correct Details",
-        "Invalid User ID format. User ID should only contain letters and numbers.",
-        [{ text: "Okay", onPress: () => userIdInputRef.current?.focus() }],
-        { cancelable: false }
-      );
-      return false;
     }
 
     // Check if Phone Number is in the format +1234567890 (optional + and 10-13 digits)
@@ -196,7 +184,7 @@ export default function AuthScreen() {
           <Text style={[styles.title, { color: colors.text }]}>{isLogin ? 'Login' : 'Sign Up'}</Text>
 
           <View style={styles.section}>
-            <View style={styles.inputContainer}>
+            {/* <View style={styles.inputContainer}>
               <Text style={{ color: colors.text }}>User ID:</Text>
               <TextInput
                 ref={userIdInputRef}
@@ -209,54 +197,10 @@ export default function AuthScreen() {
                 onSubmitEditing={() => passwordInputRef.current?.focus()}
                 blurOnSubmit={false}
               />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={{ color: colors.text }}>Password:</Text>
-              <View style={styles.passwordContainer}>
-                <TextInput
-                  ref={passwordInputRef}
-                  style={[styles.input, styles.passwordInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                  placeholder="Enter password"
-                  placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  returnKeyType={isLogin ? "done" : "next"}
-                  onSubmitEditing={() => isLogin ? handleAuth() : phoneNumberInputRef.current?.focus()}
-                  blurOnSubmit={isLogin}
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-off' : 'eye'}
-                    size={24}
-                    color={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
+            </View> */}
 
             {!isLogin && (
               <>
-                <View style={styles.inputContainer}>
-                  <Text style={{ color: colors.text }}>Phone Number:</Text>
-                  <TextInput
-                    ref={phoneNumberInputRef}
-                    style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                    placeholder="Enter phone number"
-                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                    value={phoneNumber}
-                    onChangeText={setPhoneNumber}
-                    keyboardType="phone-pad"
-                    returnKeyType="next"
-                    onSubmitEditing={() => nameInputRef.current?.focus()}
-                    blurOnSubmit={false}
-                  />
-                </View>
-
                 <View style={styles.inputContainer}>
                   <Text style={{ color: colors.text }}>Name:</Text>
                   <TextInput
@@ -267,12 +211,54 @@ export default function AuthScreen() {
                     value={name}
                     onChangeText={setName}
                     returnKeyType="next"
-                    onSubmitEditing={() => handleAuth}
+                    onSubmitEditing={() => phoneNumberInputRef.current?.focus()}
                     blurOnSubmit={true}
                   />
                 </View>
               </>
             )}
+            <View style={styles.inputContainer}>
+              <Text style={{ color: colors.text }}>Phone Number:</Text>
+              <TextInput
+                ref={phoneNumberInputRef}
+                style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                placeholder="Enter phone number"
+                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
+                returnKeyType="next"
+                onSubmitEditing={() => passwordInputRef.current?.focus()}
+                blurOnSubmit={false}
+              />
+            </View>
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={{ color: colors.text }}>Password:</Text>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                ref={passwordInputRef}
+                style={[styles.input, styles.passwordInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                placeholder="Enter password"
+                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                returnKeyType={isLogin ? "done" : "next"}
+                onSubmitEditing={() => handleAuth()}
+                blurOnSubmit={isLogin}
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={24}
+                  color={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <TouchableOpacity

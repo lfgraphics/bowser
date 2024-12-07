@@ -7,14 +7,18 @@ import * as FileSystem from 'expo-file-system';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { useTheme } from '@react-navigation/native';
-import { FormData } from '@/src/types/models';
+import { useRoute, useTheme } from '@react-navigation/native';
+import { FormData, FuelingTypes } from '@/src/types/models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
+import { capturePhoto } from '@/src/utils/imageManipulation';
 
 interface RouteParams {
+    party: string;
+    odometer: string;
+    category: FuelingTypes;
     orderId: string;
     vehicleNumber: string;
     driverId: string;
@@ -29,53 +33,45 @@ interface RouteParams {
             id: string,
         }
     }
-    allocationAdmin: {
-        name: string;
-        id: string;
-        allocationTime: string
-    };
-    setNotificationFuelingVisible: Dispatch<SetStateAction<boolean>>
+    allocationAdminName: string;
+    allocationAdminId: string
 }
 
-const NotificationFuelingScreen = ({
-    orderId,
-    vehicleNumber,
-    driverId,
-    driverMobile,
-    driverName,
-    quantity,
-    quantityType,
-    bowser,
-    allocationAdmin,
-    setNotificationFuelingVisible
-}: RouteParams) => {
+const NotificationFuelingScreen = () => {
 
-    useEffect(() => {
-        const backAction = () => {
-            setNotificationFuelingVisible(false); // Hide the fueling screen when back is pressed
-            return true;
-        };
+    const route = useRoute();
+    const {
+        party,
+        category,
+        orderId,
+        vehicleNumber = 'N/A',
+        driverId = 'N/A',
+        driverMobile = 'N/A',
+        driverName = 'N/A',
+        quantityType = 'N/A',
+        quantity = 'N/A',
+        bowser,
+        allocationAdminName,
+        allocationAdminId
+    } = route.params as RouteParams;
 
-        const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-
-        return () => backHandler.remove();
-    }, [setNotificationFuelingVisible]);
-
-
+    const properties = { allocationAdminName }
+    console.log("params:", properties)
     // declare state variables---->
     const colorScheme = useColorScheme();
     const [vehicleNumberPlateImage, setVehicleNumberPlateImage] = useState<string | null>(null);
-    const [fuelMeterImage, setFuelMeterImage] = useState<string | null>(null);
+    const [fuelMeterImage, setFuelMeterImage] = useState<string[] | null>(null);
+    const [odometer, setOdodmeter] = useState('');
     const [slipImage, setSlipImage] = useState<string | null>(null);
-    const [fuelQuantity, setFuelQuantity] = useState<string>(quantity.toString());
+    const [fuelQuantity, setFuelQuantity] = useState<string>(quantity);
     const [driverMobileNo, setDriverMobileNo] = useState(driverMobile);
     const [gpsLocation, setGpsLocation] = useState('');
-    const [fuelingDateTime, setFuelingDateTime] = useState('');
+    const [fuelingDateTime, setFuelingDateTime] = useState<Date>(new Date());
     const [formSubmitting, setFormSubmitting] = useState(false);
-    const [vehicleNumberPlateImageSize, setVehicleNumberPlateImageSize] = useState<string>('');
-    const [fuelMeterImageSize, setFuelMeterImageSize] = useState<string>('');
     const [slipImageSize, setSlipImageSize] = useState<string>('');
     const [isOnline, setIsOnline] = useState(true);
+    const [imageModalVisible, setImageModalVisible] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const { colors } = useTheme();
 
     // declare refs for input fields---->
@@ -83,47 +79,40 @@ const NotificationFuelingScreen = ({
     const driverNameInputRef = React.useRef<TextInput>(null);
     const driverIdInputRef = React.useRef<TextInput>(null);
     const driverMobileInputRef = React.useRef<TextInput>(null);
+    const odometerInputRef = React.useRef<TextInput>(null);
     const fuelQuantityInputRef = React.useRef<TextInput>(null);
-    const gpsLocationInputRef = React.useRef<TextInput>(null);
+    const adminNameInputRef = React.useRef<TextInput>(null);
+    const adminIdInputRef = React.useRef<TextInput>(null);
     const scrollViewRef = useRef<ScrollView>(null); // Ref for ScrollView
 
     // function declarations---->
     // startup function
-    const location = async () => {
+    const location = async (): Promise<string | { error: string }> => {
+        // Request location permissions
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-            const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
-            if (newStatus !== 'granted') {
-                return;
-            }
+            return { error: "Location permission denied" };
         }
 
-        let location = await Location.getCurrentPositionAsync({});
-        const coordinates = `Latitude ${location.coords.latitude}, Longitude ${location.coords.longitude}`;
-        setGpsLocation(coordinates);
-        return coordinates;
-    }
+        try {
+            // Attempt to get the current position
+            let location: Location.LocationObject = await Location.getCurrentPositionAsync({});
+            const { latitude, longitude } = location.coords;
+
+            const coordinates = `${latitude}, ${longitude}`;
+
+            setGpsLocation(coordinates);
+            return coordinates;
+        } catch (error) {
+            console.error("Error getting location or city:", error);
+            return { error: "Unable to retrieve location. Please check your internet connection." };
+        }
+    };
     const fulingTime = () => {
-        const currentDateTime = new Date().toLocaleString();
-        setFuelingDateTime(currentDateTime);
+        const currentDateTime = new Date();
+        setFuelingDateTime(new Date());
         return currentDateTime;
     }
-    const calculateBase64Size = (base64String: string): string => {
-        const stringLength = base64String.length;
-        const sizeInBytes = (stringLength * (3 / 4)) - (base64String.endsWith('==') ? 2 : base64String.endsWith('=') ? 1 : 0);
-        const sizeInKB = sizeInBytes / 1024;
-        const sizeInMB = sizeInKB / 1024;
-        return `${sizeInKB.toFixed(2)} KB (${sizeInMB.toFixed(2)} MB)`;
-    };
-    const compressImage = async (uri: string): Promise<string> => {
-        const manipulatedImage = await ImageManipulator.manipulateAsync(
-            uri,
-            [{ resize: { width: 500 } }],
-            { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
-        );
-        const base64Image = await imageToBase64(manipulatedImage.uri);
-        return base64Image;
-    };
     // form submit reset
     const submitDetails = async () => {
         setFormSubmitting(true);
@@ -143,10 +132,16 @@ const NotificationFuelingScreen = ({
         }
         currentFuelingDateTime = await fulingTime();
         const locationResult = await location();
-        if (locationResult) {
-            currentGpsLocation = locationResult;
-        }
 
+        if (typeof locationResult === 'string') {
+            currentGpsLocation = locationResult;
+        } else if (typeof locationResult === 'object' && locationResult.error) {
+            Alert.alert(
+                "Location Error",
+                locationResult.error,
+                [{ text: "OK" }]
+            );
+        }
         let tripSheetId
 
         try {
@@ -159,7 +154,10 @@ const NotificationFuelingScreen = ({
 
         if (currentFuelingDateTime && currentGpsLocation) {
             const formData: FormData = {
+                party,
+                odometer,
                 orderId,
+                category,
                 vehicleNumberPlateImage,
                 tripSheetId,
                 vehicleNumber: vehicleNumber.toUpperCase(),
@@ -181,8 +179,8 @@ const NotificationFuelingScreen = ({
                     }
                 },
                 allocationAdmin: {
-                    name: allocationAdmin.name,
-                    id: allocationAdmin.id,
+                    name: allocationAdminName,
+                    id: allocationAdminId,
                 },
             };
 
@@ -306,85 +304,30 @@ const NotificationFuelingScreen = ({
     const resetForm = () => {
         setVehicleNumberPlateImage(null);
         setFuelMeterImage(null);
-        setSlipImage(null);
         setFuelQuantity('0');
-        setGpsLocation('');
-        setFuelingDateTime('');
     }
     // form data handling
-    const imageToBase64 = async (uri: string): Promise<string> => {
-        const base64 = await FileSystem.readAsStringAsync(uri, {
-            encoding: FileSystem.EncodingType.Base64,
-        });
-        return `data:image/jpeg;base64,${base64}`;
-    };
     const openNumberPlateCamera = async () => {
         if (vehicleNumberPlateImage) {
             return;
         }
-        const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-
-        if (permissionResult.granted === false) {
-            alert("Camera permission is required!");
-            return;
-        }
-
-        const result = await ImagePicker.launchCameraAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            quality: 1,
-        });
-
-        if (!result.canceled && result.assets[0].uri) {
-            const compressedImage = await compressImage(result.assets[0].uri);
-            setVehicleNumberPlateImage(compressedImage);
-            setVehicleNumberPlateImageSize(calculateBase64Size(compressedImage));
+        try {
+            const photo = await capturePhoto()
+            if (photo && photo?.length > 0) {
+                setVehicleNumberPlateImage(photo);
+            }
+        } catch (err) {
+            alert(err)
         }
     };
     const openFuelMeterCamera = async () => {
-        if (fuelMeterImage) {
-            return;
-        }
-        const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-
-        if (permissionResult.granted === false) {
-            alert("Camera permission is required!");
-            return;
-        }
-
-        const result = await ImagePicker.launchCameraAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            quality: 1,
-        });
-
-        if (!result.canceled && result.assets[0].uri) {
-            const compressedImage = await compressImage(result.assets[0].uri);
-            setFuelMeterImage(compressedImage);
-            setFuelMeterImageSize(calculateBase64Size(compressedImage));
-        }
-    };
-    const openSlipCamera = async () => {
-        if (slipImage) {
-            return;
-        }
-        const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-
-        if (permissionResult.granted === false) {
-            alert("Camera permission is required!");
-            return;
-        }
-
-        const result = await ImagePicker.launchCameraAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            quality: 1,
-        });
-
-        if (!result.canceled && result.assets[0].uri) {
-            const compressedImage = await compressImage(result.assets[0].uri);
-            setSlipImage(compressedImage);
-            setSlipImageSize(calculateBase64Size(compressedImage));
+        try {
+            const photo = await capturePhoto()
+            if (photo && photo?.length > 0) {
+                setFuelMeterImage(prevImages => prevImages ? [...prevImages, photo] : [photo]);
+            }
+        } catch (err) {
+            alert(err)
         }
     };
     // Input validation
@@ -432,69 +375,109 @@ const NotificationFuelingScreen = ({
         return true;
     }
 
+    const openModal = (image: string) => {
+        setSelectedImage(image);
+        setImageModalVisible(true);
+    };
+
+    const closeModal = () => {
+        setImageModalVisible(false);
+        setSelectedImage(null);
+    };
+
     return (
         <ThemedView style={[styles.container, styles.main]}>
             <ScrollView>
                 <ThemedView style={styles.section}>
+                    <View style={[styles.navContainer, { backgroundColor: colors.card }]}>
+                        {(['Own', 'Attatch', 'Bulk Sale'] as FuelingTypes[]).map((option) => (
+                            <TouchableOpacity
+                                disabled
+                                key={option}
+                                style={[styles.navButton, option === category && styles.activeButton]}
+                            >
+                                <ThemedText style={[styles.submitButtonText, { color: `${category == option ? colors.card : colors.text}` }]}>{option == "Own" ? "अपना" : option == "Attatch" ? "अटैच" : "सेल"}</ThemedText>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
                     <ThemedText type="title">Fuel Dispensing Form</ThemedText>
                     <ThemedText style={{ textAlign: 'center' }}>{Date().toLocaleString()}</ThemedText>
                     <ThemedView style={styles.inputContainer}>
-                        <ThemedText>Vehicle Number:</ThemedText>
-                        {vehicleNumberPlateImage && (
-                            <>
-                                <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
-                                <ThemedText style={styles.imageSizeText}>Size: {vehicleNumberPlateImageSize}</ThemedText>
-                            </>
-                        )}
+                        {vehicleNumberPlateImage &&
+                            <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
+                        }
                         {!vehicleNumberPlateImage && (
                             <TouchableOpacity
                                 onPress={() => vehicleNumberPlateImage === null ? openNumberPlateCamera() : null}
                                 style={[styles.photoButton]}
                             >
                                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Ionicons name="car-outline" size={20} color="white" style={{ marginRight: 5 }} />
+                                    {(category == 'Own' || category == 'Attatch') && <Ionicons name="car-outline" size={20} color="white" style={{ marginRight: 5 }} />}
                                     <ThemedText style={{ color: 'white' }}>
-                                        Take Vehicle Number Plate Photo
+                                        {(category == 'Own' || category == 'Attatch') ? 'गाड़ी के नम्बर प्लेट की' : 'सेलिंग पॉइंट की'} फ़ोटो खीचें
                                     </ThemedText>
                                 </View>
                             </TouchableOpacity>
                         )}
-                        <TextInput
-                            readOnly
-                            ref={vehicleNumberInputRef}
-                            // onPress={() => vehicleNumber === '' ? openNumberPlateCamera() : null}
-                            style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                            placeholder="Enter vehicle number"
-                            placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                            value={vehicleNumber}
-                            returnKeyType="next"
-                            onSubmitEditing={() => driverNameInputRef.current?.focus()}
-                            blurOnSubmit={false}
-                        />
+                        {category !== "Bulk Sale" &&
+                            <View style={styles.inputContainer}>
+                                <ThemedText>गाड़ी नम्बर:</ThemedText>
+                                <TextInput
+                                    readOnly
+                                    ref={vehicleNumberInputRef}
+                                    onPress={() => !vehicleNumberPlateImage && openNumberPlateCamera()}
+                                    style={[styles.input, { color: colors.text }]}
+                                    placeholder={'5678'}
+                                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                                    value={vehicleNumber}
+                                    returnKeyType="next"
+                                    onSubmitEditing={() => odometerInputRef.current?.focus()}
+                                    blurOnSubmit={true}
+                                />
+                            </View>
+                        }
+                        {category == "Own" && <View style={styles.inputContainer}>
+                            <ThemedText>गाड़ी का मीटर:</ThemedText>
+                            <TextInput
+                                ref={odometerInputRef}
+                                onPress={() => !vehicleNumberPlateImage && openNumberPlateCamera()}
+                                style={[styles.input, { color: colors.text }]}
+                                placeholder={'4567835'}
+                                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                                value={odometer}
+                                onChangeText={(text) => { setOdodmeter(text); }}
+                                returnKeyType="next"
+                                keyboardType="number-pad"
+                                onSubmitEditing={() => driverIdInputRef.current?.focus()}
+                                blurOnSubmit={true}
+                            />
+                        </View>}
                     </ThemedView>
 
                     <ThemedView style={styles.section}>
 
                         <ThemedView style={styles.inputContainer}>
-                            <ThemedText>Driver ID:</ThemedText>
-                            <TextInput
-                                ref={driverIdInputRef}
-                                readOnly
-                                style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                                placeholder="Enter driver ID"
-                                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                                value={driverId}
-                                keyboardType="phone-pad"
-                                returnKeyType="next"
-                                onSubmitEditing={() => driverNameInputRef.current?.focus()}
-                                blurOnSubmit={false}
-                            />
+                            {category == 'Own' &&
+                                <View style={styles.inputContainer}>
+                                    <ThemedText>ड्राईवर की आई-डी:</ThemedText>
+                                    <TextInput
+                                        ref={driverIdInputRef}
+                                        style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                                        placeholder={`0246`}
+                                        placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                                        value={driverId}
+                                        keyboardType="default"
+                                        onSubmitEditing={() => driverNameInputRef.current?.focus()}
+                                        blurOnSubmit={false}
+                                    />
+                                </View>
+                            }
                         </ThemedView>
                         <ThemedView style={styles.inputContainer}>
-                            <ThemedText>Driver Name:</ThemedText>
+                            <ThemedText>{category !== "Bulk Sale" ? "ड्राईवर" : "मेनेजर"} का नाम:</ThemedText>
                             <TextInput
-                                ref={driverNameInputRef}
                                 readOnly
+                                ref={driverNameInputRef}
                                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
                                 placeholder="Enter driver name"
                                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
@@ -505,8 +488,9 @@ const NotificationFuelingScreen = ({
                             />
                         </ThemedView>
                         <ThemedView style={styles.inputContainer}>
-                            <ThemedText>Driver Mobile Number:</ThemedText>
+                            <ThemedText>{category !== "Bulk Sale" ? "ड्राईवर" : "मेनेजर"} का मोबाइल नम्बर:</ThemedText>
                             <TextInput
+                                readOnly
                                 ref={driverMobileInputRef}
                                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
                                 placeholder="Enter mobile number"
@@ -523,47 +507,27 @@ const NotificationFuelingScreen = ({
 
                     <ThemedView style={styles.section}>
                         <ThemedView style={styles.inputContainer}>
-                            {fuelMeterImage && (
-                                <>
-                                    <Image source={{ uri: fuelMeterImage }} style={styles.uploadedImage} />
-                                    <ThemedText style={styles.imageSizeText}>Size: {fuelMeterImageSize}</ThemedText>
-                                </>
-                            )}
-                            {!fuelMeterImage && (
-                                <TouchableOpacity
-                                    onPress={() => fuelMeterImage === null ? openFuelMeterCamera() : null}
-                                    style={[styles.photoButton]}
-                                >
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Ionicons name="speedometer-outline" size={20} color="white" style={{ marginRight: 5 }} />
-                                        <ThemedText style={{ color: 'white' }}>
-                                            Take Fuel Meter Photo
-                                        </ThemedText>
-                                    </View>
-                                </TouchableOpacity>
-                            )}
+                            <View style={styles.grid}>
+                                {fuelMeterImage &&
+                                    fuelMeterImage.map((image, index) => (
+                                        <TouchableOpacity key={index} onPress={() => openModal(image)} style={styles.gridItem}>
+                                            <Image source={{ uri: image }} style={styles.gridImage} />
+                                        </TouchableOpacity>
+                                    ))}
+                            </View>
+                            <TouchableOpacity
+                                onPress={() => openFuelMeterCamera()}
+                                style={[styles.photoButton,]}
+                            >
+                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Ionicons name="speedometer-outline" size={20} color="white" style={{ marginRight: 5 }} />
+                                    <ThemedText style={{ color: 'white' }}>
+                                        तेल मीटर/ पर्चियों की फ़ोटो खीचें
+                                    </ThemedText>
+                                </View>
+                            </TouchableOpacity>
 
-                            {slipImage && (
-                                <>
-                                    <Image source={{ uri: slipImage }} style={styles.uploadedImage} />
-                                    <ThemedText style={styles.imageSizeText}>Size: {slipImageSize}</ThemedText>
-                                </>
-                            )}
-                            {!slipImage && (
-                                <TouchableOpacity
-                                    onPress={() => slipImage === null ? openSlipCamera() : null}
-                                    style={[styles.photoButton]}
-                                >
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Ionicons name="receipt-outline" size={20} color="white" style={{ marginRight: 5 }} />
-                                        <ThemedText style={{ color: 'white' }}>
-                                            Take Slip Photo
-                                        </ThemedText>
-                                    </View>
-                                </TouchableOpacity>
-                            )}
-                            <ThemedText>Fuel Quantity Dispensed:</ThemedText>
-
+                            <ThemedText>तेल की मात्रा:</ThemedText>
                             <View style={styles.rowContainer}>
                                 <TextInput
                                     ref={fuelQuantityInputRef}
@@ -571,7 +535,7 @@ const NotificationFuelingScreen = ({
                                     style={[styles.input, styles.quarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
                                     placeholder="Quantity type"
                                     placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                                    value={quantityType}
+                                    value={quantityType == "Full" ? "फुल" : "पार्ट"}
                                     returnKeyType="next"
                                     onSubmitEditing={() => fuelQuantityInputRef.current?.focus()}
                                     blurOnSubmit={false}
@@ -582,13 +546,39 @@ const NotificationFuelingScreen = ({
                                     placeholder="Fuel quantity"
                                     placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                                     keyboardType="numeric"
-                                    value={fuelQuantity.toString()}
-                                    returnKeyType="next"
+                                    value={fuelQuantity == "0" ? "" : fuelQuantity}
+                                    returnKeyType="done"
                                     onChangeText={(text) => {
                                         setFuelQuantity(text);
                                     }}
                                     readOnly={false}
-                                    onSubmitEditing={() => gpsLocationInputRef.current?.focus()}
+                                    blurOnSubmit={false}
+                                />
+                            </View>
+                            <View style={styles.inputContainer}>
+                                <ThemedText>आर्डर कर्ता</ThemedText>
+                                <TextInput
+                                    readOnly
+                                    ref={adminIdInputRef}
+                                    style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                                    placeholder="5"
+                                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                                    keyboardType="default"
+                                    value={allocationAdminId}
+                                    returnKeyType="next"
+                                    onSubmitEditing={() => adminNameInputRef.current?.focus()}
+                                    blurOnSubmit={false}
+                                />
+                                <TextInput
+                                    readOnly
+                                    ref={adminNameInputRef}
+                                    style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                                    placeholder="Enter Allocation Admin Name"
+                                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                                    keyboardType="default"
+                                    value={allocationAdminName}
+                                    returnKeyType="next"
+                                    onSubmitEditing={() => fuelQuantityInputRef.current?.focus()}
                                     blurOnSubmit={false}
                                 />
                             </View>
@@ -600,7 +590,7 @@ const NotificationFuelingScreen = ({
                         onPress={submitDetails}
                     >
                         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                            <ThemedText style={styles.submitButtonText}>Submit</ThemedText>
+                            <ThemedText style={styles.submitButtonText}>सबमिट करें</ThemedText>
                             <Ionicons name="send-outline" size={20} color="white" />
                         </View>
                     </TouchableOpacity>
@@ -609,12 +599,24 @@ const NotificationFuelingScreen = ({
                         onPress={resetForm}
                     >
                         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                            <ThemedText style={styles.resetButtonText}>Reset</ThemedText>
+                            <ThemedText style={[styles.resetButtonText, { color: colors.text }]}>रिसेट करें</ThemedText>
                             <Ionicons name="refresh-outline" size={20} color="white" />
                         </View>
                     </TouchableOpacity>
                 </ThemedView>
             </ScrollView>
+            <Modal visible={imageModalVisible} transparent={true} onRequestClose={closeModal}>
+                <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+                    <View style={styles.modalBackground}>
+                        <TouchableOpacity onPress={closeModal} style={styles.imageModelcloseButton}>
+                            <ThemedText style={styles.closeButtonText}>Close</ThemedText>
+                        </TouchableOpacity>
+                        {selectedImage !== null && (
+                            <Image source={{ uri: selectedImage }} style={styles.fullImage} />
+                        )}
+                    </View>
+                </View>
+            </Modal>
             {formSubmitting && (
                 <ThemedView style={styles.loaderContainer}>
                     <ActivityIndicator size="large" color={colors.primary} />
@@ -630,6 +632,43 @@ const styles = StyleSheet.create({
     main: {
         paddingTop: 70,
         paddingHorizontal: 10,
+    },
+    navContainer: {
+        paddingVertical: 10,
+        borderRadius: 5,
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginVertical: 20
+    },
+    navButton: {
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        width: 90,
+        alignItems: 'center',
+        textAlign: 'center'
+    },
+    activeButton: {
+        backgroundColor: '#0a7ea4',
+    },
+    grid: {
+        width: "100%",
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        gap: 1,
+    },
+    gridItem: {
+        width: '32%', // Slightly less than 33% to allow for some spacing
+        marginBottom: 10,
+    },
+    gridImage: {
+        width: '100%', // Make sure the image fills its container
+        aspectRatio: 1,
+        borderWidth: 1,
+        resizeMode: 'cover',
+        borderRadius: 4,
     },
     containerTitles: {
         paddingTop: 4,
@@ -735,6 +774,35 @@ const styles = StyleSheet.create({
         marginTop: 50,
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
+    },
+    modalBackground: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)', // Semi-transparent background
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    imageModalContainer: {
+        width: '90%',
+        height: '80%',
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    imageModelcloseButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 150,
+        borderRadius: 5,
+    },
+    closeButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    fullImage: {
+        width: '100%',
+        height: '90%',
+        resizeMode: 'contain', // Keeps aspect ratio while showing the image
     },
     driverItem: {
         padding: 20,

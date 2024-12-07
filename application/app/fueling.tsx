@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
-import { compressImage } from '@/src/utils/imageManipulation';
+import { capturePhoto, compressImage } from '@/src/utils/imageManipulation';
 
 
 export default function FuelingScreen() {
@@ -303,41 +303,23 @@ export default function FuelingScreen() {
     if (vehicleNumberPlateImage) {
       return;
     }
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-
-    if (permissionResult.granted === false) {
-      alert("Camera permission is required!");
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      quality: 1,
-    });
-
-    if (!result.canceled && result.assets[0].uri) {
-      const compressedImage = await compressImage(result.assets[0].uri);
-      setVehicleNumberPlateImage(compressedImage);
+    try {
+      const photo = await capturePhoto()
+      if (photo && photo?.length > 0) {
+        setVehicleNumberPlateImage(photo);
+      }
+    } catch (err) {
+      alert(err)
     }
   };
   const openFuelMeterCamera = async () => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-
-    if (permissionResult.granted === false) {
-      alert("Camera permission is required!");
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      quality: 1,
-    });
-
-    if (!result.canceled && result.assets[0].uri) {
-      const compressedImage = await compressImage(result.assets[0].uri);
-      setFuelMeterImage(prevImages => prevImages ? [...prevImages, compressedImage] : [compressedImage]);
+    try {
+      const photo = await capturePhoto()
+      if (photo && photo?.length > 0) {
+        setFuelMeterImage(prevImages => prevImages ? [...prevImages, photo] : [photo]);
+      }
+    } catch (err) {
+      alert(err)
     }
   };
   const searchDriverById = async (idNumber: string) => {
@@ -605,33 +587,35 @@ export default function FuelingScreen() {
                 </View>
               </TouchableOpacity>
             )}
-            {fueling !== "Bulk Sale" && <View style={styles.inputContainer}>
-              <ThemedText>गाड़ी नम्बर:</ThemedText>
-              <TextInput
-                ref={vehicleNumberInputRef}
-                onPress={() => !vehicleNumberPlateImage && openNumberPlateCamera()}
-                style={[styles.input, { color: colors.text }]}
-                placeholder={'5678'}
-                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                value={vehicleNumber}
-                onChangeText={(text) => {
-                  setVehicleNumber(text.toUpperCase());
-                  if (fueling == 'Own') {
-                    if (text.length > 3) {
-                      setFoundVehicles([]);
-                      setNoVehicleFound(false);
-                      searchVehicleByNumber(text);
+            {fueling !== "Bulk Sale" &&
+              <View style={styles.inputContainer}>
+                <ThemedText>गाड़ी नम्बर:</ThemedText>
+                <TextInput
+                  ref={vehicleNumberInputRef}
+                  onPress={() => !vehicleNumberPlateImage && openNumberPlateCamera()}
+                  style={[styles.input, { color: colors.text }]}
+                  placeholder={'5678'}
+                  placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                  value={vehicleNumber}
+                  onChangeText={(text) => {
+                    setVehicleNumber(text.toUpperCase());
+                    if (fueling == 'Own') {
+                      if (text.length > 3) {
+                        setFoundVehicles([]);
+                        setNoVehicleFound(false);
+                        searchVehicleByNumber(text);
+                      }
+                    } else {
+                      // will intigrate functionality for finding party name
+                      // will intigrate functionality for finding attatched vehicle
                     }
-                  } else {
-                    // will intigrate functionality for finding party name
-                    // will intigrate functionality for finding attatched vehicle
-                  }
-                }}
-                returnKeyType="next"
-                onSubmitEditing={() => driverIdInputRef.current?.focus()}
-                blurOnSubmit={true}
-              />
-            </View>}
+                  }}
+                  returnKeyType="next"
+                  onSubmitEditing={() => odometerInputRef.current?.focus()}
+                  blurOnSubmit={true}
+                />
+              </View>
+            }
             {fueling == "Own" && <View style={styles.inputContainer}>
               <ThemedText>गाड़ी का मीटर:</ThemedText>
               <TextInput

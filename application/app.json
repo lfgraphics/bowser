@@ -26,8 +26,7 @@
         "backgroundColor": "#ffffff"
       },
       "runtimeVersion": "1.0.0",
-      "package": "com.itplfirebase.bowsersdispensing",
-      "googleServicesFile":"./google-services.json"
+      "package": "com.itplfirebase.bowsersdispensing"
     },
     "web": {
       "bundler": "metro",
@@ -36,7 +35,14 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+            "icon": "./assets/favicon.png",
+            "color": "#ffffff"
+        }
+     ]
     ],
     "experiments": {
       "typedRoutes": true

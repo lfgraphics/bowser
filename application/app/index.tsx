@@ -10,17 +10,20 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { Camera } from 'expo-camera';
 import NetInfo from '@react-native-community/netinfo';
-import { AppUpdates, FormData } from '../src/types/models';
+import { AppUpdates, FormData, UserData } from '../src/types/models';
 import FuelingRecords from '@/components/FuelingRecords';
 import { useTheme } from '@react-navigation/native';
 import { getAppUpdate } from '@/src/utils/helpers'
+import registerNNPushToken, { unregisterIndieDevice } from 'native-notify';
+// import * as Notifications from 'expo-notifications';
 
-const App = () => {
+export default function App() {
+  registerNNPushToken(25239, 'FWwj7ZcRXQi7FsC4ZHQlsi');
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isProfileModalVisible, setProfileModalVisible] = useState(false);
-  const [userData, setUserData] = useState<{ name: string; userId: string } | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
   const [isGPSEnabled, setIsGPSEnabled] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
@@ -29,12 +32,23 @@ const App = () => {
   const [isOfflineDataModalVisible, setOfflineDataModalVisible] = useState(false);
   const [isOfflineDataLoading, setIsOfflineDataLoading] = useState(false);
   const { colors } = useTheme();
-  const appVersion = 37
+  const appVersion = 38
   const [appurl, setAppUrl] = useState<string | null>(null);
+
 
   useEffect(() => {
     checkUserLoggedIn();
   }, []);
+
+  // useEffect(() => {
+  //   const getPushToken = async () => {
+  //     const loggedIn = await checkUserLoggedIn()
+  //     if (loggedIn) {
+  //       const token = (await Notifications.getDevicePushTokenAsync()).data;
+  //       console.log(token)
+  //     }
+  //   }
+  // }, [])
 
   let showUpdateLink = async () => {
     let appPushsOnDb: AppUpdates[] = await getAppUpdate()
@@ -245,6 +259,7 @@ const App = () => {
             await AsyncStorage.removeItem('userToken');
             await AsyncStorage.removeItem('userData');
             await AsyncStorage.removeItem('pushToken');
+            unregisterIndieDevice(userData?.phoneNumber, 25239, 'FWwj7ZcRXQi7FsC4ZHQlsi');
             router.replace('/auth' as any);
           } else {
             // User chose not to submit offline data, cancel logout
@@ -456,7 +471,7 @@ const App = () => {
           <MaterialIcons name="local-gas-station" size={24} color="white" style={{ marginHorizontal: 10 }} />
         </View>
       </Link>
-      <Link disabled style={styles.disabledButton} href={'/notifications'}>
+      <Link style={styles.button} href={'/notifications'}>
         {/* disabled */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: 'white' }}>
@@ -730,4 +745,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+// export default App;
