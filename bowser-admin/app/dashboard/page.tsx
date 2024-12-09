@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { isAuthenticated } from '@/lib/auth';
 import FuelingAllocation from '@/components/FuelingAllocation';
 import Loading from '../loading';
+import { InstallPrompt, PushNotificationManager } from '../page';
 
 export default function Dashboard() {
     const router = useRouter();
@@ -28,6 +29,8 @@ export default function Dashboard() {
     return (
         <div>
             <FuelingAllocation />
+            <PushNotificationManager />
+            <InstallPrompt />
         </div>
     );
 }

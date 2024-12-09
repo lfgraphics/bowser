@@ -1,12 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require("axios")
-// const FuelingTransaction = require('../models/fuelingTransaction');
-// const mongoose = require('mongoose');
-// const User = require('../models/user');
-// const { Expo } = require('expo-server-sdk');
 const fuelingOrders = require('../models/fuelingOrders');
-// let expo = new Expo();
 
 router.post('/', async (req, res) => {
     let newFuelingOrder;
@@ -16,6 +11,7 @@ router.post('/', async (req, res) => {
     try {
         const {
             category,
+            party,
             vehicleNumber,
             driverId,
             driverName,
@@ -28,6 +24,7 @@ router.post('/', async (req, res) => {
 
         newFuelingOrder = new fuelingOrders({
             category,
+            party,
             vehicleNumber,
             driverId,
             driverName,
@@ -47,50 +44,76 @@ router.post('/', async (req, res) => {
             },
         });
         try {
-            let sentNotificationResponse = await axios.post(`https://app.nativenotify.com/api/indie/notification`, {
-                subID: newFuelingOrder.bowser.driver.phoneNo,
-                appId: 25239,
-                appToken: 'FWwj7ZcRXQi7FsC4ZHQlsi',
-                title: 'New Fueling Order',
-                message: `Vehicle Number: ${vehicleNumber}\nDriver: ${driverName}\nAllocated by ${allocationAdmin.name} (${allocationAdmin.id})`,
-                pushData: `{
-                    vehicleNumber: ${vehicleNumber},
-                    driverName: ${driverName},
-                    driverId: ${driverId},
-                    driverMobile: ${driverMobile},
-                    quantityType: ${quantityType},
-                    fuelQuantity: ${fuelQuantity},
-                    allocationAdminName: ${allocationAdmin.name},
-                    allocationAdminId: ${allocationAdmin.id},
-                    buttons: [
-                        {
-                            text: "Call Driver",
-                            action: "call",
-                            phoneNumber: ${driverMobile}
+            // Construct the pushData object properly
+            const pushData = {
+                vehicleNumber: vehicleNumber,
+                driverName: driverName,
+                driverId: driverId,
+                driverMobile: driverMobile,
+                quantityType: quantityType,
+                fuelQuantity: fuelQuantity,
+                allocationAdminName: allocationAdmin.name,
+                allocationAdminId: allocationAdmin.id,
+                buttons: [
+                    {
+                        text: "Call Driver",
+                        action: "call",
+                        phoneNumber: driverMobile,
+                    },
+                    {
+                        text: "Fuel",
+                        action: "openScreen",
+                        screenName: "NotificationFueling",
+                        params: {
+                            category: category,
+                            vehicleNumber: vehicleNumber,
+                            driverName: driverName,
+                            driverId: driverId,
+                            driverMobile: driverMobile,
+                            quantityType: quantityType,
+                            fuelQuantity: fuelQuantity,
+                            allocationAdminName: allocationAdmin.name,
+                            allocationAdminId: allocationAdmin.id,
                         },
-                        {
-                            text: "Fuel",
-                            action: "openScreen",
-                            screenName: "NotificationFueling",
-                            params: 
-                                category: ${category},
-                                vehicleNumber: ${vehicleNumber},
-                                driverName: ${driverName},
-                                driverId: ${driverId},
-                                driverMobile: ${driverMobile},
-                                quantityType: ${quantityType},
-                                fuelQuantity: ${fuelQuantity},
-                                allocationAdminName: ${allocationAdmin.name},
-                                allocationAdminId: ${allocationAdmin.id}
-                            }
-                        }
-                    ]
-                }`
-            });
-            console.log(sentNotificationResponse.statusText)
-            if (sentNotificationResponse.statusText == "Created") notificationSent = true;
+                    },
+                ],
+            };
+
+            // Send the notification request
+            const sentNotificationResponse = await axios.post(
+                `https://app.nativenotify.com/api/indie/notification`,
+                {
+                    subID: newFuelingOrder.bowser.driver.phoneNo,
+                    appId: 25239,
+                    appToken: 'FWwj7ZcRXQi7FsC4ZHQlsi',
+                    title: 'New Fueling Order',
+                    message: `Vehicle Number: ${vehicleNumber}\nDriver: ${driverName}\nAllocated by ${allocationAdmin.name} (${allocationAdmin.id})`,
+                    pushData: JSON.stringify(pushData), // Properly stringify the pushData object
+                }
+            );
+
+            // Log the response for debugging
+            console.log('Response Status:', sentNotificationResponse.status);
+            console.log('Response Status Text:', sentNotificationResponse.statusText);
+
+            // Check if the notification was successfully sent
+            if (sentNotificationResponse.status === 201) {
+                console.log('Notification sent successfully:', sentNotificationResponse.data);
+                notificationSent = true;
+            } else {
+                console.warn('Notification was not successfully created:', sentNotificationResponse.data);
+            }
         } catch (error) {
-            console.log(error)
+            // Enhanced error handling
+            if (error.response) {
+                console.error('Error Response Data:', error.response.data);
+                console.error('Error Status:', error.response.status);
+                console.error('Error Headers:', error.response.headers);
+            } else if (error.request) {
+                console.error('No Response Received:', error.request);
+            } else {
+                console.error('Error Message:', error.message);
+            }
         }
         // Create and save new FuelingOrder
         try {

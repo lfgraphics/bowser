@@ -28,18 +28,18 @@ router.get('/:searchTerm', async (req, res) => {
     }
 });
 
-router.get('/bowser-drivers/:userId', async (req, res) => {
-    const userId = req.params.userId;
+router.get('/bowser-drivers/:parameter', async (req, res) => {
+    const parameter = req.params.parameter;
     const bowserDriverRoleId = '6710ddc21e5c7dc410e64e34';
 
     try {
-        const users = await User.find({ userId: { $regex: userId, $options: 'i' } }, 'userId name phoneNumber roles verified');
+        const users = await User.find({ $or: [{ userId: { $regex: parameter, $options: 'i' } }, { phoneNumber: { $regex: parameter, $options: "i" } }, { name: { $regex: parameter, $options: "i" } }] }, 'userId name phoneNumber roles verified');
 
         if (users.length === 0) {
             return res.status(404).json({ message: 'No users found' });
         }
 
-        const bowserDrivers = users.filter(user => 
+        const bowserDrivers = users.filter(user =>
             user.verified && user.roles.some(role => role.toString() === bowserDriverRoleId)
         );
 
@@ -48,7 +48,6 @@ router.get('/bowser-drivers/:userId', async (req, res) => {
         }
 
         res.status(200).json(bowserDrivers.map(driver => ({
-            id: driver.userId,
             name: driver.name,
             phoneNo: driver.phoneNumber
         })));

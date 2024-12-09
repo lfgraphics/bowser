@@ -135,15 +135,12 @@ export const logoutUser = async (): Promise<void> => {
 
 async function getPushNotificationToken() {
   const { data } = await Notifications.getExpoPushTokenAsync();
-  console.log("expoToken", data);  // This will be the new Expo push token
   return data;  // Return the Expo push token
 }
 
 async function getNativeNotifyExpoToken(phoneNumber: string) {
   const response = await fetch(`https://app.nativenotify.com/api/expo/indie/sub/25239/FWwj7ZcRXQi7FsC4ZHQlsi/${phoneNumber}`);
   const data = await response.json();
-  console.log("Parsed Response Body:", data);
-
   // Check if the response contains the expo token
   const storedExpoToken = data[0]?.expo_android_token ? data[0].expo_android_token[0] : null;
   return storedExpoToken;  // Return the stored Expo token from NativeNotify

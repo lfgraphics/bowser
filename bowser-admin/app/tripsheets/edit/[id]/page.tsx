@@ -30,7 +30,7 @@ export const page = ({ params }: { params: { id: string } }) => {
         checkAuth();
     }, []);
 
-    const [record, setRecord] = useState<TripSheet | undefined>(undefined);
+    const [record, setRecord] = useState<TripSheet>();
     const [loading, setLoading] = useState<boolean>(true);
     const [bowserDriver, setBowserDriver] = useState<TripSheet['bowserDriver']>([]);
     const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false);
@@ -99,7 +99,7 @@ export const page = ({ params }: { params: { id: string } }) => {
     };
 
     const addBowserDriver = () => {
-        setBowserDriver([...bowserDriver, { handOverDate: '', name: '', id: '', phoneNo: '' }]);
+        setBowserDriver([...bowserDriver, { handOverDate: new Date(), name: '', phoneNo: '' }]);
     };
 
     if (loading) return <Loading />;
@@ -112,7 +112,7 @@ export const page = ({ params }: { params: { id: string } }) => {
                     {editing ? 'Cancel' : 'Edit'}
                 </Button>
             </div>
-            <h3>Generation Time: {record?.tripSheetGenerationDateTime}</h3>
+            <h3>Generation Time: {record?.tripSheetGenerationDateTime?.toString().slice(0, 16)}</h3>
             <Label>Bowser: {!editing && record?.bowser.regNo}</Label>
             {editing && <Input
                 value={record?.bowser.regNo}
@@ -130,15 +130,6 @@ export const page = ({ params }: { params: { id: string } }) => {
                                 setBowserDriver(updatedDrivers);
                             }}
                         />}
-                        <Label>Driver Id: {!editing && driver.id}</Label>
-                        {editing && <Input
-                            value={driver.id}
-                            onChange={(e) => {
-                                const updatedDrivers = [...bowserDriver];
-                                updatedDrivers[index].id = e.target.value;
-                                setBowserDriver(updatedDrivers);
-                            }}
-                        />}
                         <Label>Driver Phone No.: {!editing && driver.phoneNo}</Label>
                         {editing && <Input
                             value={driver.phoneNo}
@@ -148,16 +139,17 @@ export const page = ({ params }: { params: { id: string } }) => {
                                 setBowserDriver(updatedDrivers);
                             }}
                         />}
-                        <Label>Handover Date, Time: {!editing && driver.handOverDate}</Label>
+                        <Label>Handover Date, Time: {(editing == false && `${driver.handOverDate}`)}</Label>
                         {editing && <Input
                             type="datetime-local"
-                            value={driver.handOverDate}
+                            value={driver.handOverDate.toISOString().slice(0, 16)} // Format the Date object to match the input type
                             onChange={(e) => {
                                 const updatedDrivers = [...bowserDriver];
-                                updatedDrivers[index].handOverDate = e.target.value;
+                                updatedDrivers[index].handOverDate = new Date(e.target.value); // Convert string to Date
                                 setBowserDriver(updatedDrivers);
                             }}
-                        />}
+                        />
+                        }
                     </div>
                 ))}
                 {editing && <Button onClick={addBowserDriver}>Add Another Driver</Button>}

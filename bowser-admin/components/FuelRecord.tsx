@@ -305,7 +305,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                     </div>
                     {record?.allocationAdmin && (
                         <p className="text-sm text-gray-500">
-                            Allocated by: {`${updatedRecord?.allocationAdmin?.name || ''} Id: ${updatedRecord?.allocationAdmin?.userId || ''}`}
+                            Allocated by: {`${updatedRecord?.allocationAdmin?.name || ''} Id: ${updatedRecord?.allocationAdmin?.id || ''}`}
                         </p>
                     )}
                 </CardFooter>

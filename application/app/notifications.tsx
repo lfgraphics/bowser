@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, Text, RefreshControl } from 'react-native';
+import { StyleSheet, ScrollView, ActivityIndicator, RefreshControl, View } from 'react-native';
 import FuelNotification from '@/components/FuelNotification';
 import { FuelingOrderData } from '@/src/types/models';
 import axios from 'axios';
@@ -81,7 +81,7 @@ export default function NotificationsScreen() {
         >
             {notificationsData.length > 0 ? (
                 notificationsData.map((data) => (
-                    <ThemedView style={{ marginBottom: 10 }} key={data._id}>
+                    <View style={{ marginBottom: 10 }} key={data._id}>
                         <FuelNotification
                             category={data.category}
                             party={data.party}
@@ -99,12 +99,12 @@ export default function NotificationsScreen() {
                                 allocationTime: ''
                             }}
                         />
-                    </ThemedView>
+                    </View>
                 ))
             ) : (
                 <ThemedText style={styles.noNotifications}>No Pending Orders Available</ThemedText>
             )}
-            {/* <ThemedView style={{ height: 40 }} /> */}
+            <ThemedView style={{ height: 40 }} />
         </ScrollView>
     );
 }
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 10,
-        paddingTop: 40,
+        paddingTop: 40
     },
     centerContainer: {
         flex: 1,

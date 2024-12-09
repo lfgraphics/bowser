@@ -3,10 +3,10 @@ const moment = require("moment-timezone");
 const { bowsersDatabaseConnection } = require('../../config/database');
 
 const fuelingOrderSchema = new mongoose.Schema({
-  vehicleNumber: { type: String, required: true },
+  vehicleNumber: { type: String, required: false },
   category: { type: String, required: true },
-  partyName: { type: String, required: false },
-  driverId: { type: String, required: true },
+  party: { type: String, required: false, default: "Own" },
+  driverId: { type: String, required: false },
   driverName: { type: String, required: true },
   driverMobile: { type: String },
   quantityType: {

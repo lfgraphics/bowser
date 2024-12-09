@@ -23,11 +23,13 @@ import { searchItems } from '@/utils/searchUtils'
 import { Vehicle } from "@/types"
 import Loading from "@/app/loading"
 import { BASE_URL } from "@/lib/api"
+import { updateDriverMobile } from "@/utils"
 
 export default function FuelingAllocation() {
     const [isSearching, setIsSearching] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [vehicleNumber, setVehicleNumber] = useState("")
+    const [partyName, setPartyName] = useState("Own")
     const [driverId, setDriverId] = useState("")
     const [driverName, setDriverName] = useState("")
     const [driverMobile, setDriverMobile] = useState("")
@@ -36,7 +38,6 @@ export default function FuelingAllocation() {
     const [bowserDriverName, setBowserDriverName] = useState("")
     const [bowserDriverId, setBowserDriverId] = useState("")
     const [bowserRegNo, setBowserRegNo] = useState("")
-    const [tripSheetId, setTripSheetId] = useState("")
     const [bowserDriverMobile, setBowserDriverMobile] = useState<string>("")
     const [alertDialogOpen, setAlertDialogOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
@@ -68,6 +69,14 @@ export default function FuelingAllocation() {
         checkAuth();
     }, []);
 
+    useEffect(() => {
+        if (fueling == "Own") {
+            setPartyName("Own")
+        } else {
+            setPartyName("")
+        }
+    }, [fueling])
+
     const searchDriver = async (idNumber: string) => {
         setIsSearching(true);
         try {
@@ -92,6 +101,7 @@ export default function FuelingAllocation() {
             setIsSearching(false);
         }
     }
+
     const searchBowser = async (bowser: string) => {
         setIsSearching(true);
         try {
@@ -107,7 +117,7 @@ export default function FuelingAllocation() {
                     title: "Select a Bowser",
                     items: response,
                     onSelect: handleBowserSelection,
-                    renderItem: (trip) => `${trip.tripSheetId} : Bowser: ${trip.bowser.regNo}\nDriver: ${trip.bowserDriver[0]?.name} (${trip.bowserDriver[0]?.id})`,
+                    renderItem: (trip) => `${trip.tripSheetId} : Bowser: ${trip.bowser.regNo}\nDriver: ${trip.bowserDriver[0]?.name} (${trip.bowserDriver[0]?.phoneNo})`,
                     keyExtractor: (trip) => trip.bowser.regNo,
                 });
             }
@@ -129,8 +139,8 @@ export default function FuelingAllocation() {
                     title: "Select a Bowser Driver",
                     items: drivers,
                     onSelect: handleBowserDriverSelection,
-                    renderItem: (driver) => `${driver.name} (${driver.id})`,
-                    keyExtractor: (driver) => driver.id,
+                    renderItem: (driver) => `${driver.name} (${driver.phoneNo})`,
+                    keyExtractor: (driver) => driver.phoneNo,
                 });
             }
         } catch (error) {
@@ -201,10 +211,8 @@ export default function FuelingAllocation() {
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
 
         if (bowser) {
-            setTripSheetId(bowser.tripSheetId);
-            setBowserRegNo(bowser.regNo);
-            setBowserDriverId(bowser.bowserDriver[0]?.id || '');
-            setBowserDriverName(bowser.bowserDriver[0]?.name || '');
+            setBowserRegNo(bowser.bowser.regNo);
+            setBowserDriverName(bowser.bowserDriver[0]?.name);
             setBowserDriverMobile(bowser.bowserDriver[0]?.phoneNo);
         }
     }
@@ -245,29 +253,6 @@ export default function FuelingAllocation() {
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
     }
 
-    const updateDriverMobile = async () => {
-        try {
-            const response = await fetch('https://bowser-backend-2cdr.onrender.com/searchDriver/updateDriverMobile', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ driverId, driverMobile }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to update driver mobile number: ${response.status}`);
-            }
-
-            const result = await response.json();
-            setAlertMessage(result.message);
-            setAlertDialogOpen(true);
-        } catch (error) {
-            console.error('Error updating driver mobile number:', error);
-            throw error;
-        }
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
@@ -283,7 +268,7 @@ export default function FuelingAllocation() {
 
         if (driverMobileNotFound && driverMobile) {
             try {
-                await updateDriverMobile();
+                await updateDriverMobile(driverId, driverMobile);
             } catch (error) {
                 setSubmitting(false);
                 setAlertMessage("Failed to update driver mobile number. Please try again.");
@@ -294,8 +279,8 @@ export default function FuelingAllocation() {
 
         const allocationData = {
             category: fueling,
+            party: partyName,
             vehicleNumber,
-            tripSheetId,
             driverId,
             driverName,
             driverMobile,
@@ -305,7 +290,6 @@ export default function FuelingAllocation() {
                 regNo: bowserRegNo,
                 driver: {
                     name: bowserDriverName,
-                    id: bowserDriverId,
                     phoneNo: bowserDriverMobile
                 }
             },
@@ -315,10 +299,8 @@ export default function FuelingAllocation() {
             },
         };
 
-        console.log(allocationData)
-
         try {
-            const response = await fetch('https://bowser-backend-2cdr.onrender.com/allocateFueling', { //https://bowser-backend-2cdr.onrender.com
+            const response = await fetch(`${BASE_URL}/allocateFueling`, { //https://bowser-backend-2cdr.onrender.com
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -331,8 +313,6 @@ export default function FuelingAllocation() {
             if (!response.ok) {
                 throw new Error(`Failed to allocate fueling: ${response.status} ${response.statusText}`);
             }
-
-            console.log(response)
 
             const result = JSON.parse(responseText);
             setAlertMessage(result.message);
@@ -354,6 +334,7 @@ export default function FuelingAllocation() {
 
     const resetForm = () => {
         setVehicleNumber("")
+        setPartyName("")
         setDriverId("")
         setDriverName("")
         setDriverMobile("")
@@ -361,6 +342,7 @@ export default function FuelingAllocation() {
         setFuelQuantity("0")
         setBowserRegNo('')
         setBowserDriverName("")
+        setBowserDriverMobile("")
         setBowserDriverId("")
         setDriverMobileNotFound(false)
     }
@@ -385,7 +367,7 @@ export default function FuelingAllocation() {
                 <form onSubmit={handleSubmit}>
                     <CardContent>
                         {/* Nav for diffrent type */}
-                        <div className="px-4 rounded-md flex justify-around my-6 bg-card">
+                        <div className="px-4 rounded-md flex justify-around my-6 mt-0 bg-card">
                             {(['Own', 'Attatch', 'Bulk Sale'] as FuelingTypes[]).map((option) => (
                                 <Button
                                     type="button"
@@ -398,26 +380,40 @@ export default function FuelingAllocation() {
                             ))}
                         </div>
                         <div className="grid w-full items-center gap-4">
-                            <div className="flex flex-col space-y-1.5">
-                                <Label htmlFor="vehicleNumber">Vehicle Number</Label>
-                                <Input
-                                    id="vehicleNumber"
-                                    placeholder="Enter vehicle number"
-                                    value={vehicleNumber}
-                                    onChange={(e) => {
-                                        setVehicleNumber(e.target.value.toUpperCase());
-                                        if (e.target.value.length > 3) {
-                                            searchVehicle(e.target.value.toUpperCase());
-                                        }
-                                    }}
-                                    required
-                                />
-                            </div>
+                            {fueling !== "Bulk Sale" &&
+                                <div className="flex flex-col space-y-1.5">
+                                    <Label htmlFor="vehicleNumber">Vehicle Number</Label>
+                                    <Input
+                                        id="vehicleNumber"
+                                        placeholder="4576"
+                                        value={vehicleNumber}
+                                        onChange={(e) => {
+                                            setVehicleNumber(e.target.value.toUpperCase());
+                                            if (e.target.value.length > 3) {
+                                                searchVehicle(e.target.value.toUpperCase());
+                                            }
+                                        }}
+                                        required
+                                    />
+                                </div>}
+                            {fueling !== "Own" &&
+                                <div className="flex flex-col space-y-1.5">
+                                    <Label htmlFor="partyName">{fueling == "Attatch" ? "Vendor" : "Party"} Name</Label>
+                                    <Input
+                                        id="partyName"
+                                        placeholder="Flipkart"
+                                        value={partyName}
+                                        onChange={(e) => {
+                                            setPartyName(e.target.value.toUpperCase());
+                                        }}
+                                        required
+                                    />
+                                </div>}
                             <div className="flex flex-col space-y-1.5">
                                 <Label htmlFor="driverId">Driver ID</Label>
                                 <Input
                                     id="driverId"
-                                    placeholder="Enter driver ID"
+                                    placeholder="0246"
                                     value={driverId}
                                     onChange={(e) => {
                                         const value = e.target.value;
@@ -439,7 +435,7 @@ export default function FuelingAllocation() {
                                 <Label htmlFor="driverName">Driver Name</Label>
                                 <Input
                                     id="driverName"
-                                    placeholder="Enter driver name"
+                                    placeholder="Dinesh"
                                     value={driverName}
                                     onChange={(e) => setDriverName(e.target.value)}
                                     required
@@ -449,7 +445,7 @@ export default function FuelingAllocation() {
                                 <Label htmlFor="driverMobile">Driver Mobile</Label>
                                 <Input
                                     id="driverMobile"
-                                    placeholder="Enter driver mobile"
+                                    placeholder="0123456789"
                                     value={driverMobile}
                                     onChange={(e) => setDriverMobile(e.target.value)}
                                     required
@@ -478,7 +474,7 @@ export default function FuelingAllocation() {
                                     <Label htmlFor="fuelQuantity">Fuel Quantity</Label>
                                     <Input
                                         id="fuelQuantity"
-                                        placeholder="Enter fuel quantity"
+                                        placeholder="240"
                                         value={fuelQuantity}
                                         onChange={(e) => setFuelQuantity(e.target.value)}
                                         required
@@ -494,7 +490,7 @@ export default function FuelingAllocation() {
                             <Label htmlFor="bowserRegNo">Bowser Registration Number</Label>
                             <Input
                                 id="bowserRegNo"
-                                placeholder="Enter bowser registration number"
+                                placeholder="2003"
                                 value={bowserRegNo}
                                 onChange={(e) => {
                                     const value = e.target.value;
@@ -512,19 +508,20 @@ export default function FuelingAllocation() {
                                 required
                             />
                         </div>
-                        <div className="flex flex-col space-y-1.5">
-                            <Label htmlFor="bowserDriverId">Bowser Driver ID</Label>
+                        <div className="flex flex-col space-y-1.5 mt-4">
+                            <Label htmlFor="bowserDriverName">Bowser Driver Name</Label>
                             <Input
-                                id="bowserDriverId"
-                                placeholder="Enter bowser driver ID"
-                                value={bowserDriverId}
+                                id="bowserDriverName"
+                                placeholder="Sunil/ 0123456789"
+                                value={bowserDriverName}
+                                required
                                 onChange={(e) => {
                                     const value = e.target.value;
-                                    setBowserDriverId(value);
+                                    setBowserDriverName(value);
                                     if (value.length > 3) {
                                         searchBowserDriver(value);
                                         if (value.length > 3) {
-                                            searchBowserDriver(bowserDriverId);
+                                            searchBowserDriver(bowserDriverName);
                                         }
                                     }
                                 }}
@@ -536,19 +533,15 @@ export default function FuelingAllocation() {
                                         }
                                     }
                                 }}
-                                required
-                                readOnly
                             />
                         </div>
                         <div className="flex flex-col space-y-1.5 mt-4">
-                            <Label htmlFor="bowserDriverName">Bowser Driver Name</Label>
+                            <Label htmlFor="bowserDriverPhone">Bowser Driver Mobile</Label>
                             <Input
-                                id="bowserDriverName"
-                                placeholder="Enter bowser driver name"
-                                value={bowserDriverName}
-                                onChange={(e) => setBowserDriverName(e.target.value)}
+                                id="bowserDriverPhone"
+                                placeholder="0123456789"
+                                value={bowserDriverMobile}
                                 required
-                                readOnly
                             />
                         </div>
                     </CardContent>

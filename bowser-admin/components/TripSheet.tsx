@@ -110,8 +110,9 @@ const TripSheetPage = () => {
                             <div className='flex gap-3'>Trip Sheet ID {sort.order === "asc" ? <ArrowUp10 /> : <ArrowDown01 />}</div>
                         </TableHead>
                         <TableHead>Created on</TableHead>
+                        <TableHead>Settled on</TableHead>
                         <TableHead>Driver Name</TableHead>
-                        <TableHead>Driver Id</TableHead>
+                        <TableHead>Driver Mobile</TableHead>
                         <TableHead>Bowser Reg No</TableHead>
                         <TableHead>Actions</TableHead>
                     </TableRow>
@@ -131,8 +132,9 @@ const TripSheetPage = () => {
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>{sheet.tripSheetId}</TableCell>
                                 <TableCell>{`${formatDate(sheet.tripSheetGenerationDateTime!)}`}</TableCell>
+                                <TableCell>{`${sheet.settelment.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : ""}`}</TableCell>
                                 <TableCell>{sheet.bowserDriver[0].name}</TableCell>
-                                <TableCell>{sheet.bowserDriver[0].id}</TableCell>
+                                <TableCell>{sheet.bowserDriver[0].phoneNo}</TableCell>
                                 <TableCell>{sheet.bowser.regNo}</TableCell>
                                 <TableCell className="flex space-x-2">
                                     <Link href={`/tripsheets/edit/${sheet._id}`}>

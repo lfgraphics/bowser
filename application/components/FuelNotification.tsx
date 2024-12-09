@@ -1,15 +1,10 @@
 import * as React from 'react';
-import { View, Text, TouchableOpacity, Linking, Alert, StyleSheet } from 'react-native';
-import { useNavigation, useTheme } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { View, TouchableOpacity, Linking, Alert, StyleSheet } from 'react-native';
+import { useTheme } from '@react-navigation/native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { FuelNotificationProps } from '../src/types/models';
-import { useState } from 'react';
 import { router } from 'expo-router';
-// import NotificationFuelingScreen from '@/app/NotificationFueling';
-import { ThemedView } from './ThemedView';
 import { ThemedText } from './ThemedText';
-import { setParams } from 'expo-router/build/global-state/routing';
 
 type RootStackParamList = {
   NotificationFueling: FuelNotificationProps;
@@ -28,9 +23,7 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
   bowser,
   allocationAdmin
 }) => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme();
-  const [notificationFuelingVisible, setNotificationFuelingVisible] = useState<boolean>(false);
 
   const handleCallDriver = () => {
     if (driverMobile) {
@@ -46,29 +39,13 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
 
   return (
     <>
-      {/* {notificationFuelingVisible ? (
-        <NotificationFuelingScreen
-          party={party}
-          category={category}
-          odometer={""}
-          orderId={orderId}
-          vehicleNumber={vehicleNumber}
-          driverId={driverId}
-          driverMobile={driverMobile}
-          driverName={driverName}
-          quantity={quantity}
-          quantityType={quantityType}
-          bowser={bowser}
-          allocationAdmin={allocationAdmin}
-        />
-      ) : ( */}
-      <ThemedView style={[styles.container, { backgroundColor: colors.card }]}>
+      <View style={[styles.container, { backgroundColor: colors.card }]}>
         <ThemedText style={[styles.vehicleNumber, { color: colors.text }]}>{vehicleNumber}</ThemedText>
         {driverMobile && <ThemedText style={[styles.detail, { color: colors.text }]}>Mobile No.: {driverMobile}</ThemedText>}
         {driverName && <ThemedText style={[styles.detail, { color: colors.text }]}>Driver Name: {driverName}</ThemedText>}
         <ThemedText style={[styles.detail, { color: colors.text }]}>Fueling: {quantityType}</ThemedText>
         {quantity && <ThemedText style={[styles.detail, { color: colors.text }]}>Quantity: {quantity}</ThemedText>}
-        <ThemedView style={styles.buttonContainer}>
+        <View style={styles.buttonContainer}>
           {driverMobile && (
             <TouchableOpacity style={styles.button} onPress={handleCallDriver}>
               <Ionicons name="call" size={32} color={'white'} />
@@ -80,8 +57,8 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
           <TouchableOpacity style={styles.button} onPress={handleGiveFuel}>
             <MaterialIcons name="local-gas-station" size={24} color={'white'} />
           </TouchableOpacity>
-        </ThemedView>
-      </ThemedView>
+        </View>
+      </View>
       {/* // )} */}
     </>
   );
@@ -96,7 +73,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 2,
   },
   vehicleNumber: {
     fontSize: 24,

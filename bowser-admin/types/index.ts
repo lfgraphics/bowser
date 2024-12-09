@@ -17,6 +17,7 @@ export interface BowserResponse {
 }
 
 export interface ResponseBowser {
+    bowser: any;
     bowserDetails: {
 
     },
@@ -70,9 +71,8 @@ export interface TripSheet {
     tripSheetId: number;
     tripSheetGenerationDateTime?: Date;
     bowserDriver: {
-        handOverDate: string;
+        handOverDate: Date;
         name: string;
-        id: string;
         phoneNo: string;
     }[];
     bowser: {
@@ -187,7 +187,7 @@ export interface DispensesRecord {
     },
     allocationAdmin: {
         name: { type: string, required: false },
-        userId: { type: string, required: false }
+        id: { type: string, required: false }
     },
 }
 

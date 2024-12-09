@@ -1,9 +1,8 @@
 import * as React from 'react';
-import { Image, StyleSheet, TextInput, TouchableOpacity, useColorScheme, ScrollView, View, ActivityIndicator, Button, Alert, Modal, FlatList, BackHandler } from 'react-native';
+import { Image, StyleSheet, TextInput, TouchableOpacity, useColorScheme, ScrollView, View, ActivityIndicator, Alert, Modal } from 'react-native';
 import { useState, useRef, } from 'react';
 import * as Location from 'expo-location';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { useRoute, useTheme } from '@react-navigation/native';
 import { FormData, FuelingTypes } from '@/src/types/models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -69,6 +68,7 @@ const NotificationFuelingScreen = () => {
     const vehicleNumberInputRef = React.useRef<TextInput>(null);
     const driverNameInputRef = React.useRef<TextInput>(null);
     const driverIdInputRef = React.useRef<TextInput>(null);
+    const partyNameInputRef = React.useRef<TextInput>(null);
     const driverMobileInputRef = React.useRef<TextInput>(null);
     const odometerInputRef = React.useRef<TextInput>(null);
     const fuelQuantityInputRef = React.useRef<TextInput>(null);
@@ -112,7 +112,6 @@ const NotificationFuelingScreen = () => {
             return;
         }
 
-        let currentFuelingDateTime = fuelingDateTime;
         let currentGpsLocation = gpsLocation;
         const userDataString = await AsyncStorage.getItem('userData');
         const userData = userDataString ? JSON.parse(userDataString) : null;
@@ -121,7 +120,6 @@ const NotificationFuelingScreen = () => {
             router.replace('/auth');
             return;
         }
-        currentFuelingDateTime = await fulingTime();
         const locationResult = await location();
 
         if (typeof locationResult === 'string') {
@@ -143,7 +141,7 @@ const NotificationFuelingScreen = () => {
             console.error('Error fetching user data from AsyncStorage:', error);
         }
 
-        if (currentFuelingDateTime && currentGpsLocation) {
+        if (currentGpsLocation) {
             const formData: FormData = {
                 party,
                 odometer,
@@ -159,7 +157,7 @@ const NotificationFuelingScreen = () => {
                 quantityType,
                 fuelQuantity,
                 gpsLocation: currentGpsLocation,
-                fuelingDateTime: currentFuelingDateTime,
+                fuelingDateTime: new Date(),
                 bowser: {
                     regNo: userData.Bowser ? userData.Bowser : '',
                     driver: {
@@ -321,44 +319,16 @@ const NotificationFuelingScreen = () => {
     };
     // Input validation
     const validateInputs = () => {
-        if (!vehicleNumber) {
-            alert("Vehicle Number is required.");
-            vehicleNumberInputRef.current?.measureLayout(
-                scrollViewRef.current?.getInnerViewNode(),
-                (x, y) => {
-                    scrollViewRef.current?.scrollTo({ y: y, animated: true });
-                }
-            );
-            return false;
-        }
-        if (!driverName) {
-            alert("Driver Name is required.");
-            driverNameInputRef.current?.measureLayout(
-                scrollViewRef.current?.getInnerViewNode(),
-                (x, y) => {
-                    scrollViewRef.current?.scrollTo({ y: y, animated: true });
-                }
-            );
-            return false;
-        }
-        if (!driverId) {
-            alert("Driver ID is required.");
-            driverIdInputRef.current?.measureLayout(
-                scrollViewRef.current?.getInnerViewNode(),
-                (x, y) => {
-                    scrollViewRef.current?.scrollTo({ y: y, animated: true });
-                }
-            );
-            return false;
-        }
         if (!fuelQuantity) {
             alert("Fuel Quantity is required.");
-            fuelQuantityInputRef.current?.measureLayout(
-                scrollViewRef.current?.getInnerViewNode(),
-                (x, y) => {
-                    scrollViewRef.current?.scrollTo({ y: y, animated: true });
-                }
-            );
+            return false;
+        }
+        if (!vehicleNumberPlateImage) {
+            alert("Vehcicle Numebr plate image is required.");
+            return false;
+        }
+        if (!fuelMeterImage) {
+            alert("Fuel meter image is required.");
             return false;
         }
         return true;
@@ -375,9 +345,9 @@ const NotificationFuelingScreen = () => {
     };
 
     return (
-        <ThemedView style={[styles.container, styles.main]}>
+        <View style={[styles.container, styles.main]}>
             <ScrollView>
-                <ThemedView style={styles.section}>
+                <View style={styles.section}>
                     <View style={[styles.navContainer, { backgroundColor: colors.card }]}>
                         {(['Own', 'Attatch', 'Bulk Sale'] as FuelingTypes[]).map((option) => (
                             <TouchableOpacity
@@ -391,7 +361,7 @@ const NotificationFuelingScreen = () => {
                     </View>
                     <ThemedText type="title">Fuel Dispensing Form</ThemedText>
                     <ThemedText style={{ textAlign: 'center' }}>{Date().toLocaleString()}</ThemedText>
-                    <ThemedView style={styles.inputContainer}>
+                    <View style={styles.inputContainer}>
                         {vehicleNumberPlateImage &&
                             <Image source={{ uri: vehicleNumberPlateImage }} style={styles.uploadedImage} />
                         }
@@ -441,11 +411,25 @@ const NotificationFuelingScreen = () => {
                                 blurOnSubmit={true}
                             />
                         </View>}
-                    </ThemedView>
+                        {category !== "Own" && <View style={styles.inputContainer}>
+                            <ThemedText>{category == "Attatch" ? "वेंडर" : "पार्टी"} का नाम:</ThemedText>
+                            <TextInput
+                                readOnly
+                                ref={partyNameInputRef}
+                                style={[styles.input, { color: colors.text }]}
+                                placeholder={`रिलायंक/ Flipkart`}
+                                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                                value={party}
+                                returnKeyType="next"
+                                onSubmitEditing={() => driverIdInputRef.current?.focus()}
+                                blurOnSubmit={true}
+                            />
+                        </View>}
+                    </View>
 
-                    <ThemedView style={styles.section}>
+                    <View style={styles.section}>
 
-                        <ThemedView style={styles.inputContainer}>
+                        <View style={styles.inputContainer}>
                             {category == 'Own' &&
                                 <View style={styles.inputContainer}>
                                     <ThemedText>ड्राईवर की आई-डी:</ThemedText>
@@ -461,8 +445,8 @@ const NotificationFuelingScreen = () => {
                                     />
                                 </View>
                             }
-                        </ThemedView>
-                        <ThemedView style={styles.inputContainer}>
+                        </View>
+                        <View style={styles.inputContainer}>
                             <ThemedText>{category !== "Bulk Sale" ? "ड्राईवर" : "मेनेजर"} का नाम:</ThemedText>
                             <TextInput
                                 readOnly
@@ -475,8 +459,8 @@ const NotificationFuelingScreen = () => {
                                 onSubmitEditing={() => driverMobileInputRef.current?.focus()}
                                 blurOnSubmit={false}
                             />
-                        </ThemedView>
-                        <ThemedView style={styles.inputContainer}>
+                        </View>
+                        <View style={styles.inputContainer}>
                             <ThemedText>{category !== "Bulk Sale" ? "ड्राईवर" : "मेनेजर"} का मोबाइल नम्बर:</ThemedText>
                             <TextInput
                                 readOnly
@@ -491,11 +475,11 @@ const NotificationFuelingScreen = () => {
                                 onSubmitEditing={() => fuelQuantityInputRef.current?.focus()}
                                 blurOnSubmit={false}
                             />
-                        </ThemedView>
-                    </ThemedView>
+                        </View>
+                    </View>
 
-                    <ThemedView style={styles.section}>
-                        <ThemedView style={styles.inputContainer}>
+                    <View style={styles.section}>
+                        <View style={styles.inputContainer}>
                             <View style={styles.grid}>
                                 {fuelMeterImage &&
                                     fuelMeterImage.map((image, index) => (
@@ -571,8 +555,8 @@ const NotificationFuelingScreen = () => {
                                     blurOnSubmit={false}
                                 />
                             </View>
-                        </ThemedView>
-                    </ThemedView>
+                        </View>
+                    </View>
 
                     <TouchableOpacity
                         style={styles.submitButton}
@@ -592,7 +576,7 @@ const NotificationFuelingScreen = () => {
                             <Ionicons name="refresh-outline" size={20} color="white" />
                         </View>
                     </TouchableOpacity>
-                </ThemedView>
+                </View>
             </ScrollView>
             <Modal visible={imageModalVisible} transparent={true} onRequestClose={closeModal}>
                 <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
@@ -607,11 +591,11 @@ const NotificationFuelingScreen = () => {
                 </View>
             </Modal>
             {formSubmitting && (
-                <ThemedView style={styles.loaderContainer}>
+                <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" color={colors.primary} />
-                </ThemedView>
+                </View>
             )}
-        </ThemedView>
+        </View>
     );
 }
 
@@ -619,7 +603,7 @@ export default NotificationFuelingScreen;
 
 const styles = StyleSheet.create({
     main: {
-        paddingTop: 70,
+        paddingTop: 10,
         paddingHorizontal: 10,
     },
     navContainer: {
