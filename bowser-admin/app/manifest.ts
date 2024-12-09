@@ -3,7 +3,7 @@ import type { MetadataRoute } from 'next'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'ITPL Deisel Control System',
-    short_name: 'ITPL DCS',
+    short_name: 'ITPL DCS Admin',
     description: 'A Progressive Web App for managing wechicles fuel allocation',
     start_url: '/',
     display: 'standalone',
