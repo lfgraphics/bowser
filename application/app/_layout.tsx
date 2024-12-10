@@ -4,10 +4,9 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-
+import { StatusBar } from "react-native";
 import { useColorScheme } from '@/hooks/useColorScheme';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -28,6 +27,10 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <StatusBar
+        barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
+        backgroundColor={colorScheme === "dark" ? "#121212" : "#ffffff"}
+      />
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="fueling" options={{ headerShown: false }} />
