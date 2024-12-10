@@ -29,7 +29,7 @@ export default function Dashboard() {
     return (
         <div>
             <FuelingAllocation />
-            <PushNotificationManager />
+            {/* <PushNotificationManager /> */}
             <InstallPrompt />
         </div>
     );

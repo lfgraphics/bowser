@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'A Progressive Web App for managing wechicles fuel allocation',
     start_url: '/',
     display: 'standalone',
-    background_color: '#00000',
+    background_color: '#0000',
     theme_color: '#000000',
     icons: [
       {

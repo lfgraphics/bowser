@@ -1,67 +1,59 @@
 const express = require('express');
 const router = express.Router();
-const { Expo } = require('expo-server-sdk');
-const User = require('../models/user');
+const { sendPushNotification } = require('../utils/pushNotifications');
+const PushSubscription = require('../models/pushSubscription');
 
-let expo = new Expo();
+// Route to register a push subscription
+router.post('/register', async (req, res) => {
+    const { mobileNumber, subscription } = req.body;
 
-router.post('/send', async (req, res) => {
+    if (!mobileNumber || !subscription) {
+        return res.status(400).json({ error: 'Mobile number and subscription are required.' });
+    }
+
     try {
-        const { token, title, body, data } = req.body;
-
-        if (!Expo.isExpoPushToken(token)) {
-            console.error(`Push token ${token} is not a valid Expo push token`);
-            return res.status(400).json({ error: 'Invalid push token' });
-        }
-
-        const message = {
-            to: token,
-            sound: 'default',
-            title,
-            body,
-            data,
-        };
-
-        const chunks = expo.chunkPushNotifications([message]);
-        const tickets = [];
-
-        for (let chunk of chunks) {
-            try {
-                let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-                tickets.push(...ticketChunk);
-            } catch (error) {
-                console.error(error);
-            }
-        }
-
-        res.json({ success: true, tickets });
+        const result = await PushSubscription.findOneAndUpdate(
+            { mobileNumber },
+            { mobileNumber, subscription, platform: 'web', createdAt: new Date() },
+            { upsert: true, new: true }
+        );
+        res.status(200).json({ success: true, message: 'Subscription registered successfully.', data: result });
     } catch (error) {
-        console.error('Error sending notification:', error);
-        res.status(500).json({ error: 'Failed to send notification' });
+        console.error('Error registering subscription:', error);
+        res.status(500).json({ error: 'Failed to register subscription.' });
     }
 });
 
-router.post('/register-token', async (req, res) => {
+// Route to unregister a push subscription
+router.post('/unregister', async (req, res) => {
+    const { mobileNumber } = req.body;
+
+    if (!mobileNumber) {
+        return res.status(400).json({ error: 'Mobile number is required.' });
+    }
+
     try {
-        const { userId, pushToken } = req.body;
-        if (!userId) {
-            console.error('UserId is missing in the request');
-            return res.status(400).json({ error: 'UserId is required' });
-        }
-        const user = await User.findOneAndUpdate(
-            { userId: userId },
-            { $set: { pushToken: pushToken } },
-            { new: true }
-        );
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        res.json({ success: true, message: 'Push token registered successfully' });
+        await PushSubscription.deleteOne({ mobileNumber });
+        res.status(200).json({ success: true, message: 'Subscription unregistered successfully.' });
     } catch (error) {
-        console.error('Error registering push token:', error);
-        console.error('Error details:', error.message);
-        console.error('Stack trace:', error.stack);
-        res.status(500).json({ error: 'Failed to register push token', details: error.message });
+        console.error('Error unregistering subscription:', error);
+        res.status(500).json({ error: 'Failed to unregister subscription.' });
+    }
+});
+
+// Route to send a push notification
+router.post('/send', async (req, res) => {
+    const { mobileNumber, message } = req.body;
+
+    if (!mobileNumber || !message) {
+        return res.status(400).json({ error: 'Mobile number and message are required.' });
+    }
+
+    const result = await sendPushNotification(mobileNumber, message);
+    if (result.success) {
+        res.status(200).json(result);
+    } else {
+        res.status(500).json(result);
     }
 });
 

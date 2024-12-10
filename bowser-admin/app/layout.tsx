@@ -39,7 +39,7 @@ export default function RootLayout({
         >
           {isAuth && <Sidebar />}
           <div className={`min-h-full`}>
-            <main className="px-4 pb-4 md:px-8 md:pb-8">
+            <main className="p-4 md:px-8 md:pb-8">
               {children}
             </main>
           </div>
