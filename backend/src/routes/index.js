@@ -15,6 +15,7 @@ const userRoutes = require('./users');
 const roleRoutes = require('./roles');
 const bowserRoutes = require('./bowsers');
 const updateRoutes = require('./updates');
+const attatchedRoutes = require('./attatched');
 
 router.get('/', (req, res) => {
     res.send('landing page');
@@ -34,5 +35,6 @@ router.use('/users', userRoutes)
 router.use('/roles', roleRoutes)
 router.use('/bowsers', bowserRoutes)
 router.use('/updates', updateRoutes)
+router.use('/attatched', attatchedRoutes)
 
 module.exports = router;

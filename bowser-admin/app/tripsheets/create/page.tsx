@@ -30,8 +30,8 @@ const TripSheetCreationPage: React.FC = () => {
         checkAuth();
     }, []);
     const [tripSheetId, setTripSheetId] = useState<number>(0);
-    const [bowserDriver, setBowserDriver] = useState<{ handOverDate: string; name: string; id: string; phoneNo: string }[]>([
-        { handOverDate: '', name: '', id: '', phoneNo: '' },
+    const [bowserDriver, setBowserDriver] = useState<{ handOverDate: Date; name: string; phoneNo: string }[]>([
+        { handOverDate: new Date(), name: '', phoneNo: '' },
     ]);
     const [bowserRegNo, setBowserRegNo] = useState<string>('');
     const [bowserOdometerStartReading, setBowserOdometerStartReading] = useState<number | undefined>(undefined);
@@ -59,7 +59,7 @@ const TripSheetCreationPage: React.FC = () => {
 
     const resetForm = () => {
         setTripSheetId(0);
-        setBowserDriver([{ handOverDate: '', name: '', id: '', phoneNo: '' }]);
+        setBowserDriver([{ handOverDate: new Date(), name: '', phoneNo: '' }]);
         setBowserRegNo('');
         setBowserOdometerStartReading(undefined);
         setFuelingAreaDestination(undefined);
@@ -115,22 +115,22 @@ const TripSheetCreationPage: React.FC = () => {
         }
     };
 
-    const searchBowser = async (regNo: string) => {
+    const searchBowser = async (bowser: string) => {
         setLoading(true);
         try {
             const response: ResponseBowser[] = await searchItems<ResponseBowser>(
-                `${BASE_URL}/searchBowserDetails`, //https://bowser-backend-2cdr.onrender.com
-                regNo,
-                `No proper details found with the given regNo ${regNo}`
+                `${BASE_URL}/searchBowserDetails/trip`, //https://bowser-backend-2cdr.onrender.com
+                bowser,
+                `No proper details found with the given regNo ${bowser}`
             );
-            if (response.bowserDetails.length > 0) {
+            if (response.length > 0) {
                 setSearchModalConfig({
                     isOpen: true,
                     title: "Select a Bowser",
-                    items: response.bowserDetails,
+                    items: response,
                     onSelect: handleBowserSelection,
-                    renderItem: (bowser) => `Bowser: ${bowser.regNo}`,
-                    keyExtractor: (bowser) => bowser.regNo,
+                    renderItem: (trip) => `${trip.tripSheetId} : Bowser: ${trip.bowser.regNo}\nDriver: ${trip.bowserDriver[0]?.name} (${trip.bowserDriver[0]?.phoneNo})`,
+                    keyExtractor: (trip) => trip.bowser.regNo,
                 });
             }
         } catch (error) {
@@ -162,8 +162,8 @@ const TripSheetCreationPage: React.FC = () => {
                     title: "Select a Driver",
                     items: drivers,
                     onSelect: handleDriverSelection,
-                    renderItem: (driver) => `${driver.name} (${driver.id})`,
-                    keyExtractor: (driver) => driver.id,
+                    renderItem: (driver) => `${driver.name} (${driver.phoneNumber})`,
+                    keyExtractor: (driver) => driver.phoneNumber,
                 });
             }
         } catch (error) {
@@ -176,7 +176,7 @@ const TripSheetCreationPage: React.FC = () => {
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
 
         if (driver) {
-            setBowserDriver([{ ...driver, id: driver.id, name: driver.name, phoneNo: driver.phoneNo }]);
+            setBowserDriver([{ ...driver, name: driver.name, phoneNo: driver.phoneNumber, handOverDate: new Date() }]);
         }
     }
 
@@ -258,24 +258,6 @@ const TripSheetCreationPage: React.FC = () => {
 
             {bowserDriver.map((driver, index) => (
                 <div key={index} className="mb-4 border-t pt-4">
-                    <Label>{`Driver ID`}</Label>
-                    <Input
-                        value={driver.id}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            setBowserDriver(bowserDriver.map((d, i) => (i === index ? { ...d, id: e.target.value } : d)))
-                            if (value.length > 3) {
-                                searchDriver(value);
-                            }
-                        }}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && driver.id.length > 3) {
-                                e.preventDefault();
-                                searchDriver(driver.id);
-                            }
-                        }}
-                        placeholder="Enter Driver ID"
-                    />
                     <Label>{`Driver Name`}</Label>
                     <Input
                         value={driver.name}
@@ -284,6 +266,12 @@ const TripSheetCreationPage: React.FC = () => {
                                 bowserDriver.map((d, i) => (i === index ? { ...d, name: e.target.value } : d))
                             )
                         }
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && driver.name.length > 3) {
+                                e.preventDefault();
+                                searchDriver(driver.name);
+                            }
+                        }}
                         placeholder="Enter Driver Name"
                     />
                     <Label>{`Driver Phone No`}</Label>

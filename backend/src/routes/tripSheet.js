@@ -58,10 +58,10 @@ router.post('/create', async (req, res) => {
         await Promise.race([savePromise, timeoutPromise]);
 
         // Update the bowser driver information
-        const bowserDriverId = req.body.bowserDriver[0]?.id;
-        if (bowserDriverId) {
+        const bowserDriverphoneNo = req.body.bowserDriver[0]?.phoneNo;
+        if (bowserDriverphoneNo) {
             await User.findOneAndUpdate(
-                { userId: bowserDriverId },
+                { phoneNumber: bowserDriverphoneNo },
                 { $set: { bowserId: newSheetBowser } },
                 { new: true, upsert: true }
             );

@@ -147,6 +147,38 @@ async function syncVechiclesData() {
   }
 }
 
+async function syncAttachedVechicles() {
+  const localCollection = localClient.db('TransappDataHub').collection('VehicleCollection');
+  const atlasCollection = atlasClient.db('TransportData').collection('AttatchedVehiclesCollection');
+
+  // Step 1: Fetch all data from Atlas and Local
+  const atlasData = await atlasCollection.find().toArray();
+  console.log("Fetched Attached vehicles data from Atlas:", atlasData.length, "documents.");
+
+  const atlasDataMap = new Map(atlasData.map(doc => [doc._id.toString(), doc]));
+
+  const localData = await localCollection.find({ AssetsType: { $regex: 'Attached', $options: 'i' } }, { projection: { _id: 1, VehicleNo: 1, TransportPartenName: 1 } }).toArray();
+  console.log("Fetched Attached vehicles data from Local:", localData.length, "documents.");
+
+  // Step 2: Prepare new documents to insert into Atlas
+  const newDocumentsToAtlas = [];
+
+  for (const localDoc of localData) {
+    if (!atlasDataMap.has(localDoc._id.toString())) {
+      // Document exists in Local but not in Atlas, add to newDocumentsToAtlas
+      newDocumentsToAtlas.push(localDoc);
+    }
+  }
+
+  // Step 3: Insert new documents to Atlas in bulk if there are any
+  if (newDocumentsToAtlas.length > 0) {
+    await atlasCollection.insertMany(newDocumentsToAtlas);
+    console.log(`Inserted ${newDocumentsToAtlas.length} new documents to Atlas.`);
+  } else {
+    console.log('Nothing new to sync')
+  }
+}
+
 async function syncTripData() {
   const localCollection = localClient.db(localDbName).collection(localTripCollectionName);
   const atlasCollection = atlasClient.db(atlasTransportDbName).collection(atlasTripCollectionName);
@@ -354,59 +386,66 @@ async function main() {
   await connectToDatabases();
 
   try {
-      while (true) {
-          const now = new Date();
-          const currentHour = now.getHours();
+    while (true) {
+      const now = new Date();
+      const currentHour = now.getHours();
 
-          // Check if the current time falls within the allowed range
-          if (currentHour >= 9 && currentHour <= 23 && (currentHour - 9) % 2 === 0) {
-              console.log(`Starting sync operations at ${now.toLocaleTimeString()}`);
+      // Check if the current time falls within the allowed range
+      if (currentHour >= 9 && currentHour <= 23 && (currentHour - 9) % 2 === 0) {
+        console.log(`Starting sync operations at ${now.toLocaleTimeString()}`);
 
-              // Individual try-catch for each function to ensure all operations log errors separately
-              try {
-                  console.log("------------Syncing driver data...------------");
-                  await syncDriversData();
-                  console.log("------------Driver data sync completed successfully.------------");
-              } catch (error) {
-                  console.error("~~~~~~~~~~~~~~~Error syncing driver data:", error);
-              }
+        // Individual try-catch for each function to ensure all operations log errors separately
+        try {
+          console.log("------------Syncing driver data...------------");
+          await syncDriversData();
+          console.log("------------Driver data sync completed successfully.------------");
+        } catch (error) {
+          console.error("~~~~~~~~~~~~~~~Error syncing driver data:", error);
+        }
 
-              try {
-                  console.log("------------Syncing vehicle data...------------");
-                  await syncVechiclesData();
-                  console.log("------------Vehicle data sync completed successfully.------------");
-              } catch (error) {
-                  console.error("~~~~~~~~~~~~~~~Error syncing vehicle data:", error);
-              }
+        try {
+          console.log("------------Syncing vehicle data...------------");
+          await syncVechiclesData();
+          console.log("------------Vehicle data sync completed successfully.------------");
+        } catch (error) {
+          console.error("~~~~~~~~~~~~~~~Error syncing vehicle data:", error);
+        }
+        try {
+          console.log("------------Syncing Attached vehicle data...------------");
+          await syncAttachedVechicles();
+          console.log("------------Attached Vehicle data sync completed successfully.------------");
+        } catch (error) {
+          console.error("~~~~~~~~~~~~~~~Error syncing Attached vehicle data:", error);
+        }
 
-              try {
-                  console.log("------------Syncing trip data...------------");
-                  await syncTripData();
-                  console.log("------------Trip data sync completed successfully.------------");
-              } catch (error) {
-                  console.error("~~~~~~~~~~~~~~~Error syncing trip data:", error);
-              }
+        try {
+          console.log("------------Syncing trip data...------------");
+          await syncTripData();
+          console.log("------------Trip data sync completed successfully.------------");
+        } catch (error) {
+          console.error("~~~~~~~~~~~~~~~Error syncing trip data:", error);
+        }
 
-              console.log(`..................Sync operations completed at ${new Date().toLocaleTimeString()}..................`);
+        console.log(`..................Sync operations completed at ${new Date().toLocaleTimeString()}..................`);
 
-              // Wait until the next 2-hour window
-              const nextHour = currentHour + 2;
-              const nextRun = new Date(now);
-              nextRun.setHours(nextHour, 0, 0, 0);
-              const waitTime = nextRun - new Date();
-              console.log(`Waiting until ${nextRun.toLocaleTimeString()} for the next run.`);
-              await new Promise(resolve => setTimeout(resolve, waitTime));
-          } else {
-              // Wait for 1 minute and re-check the time if outside the range
-              console.log(`Not in sync window (${now.toLocaleTimeString()}). Checking again in 1 minute.`);
-              await new Promise(resolve => setTimeout(resolve, 60000));
-          }
+        // Wait until the next 2-hour window
+        const nextHour = currentHour + 2;
+        const nextRun = new Date(now);
+        nextRun.setHours(nextHour, 0, 0, 0);
+        const waitTime = nextRun - new Date();
+        console.log(`Waiting until ${nextRun.toLocaleTimeString()} for the next run.`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      } else {
+        // Wait for 1 minute and re-check the time if outside the range
+        console.log(`Not in sync window (${now.toLocaleTimeString()}). Checking again in 1 minute.`);
+        await new Promise(resolve => setTimeout(resolve, 60000));
       }
+    }
   } catch (error) {
-      console.error("An error occurred in the main loop:", error);
+    console.error("An error occurred in the main loop:", error);
   } finally {
-      await closeConnections();
-      console.log("Connections closed. Exiting script.");
+    await closeConnections();
+    console.log("Connections closed. Exiting script.");
   }
 }
 

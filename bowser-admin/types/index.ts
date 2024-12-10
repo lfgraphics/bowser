@@ -150,6 +150,10 @@ export interface Vehicle {
         open: boolean
     }
 }
+export interface AttachedVehicle {
+    VehicleNo: string;
+    TransportPartenName: string;
+}
 
 export interface TripDriver {
     Name: string;

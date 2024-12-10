@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const Vehicle = require('../models/vehicle');
+const AttachedVehicle = require('../models/attatchedVehicle');
 
-router.get('/:vehicleNumber', async (req, res) => {
+router.get('/search/:vehicleNumber', async (req, res) => {
     const vehicleNumber = req.params.vehicleNumber;
 
     try {
-        const vehicles = await Vehicle.find({
+        const vehicles = await AttachedVehicle.find({
             VehicleNo: { $regex: vehicleNumber, $options: 'i' }
         }).exec();
 

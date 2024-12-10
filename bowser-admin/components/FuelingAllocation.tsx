@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { isAuthenticated, getCurrentUser } from "@/lib/auth"
-import { Driver, FuelingTypes, ResponseBowser, User } from "@/types"
+import { isAuthenticated, getCurrentUser, API_URL } from "@/lib/auth"
+import { AttachedVehicle, Driver, FuelingTypes, ResponseBowser, User } from "@/types"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select"
 import {
     AlertDialog,
@@ -18,6 +18,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { SearchModal } from "@/components/SearchModal"
 import { searchItems } from '@/utils/searchUtils'
 import { Vehicle } from "@/types"
@@ -110,7 +111,6 @@ export default function FuelingAllocation() {
                 bowser,
                 `No proper details found with the given regNo ${bowser}`
             );
-            console.log(response)
             if (response.length > 0) {
                 setSearchModalConfig({
                     isOpen: true,
@@ -166,6 +166,32 @@ export default function FuelingAllocation() {
                     items: vehicles,
                     onSelect: handleVehicleSelection,
                     renderItem: (vehicle) => `${vehicle.VehicleNo} - ${vehicle.tripDetails.driver?.Name}`,
+                    keyExtractor: (vehicle) => vehicle.VehicleNo,
+                });
+            }
+        } catch (error) {
+            console.error('Error searching for vehicle:', error);
+        } finally {
+            setIsSearching(false);
+        }
+    }
+
+    const searchAttatchedVehicle = async (vehicleNumber: string) => {
+        setIsSearching(true);
+        try {
+            const vehicles = await searchItems<AttachedVehicle>(
+                `${API_URL}/attatched/search`, //https://bowser-backend-2cdr.onrender.com
+                vehicleNumber,
+                'No vehicle found with the given number'
+            );
+            console.log(vehicles)
+            if (vehicles.length > 0) {
+                setSearchModalConfig({
+                    isOpen: true,
+                    title: "Select a Vehicle",
+                    items: vehicles,
+                    onSelect: handleAttachedVehicleSelection,
+                    renderItem: (vehicle) => `${vehicle.VehicleNo} - ${vehicle.TransportPartenName}`,
                     keyExtractor: (vehicle) => vehicle.VehicleNo,
                 });
             }
@@ -250,6 +276,12 @@ export default function FuelingAllocation() {
                 setDriverMobileNotFound(true);
             }
         }
+        setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
+    }
+
+    const handleAttachedVehicleSelection = (vehicle: AttachedVehicle) => {
+        setVehicleNumber(vehicle.VehicleNo);
+        setPartyName(vehicle.TransportPartenName)
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
     }
 
@@ -389,8 +421,14 @@ export default function FuelingAllocation() {
                                         value={vehicleNumber}
                                         onChange={(e) => {
                                             setVehicleNumber(e.target.value.toUpperCase());
-                                            if (e.target.value.length > 3) {
-                                                searchVehicle(e.target.value.toUpperCase());
+                                            if (fueling == "Own") {
+                                                if (e.target.value.length > 3) {
+                                                    searchVehicle(e.target.value);
+                                                }
+                                            } else {
+                                                if (e.target.value.length > 3) {
+                                                    searchAttatchedVehicle(e.target.value)
+                                                }
                                             }
                                         }}
                                         required
@@ -409,7 +447,7 @@ export default function FuelingAllocation() {
                                         required
                                     />
                                 </div>}
-                            <div className="flex flex-col space-y-1.5">
+                            {fueling == "Own" && <div className="flex flex-col space-y-1.5">
                                 <Label htmlFor="driverId">Driver ID</Label>
                                 <Input
                                     id="driverId"
@@ -430,9 +468,9 @@ export default function FuelingAllocation() {
                                     }}
                                     required
                                 />
-                            </div>
+                            </div>}
                             <div className="flex flex-col space-y-1.5">
-                                <Label htmlFor="driverName">Driver Name</Label>
+                                <Label htmlFor="driverName">{(fueling == "Own" || fueling == "Attatch") ? "Driver" : "Manager"} Name</Label>
                                 <Input
                                     id="driverName"
                                     placeholder="Dinesh"
@@ -442,7 +480,7 @@ export default function FuelingAllocation() {
                                 />
                             </div>
                             <div className="flex flex-col space-y-1.5">
-                                <Label htmlFor="driverMobile">Driver Mobile</Label>
+                                <Label htmlFor="driverMobile">{(fueling == "Own" || fueling == "Attatch") ? "Driver" : "Manager"} Mobile</Label>
                                 <Input
                                     id="driverMobile"
                                     placeholder="0123456789"
@@ -452,25 +490,20 @@ export default function FuelingAllocation() {
                                 />
                             </div>
                             <div className="flex space-x-4 my-6">
-                                <div className="flex-[0.5]">
-                                    <Label htmlFor="quantityType">Quantity Type</Label>
-                                    <Select
-                                        value={quantityType}
-                                        onValueChange={(e) => handleQuantityTypeChange(e as "Full" | "Part")}
-                                    >
-                                        <SelectTrigger className="w-[180px]">
-                                            <SelectValue placeholder="Select a quantity type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                {/* <SelectLabel>Quantity Type</SelectLabel> */}
-                                                <SelectItem value="Part">Part</SelectItem>
-                                                <SelectItem value="Full">Full</SelectItem>
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
                                 <div className="flex-1">
+                                    <Label htmlFor="quantityType">Quantity Type</Label>
+                                    <RadioGroup className="flex gap-4 mt-4" defaultValue={quantityType} onValueChange={(e) => handleQuantityTypeChange(e as "Full" | "Part")}>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="Full" id="option-two" />
+                                            <Label htmlFor="option-two">Full</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="Part" id="option-one" />
+                                            <Label htmlFor="option-one">Part</Label>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
+                                <div className={`${quantityType == 'Full' ? "hidden" : "flex-1"}`}>
                                     <Label htmlFor="fuelQuantity">Fuel Quantity</Label>
                                     <Input
                                         id="fuelQuantity"
