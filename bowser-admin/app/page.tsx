@@ -1,124 +1,19 @@
 "use client"
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { subscribeUser, unsubscribeUser, sendNotification } from './actions'
 import { isAuthenticated } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
 
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
-
-  try {
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-  } catch (error) {
-    console.error('Invalid Base64 string:', base64String, error);
-    throw new Error('Failed to decode Base64 string.');
-  }
-}
-
-export function PushNotificationManager() {
-  const [isSupported, setIsSupported] = useState(false)
-  const [subscription, setSubscription] = useState<PushSubscription | null>(
-    null
-  )
-  const [message, setMessage] = useState('')
-
-  useEffect(() => {
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      setIsSupported(true)
-      registerServiceWorker()
-    }
-  }, [])
-
-  async function registerServiceWorker() {
-    const registration = await navigator.serviceWorker.register('/sw.js', {
-      scope: '/',
-      updateViaCache: 'none',
-    })
-    const sub = await registration.pushManager.getSubscription()
-
-    if (sub) {
-      setSubscription(sub)
-      // Optionally send the subscription to the server to ensure it's stored
-      await subscribeUser(sub)
-    }
-  }
-
-
-  async function subscribeToPush() {
-    const registration = await navigator.serviceWorker.ready;
-    const sub = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
-      ),
-    });
-    setSubscription(sub);
-
-    // Serialize the subscription object
-    const subscriptionPlainObject = JSON.parse(JSON.stringify(sub));
-
-    // Send the serialized subscription to the server
-    await subscribeUser(subscriptionPlainObject);
-  }
-
-
-  async function unsubscribeFromPush() {
-    if (subscription) {
-      await subscription.unsubscribe()
-      await unsubscribeUser(subscription) // Pass the subscription to remove it from the server
-      setSubscription(null)
-    }
-  }
-
-  async function sendTestNotification() {
-    if (subscription) {
-      console.log(subscription)
-      await sendNotification(message)
-      setMessage('')
-    }
-  }
-
-  if (!isSupported) {
-    return <p>Push notifications are not supported in this browser.</p>
-  }
-
-  return (
-    <div>
-      <h3>Push Notifications</h3>
-      {subscription ? (
-        <>
-          <p>You are subscribed to push notifications.</p>
-          <button onClick={unsubscribeFromPush}>Unsubscribe</button>
-          <input
-            type="text"
-            placeholder="Enter notification message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
-          <button onClick={sendTestNotification}>Send Test</button>
-        </>
-      ) : (
-        <>
-          <p>You are not subscribed to push notifications.</p>
-          <button onClick={subscribeToPush}>Subscribe</button>
-        </>
-      )}
-    </div>
-  )
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
 export function InstallPrompt() {
   const [isIOS, setIsIOS] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+
 
   useEffect(() => {
     setIsIOS(
@@ -128,26 +23,55 @@ export function InstallPrompt() {
     setIsStandalone(window.matchMedia('(display-mode: standalone)').matches)
   }, [])
 
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+
+    // Listen for the beforeinstallprompt event
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = () => {
+    if (deferredPrompt) {
+      // Show the install prompt
+      deferredPrompt.prompt();
+
+      // Wait for the user to respond to the prompt
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        } else {
+          console.log('User dismissed the install prompt');
+        }
+        // Clear the deferredPrompt so it can only be triggered once
+        setDeferredPrompt(null);
+      });
+    } else {
+      console.log('Install prompt not available');
+    }
+  };
+
   if (isStandalone) {
-    return null // Don't show install button if already installed
+    return null
   }
 
   return (
     <div>
       <h3>Install App</h3>
-      <button>Add to Home Screen</button>
+      <Button variant="secondary" onClick={handleInstallClick}>Add to Home Screen</Button>
       {isIOS && (
         <p>
           To install this app on your iOS device, tap the share button
-          <span role="img" aria-label="share icon">
-            {' '}
-            ⎋{' '}
-          </span>
+          <span role="img" aria-label="share icon"> ⎋ </span>
           and then "Add to Home Screen"
-          <span role="img" aria-label="plus icon">
-            {' '}
-            ➕{' '}
-          </span>.
+          <span role="img" aria-label="plus icon"> ➕ </span>.
         </p>
       )}
     </div>

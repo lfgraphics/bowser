@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { isAuthenticated } from '@/lib/auth';
 import FuelingAllocation from '@/components/FuelingAllocation';
 import Loading from '../loading';
-import { InstallPrompt, PushNotificationManager } from '../page';
+import { InstallPrompt } from '../page';
 
 export default function Dashboard() {
     const router = useRouter();
