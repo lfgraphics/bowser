@@ -13,7 +13,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Toaster } from "@/components/ui/toaster"
-import { ArrowDown01, ArrowUp10, Edit, Plus } from 'lucide-react';
+import { ArrowDown01, ArrowUp10, Check, Edit, Plus, X } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { TripSheet, Filters, Sort } from '@/types/index';
@@ -115,6 +115,8 @@ const TripSheetPage = () => {
                         <TableHead>Driver Mobile</TableHead>
                         <TableHead>Bowser Reg No</TableHead>
                         <TableHead>Actions</TableHead>
+                        <TableHead>Verification</TableHead>
+                        <TableHead>Post/ed</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -130,7 +132,11 @@ const TripSheetPage = () => {
                         sheets.map((sheet, index) => (
                             <TableRow key={sheet._id}>
                                 <TableCell>{index + 1}</TableCell>
-                                <TableCell>{sheet.tripSheetId}</TableCell>
+                                <TableCell>
+                                    <Link href={`/dispense-records?tripNumber=${sheet.tripSheetId}`}>
+                                        {sheet.tripSheetId}
+                                    </Link>
+                                </TableCell>
                                 <TableCell>{`${formatDate(sheet.tripSheetGenerationDateTime!)}`}</TableCell>
                                 <TableCell>{`${sheet.settelment.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : ""}`}</TableCell>
                                 <TableCell>{sheet.bowserDriver[0].name}</TableCell>
@@ -143,6 +149,9 @@ const TripSheetPage = () => {
                                         </Button>
                                     </Link>
                                 </TableCell>
+                                <TableCell><Button variant="outline"><X /></Button></TableCell>
+                                {/* <Check /> */}
+                                <TableCell><Button disabled variant="outline">Post</Button></TableCell>
                             </TableRow>
                         ))
                     )}

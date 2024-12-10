@@ -35,18 +35,20 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { formatDate } from "@/lib/utils";
 
-const VehicleDispensesPage = () => {
+const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: string } }) => {
+    const tripNumber = searchParams.tripNumber;
+
     const [records, setRecords] = useState<DispensesRecord[]>([]);
     const [totalPages, setTotalPages] = useState(1);
     const [totalRecords, setTotalRecords] = useState();
     const [currentPage, setCurrentPage] = useState(1);
     const [category, setCategory] = useState('all');
-    const [filter, setFilter] = useState({ bowserNumber: "", driverName: "", tripSheetId: "", verified: "all", vehicleNo: "" });
+    const [filter, setFilter] = useState({ bowserNumber: "", driverName: "", tripSheetId: tripNumber, verified: "all", vehicleNo: "" });
     const [sortBy, setSortBy] = useState("fuelingDateTime");
     const [order, setOrder] = useState("desc");
     const [localBowserNumber, setLocalBowserNumber] = useState("");
     const [localDriverName, setLocalDriverName] = useState("");
-    const [localTripSheetId, setLocalTripSheetId] = useState("");
+    const [localTripSheetId, setLocalTripSheetId] = useState(tripNumber);
     const [localVehicleNo, setLocalVehicleNo] = useState("");
     const [limit, setLimit] = useState(20);
     const [loading, setLoading] = useState(true);
