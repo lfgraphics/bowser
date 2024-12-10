@@ -31,6 +31,25 @@ export default function manifest(): MetadataRoute.Manifest {
         label: "Home screen showing main form for allcating fueling orders to the bowsers"
       },
       {
+        src: "/screenshots/dispenses_phone.jpg",
+        sizes: "1080x2400",
+        type: "image/jpg",
+        label: "Dispense recors screen showing the list of dispense/fueling records by the bowsers"
+      },
+      {
+        src: "/screenshots/tripsheets_phone.jpg",
+        sizes: "1080x2400",
+        type: "image/jpg",
+        label: "Trips sheets screen showing all time created trips of bowsers"
+      },
+      {
+        src: "/screenshots/tripsheet.png",
+        sizes: "1885x833",
+        type: "image/png",
+        form_factor: "wide",
+        label: "Trips sheets screen showing all time created trips of bowsers"
+      },
+      {
         src: "/screenshots/dispense-records.png",
         sizes: "1885x833",
         type: "image/png",
@@ -39,7 +58,7 @@ export default function manifest(): MetadataRoute.Manifest {
       },
       {
         src: "/screenshots/navigation-menu.png",
-        sizes: "244x529",
+        sizes: "418x944",
         type: "image/png",
         label: "Navigation menu showing navigations of the app"
       }
@@ -56,7 +75,7 @@ export default function manifest(): MetadataRoute.Manifest {
         ]
       },
       {
-        name: "Dispense Records",
+        name: "Dispenses",
         url: "/dispense-records",
         "icons": [
           {
