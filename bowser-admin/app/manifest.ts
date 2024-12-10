@@ -1,5 +1,13 @@
 import type { MetadataRoute } from 'next'
 
+type ExtendedIcon = {
+  src: string;
+  sizes: string;
+  type?: string;
+  form_factor?: string;
+  label?: string;
+};
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'ITPL Deisel Control System',
@@ -29,7 +37,7 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: "503x921",
         type: "image/png",
         label: "Home screen showing main form for allcating fueling orders to the bowsers"
-      },
+      } as ExtendedIcon,
       {
         src: "/screenshots/dispenses_phone.jpg",
         sizes: "1080x2400",
