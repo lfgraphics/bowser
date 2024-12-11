@@ -574,6 +574,7 @@ export default function FuelingAllocation() {
                                 id="bowserDriverPhone"
                                 placeholder="0123456789"
                                 value={bowserDriverMobile}
+                                onChange={(e) => setBowserDriverMobile(e.target.value)}
                                 required
                             />
                         </div>
