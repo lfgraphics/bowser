@@ -433,12 +433,12 @@ async function main() {
         const nextRun = new Date(now);
         nextRun.setHours(nextHour, 0, 0, 0);
         const waitTime = nextRun - new Date();
-        console.log(`Waiting until ${nextRun.toLocaleTimeString()} for the next run.`);
+        console.log(`Waiting until ${nextRun.toLocaleTimeString()} for the next run.\n\n\n`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       } else {
         // Wait for 1 minute and re-check the time if outside the range
-        console.log(`Not in sync window (${now.toLocaleTimeString()}). Checking again in 1 minute.`);
-        await new Promise(resolve => setTimeout(resolve, 60000));
+        console.log(`Not in sync window (${now.toLocaleTimeString()}). Will cehck again tomorrow at 09:00 AM.\n\n\n`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * 60 * 60 * 10));
       }
     }
   } catch (error) {
