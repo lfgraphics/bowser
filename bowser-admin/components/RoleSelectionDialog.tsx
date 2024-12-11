@@ -40,11 +40,11 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({ user, roles, 
                     {roles.map((role, index) => (
                         <div key={index} className="flex items-center space-x-2">
                             <Checkbox
-                                id={`${role.name}`}
+                                id={`${role._id}`}
                                 checked={selectedRoles.includes(String(role._id))}
                                 onCheckedChange={() => handleToggleRole(String(role._id))}
                             />
-                            <Label htmlFor={`${role.name}`}>{role.name}</Label>
+                            <Label htmlFor={`${role._id}`}>{role.name}</Label>
                         </div>
                     ))}
                 </div>

@@ -108,7 +108,7 @@ const UsersList = () => {
             const filtered = users.filter(user => {
                 // Search by userId, name, or phoneNumber
                 const matchesSearchTerm =
-                    user.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    user.userId !== undefined && user.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     user.phoneNumber.includes(searchTerm);
 
@@ -212,7 +212,16 @@ const UsersList = () => {
             {!superAdmin ? <p className="block mx-auto w-max p-3 border rounded-md mt-72 border-foreground scale-150">You do not have permission to view this page<br />Your should ask Super Admin for these actions</p> :
                 <>
                     <Toaster />
-                    {nav === 'Users' && <div className="filter-container w-full flex flex-wrap gap-3 justify-around my-3">
+                    <div className="nav mx-auto mb-4 flex gap-4 bg-muted-foreground bg-opacity-35 w-max p-4 rounded-lg">
+                        {(['Users', 'Roles', 'Un Authorized'] as Nav[]).map((option) => (
+                            <Button
+                                key={option}
+                                variant={nav == option ? 'default' : 'secondary'}
+                                onClick={() => setNav(option)}
+                            >{option}
+                            </Button>))}
+                    </div>
+                    {nav === 'Users' && <div className="filter-container w-full flex flex-wrap gap-3 justify-around my-6">
                         {/* Verification Filter */}
                         <div className="flex items-center gap-4 mt-4">
                             <Switch
@@ -243,10 +252,10 @@ const UsersList = () => {
                             <Search size={20} className="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400" />
                             <Input
                                 type="text"
-                                placeholder="Search by ID, name, or phone number"
+                                placeholder="Search name, or phone number"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
-                                className="w-full pl-10" // Adjust padding to accommodate the icon
+                                className="w-full pl-10"
                             />
                         </div>
 
@@ -274,20 +283,11 @@ const UsersList = () => {
                             </div>
                         </div>
                     </div>}
-                    <div className="nav mx-auto mb-4 flex gap-4 bg-muted-foreground bg-opacity-35 w-max p-4 rounded-lg">
-                        {(['Users', 'Roles', 'Un Authorized'] as Nav[]).map((option) => (
-                            <Button
-                                key={option}
-                                variant={nav == option ? 'default' : 'secondary'}
-                                onClick={() => setNav(option)}
-                            >{option}
-                            </Button>))}
-                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {nav === 'Users' && filteredUsers.map((user, index) => (
                             <UsersCard
                                 key={index}
-                                header={`${user.name}, ID: ${user.userId}`}
+                                header={`${user.name}${user.userId ? ", Id:" : ""} ${user.userId ? user.userId : ""}`}
                                 description={`Phone: ${user.phoneNumber}`}
                                 content={
                                     <div>

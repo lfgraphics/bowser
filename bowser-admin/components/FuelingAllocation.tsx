@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { isAuthenticated, getCurrentUser, API_URL } from "@/lib/auth"
 import { AttachedVehicle, Driver, FuelingTypes, ResponseBowser, User } from "@/types"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -73,7 +72,10 @@ export default function FuelingAllocation() {
     useEffect(() => {
         if (fueling == "Own") {
             setPartyName("Own")
-        } else {
+        } else if (fueling == "Bulk Sale") {
+            setQuantityType("Part")
+        }
+        else {
             setPartyName("")
         }
     }, [fueling])
@@ -490,9 +492,9 @@ export default function FuelingAllocation() {
                                 />
                             </div>
                             <div className="flex space-x-4 my-6">
-                                <div className="flex-1">
-                                    <Label htmlFor="quantityType">Quantity Type</Label>
-                                    <RadioGroup className="flex gap-4 mt-4" defaultValue={quantityType} onValueChange={(e) => handleQuantityTypeChange(e as "Full" | "Part")}>
+                                <div className={`${fueling == "Bulk Sale" ? "hidden" : "flex-1"}`}>
+                                    <h3>Quantity Type</h3>
+                                    <RadioGroup name="quantityType" className="flex gap-4 mt-4" defaultValue={quantityType} onValueChange={(e) => handleQuantityTypeChange(e as "Full" | "Part")}>
                                         <div className="flex items-center space-x-2">
                                             <RadioGroupItem value="Full" id="option-two" />
                                             <Label htmlFor="option-two">Full</Label>
