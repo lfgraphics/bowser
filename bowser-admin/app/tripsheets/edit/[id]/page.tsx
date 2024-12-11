@@ -142,7 +142,7 @@ export const page = ({ params }: { params: { id: string } }) => {
                         <Label>Handover Date, Time: {(editing == false && `${driver.handOverDate}`)}</Label>
                         {editing && <Input
                             type="datetime-local"
-                            value={driver.handOverDate.toISOString().slice(0, 16)} // Format the Date object to match the input type
+                            value={driver.handOverDate && driver.handOverDate.toISOString().slice(0, 16)} // Format the Date object to match the input type
                             onChange={(e) => {
                                 const updatedDrivers = [...bowserDriver];
                                 updatedDrivers[index].handOverDate = new Date(e.target.value); // Convert string to Date
