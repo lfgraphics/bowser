@@ -13,6 +13,10 @@ const tripSheetSchema = new mongoose.Schema({
             phoneNo: String,
         }
     ],
+    dispenses: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'FuelingTransaction'
+    }],
     bowser: {
         regNo: String,
     },
@@ -31,14 +35,6 @@ const tripSheetSchema = new mongoose.Schema({
     proposedDepartureDateTime: {
         type: String,
         required: false,
-        // validate: {
-        //     validator: function (v) {
-        //         const generationDateTime = new Date(this.tripSheetGenerationDateTime);
-        //         const proposedDateTime = new Date(v);
-        //         return proposedDateTime > generationDateTime;
-        //     },
-        //     message: 'Proposed departure date time should be after the generation date time'
-        // }
     },
     loadQuantityByDip: {
     },

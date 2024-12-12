@@ -436,9 +436,22 @@ async function main() {
         console.log(`Waiting until ${nextRun.toLocaleTimeString()} for the next run.\n\n\n`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       } else {
-        // Wait for 1 minute and re-check the time if outside the range
-        console.log(`Not in sync window (${now.toLocaleTimeString()}). Will cehck again tomorrow at 09:00 AM.\n\n\n`);
-        await new Promise(resolve => setTimeout(resolve, 1000 * 60 * 60 * 10));
+        // Calculate the next valid sync time
+        const nextValidHour = currentHour < 9 ? 9 : Math.ceil((currentHour - 9) / 2) * 2 + 9;
+        let nextRun = new Date(now);
+
+        if (nextValidHour > 23) {
+          // Next valid sync time is tomorrow at 9:00 AM
+          nextRun.setDate(nextRun.getDate() + 1);
+          nextRun.setHours(9, 0, 0, 0);
+        } else {
+          // Next valid sync time is later today
+          nextRun.setHours(nextValidHour, 0, 0, 0);
+        }
+
+        const waitTime = nextRun - new Date();
+        console.log(`Not in sync window (${now.toLocaleTimeString()}). Waiting until ${nextRun.toLocaleTimeString()}.\n\n\n`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
   } catch (error) {

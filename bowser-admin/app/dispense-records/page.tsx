@@ -35,8 +35,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { formatDate } from "@/lib/utils";
 
-const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: string } }) => {
+const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: string, allocator: string } }) => {
     const tripNumber = searchParams.tripNumber;
+    const allocator = searchParams.allocator;
 
     const [records, setRecords] = useState<DispensesRecord[]>([]);
     const [totalPages, setTotalPages] = useState(1);
@@ -69,7 +70,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
 
     useEffect(() => {
         fetchRecords();
-    }, [currentPage, sortBy, order, filter, limit, verificationStatus, category]);
+    }, [currentPage, sortBy, order, filter, limit, verificationStatus, category, searchParams]);
 
 
     const fetchRecords = async () => {
@@ -77,6 +78,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
         try {
             const response = await axios.get("https://bowser-backend-2cdr.onrender.com/listDispenses", { //https://bowser-backend-2cdr.onrender.com
                 params: {
+                    allocator,
                     page: currentPage,
                     limit: limit,
                     sortBy,

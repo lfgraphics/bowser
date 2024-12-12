@@ -4,9 +4,10 @@ const FuelingTransaction = require('../models/fuelingTransaction');
 const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
+const { removeDispenseFromTripSheet } = require('../utils/fuelTransactions');
 
 router.get('/', async (req, res) => {
-    const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'fuelingDateTime', order = 'desc', verified, category, vehicleNo } = req.query;
+    const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'fuelingDateTime', order = 'desc', verified, category, vehicleNo, allocator } = req.query;
     const skip = (page - 1) * limit;
     let filter = {};
 
@@ -19,6 +20,14 @@ router.get('/', async (req, res) => {
     if (bowserNumber) {
         filter['bowser.regNo'] = bowserNumber;
     }
+
+    if (allocator) {
+        filter.$or = [
+            { 'allocationAdmin.name': { $regex: allocator, $options: "i" } },
+            { 'allocationAdmin.id': { $regex: allocator, $options: "i" } }
+        ];
+    }
+
     if (tripSheetId) {
         filter['tripSheetId'] = { $regex: tripSheetId, $options: 'i' };
     }
@@ -253,6 +262,8 @@ router.delete('/delete/:id', async (req, res) => {
         if (!deletedRecord) {
             return res.status(404).json({ message: 'Record not found' });
         }
+
+        await removeDispenseFromTripSheet(id)
 
         res.status(200).json({ message: 'Fueling record deleted successfully', success: true });
     } catch (err) {

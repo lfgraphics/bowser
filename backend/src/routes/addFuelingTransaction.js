@@ -1,28 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const FuelingTransaction = require('../models/fuelingTransaction');
-
-const fetchLocationData = async (latitude, longitude) => {
-    const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`;
-
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data && data.address) {
-            const { county: state, city, town, village } = data.address;
-            const location = city || town || village;
-            let obj = `${location}, ${data.address.state_district}, ${state}`
-            return obj
-        } else {
-            console.log(`Unable to capture the location by nominatim's api- Cord are: lat = ${latitude}, long = ${longitude}`);
-            return null;
-        }
-    } catch (error) {
-        console.error(error);
-        return null;
-    }
-};
-
+const { fetchLocationData, addRecordToTrip, } = require('../utils/fuelTransactions');
 
 router.post('/', async (req, res) => {
     try {
@@ -53,6 +32,8 @@ router.post('/', async (req, res) => {
         );
 
         await Promise.race([savePromise, timeoutPromise]);
+
+        await addRecordToTrip(fuelingTransaction);
 
         res.status(200).json({ message: 'Data Submitted successfully' });
     } catch (err) {
