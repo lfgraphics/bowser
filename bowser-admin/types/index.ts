@@ -163,7 +163,7 @@ export interface TripDriver {
 
 export interface DispensesRecord {
     _id: string;
-    orderId: mongoose.Schema.Types.ObjectId,
+    orderId: string,
     category: string;
     party: string;
     tripSheetId: string;
@@ -190,8 +190,8 @@ export interface DispensesRecord {
         }
     },
     allocationAdmin: {
-        name: { type: string, required: false },
-        id: { type: string, required: false }
+        name: string,
+        id: string
     },
 }
 

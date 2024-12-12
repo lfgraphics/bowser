@@ -3,6 +3,7 @@ import FuelRecordCard from '@/components/FuelRecord';
 import { isAuthenticated } from '@/lib/auth';
 import { DispensesRecord } from '@/types';
 import axios from 'axios';
+import mongoose from 'mongoose';
 import React, { useEffect, useState } from 'react'
 
 export const page = ({ params }: { params: { id: string } }) => {
@@ -15,8 +16,42 @@ export const page = ({ params }: { params: { id: string } }) => {
     useEffect(() => {
         checkAuth();
     }, []);
-    
-    const [record, setRecord] = useState<DispensesRecord>();
+
+    const dummyRecord: DispensesRecord = {
+        _id: "someId",
+        orderId: "ObjectId",
+        category: "Own",
+        party: "Own",
+        tripSheetId: "XXXX",
+        vehicleNumberPlateImage: "string",
+        vehicleNumber: "UPXXATXXXX",
+        odometer: "XXXXXX",
+        driverName: "Driver Name",
+        driverId: "ITPLId",
+        driverMobile: "0123456789",
+        fuelMeterImage: ["string", "somethine else"],
+        slipImage: "string",
+        fuelQuantity: "XXX.XX",
+        quantityType: "Full",
+        gpsLocation: "XYZ",
+        fuelingDateTime: `${new Date().toLocaleString}`,
+        verified: false,
+        posted: false,
+        bowser: {
+            regNo: "UPXXATXXXX",
+            driver: {
+                name: "Bowser Driver",
+                id: "ID",
+                phoneNo: "0123456789"
+            }
+        },
+        allocationAdmin: {
+            name: "Allocator name",
+            id: "Allocator Number/ Id"
+        },
+    }
+
+    const [record, setRecord] = useState<DispensesRecord>(dummyRecord);
     useEffect(() => {
         const fetchRecords = async () => {
             try {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Check, X, User2Icon } from 'lucide-react';
+import { MapPin, Check, X } from 'lucide-react';
 import { DispensesRecord } from '@/types';
 import Modal from './Modal';
 import Loading from '@/app/loading';
@@ -16,7 +16,7 @@ import { BASE_URL } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 
 interface FuelRecordCardProps {
-    record?: DispensesRecord;
+    record: DispensesRecord;
 }
 
 const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
@@ -28,7 +28,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
     const [alertMessage, setAlertMessage] = useState("");
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [editing, setEditing] = useState<boolean>(false);
-    const [updatedRecord, setUpdatedRecord] = useState<DispensesRecord | undefined>(record);
+    const [updatedRecord, setUpdatedRecord] = useState<DispensesRecord>(record);
     const [superAdmin, setSuperAdmin] = useState<boolean>(false);
 
     const checkAuth = () => {
@@ -150,29 +150,47 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                 {/* Header */}
                 <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
-                        <User2Icon className="w-5 h-5" />
-                        <span>Vehicle Driver: {editing ? (
-                            <Input
-                                value={`${updatedRecord?.driverName} - ${updatedRecord?.driverId}`}
-                                onChange={(e) => {
-                                    const [name, id] = e.target.value.split(' - ');
-                                    setUpdatedRecord({ ...updatedRecord, driverName: name, driverId: id });
-                                }}
-                            />
-                        ) : (
-                            `${updatedRecord?.driverName} - ${updatedRecord?.driverId}`
-                        )}</span>
+                        Caregory: {record?.category} {record.category == "Attatch" && `, Party: ${record.party}`}{record.category == "Bulk Sale" && `, Vendor: ${record.party}`}
                     </CardTitle>
                 </CardHeader>
 
                 {/* Content */}
                 <CardContent>
+                    <div className='my-3'>
+                        <span>Receaver: {editing ? (
+                            <div className='flex gap-3 flex-wrap md:flex-nowrap'>
+                                <Input
+                                    placeholder='Receaver Name'
+                                    value={updatedRecord?.driverName}
+                                    onChange={(e) => {
+                                        setUpdatedRecord({ ...updatedRecord, driverName: e.target.value });
+                                    }}
+                                />
+                                {record.category == "Own" && <Input
+                                    placeholder='Driver ITPLId'
+                                    value={updatedRecord?.driverId}
+                                    onChange={(e) => {
+                                        setUpdatedRecord({ ...updatedRecord, driverId: e.target.value });
+                                    }}
+                                />}
+                                <Input
+                                    placeholder='Receaver Phone No'
+                                    value={updatedRecord?.driverMobile}
+                                    onChange={(e) => {
+                                        setUpdatedRecord({ ...updatedRecord, driverMobile: e.target.value });
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            `${updatedRecord?.driverName}${updatedRecord?.driverId ? (" - " + updatedRecord?.driverId) : ""}, Mobile No.: ${updatedRecord?.driverMobile}`
+                        )}</span>
+                    </div>
                     {(updatedRecord || record) &&
                         <>
                             <div className="mb-4">
-                                <h2 className="text-md font-semibold">Vehicle Details</h2>
-                                <p className="text-sm text-foreground"><strong>Vehicle Number:</strong> {editing ? (
+                                {record.vehicleNumber && <p className="text-sm text-foreground"><strong>Vehicle Number:</strong> {editing ? (
                                     <Input
+                                        placeholder='Vehicle Number'
                                         value={updatedRecord?.vehicleNumber}
                                         onChange={(e) => {
                                             setUpdatedRecord({ ...updatedRecord, vehicleNumber: e.target.value });
@@ -180,18 +198,31 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                     />
                                 ) : (
                                     updatedRecord?.vehicleNumber
-                                )}</p>
-                                <div className="flex space-x-4 mt-2">
+                                )}</p>}
+                                <div className="flex flex-col gap-3 mt-2">
+                                    {record?.category == "Bulk Sale" && "Saling Point"}
                                     <img className="w-32 h-32 object-cover rounded-md" src={`${record?.vehicleNumberPlateImage}`} alt="Vehicle Plate"
                                         onClick={() => openImageModal(record?.vehicleNumberPlateImage || '')}
                                     />
                                 </div>
+                                {record.category == "Own" && <p className='text-sm text-foreground my-3'>
+                                    <strong>Odo Meter:</strong> {editing ? (
+                                        <Input
+                                            placeholder='Odo Meter'
+                                            value={updatedRecord?.odometer}
+                                            onChange={((e) => {
+                                                setUpdatedRecord({ ...updatedRecord, odometer: e.target.value })
+                                            })}
+                                        />
+                                    ) : `${record.odometer}`}
+                                </p>}
                             </div>
 
                             <div className="mb-4">
-                                <h2 className="text-md font-semibold">Fueling Details</h2>
+                                <h2 className="text-md font-semibold">Dispense Details</h2>
                                 <p className="text-sm text-gray-600"><strong>Quantity:</strong> {editing ? (
                                     <Input
+                                        placeholder='Quantity'
                                         value={updatedRecord?.fuelQuantity}
                                         onChange={(e) => {
                                             setUpdatedRecord({ ...updatedRecord, fuelQuantity: e.target.value });
@@ -200,19 +231,16 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                 ) : (
                                     `${updatedRecord?.fuelQuantity} Liter - ${updatedRecord?.quantityType}`
                                 )}</p>
-                                <p className="text-sm text-gray-600"><strong>Date & Time:</strong> {formatDate(record?.fuelingDateTime)}</p>
+                                <p className="text-sm text-gray-600"><strong>Date & Time:</strong> {formatDate(record?.fuelingDateTime!)}</p>
                                 <h2 className="text-md font-semibold">Bowser Details</h2>
-                                <p className="text-sm text-gray-600"><strong>Registration Number:</strong> {record?.bowser.regNo || "Not Registered"}</p>
-                                <p className="text-sm text-gray-600"><strong>Driver:</strong> {record?.bowser.driver.name}</p>
-                                <p className="text-sm text-gray-600"><strong>Phone:</strong> {record?.bowser.driver.phoneNo}</p>
-                            </div>
-
-                            <div className="mb-4">
-                                <h2 className="text-md font-semibold">Location</h2>
+                                <p className="text-sm text-gray-600"><strong>Registration Number:</strong> {record?.bowser.regNo || "Error"}</p>
+                                <p className="text-sm text-gray-600"><strong>Driver Name:</strong> {record?.bowser.driver.name}</p>
+                                <p className="text-sm text-gray-600"><strong>Driver Phone:</strong> {record?.bowser.driver.phoneNo}</p>
                                 <p className="text-sm text-gray-600 flex items-center">
                                     <MapPin className="w-4 h-4 mr-1" />
                                     {editing ? (
                                         <Input
+                                            placeholder='Location of Fueling'
                                             value={updatedRecord?.gpsLocation}
                                             onChange={(e) => {
                                                 setUpdatedRecord({ ...updatedRecord, gpsLocation: e.target.value });
@@ -223,12 +251,15 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                     )}
                                 </p>
                             </div>
+
                             <div className="flex space-x-4">
                                 <div>
-                                    <h2 className="text-md font-semibold">Fuel Meter Image</h2>
+                                    <h2 className="text-md font-semibold">Fuel Meter & Slip Image/s</h2>
                                     <div className="flex gap-3">
                                         {record?.fuelMeterImage.map((img, index) => (
                                             <img
+                                                width={128}
+                                                height={128}
                                                 key={index}
                                                 src={img}
                                                 alt="Fuel Meter"
@@ -238,15 +269,24 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                         ))}
                                     </div>
                                 </div>
-                                <div>
+                                {record?.slipImage && <div>
                                     <h2 className="text-md font-semibold">Slip Image</h2>
                                     {record?.slipImage && <img
+                                        width={128}
+                                        height={128}
                                         src={record?.slipImage}
                                         alt="Slip"
                                         className="w-32 h-32 object-cover rounded-md"
                                         onClick={() => openImageModal(record.slipImage)}
                                     />}
-                                </div></div>
+                                </div>}
+                            </div>
+
+                            {record?.allocationAdmin && (
+                                <p className="text-sm text-gray-500 mt-4">
+                                    Allocated by: {`${updatedRecord?.allocationAdmin?.name || ''} Id: ${updatedRecord?.allocationAdmin?.id || ''}`}
+                                </p>
+                            )}
 
                             <div className="recordVerificationStatus mt-6 flex items-center">
                                 <Label htmlFor="verification" >Record Verification Status: </Label>{editing ? (
@@ -275,7 +315,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                 </CardContent>
 
                 {/* Footer */}
-                <CardFooter className="mt-4 flex justify-between">
+                <CardFooter className="mt-4 flex gap-6">
                     <div className="flex space-x-2">
                         <Button variant="ghost" onClick={() => setEditing(!editing)}>
                             {editing ? 'Cancel' : 'Edit'}
@@ -303,11 +343,6 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                             </>
                         )}
                     </div>
-                    {record?.allocationAdmin && (
-                        <p className="text-sm text-gray-500">
-                            Allocated by: {`${updatedRecord?.allocationAdmin?.name || ''} Id: ${updatedRecord?.allocationAdmin?.id || ''}`}
-                        </p>
-                    )}
                 </CardFooter>
                 {/* Modal for Image */}
                 <Modal isOpen={isModalOpen} onClose={closeModal}>
