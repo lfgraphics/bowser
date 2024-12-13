@@ -5,6 +5,7 @@ const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
 const { removeDispenseFromTripSheet } = require('../utils/fuelTransactions');
+const TripSheet = require('../models/tripsheet');
 
 router.get('/', async (req, res) => {
     const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'fuelingDateTime', order = 'desc', verified, category, vehicleNo, allocator } = req.query;
@@ -214,6 +215,11 @@ router.patch('/verify/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const updatedRecord = await FuelingTransaction.findByIdAndUpdate(id, { verified: true });
+        const tripSheet = await TripSheet.findOneAndUpdate(
+            { 'dispenses.transaction': id }, // Match the id in the dispenses array
+            { $set: { 'dispenses.$.isVerified': true } }, // Update the verification status
+            { new: true } // Return the updated document
+        );
 
         if (!updatedRecord) {
             return res.status(404).json({ heading: "Failed", message: 'Record not found' });
@@ -241,6 +247,12 @@ router.post('/verify', async (req, res) => {
         if (result.modifiedCount === 0) {
             return res.status(404).json({ heading: "Failed!", message: "No records found to update" });
         }
+
+        await TripSheet.updateMany(
+            { 'dispenses.transaction': { $in: ids } },
+            { $set: { 'dispenses.$[elem].isVerified': true } },
+            { arrayFilters: [{ 'elem.transaction': { $in: ids } }] }
+        );
 
         res.json({
             heading: "Success!",

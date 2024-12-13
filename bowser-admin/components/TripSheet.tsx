@@ -56,6 +56,7 @@ const TripSheetPage = () => {
                 params: { ...filters, sortField: sort.field, sortOrder: sort.order },
             });
             setSheets(response.data);
+            console.log(response.data);
         } catch (error) {
             toast({ title: 'Error', description: 'Failed to load sheets', variant: "destructive" });
         } finally {
@@ -114,6 +115,7 @@ const TripSheetPage = () => {
                         <TableHead>Driver Name</TableHead>
                         <TableHead>Driver Mobile</TableHead>
                         <TableHead>Bowser Reg No</TableHead>
+                        <TableHead>Dispenses</TableHead>
                         <TableHead>Actions</TableHead>
                         <TableHead>Verification</TableHead>
                         <TableHead>Post/ed</TableHead>
@@ -122,11 +124,11 @@ const TripSheetPage = () => {
                 <TableBody>
                     {loading ? (
                         <TableRow>
-                            <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                            <TableCell colSpan={11} className="text-center">Loading...</TableCell>
                         </TableRow>
                     ) : sheets.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={6} className="text-center">No records found</TableCell>
+                            <TableCell colSpan={11} className="text-center">No records found</TableCell>
                         </TableRow>
                     ) : (
                         sheets.map((sheet, index) => (
@@ -138,10 +140,11 @@ const TripSheetPage = () => {
                                     </Link>
                                 </TableCell>
                                 <TableCell>{`${formatDate(sheet.tripSheetGenerationDateTime!)}`}</TableCell>
-                                <TableCell>{`${sheet.settelment.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : ""}`}</TableCell>
+                                <TableCell>{`${sheet.settelment.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : "Un Settled"}`}</TableCell>
                                 <TableCell>{sheet.bowserDriver[0].name}</TableCell>
                                 <TableCell>{sheet.bowserDriver[0].phoneNo}</TableCell>
                                 <TableCell>{sheet.bowser.regNo}</TableCell>
+                                <TableCell>{sheet.dispenses?.length || "Error"}</TableCell>
                                 <TableCell className="flex space-x-2">
                                     <Link href={`/tripsheets/edit/${sheet._id}`}>
                                         <Button variant="ghost">
@@ -149,8 +152,7 @@ const TripSheetPage = () => {
                                         </Button>
                                     </Link>
                                 </TableCell>
-                                <TableCell><Button variant="outline"><X /></Button></TableCell>
-                                {/* <Check /> */}
+                                <TableCell>{sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? <Check /> : (sheet.dispenses && sheet.dispenses.length > 0 ? <X /> : null)}</TableCell>
                                 <TableCell><Button disabled variant="outline">Post</Button></TableCell>
                             </TableRow>
                         ))

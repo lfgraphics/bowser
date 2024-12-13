@@ -60,15 +60,10 @@ export interface Trip {
     settled: boolean;
 }
 
-// export interface Bowser {
-//     _id: string;
-//     regNo: string;
-//     currentTrip: TripSheet
-// }
-
 export interface TripSheet {
     _id?: string;
     tripSheetId: number;
+    dispenses: { transaction: string, isVerified: boolean }[];
     tripSheetGenerationDateTime?: Date;
     bowserDriver: {
         handOverDate: Date;

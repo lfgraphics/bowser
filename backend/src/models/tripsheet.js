@@ -14,8 +14,14 @@ const tripSheetSchema = new mongoose.Schema({
         }
     ],
     dispenses: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'FuelingTransaction'
+        transaction: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'FuelingTransaction'
+        },
+        isVerified: {
+            type: Boolean,
+            default: false
+        }
     }],
     bowser: {
         regNo: String,
