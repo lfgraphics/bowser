@@ -23,7 +23,7 @@ export function SearchModal<T>({
 }: SearchModalProps<T>) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className='max-h-[80svh]'>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>

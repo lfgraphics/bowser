@@ -15,14 +15,7 @@ router.get('/:regNo', async (req, res) => {
             return res.status(404).json({ message: 'No bowsers found with the given registration number' });
         }
 
-        const bowserDetails = await Promise.all(bowsers.map(async (bowser) => {
-            return {
-                regNo: bowser.regNo,
-                _id: bowser._id
-            };
-        }));
-
-        res.status(200).json({ bowserDetails });
+        res.status(200).json(bowsers);
 
     } catch (err) {
         console.error('Error searching bowsers, trip details, or bowser drivers:', err);
@@ -62,7 +55,7 @@ router.get('/trip/:bowser', async (req, res) => {
             // If no drivers have handOverDate, select the first one (if any)
             selectedDriver = trip.bowserDriver[0];
         }
-        
+
         res.status(200).json([trip]);
 
     } catch (err) {

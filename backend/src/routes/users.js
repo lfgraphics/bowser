@@ -6,11 +6,38 @@ const mongoose = require('mongoose')
 
 // Get all users with roles populated
 router.get('/', async (req, res) => {
+    const { searchParam } = req.query;
     try {
-        const users = await User.find().populate('roles').sort({ generationTime: -1 }).exec();
-        res.status(200).json(users);
+        if (searchParam) {
+            const filter = {
+                $and: [
+                    {
+                        $or: [
+                            { phoneNumber: { $regex: searchParam, $options: "i" } },
+                            { name: { $regex: searchParam, $options: "i" } },
+                            { bowserId: { $regex: searchParam, $options: "i" } },
+                        ],
+                    },
+                    { roles: '6710ddc21e5c7dc410e64e34' },
+                    { verified: true },
+                ]
+            };
+            const users = await User.find(filter, { phoneNumber: 1, name: 1, bowserId: 1, _id: '-1' }).lean();
+            if (users.length === 0) {
+                return res.status(404).json({
+                    title: "Error",
+                    message: "No User found by the given parameter"
+                });
+            }
+
+            return res.status(200).json(users);
+        } else {
+            const users = await User.find().populate('roles').sort({ generationTime: -1 });
+            return res.status(200).json(users);
+        }
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch users', details: error });
+        console.error('Error fetching users:', error);
+        return res.status(500).json({ error: 'Failed to fetch users', details: error });
     }
 });
 

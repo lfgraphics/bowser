@@ -215,10 +215,10 @@ router.patch('/verify/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const updatedRecord = await FuelingTransaction.findByIdAndUpdate(id, { verified: true });
-        const tripSheet = await TripSheet.findOneAndUpdate(
-            { 'dispenses.transaction': id }, // Match the id in the dispenses array
-            { $set: { 'dispenses.$.isVerified': true } }, // Update the verification status
-            { new: true } // Return the updated document
+        await TripSheet.findOneAndUpdate(
+            { 'dispenses.transaction': id },
+            { $set: { 'dispenses.$.isVerified': true } },
+            { new: true }
         );
 
         if (!updatedRecord) {

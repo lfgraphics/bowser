@@ -144,7 +144,7 @@ const TripSheetPage = () => {
                                 <TableCell>{sheet.bowserDriver[0].name}</TableCell>
                                 <TableCell>{sheet.bowserDriver[0].phoneNo}</TableCell>
                                 <TableCell>{sheet.bowser.regNo}</TableCell>
-                                <TableCell>{sheet.dispenses?.length || "Error"}</TableCell>
+                                <TableCell>{sheet.dispenses?.length || "0"}</TableCell>
                                 <TableCell className="flex space-x-2">
                                     <Link href={`/tripsheets/edit/${sheet._id}`}>
                                         <Button variant="ghost">

@@ -83,11 +83,11 @@ export default function FuelingAllocation() {
     const searchDriver = async (idNumber: string) => {
         setIsSearching(true);
         try {
-            const drivers = await searchItems<Driver>(
-                'https://bowser-backend-2cdr.onrender.com/searchDriver', //https://bowser-backend-2cdr.onrender.com
-                idNumber,
-                'No driver found with the given ID'
-            );
+            const drivers = await searchItems<Driver>({
+                url: 'https://bowser-backend-2cdr.onrender.com/searchDriver', //https://bowser-backend-2cdr.onrender.com
+                searchTerm: idNumber,
+                errorMessage: 'No driver found with the given ID'
+            });
             if (drivers.length > 0) {
                 setSearchModalConfig({
                     isOpen: true,
@@ -108,19 +108,18 @@ export default function FuelingAllocation() {
     const searchBowser = async (bowser: string) => {
         setIsSearching(true);
         try {
-            const response: ResponseBowser[] = await searchItems<ResponseBowser>(
-                `${BASE_URL}/searchBowserDetails/trip`, //https://bowser-backend-2cdr.onrender.com
-                bowser,
-                `No proper details found with the given regNo ${bowser}`
-            );
+            const response: User[] = await searchItems<User>({
+                url: `${BASE_URL}/users?searchParam=${bowser}`,
+                errorMessage: `No proper details found with the given parameter: ${bowser}`
+            });
             if (response.length > 0) {
                 setSearchModalConfig({
                     isOpen: true,
                     title: "Select a Bowser",
                     items: response,
                     onSelect: handleBowserSelection,
-                    renderItem: (trip) => `${trip.tripSheetId} : Bowser: ${trip.bowser.regNo}\nDriver: ${trip.bowserDriver[0]?.name} (${trip.bowserDriver[0]?.phoneNo})`,
-                    keyExtractor: (trip) => trip.bowser.regNo,
+                    renderItem: (driver) => `Bowser: ${driver.bowserId || "Not Found"}\n Driver: ${driver.name} (${driver.phoneNumber})`,
+                    keyExtractor: (driver) => driver.phoneNumber,
                 });
             }
         } catch (error) {
@@ -133,7 +132,7 @@ export default function FuelingAllocation() {
     const searchBowserDriver = async (userId: string) => {
         setIsSearching(true);
         try {
-            const response = await searchItems('https://bowser-backend-2cdr.onrender.com/searchDriver/bowser-drivers', userId, `No details found with the user id: ${userId}`)// fetch(`https://bowser-backend-2cdr.onrender.com/searchDriver/bowser-drivers/${userId}`); //https://bowser-backend-2cdr.onrender.com
+            const response = await searchItems({ url: 'https://bowser-backend-2cdr.onrender.com/searchDriver/bowser-drivers', searchTerm: userId, errorMessage: `No details found with the user id: ${userId}` })// fetch(`https://bowser-backend-2cdr.onrender.com/searchDriver/bowser-drivers/${userId}`); //https://bowser-backend-2cdr.onrender.com
             const drivers = response;
             if (drivers.length > 0) {
                 setSearchModalConfig({
@@ -155,11 +154,11 @@ export default function FuelingAllocation() {
     const searchVehicle = async (vehicleNumber: string) => {
         setIsSearching(true);
         try {
-            const vehicles = await searchItems<Vehicle>(
-                'https://bowser-backend-2cdr.onrender.com/searchVehicleNumber', //https://bowser-backend-2cdr.onrender.com
-                vehicleNumber,
-                'No vehicle found with the given number'
-            );
+            const vehicles = await searchItems<Vehicle>({
+                url: 'https://bowser-backend-2cdr.onrender.com/searchVehicleNumber', //https://bowser-backend-2cdr.onrender.com
+                searchTerm: vehicleNumber,
+                errorMessage: 'No vehicle found with the given number'
+            });
             console.log(vehicles)
             if (vehicles.length > 0) {
                 setSearchModalConfig({
@@ -167,7 +166,7 @@ export default function FuelingAllocation() {
                     title: "Select a Vehicle",
                     items: vehicles,
                     onSelect: handleVehicleSelection,
-                    renderItem: (vehicle) => `${vehicle.VehicleNo} - ${vehicle.tripDetails.driver?.Name}`,
+                    renderItem: (vehicle) => `${vehicle.VehicleNo} - ${vehicle.tripDetails.driver?.Name} - ${vehicle.tripDetails.driver?.MobileNo}`,
                     keyExtractor: (vehicle) => vehicle.VehicleNo,
                 });
             }
@@ -181,11 +180,11 @@ export default function FuelingAllocation() {
     const searchAttatchedVehicle = async (vehicleNumber: string) => {
         setIsSearching(true);
         try {
-            const vehicles = await searchItems<AttachedVehicle>(
-                `${API_URL}/attatched/search`, //https://bowser-backend-2cdr.onrender.com
-                vehicleNumber,
-                'No vehicle found with the given number'
-            );
+            const vehicles = await searchItems<AttachedVehicle>({
+                url: `${API_URL}/attatched/search`, //https://bowser-backend-2cdr.onrender.com
+                searchTerm: vehicleNumber,
+                errorMessage: 'No vehicle found with the given number'
+            });
             console.log(vehicles)
             if (vehicles.length > 0) {
                 setSearchModalConfig({
@@ -235,13 +234,13 @@ export default function FuelingAllocation() {
             }
         }
     }
-    const handleBowserSelection = (bowser: ResponseBowser) => {
+    const handleBowserSelection = (driver: User) => {
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
 
-        if (bowser) {
-            setBowserRegNo(bowser.bowser.regNo);
-            setBowserDriverName(bowser.bowserDriver[0]?.name);
-            setBowserDriverMobile(bowser.bowserDriver[0]?.phoneNo);
+        if (driver) {
+            setBowserRegNo(driver.bowserId);
+            setBowserDriverName(driver.name);
+            setBowserDriverMobile(driver.phoneNumber);
         }
     }
 

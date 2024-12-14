@@ -118,19 +118,20 @@ const TripSheetCreationPage: React.FC = () => {
     const searchBowser = async (bowser: string) => {
         setLoading(true);
         try {
-            const response: ResponseBowser[] = await searchItems<ResponseBowser>(
-                `${BASE_URL}/searchBowserDetails/trip`, //https://bowser-backend-2cdr.onrender.com
-                bowser,
-                `No proper details found with the given regNo ${bowser}`
-            );
+            const response: ResponseBowser[] = await searchItems<ResponseBowser>({
+                url: `${BASE_URL}/searchBowserDetails`,
+                searchTerm: bowser,
+                errorMessage: `No proper details found with the given regNo ${bowser}`
+            });
+            console.log(response)
             if (response.length > 0) {
                 setSearchModalConfig({
                     isOpen: true,
                     title: "Select a Bowser",
                     items: response,
                     onSelect: handleBowserSelection,
-                    renderItem: (trip) => `${trip.tripSheetId} : Bowser: ${trip.bowser.regNo}\nDriver: ${trip.bowserDriver[0]?.name} (${trip.bowserDriver[0]?.phoneNo})`,
-                    keyExtractor: (trip) => trip.bowser.regNo,
+                    renderItem: (bowser) => `Bowser: ${bowser.regNo}`,
+                    keyExtractor: (bowser) => bowser.regNo,
                 });
             }
         } catch (error) {
@@ -147,14 +148,14 @@ const TripSheetCreationPage: React.FC = () => {
         }
     }
 
-    const searchDriver = async (userId: string) => {
+    const searchDriver = async (name: string) => {
         setLoading(true);
         try {
-            const drivers = await searchItems<User>(
-                `${BASE_URL}/searchDriver/bowser-drivers`, //https://bowser-backend-2cdr.onrender.com
-                userId,
-                'No driver found with the given ID'
-            );
+            const drivers = await searchItems<User>({
+                url: `${BASE_URL}/searchDriver/bowser-drivers`, //https://bowser-backend-2cdr.onrender.com
+                searchTerm: name,
+                errorMessage: 'No driver found with the given ID'
+            });
             if (drivers.length > 0) {
                 console.log(drivers)
                 setSearchModalConfig({
@@ -162,8 +163,8 @@ const TripSheetCreationPage: React.FC = () => {
                     title: "Select a Driver",
                     items: drivers,
                     onSelect: handleDriverSelection,
-                    renderItem: (driver) => `${driver.name} (${driver.phoneNumber})`,
-                    keyExtractor: (driver) => driver.phoneNumber,
+                    renderItem: (driver) => `${driver.name} (${driver.phoneNo})`,
+                    keyExtractor: (driver) => driver.phoneNo,
                 });
             }
         } catch (error) {
@@ -176,7 +177,7 @@ const TripSheetCreationPage: React.FC = () => {
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
 
         if (driver) {
-            setBowserDriver([{ ...driver, name: driver.name, phoneNo: driver.phoneNumber, handOverDate: new Date() }]);
+            setBowserDriver([{ ...driver, name: driver.name, phoneNo: driver.phoneNo ? driver.phoneNo : "", handOverDate: new Date() }]);
         }
     }
 

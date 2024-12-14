@@ -63,7 +63,7 @@ export interface Trip {
 export interface TripSheet {
     _id?: string;
     tripSheetId: number;
-    dispenses: { transaction: string, isVerified: boolean }[];
+    dispenses?: { transaction: string, isVerified: boolean }[];
     tripSheetGenerationDateTime?: Date;
     bowserDriver: {
         handOverDate: Date;
@@ -112,7 +112,9 @@ export interface User {
     _id: mongoose.Schema.Types.ObjectId;
     userId: string;
     phoneNumber: string;
+    phoneNo?: string;
     name: string;
+    bowserId: string;
     verified: boolean;
     roles: Role[];
     generationTime: Date;
