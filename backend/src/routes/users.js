@@ -42,11 +42,11 @@ router.get('/', async (req, res) => {
 });
 
 // Update verification status
-router.put('/:id/verify', async (req, res) => {
+router.put('/:phoneNo/verify', async (req, res) => {
     const { verified } = req.body;
     try {
         const user = await User.findOneAndUpdate(
-            { userId: req.params.id },
+            { phoneNumber: req.params.phoneNo },
             { verified },
             { new: true } // Ensure the updated document is returned
         ).populate('roles'); // Populate any referenced fields like roles
@@ -60,10 +60,10 @@ router.put('/:id/verify', async (req, res) => {
 });
 
 // Update or add roles
-router.put('/:id/roles', async (req, res) => {
-    const { roles } = req.body;
+router.put('/update/roles', async (req, res) => {
+    const { roles, phoneNumber } = req.body;
     try {
-        const user = await User.findOne({ userId: req.params.id });
+        const user = await User.findOne({ phoneNumber });
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         const roleObjectIds = roles.map((role) => new mongoose.Types.ObjectId(role));
@@ -71,7 +71,7 @@ router.put('/:id/roles', async (req, res) => {
         user.roles = roleObjectIds;
         await user.save();
 
-        const updatedUser = await User.findOne({ userId: req.params.id }).populate("roles");
+        const updatedUser = await User.findOne({ phoneNumber }).populate("roles");
         if (!updatedUser) return res.status(404).json({ error: "User not found" });
         res.status(200).json(updatedUser);
 

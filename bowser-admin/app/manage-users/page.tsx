@@ -129,13 +129,13 @@ const UsersList = () => {
         applyFilters();
     }, [searchTerm, isVerified, selectedRoles, users]);
 
-    const handleUpdateVerification = async (userId: string, verified: boolean) => {
+    const handleUpdateVerification = async (phoneNumber: string, verified: boolean) => {
         try {
             setLoading(true);
-            const updatedUser = await updateUserVerification(userId, verified);
+            const updatedUser = await updateUserVerification(phoneNumber, verified);
             setUsers((prev) =>
                 prev.map((user) =>
-                    user.userId === userId ? { ...user, ...updatedUser } : user
+                    user.phoneNumber === phoneNumber ? { ...user, ...updatedUser } : user
                 )
             );
             toast({ title: 'Success', description: 'Updated Successfully', variant: "success" });
@@ -160,16 +160,16 @@ const UsersList = () => {
         }
     };
 
-    const handleUpdateRoles = async (userId: string, newRoles: string[]) => {
+    const handleUpdateRoles = async (phoneNumber: string, newRoles: string[]) => {
         try {
             setLoading(true);
-            const updatedUser = await updateUserRoles(userId, newRoles);
+            const updatedUser = await updateUserRoles(phoneNumber, newRoles);
             setUsers((prev) =>
-                prev.map((user) => (user._id === updatedUser._id ? updatedUser : user))
+                prev.map((user) => (user.phoneNumber === updatedUser.phoneNumber ? updatedUser : user))
             );
             toast({ title: "Success", description: "Roles updated successfully", variant: "success" });
         } catch (err: any) {
-            toast({ title: "Error", description: err.message, variant: "destructive" });
+            toast({ title: "Error", description: err, variant: "destructive" });
         } finally {
             setLoading(false);
         }
@@ -300,7 +300,7 @@ const UsersList = () => {
                                 }
                                 footer={
                                     <div className="flex gap-2 justify-between">
-                                        <Button variant='outline' onClick={() => handleUpdateVerification(user.userId, !user.verified)}>
+                                        <Button variant='outline' onClick={() => handleUpdateVerification(user.phoneNumber, !user.verified)}>
                                             {user.verified ? 'Unverify' : 'Verify'}
                                         </Button>
                                         <AlertDialog open={selectedUserId === user.userId} onOpenChange={(isOpen) => !isOpen && setSelectedUserId(null)}>

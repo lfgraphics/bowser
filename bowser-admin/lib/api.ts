@@ -22,8 +22,8 @@ export const getUnAuthorizedLogins = async (): Promise<UnauthorizedLogin[]> => {
     return response.json();
 };
 
-export const updateUserVerification = async (userId: string, verified: boolean): Promise<User> => {
-    const response = await fetch(`${BASE_URL}/users/${userId}/verify`, {
+export const updateUserVerification = async (phoneNo: string, verified: boolean): Promise<User> => {
+    const response = await fetch(`${BASE_URL}/users/${phoneNo}/verify`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ verified }),
@@ -55,11 +55,11 @@ export const updateUserDevice = async (userId: string, newDeviceUUID: string): P
     }
 };
 
-export const updateUserRoles = async (userId: string, roles: string[]): Promise<User> => {
-    const response = await fetch(`${BASE_URL}/users/${userId}/roles`, {
+export const updateUserRoles = async (phoneNumber: string, roles: string[]): Promise<User> => {
+    const response = await fetch(`${BASE_URL}/users/update/roles`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roles }),
+        body: JSON.stringify({ phoneNumber, roles }),
     });
     if (!response.ok) throw new Error('Failed to update user roles');
     return response.json();

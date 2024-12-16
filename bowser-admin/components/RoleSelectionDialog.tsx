@@ -8,7 +8,7 @@ import { Label } from './ui/label';
 interface RoleSelectionDialogProps {
     user: User;
     roles: Role[];
-    onUpdateRoles: (userId: string, roles: string[]) => void;
+    onUpdateRoles: (phoneNumber: string, roles: string[]) => void;
 }
 
 const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({ user, roles, onUpdateRoles }) => {
@@ -22,7 +22,7 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({ user, roles, 
     };
 
     const handleUpdate = async () => {
-        await onUpdateRoles(user.userId, selectedRoles);
+        await onUpdateRoles(user.phoneNumber, selectedRoles);
         setOpen(false);
     };
 
