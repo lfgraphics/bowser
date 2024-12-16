@@ -47,7 +47,10 @@ async function syncDriversData() {
   const atlasCollection = atlasClient.db('TransportData').collection('DriversCollection');
 
   // Step 1: Fetch all data from Atlas and Local
-  const atlasData = await atlasCollection.find().toArray();
+  const atlasData = await atlasCollection.find(
+    { Name: { $regex: 'ITPL', $options: 'i' } },
+    { projection: { _id: 1, Name: 1, ITPLID: 1, MobileNo: 1 } }
+  ).toArray();
   console.log("Fetched drivers data from Atlas:", atlasData.length, "documents.");
 
   const atlasDataMap = new Map(atlasData.map(doc => [doc._id.toString(), doc]));
@@ -182,6 +185,7 @@ async function syncAttachedVechicles() {
 async function syncTripData() {
   const localCollection = localClient.db(localDbName).collection(localTripCollectionName);
   const atlasCollection = atlasClient.db(atlasTransportDbName).collection(atlasTripCollectionName);
+  const driversCollection = atlasClient.db(atlasTransportDbName).collection("DriversCollection");
 
   let openedTrips = [];
   let updatedTrips = [];
@@ -191,6 +195,11 @@ async function syncTripData() {
   // Step 1: Fetch all vehicle data from Atlas
   const atlasVehicles = await atlasCollection.find().toArray();
   console.log(`Fetched ${atlasVehicles.length} vehicles from Atlas.`);
+
+  // Step 1.5: Fetch all driver documents once and store them in memory
+  const allDrivers = await driversCollection.find({}, { projection: { Name: 1, MobileNo: 1 } }).toArray();
+  const driverMap = new Map(allDrivers.map(d => [d.Name, d]));
+  console.log(`Fetched ${allDrivers.length} drivers from Atlas. DriverMap created for quick lookups.`);
 
   // Step 2: Fetch filtered trip data from Local
   const localTrips = await localCollection.find(localTripFilter, {
@@ -202,80 +211,90 @@ async function syncTripData() {
     const matchingTrips = localTrips.filter(trip => trip.VehicleNo === vehicle.VehicleNo);
 
     if (matchingTrips.length > 0) {
-      // Step 3: Handle multiple open trips by sorting and picking the latest
+      // Handle multiple open trips by picking the latest
       const sortedTrips = matchingTrips.sort((a, b) => new Date(b.StartDate) - new Date(a.StartDate));
       const latestTrip = sortedTrips[0];
 
-      const driverIdFromTrip = latestTrip.StartDriver; // StartDriver field
+      const driverIdFromTrip = latestTrip.StartDriver;
 
       // Regex to match both "ITPL" IDs and numeric-only IDs
       const driverMatch = driverIdFromTrip.match(
         /(.*?)(?:\s*[-(]?\s*(ITPL\d+|\d+)[)-]?)$/i
       );
 
-      let tripDetails;
-
+      let driverName, driverId;
       if (driverMatch) {
-        // Extracted Name and ID
-        const driverName = driverMatch[1].trim();
-        const id = driverMatch[2]?.toUpperCase();
-
-        tripDetails = {
-          id: latestTrip._id, // Local trip ID
-          driver: {
-            id: id, // Extracted ID
-            Name: driverName, // Extracted driver name
-            MobileNo: null, // Leave MobileNo blank
-          },
-          open: true, // Trip is open
-        };
+        driverName = driverMatch[1].trim();
+        driverId = driverMatch[2]?.toUpperCase();
       } else {
-        // No valid ID found: Use StartDriver as the Name and omit the ID
-        tripDetails = {
-          id: latestTrip._id, // Local trip ID
-          driver: {
-            Name: driverIdFromTrip, // Use full StartDriver value
-            MobileNo: null, // Leave MobileNo blank
-          },
-          open: true, // Trip is open
-        };
+        driverName = driverIdFromTrip;
+        driverId = null;
       }
 
-      // Check if the trip details already match the new data
+      // Lookup driver details from the pre-fetched driverMap
+      const driverDoc = driverMap.get(driverName);
+      let validMobileNo = null;
+
+      if (driverDoc && Array.isArray(driverDoc.MobileNo)) {
+        const filteredNumbers = driverDoc.MobileNo
+          .map(obj => (obj && obj.MobileNo ? obj.MobileNo.trim() : ""))
+          .filter(num => num && num.length > 0);
+
+        if (filteredNumbers.length > 0) {
+          validMobileNo = filteredNumbers[0];
+        }
+      }
+
+      const tripDetails = {
+        id: latestTrip._id,
+        driver: {
+          Name: driverName,
+          MobileNo: validMobileNo || null
+        },
+        open: true
+      };
+
+      if (driverId) {
+        tripDetails.driver.id = driverId;
+      }
+
       const currentTripDetails = vehicle.tripDetails || {};
       const isTripDetailsSame =
         currentTripDetails.open === tripDetails.open &&
         currentTripDetails.driver?.id === tripDetails.driver?.id &&
-        currentTripDetails.driver?.Name === tripDetails.driver.Name;
+        currentTripDetails.driver?.Name === tripDetails.driver.Name &&
+        currentTripDetails.driver?.MobileNo === tripDetails.driver.MobileNo;
 
       if (isTripDetailsSame) {
         noUpdatesNeeded++;
-        continue; // Skip updates if details are identical
+        continue;
       }
 
-      // Update the trip details
+      // Update the trip details on Atlas
       try {
         await atlasCollection.updateOne(
           { _id: vehicle._id },
           { $set: { tripDetails } }
         );
+
         if (!currentTripDetails.open && tripDetails.open) {
-          openedTrips.push(vehicle.VehicleNo); // Log trips opened
+          openedTrips.push(vehicle.VehicleNo);
         } else {
-          updatedTrips.push(vehicle.VehicleNo); // Log trips with updated details
+          updatedTrips.push(vehicle.VehicleNo);
         }
       } catch (error) {
         console.log(`Error updating vehicle ${vehicle.VehicleNo}:`, error);
       }
+
     } else {
-      // No open trips found or trip is closed
+      // No open trips found: close trip if currently open
       if (vehicle.tripDetails?.open) {
         try {
           await atlasCollection.updateOne(
             { _id: vehicle._id },
             { $set: { "tripDetails.open": false } }
           );
-          closedTrips.push(vehicle.VehicleNo); // Log trips closed
+          closedTrips.push(vehicle.VehicleNo);
         } catch (error) {
           console.log(`Error closing trip for vehicle ${vehicle.VehicleNo}:`, error);
         }
@@ -295,7 +314,7 @@ async function syncTripData() {
 }
 
 async function cleanUpVehicleDriverCollection() {
-  const localCollection = localClient.db('TransappDataHub').collection('VehicleDriverCollection');
+  const localCollection = atlasClient.db('TransappData').collection('DriversCollection');
   const tempCollection = localClient.db('TransappDataHub').collection('VehicleDriverCollection_temp');
 
   try {
@@ -365,16 +384,23 @@ async function cleanUpVehicleDriverCollection() {
     if (result.length > 0) {
       await tempCollection.insertMany(result);
       console.log("Filtered documents inserted into temporary collection.");
+
+      // Replace the original collection with the temporary collection
+      await localCollection.deleteMany({});
+      const tempDocs = await tempCollection.find().toArray();
+      if (tempDocs.length > 0) {
+        await localCollection.insertMany(tempDocs);
+        console.log("Original collection replaced with filtered documents.");
+      } else {
+        console.log("No documents to replace original collection with.");
+      }
+
+      // Drop the temporary collection
+      await tempCollection.drop();
+      console.log("Temporary collection dropped.");
+    } else {
+      console.log("No documents returned from aggregation. Skipping insert.");
     }
-
-    // Replace the original collection with the temporary collection
-    await localCollection.deleteMany({});
-    await localCollection.insertMany(await tempCollection.find().toArray());
-    console.log("Original collection replaced with filtered documents.");
-
-    // Drop the temporary collection
-    await tempCollection.drop();
-    console.log("Temporary collection dropped.");
   } catch (err) {
     console.error("Error running the cleanup task:", err);
   }
