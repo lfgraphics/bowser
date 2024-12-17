@@ -156,11 +156,10 @@ export default function FuelingAllocation() {
         setIsSearching(true);
         try {
             const vehicles = await searchItems<Vehicle>({
-                url: 'http://localhost:5000/searchVehicleNumber', //https://bowser-backend-2cdr.onrender.com
+                url: `${BASE_URL}/searchVehicleNumber`, //https://bowser-backend-2cdr.onrender.com
                 searchTerm: vehicleNumber,
                 errorMessage: 'No vehicle found with the given number'
             });
-            console.log(vehicles)
             if (vehicles.length > 0) {
                 setSearchModalConfig({
                     isOpen: true,
@@ -443,7 +442,6 @@ export default function FuelingAllocation() {
                                     <Label htmlFor="vehicleNumber">Vehicle Number</Label>
                                     <Input
                                         id="vehicleNumber"
-                                        placeholder="4576"
                                         value={vehicleNumber}
                                         onChange={(e) => {
                                             setVehicleNumber(e.target.value.toUpperCase());
@@ -465,7 +463,6 @@ export default function FuelingAllocation() {
                                     <Label htmlFor="partyName">{fueling == "Attatch" ? "Vendor" : "Party"} Name</Label>
                                     <Input
                                         id="partyName"
-                                        placeholder="Flipkart"
                                         value={partyName}
                                         onChange={(e) => {
                                             setPartyName(e.target.value.toUpperCase());
@@ -477,7 +474,6 @@ export default function FuelingAllocation() {
                                 <Label htmlFor="driverId">Driver ID</Label>
                                 <Input
                                     id="driverId"
-                                    placeholder="0246"
                                     value={driverId}
                                     onChange={(e) => {
                                         const value = e.target.value;
@@ -499,7 +495,6 @@ export default function FuelingAllocation() {
                                 <Label htmlFor="driverName">{(fueling == "Own" || fueling == "Attatch") ? "Driver" : "Manager"} Name</Label>
                                 <Input
                                     id="driverName"
-                                    placeholder="Dinesh"
                                     value={driverName}
                                     onChange={(e) => setDriverName(e.target.value)}
                                     required
@@ -509,7 +504,6 @@ export default function FuelingAllocation() {
                                 <Label htmlFor="driverMobile">{(fueling == "Own" || fueling == "Attatch") ? "Driver" : "Manager"} Mobile</Label>
                                 <Input
                                     id="driverMobile"
-                                    placeholder="0123456789"
                                     value={driverMobile}
                                     onChange={(e) => setDriverMobile(e.target.value)}
                                     required
@@ -533,7 +527,6 @@ export default function FuelingAllocation() {
                                     <Label htmlFor="fuelQuantity">Fuel Quantity</Label>
                                     <Input
                                         id="fuelQuantity"
-                                        placeholder="240"
                                         value={fuelQuantity}
                                         onChange={(e) => setFuelQuantity(e.target.value)}
                                         required
@@ -549,7 +542,7 @@ export default function FuelingAllocation() {
                             <Label htmlFor="bowserRegNo">Bowser Registration Number</Label>
                             <Input
                                 id="bowserRegNo"
-                                placeholder="2003"
+                                placeholder="Bowser number/driver name/mobile"
                                 value={bowserRegNo}
                                 onChange={(e) => {
                                     const value = e.target.value;
@@ -571,7 +564,6 @@ export default function FuelingAllocation() {
                             <Label htmlFor="bowserDriverName">Bowser Driver Name</Label>
                             <Input
                                 id="bowserDriverName"
-                                placeholder="Sunil/ 0123456789"
                                 value={bowserDriverName}
                                 required
                                 onChange={(e) => {
@@ -598,7 +590,6 @@ export default function FuelingAllocation() {
                             <Label htmlFor="bowserDriverPhone">Bowser Driver Mobile</Label>
                             <Input
                                 id="bowserDriverPhone"
-                                placeholder="0123456789"
                                 value={bowserDriverMobile}
                                 onChange={(e) => setBowserDriverMobile(e.target.value)}
                                 required
