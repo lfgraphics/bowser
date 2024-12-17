@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useTheme } from '@react-navigation/native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import { baseUrl } from '@/src/utils/helpers';
 
 interface ServerResponse {
     orders: FuelingOrderData[];
@@ -40,7 +41,7 @@ export default function NotificationsScreen() {
             if (!userData || !userData['Phone Number']) {
                 throw new Error('User data not found. Please log in again.');
             }
-            const url = `https://bowser-backend-2cdr.onrender.com/fuelingOrders/${userData['Phone Number']}`; //https://bowser-backend-2cdr.onrender.com //http://192.168.137.1:5000
+            const url = `${baseUrl}/fuelingOrders/${userData['Phone Number']}`; //https://bowser-backend-2cdr.onrender.com //http://192.168.137.1:5000
             const response = await axios.get<ServerResponse>(url);
             setNotificationsData(response.data.orders);
         } catch (err) {

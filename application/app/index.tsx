@@ -1,23 +1,21 @@
 import 'react-native-get-random-values';
 import * as React from 'react';
-import { useEffect, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Modal, Alert, ScrollView, Image } from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Modal, Alert, ScrollView, Image, Platform, Linking } from 'react-native';
+import { Link, useNavigation, useRouter } from 'expo-router';
 import { checkUserLoggedIn } from '../src/utils/authUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { Camera } from 'expo-camera';
 import NetInfo from '@react-native-community/netinfo';
 import { AppUpdates, FormData, UserData } from '../src/types/models';
 import FuelingRecords from '@/components/FuelingRecords';
 import { useTheme } from '@react-navigation/native';
 import { getAppUpdate } from '@/src/utils/helpers'
-import registerNNPushToken, { unregisterIndieDevice } from 'native-notify';
+import * as Notifications from 'expo-notifications';
 
 export default function App() {
-  registerNNPushToken(25239, 'FWwj7ZcRXQi7FsC4ZHQlsi');
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +31,71 @@ export default function App() {
   const { colors } = useTheme();
   const appVersion = 42
   const [appurl, setAppUrl] = useState<string | null>(null);
+  const navigation = useNavigation<any>();
+
+  const notificationListener = useRef<Notifications.Subscription>();
+  const responseListener = useRef<Notifications.Subscription>();
+
+  useEffect(() => {
+    // Define categories for notifications with buttons
+    async function setupNotificationCategories() {
+      await Notifications.setNotificationCategoryAsync('fuelingActions', [
+        {
+          identifier: 'callDriver',
+          buttonTitle: 'Call Driver',
+          options: { isDestructive: false, opensAppToForeground: false },
+        },
+        {
+          identifier: 'openFuelingScreen',
+          buttonTitle: 'Fuel',
+          options: { opensAppToForeground: true },
+        },
+      ]);
+    }
+
+    setupNotificationCategories();
+
+    // Handle incoming notifications
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+
+    // Foreground notification listener
+    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
+      console.log('Notification received (Foreground):', notification);
+    });
+
+    // Notification interaction listener
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+      const actionIdentifier = response.actionIdentifier;
+      const data = response.notification.request.content.data;
+
+      console.log('User interacted with notification:', actionIdentifier,);
+
+      // Handle button actions
+      if (actionIdentifier === 'callDriver') {
+        const phoneNumber = data.driverMobile;
+        Linking.openURL(`tel:${phoneNumber}`);
+      } else if (actionIdentifier === 'openFuelingScreen') {
+        navigation.navigate('NotificationFueling', data);
+        console.log(data)
+      }
+    });
+
+    // Cleanup listeners
+    return () => {
+      if (notificationListener.current) {
+        Notifications.removeNotificationSubscription(notificationListener.current);
+      }
+      if (responseListener.current) {
+        Notifications.removeNotificationSubscription(responseListener.current);
+      }
+    };
+  }, []);
 
   let showUpdateLink = async () => {
     let appPushsOnDb: AppUpdates[] = await getAppUpdate()
@@ -144,12 +207,11 @@ export default function App() {
 
   const requestPermissions = async () => {
     try {
-      const [locationPermission, cameraPermission] = await Promise.all([
+      const [locationPermission] = await Promise.all([
         Location.requestForegroundPermissionsAsync(),
-        Camera.requestCameraPermissionsAsync()
       ]);
 
-      if (locationPermission.status === 'granted' && cameraPermission.status === 'granted') {
+      if (locationPermission.status === 'granted') {
         setPermissionsGranted(true);
         await checkGPSStatus();
       } else {
@@ -243,7 +305,7 @@ export default function App() {
             await AsyncStorage.removeItem('userToken');
             await AsyncStorage.removeItem('userData');
             await AsyncStorage.removeItem('pushToken');
-            unregisterIndieDevice(userData?.phoneNumber, 25239, 'FWwj7ZcRXQi7FsC4ZHQlsi');
+            // unregisterIndieDevice(userData?.phoneNumber, 25239, 'FWwj7ZcRXQi7FsC4ZHQlsi');
             router.replace('/auth' as any);
           } else {
             // User chose not to submit offline data, cancel logout
@@ -495,7 +557,7 @@ export default function App() {
               )}
               {appurl &&
                 <View style={styles.modalContainer}>
-                  <Link style={styles.button} href={appurl}><Text style={{ color: colors.text }}>ऐप अपडेट करें</Text></Link>
+                  <Link style={styles.button} href={appurl as any}><Text style={{ color: colors.text }}>ऐप अपडेट करें</Text></Link>
                 </View>}
             </ScrollView>
             <View style={styles.modalFooter}>

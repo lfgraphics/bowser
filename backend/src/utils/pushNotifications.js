@@ -1,5 +1,8 @@
 const webpush = require('web-push');
 const PushSubscription = require('../models/pushSubscription');
+const { Expo } = require('expo-server-sdk');
+
+const expo = new Expo();
 
 // VAPID keys setup
 webpush.setVapidDetails(
@@ -15,32 +18,65 @@ webpush.setVapidDetails(
  * @param {object} [options] - Optional parameters for the notification (e.g., title, icon).
  * @returns {Promise<object>} - A promise that resolves with the result of the notification sending.
  */
-async function sendPushNotification(mobileNumber, message, options = {}) {
+async function sendWebPushNotification(mobileNumber, message, options = {}) {
     try {
-        // Fetch the user's subscription from the database
-        const subscriptionData = await PushSubscription.findOne({ mobileNumber });
+        const subscriptionData = await PushSubscription.findOne({ mobileNumber, platform: 'web' });
 
         if (!subscriptionData || !subscriptionData.subscription) {
-            throw new Error('No subscription found for this mobile number.');
+            throw new Error('No web subscription found for this mobile number.');
         }
 
         const subscription = subscriptionData.subscription;
 
-        // Default notification payload
-        const notificationPayload = JSON.stringify({
-            title: options.title || 'New Fuel Requirment',
+        const payload = JSON.stringify({
+            title: options.title || 'Notification',
             body: message,
             icon: options.icon || '/icon-512x512.png',
         });
 
-        // Send the push notification
-        await webpush.sendNotification(subscription, notificationPayload);
-
-        return { success: true, message: 'Notification sent successfully.' };
+        await webpush.sendNotification(subscription, payload);
+        return { success: true, message: 'Web notification sent successfully.' };
     } catch (error) {
-        console.error('Error sending push notification:', error);
-        return { success: false, error: error.message || 'Failed to send notification.' };
+        console.error('Error sending web push notification:', error.message);
+        return { success: false, error: error.message };
     }
 }
 
-module.exports = { sendPushNotification };
+/**
+ * Send Native Push Notification
+ * @param {string} mobileNumber
+ * @param {string} message
+ * @param {object} [options]
+ */
+async function sendNativePushNotification({ mobileNumber, message, options = {} }) {
+    try {
+        const subscriptionData = await PushSubscription.findOne({ mobileNumber, platform: 'native' });
+
+        if (!subscriptionData || !subscriptionData.subscription.pushToken) {
+            throw new Error('No native subscription found for this mobile number.');
+        }
+
+        const pushToken = subscriptionData.subscription.pushToken;
+
+        if (!Expo.isExpoPushToken(pushToken)) {
+            throw new Error('Invalid Expo push token.');
+        }
+
+        const notification = {
+            to: pushToken,
+            sound: 'default',
+            title: options.title || 'Notification',
+            body: message,
+            categoryId: "fuelingActions",
+            data: options.data || {},
+        };
+
+        const response = await expo.sendPushNotificationsAsync([notification]);
+        return { success: true, message: 'Native notification sent successfully.', response };
+    } catch (error) {
+        console.error('Error sending native push notification:', error.message);
+        return { success: false, error: error.message };
+    }
+}
+
+module.exports = { sendWebPushNotification, sendNativePushNotification };

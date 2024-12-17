@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { registerIndieID } from 'native-notify';
 import { Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync } from './notifications';
+import { baseUrl } from './helpers';
 let isLoggedIn = false;
 
 export const checkUserLoggedIn = async (isLoggingIn = false) => {
@@ -132,6 +134,29 @@ export const logoutUser = async (): Promise<void> => {
   isLoggedIn = false;
 };
 
+async function sendTokenToBackend(phoneNumber: string) {
+  try {
+    const pushToken = await registerForPushNotificationsAsync();
+
+    if (pushToken) {
+      const response = await fetch(`${baseUrl}/notifications/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mobileNumber: phoneNumber,
+          subscription: { pushToken },
+          platform: 'native',
+        }),
+      });
+
+      const result = await response.json();
+      console.log('Token registered:', result);
+    }
+  } catch (error) {
+    if (error instanceof Error) { console.error('Error registering push token:', error.message); }
+  }
+}
+
 
 async function getPushNotificationToken() {
   const { data } = await Notifications.getExpoPushTokenAsync();
@@ -139,7 +164,7 @@ async function getPushNotificationToken() {
 }
 
 async function getNativeNotifyExpoToken(phoneNumber: string) {
-  const response = await fetch(`https://app.nativenotify.com/api/expo/indie/sub/25239/FWwj7ZcRXQi7FsC4ZHQlsi/${phoneNumber}`);
+  const response = await fetch(`${baseUrl}/notifications/${phoneNumber}`);
   const data = await response.json();
   // Check if the response contains the expo token
   const storedExpoToken = data[0]?.expo_android_token ? data[0].expo_android_token[0] : null;
@@ -149,20 +174,20 @@ async function getNativeNotifyExpoToken(phoneNumber: string) {
 export async function checkAndRegisterDevice(phoneNumber: string) {
   try {
     // Step 1: Get the current device's Expo push token
-    const currentExpoToken = await getPushNotificationToken();
+    // const currentExpoToken = await getPushNotificationToken();
 
     // Step 2: Get the Expo token already registered with NativeNotify
-    const registeredExpoToken = await getNativeNotifyExpoToken(phoneNumber);
+    // const registeredExpoToken = await getNativeNotifyExpoToken(phoneNumber);
 
     // Step 3: Check if the tokens are different
-    if (currentExpoToken !== registeredExpoToken) {
-      // If tokens are different, register the device with Indie ID
-      await registerIndieID(phoneNumber, 25239, 'FWwj7ZcRXQi7FsC4ZHQlsi');
-      Alert.alert("Success", "Login Successful and device is ready to receive push notifications");
-    } else {
-      // If tokens are the same, skip registration
-      Alert.alert("Device already registered", "No need to register again, Expo token is the same.");
-    }
+    await sendTokenToBackend(phoneNumber);
+    // if (currentExpoToken !== registeredExpoToken) {
+    // If tokens are different, register the device with Indie ID
+    //   Alert.alert("Success", "Login Successful and device is ready to receive push notifications");
+    // } else {
+    // If tokens are the same, skip registration
+    // Alert.alert("Device already registered", "No need to register again, Expo token is the same.");
+    // }
   } catch (error) {
     // Handle any errors
     Alert.alert("Errors registering push notifications", `${error instanceof Error ? error.message : error}`);

@@ -11,7 +11,7 @@ router.get('/:phoneNo', async (req, res) => {
         const skip = (page - 1) * limit;
 
         // Get all order IDs for the user
-        const userOrders = await FuelingOrder.find({ 'bowser.driver.phoneNo': phoneNo }); //, '_id'
+        const userOrders = await FuelingOrder.find({ 'bowser.driver.phoneNo': phoneNo }).sort({ createdAt: -1 });
         const userOrderIds = userOrders.map(order => order._id);
 
         // Find completed orders

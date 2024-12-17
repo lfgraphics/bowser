@@ -10,6 +10,7 @@ import { router } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
 import { capturePhoto } from '@/src/utils/imageManipulation';
+import { baseUrl } from '@/src/utils/helpers';
 
 interface RouteParams {
     party: string;
@@ -173,7 +174,7 @@ const NotificationFuelingScreen = () => {
 
             if (isOnline) {
                 try {
-                    const response = await fetch(`https://bowser-backend-2cdr.onrender.com/addFuelingTransaction`, { //https://bowser-backend-2cdr.onrender.com // http://192.168.137.1:5000
+                    const response = await fetch(`${baseUrl}/addFuelingTransaction`, { //https://bowser-backend-2cdr.onrender.com // http://192.168.137.1:5000
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

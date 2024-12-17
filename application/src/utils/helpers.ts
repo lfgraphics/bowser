@@ -1,8 +1,9 @@
 import axios from "axios"
+export const baseUrl = "https://bowser-backend-2cdr.onrender.com" //http://192.168.137.1:5000
 
 export const getAppUpdate = async () => {
     try {
-        let response = await axios.get("https://bowser-backend-2cdr.onrender.com/updates") //http://192.168.137.1:5000
+        let response = await axios.get(`${baseUrl}/updates`) //http://192.168.137.1:5000
         return response.data
     } catch (error) {
         console.log(error)

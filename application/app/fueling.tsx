@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
 import { capturePhoto, compressImage } from '@/src/utils/imageManipulation';
+import { baseUrl } from '@/src/utils/helpers';
 
 
 export default function FuelingScreen() {
@@ -118,7 +119,7 @@ export default function FuelingScreen() {
 
     if (driverMobileNotFound && driverMobile && isOnline) {
       try {
-        const updateResponse = await fetch(`https://bowser-backend-2cdr.onrender.com/searchDriver/updateDriverMobile`, { //https://bowser-backend-2cdr.onrender.com http://192.168.137.1:5000
+        const updateResponse = await fetch(`${baseUrl}/searchDriver/updateDriverMobile`, { //https://bowser-backend-2cdr.onrender.com http://192.168.137.1:5000
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

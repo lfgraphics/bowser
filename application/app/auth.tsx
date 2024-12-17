@@ -8,6 +8,7 @@ import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { checkAndRegisterDevice } from '@/src/utils/authUtils';
+import { registerForPushNotificationsAsync } from '@/src/utils/notifications';
 
 export default function AuthScreen() {
   const router = useRouter();

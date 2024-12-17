@@ -85,7 +85,7 @@ export default function FuelingAllocation() {
         setIsSearching(true);
         try {
             const drivers = await searchItems<Driver>({
-                url: 'https://bowser-backend-2cdr.onrender.com/searchDriver', //https://bowser-backend-2cdr.onrender.com
+                url: `${BASE_URL}/searchDriver`, //https://bowser-backend-2cdr.onrender.com
                 searchTerm: idNumber,
                 errorMessage: 'No driver found with the given ID'
             });

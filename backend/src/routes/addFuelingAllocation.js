@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const axios = require("axios")
+// const axios = require("axios")
+const { sendNativePushNotification } = require('../utils/pushNotifications')
 const fuelingOrders = require('../models/fuelingOrders');
 const Vehicle = require('../models/vehicle')
 
@@ -47,12 +48,14 @@ router.post('/', async (req, res) => {
         try {
             // Construct the pushData object properly
             const pushData = {
+                party: party,
+                category: category,
                 vehicleNumber: vehicleNumber,
                 driverName: driverName,
                 driverId: driverId,
                 driverMobile: driverMobile,
                 quantityType: quantityType,
-                fuelQuantity: fuelQuantity,
+                quantity: fuelQuantity,
                 allocationAdminName: allocationAdmin.name,
                 allocationAdminId: allocationAdmin.id,
                 buttons: [
@@ -66,6 +69,7 @@ router.post('/', async (req, res) => {
                         action: "openScreen",
                         screenName: "NotificationFueling",
                         params: {
+                            party: party,
                             category: category,
                             vehicleNumber: vehicleNumber,
                             driverName: driverName,
@@ -80,29 +84,35 @@ router.post('/', async (req, res) => {
                 ],
             };
 
+            let primaryHead = category == "Bulk Sale" ? `Party: ${party}` : `Vehicle Number: ${vehicleNumber}`;
+            let secondaryHead = category == "Bulk Sale" ? `` : `Driver: ${driverName}\n`;
+            let midHead = category == "Attatch" ? `Vendor: ${party}\n` : ``;
             // Send the notification request
-            const sentNotificationResponse = await axios.post(
-                `https://app.nativenotify.com/api/indie/notification`,
+            const sentNotificationResponse = await sendNativePushNotification(
                 {
-                    subID: newFuelingOrder.bowser.driver.phoneNo,
-                    appId: 25239,
-                    appToken: 'FWwj7ZcRXQi7FsC4ZHQlsi',
-                    title: 'New Fueling Order',
-                    message: `Vehicle Number: ${vehicleNumber}\nDriver: ${driverName}\nAllocated by ${allocationAdmin.name} (${allocationAdmin.id})`,
-                    pushData: JSON.stringify(pushData), // Properly stringify the pushData object
+                    mobileNumber: newFuelingOrder.bowser.driver.phoneNo,
+                    message: `${primaryHead}\n${midHead}${secondaryHead}Allocated by ${allocationAdmin.name} (${allocationAdmin.id})`,
+                    options: { title: 'New Fueling Order', data: JSON.stringify(pushData) }
                 }
-            );
-
-            // Log the response for debugging
-            console.log('Response Status:', sentNotificationResponse.status);
-            console.log('Response Status Text:', sentNotificationResponse.statusText);
+            )
+            // const sentNotificationResponse = await axios.post(
+            //     `https://app.nativenotify.com/api/indie/notification`,
+            //     {
+            //         subID: newFuelingOrder.bowser.driver.phoneNo,
+            //         appId: 25239,
+            //         appToken: 'FWwj7ZcRXQi7FsC4ZHQlsi',
+            //         title: 'New Fueling Order',
+            //         message: `Vehicle Number: ${vehicleNumber}\nDriver: ${driverName}\nAllocated by ${allocationAdmin.name} (${allocationAdmin.id})`,
+            //         pushData: JSON.stringify(pushData), // Properly stringify the pushData object
+            //     }
+            // );
 
             // Check if the notification was successfully sent
-            if (sentNotificationResponse.status === 201) {
-                console.log('Notification sent successfully:', sentNotificationResponse.data);
+            if (sentNotificationResponse.success) {
+                console.log('Notification sent successfully:', sentNotificationResponse.response);
                 notificationSent = true;
             } else {
-                console.warn('Notification was not successfully created:', sentNotificationResponse.data);
+                console.warn('Notification was not successfully created:', sentNotificationResponse.response);
             }
         } catch (error) {
             // Enhanced error handling
@@ -124,18 +134,6 @@ router.post('/', async (req, res) => {
             console.error("Error creating FuelingOrder:", error);
             throw new Error("Fueling Allocation Failed", error);
         }
-
-        // Update User documents
-        // try {
-        //     await User.updateMany(
-        //         { userId: { $in: [bowserDriver.userId, allocationAdmin.userId] } },
-        //         { $push: { orders: newFuelingOrder._id } },
-        //         { new: true, upsert: true }
-        //     );
-        // } catch (error) {
-        //     console.error("Error updating User documents:", error);
-        //     throw new Error("Failed to update Users profile", error);
-        // }
 
         // Prepare response message
         const responseMessage = notificationSent

@@ -30,7 +30,7 @@ export async function registerPushSubscription(mobileNumber: string): Promise<vo
             const response = await fetch(`${API_URL}/notifications/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mobileNumber, subscription }),
+                body: JSON.stringify({ mobileNumber, subscription, platform: "web" }),
             });
 
             if (!response.ok) {
