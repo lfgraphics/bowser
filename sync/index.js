@@ -185,226 +185,182 @@ async function syncAttachedVechicles() {
 async function syncTripData() {
   const localCollection = localClient.db(localDbName).collection(localTripCollectionName);
   const atlasCollection = atlasClient.db(atlasTransportDbName).collection(atlasTripCollectionName);
-  const driversCollection = atlasClient.db(atlasTransportDbName).collection("DriversCollection");
 
-  let openedTrips = [];
-  let updatedTrips = [];
-  let closedTrips = [];
+  const openedTrips = [];
+  const updatedTrips = [];
+  const closedTrips = [];
   let noUpdatesNeeded = 0;
 
-  // Step 1: Fetch all vehicle data from Atlas
-  const atlasVehicles = await atlasCollection.find().toArray();
+  // Step 1: Fetch data from Local and Atlas
+  const [atlasVehicles, localTrips] = await Promise.all([
+    atlasCollection.find().toArray(),
+    localCollection.find(localTripFilter, {
+      projection: { _id: 1, VehicleNo: 1, StartDriver: 1, StartDate: 1 },
+    }).toArray(),
+  ]);
+
   console.log(`Fetched ${atlasVehicles.length} vehicles from Atlas.`);
-
-  // Step 1.5: Fetch all driver documents once and store them in memory
-  const allDrivers = await driversCollection.find({}, { projection: { Name: 1, MobileNo: 1 } }).toArray();
-  const driverMap = new Map(allDrivers.map(d => [d.Name, d]));
-  console.log(`Fetched ${allDrivers.length} drivers from Atlas. DriverMap created for quick lookups.`);
-
-  // Step 2: Fetch filtered trip data from Local
-  const localTrips = await localCollection.find(localTripFilter, {
-    projection: { _id: 1, VehicleNo: 1, StartDriver: 1, StartDate: 1 },
-  }).toArray();
   console.log(`Fetched ${localTrips.length} trips from Local.`);
+
+  // Step 2: Prepare bulk operations for MongoDB Atlas
+  const bulkOps = [];
 
   for (const vehicle of atlasVehicles) {
     const matchingTrips = localTrips.filter(trip => trip.VehicleNo === vehicle.VehicleNo);
 
     if (matchingTrips.length > 0) {
-      // Handle multiple open trips by picking the latest
-      const sortedTrips = matchingTrips.sort((a, b) => new Date(b.StartDate) - new Date(a.StartDate));
-      const latestTrip = sortedTrips[0];
-
-      const driverIdFromTrip = latestTrip.StartDriver;
-
-      // Regex to match both "ITPL" IDs and numeric-only IDs
-      const driverMatch = driverIdFromTrip.match(
-        /(.*?)(?:\s*[-(]?\s*(ITPL\d+|\d+)[)-]?)$/i
+      // Find the latest trip based on StartDate
+      const latestTrip = matchingTrips.reduce((latest, current) =>
+        new Date(current.StartDate) > new Date(latest.StartDate) ? current : latest
       );
 
-      let driverName, driverId;
-      if (driverMatch) {
-        driverName = driverMatch[1].trim();
-        driverId = driverMatch[2]?.toUpperCase();
-      } else {
-        driverName = driverIdFromTrip;
-        driverId = null;
-      }
-
-      // Lookup driver details from the pre-fetched driverMap
-      const driverDoc = driverMap.get(driverName);
-      let validMobileNo = null;
-
-      if (driverDoc && Array.isArray(driverDoc.MobileNo)) {
-        const filteredNumbers = driverDoc.MobileNo
-          .map(obj => (obj && obj.MobileNo ? obj.MobileNo.trim() : ""))
-          .filter(num => num && num.length > 0);
-
-        if (filteredNumbers.length > 0) {
-          validMobileNo = filteredNumbers[0];
-        }
-      }
-
       const tripDetails = {
-        id: latestTrip._id,
-        driver: {
-          Name: driverName,
-          MobileNo: validMobileNo || null
-        },
-        open: true
+        id: latestTrip._id,               // Set trip ID
+        driver: latestTrip.StartDriver,   // Set StartDriver directly as a string
+        open: true                        // Trip is open
       };
 
-      if (driverId) {
-        tripDetails.driver.id = driverId;
-      }
-
-      const currentTripDetails = vehicle.tripDetails || {};
-      const isTripDetailsSame =
-        currentTripDetails.open === tripDetails.open &&
-        currentTripDetails.driver?.id === tripDetails.driver?.id &&
-        currentTripDetails.driver?.Name === tripDetails.driver.Name &&
-        currentTripDetails.driver?.MobileNo === tripDetails.driver.MobileNo;
-
-      if (isTripDetailsSame) {
+      // Skip update if tripDetails.id matches current tripDetails.id
+      if (vehicle.tripDetails?.id?.toString() === latestTrip._id.toString()) {
         noUpdatesNeeded++;
         continue;
       }
 
-      // Update the trip details on Atlas
-      try {
-        await atlasCollection.updateOne(
-          { _id: vehicle._id },
-          { $set: { tripDetails } }
-        );
-
-        if (!currentTripDetails.open && tripDetails.open) {
-          openedTrips.push(vehicle.VehicleNo);
-        } else {
-          updatedTrips.push(vehicle.VehicleNo);
-        }
-      } catch (error) {
-        console.log(`Error updating vehicle ${vehicle.VehicleNo}:`, error);
-      }
-
-    } else {
-      // No open trips found: close trip if currently open
-      if (vehicle.tripDetails?.open) {
-        try {
-          await atlasCollection.updateOne(
-            { _id: vehicle._id },
-            { $set: { "tripDetails.open": false } }
-          );
-          closedTrips.push(vehicle.VehicleNo);
-        } catch (error) {
-          console.log(`Error closing trip for vehicle ${vehicle.VehicleNo}:`, error);
-        }
-      } else {
-        noUpdatesNeeded++;
-      }
-    }
-  }
-
-  // Log summary of changes
-  console.log(`${openedTrips.length} trips opened.`);
-  console.log(`${updatedTrips.length} vehicles updated with new trip details.`);
-  console.log(`${closedTrips.length} trips closed.`);
-  if (noUpdatesNeeded > 0) {
-    console.log(`${noUpdatesNeeded} vehicles required no updates.`);
-  }
-}
-
-async function cleanUpVehicleDriverCollection() {
-  const localCollection = atlasClient.db('TransappData').collection('DriversCollection');
-  const tempCollection = localClient.db('TransappDataHub').collection('VehicleDriverCollection_temp');
-
-  try {
-    // Run the aggregation pipeline
-    const result = await localCollection.aggregate([
-      {
-        $group: {
-          _id: "$Name",
-          docs: { $push: "$$ROOT" } // Collect all documents with the same Name
-        }
-      },
-      {
-        $project: {
-          docToKeep: {
-            $let: {
-              vars: {
-                filteredDocs: {
-                  $filter: {
-                    input: "$docs",
-                    as: "doc",
-                    cond: {
-                      $or: [
-                        {
-                          $gt: [
-                            {
-                              $size: {
-                                $ifNull: [
-                                  {
-                                    $cond: {
-                                      if: { $isArray: "$$doc.MobileNo" },
-                                      then: "$$doc.MobileNo",
-                                      else: [{ $ifNull: ["$$doc.MobileNo", {}] }] // Ensure that a non-array MobileNo is wrapped in an array
-                                    }
-                                  },
-                                  []
-                                ]
-                              }
-                            },
-                            0
-                          ]
-                        }, // Ensure MobileNo is an array
-                        { $ne: ["$$doc.ITPLId", null] } // ITPLId is not null
-                      ]
-                    }
-                  }
-                }
-              },
-              in: {
-                $cond: {
-                  if: { $gt: [{ $size: "$$filteredDocs" }, 0] },
-                  then: { $arrayElemAt: ["$$filteredDocs", 0] },
-                  else: { $arrayElemAt: ["$docs", 0] }
-                }
+      // Update the tripDetails, preserve existing MobileNo
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: vehicle._id },
+          update: {
+            $set: {
+              tripDetails: {
+                ...tripDetails,
+                driver: latestTrip.StartDriver, // Simplified driver field
               }
             }
           }
         }
-      },
-      {
-        $replaceRoot: {
-          newRoot: "$docToKeep"
+      });
+
+      updatedTrips.push(vehicle.VehicleNo);
+    } else if (vehicle.tripDetails?.open) {
+      // Close trips with no matching local trip
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: vehicle._id },
+          update: { $set: { "tripDetails.open": false } }
         }
-      }
-    ]).toArray();
-
-    // Insert the filtered documents into the temporary collection
-    if (result.length > 0) {
-      await tempCollection.insertMany(result);
-      console.log("Filtered documents inserted into temporary collection.");
-
-      // Replace the original collection with the temporary collection
-      await localCollection.deleteMany({});
-      const tempDocs = await tempCollection.find().toArray();
-      if (tempDocs.length > 0) {
-        await localCollection.insertMany(tempDocs);
-        console.log("Original collection replaced with filtered documents.");
-      } else {
-        console.log("No documents to replace original collection with.");
-      }
-
-      // Drop the temporary collection
-      await tempCollection.drop();
-      console.log("Temporary collection dropped.");
+      });
+      closedTrips.push(vehicle.VehicleNo);
     } else {
-      console.log("No documents returned from aggregation. Skipping insert.");
+      noUpdatesNeeded++;
     }
-  } catch (err) {
-    console.error("Error running the cleanup task:", err);
   }
+
+  // Step 3: Execute bulk update
+  if (bulkOps.length > 0) {
+    const result = await atlasCollection.bulkWrite(bulkOps);
+    console.log(`Bulk update result: ${result.modifiedCount} documents updated.`);
+  }
+
+  // Step 4: Log summary
+  console.log(`${openedTrips.length} trips opened.`);
+  console.log(`${updatedTrips.length} vehicles updated.`);
+  console.log(`${closedTrips.length} trips closed.`);
+  console.log(`${noUpdatesNeeded} vehicles required no updates.`);
 }
+
+// async function cleanUpVehicleDriverCollection() {
+//   const localCollection = atlasClient.db('TransappData').collection('DriversCollection');
+//   const tempCollection = localClient.db('TransappDataHub').collection('VehicleDriverCollection_temp');
+
+//   try {
+//     // Run the aggregation pipeline
+//     const result = await localCollection.aggregate([
+//       {
+//         $group: {
+//           _id: "$Name",
+//           docs: { $push: "$$ROOT" } // Collect all documents with the same Name
+//         }
+//       },
+//       {
+//         $project: {
+//           docToKeep: {
+//             $let: {
+//               vars: {
+//                 filteredDocs: {
+//                   $filter: {
+//                     input: "$docs",
+//                     as: "doc",
+//                     cond: {
+//                       $or: [
+//                         {
+//                           $gt: [
+//                             {
+//                               $size: {
+//                                 $ifNull: [
+//                                   {
+//                                     $cond: {
+//                                       if: { $isArray: "$$doc.MobileNo" },
+//                                       then: "$$doc.MobileNo",
+//                                       else: [{ $ifNull: ["$$doc.MobileNo", {}] }] // Ensure that a non-array MobileNo is wrapped in an array
+//                                     }
+//                                   },
+//                                   []
+//                                 ]
+//                               }
+//                             },
+//                             0
+//                           ]
+//                         }, // Ensure MobileNo is an array
+//                         { $ne: ["$$doc.ITPLId", null] } // ITPLId is not null
+//                       ]
+//                     }
+//                   }
+//                 }
+//               },
+//               in: {
+//                 $cond: {
+//                   if: { $gt: [{ $size: "$$filteredDocs" }, 0] },
+//                   then: { $arrayElemAt: ["$$filteredDocs", 0] },
+//                   else: { $arrayElemAt: ["$docs", 0] }
+//                 }
+//               }
+//             }
+//           }
+//         }
+//       },
+//       {
+//         $replaceRoot: {
+//           newRoot: "$docToKeep"
+//         }
+//       }
+//     ]).toArray();
+
+//     // Insert the filtered documents into the temporary collection
+//     if (result.length > 0) {
+//       await tempCollection.insertMany(result);
+//       console.log("Filtered documents inserted into temporary collection.");
+
+//       // Replace the original collection with the temporary collection
+//       await localCollection.deleteMany({});
+//       const tempDocs = await tempCollection.find().toArray();
+//       if (tempDocs.length > 0) {
+//         await localCollection.insertMany(tempDocs);
+//         console.log("Original collection replaced with filtered documents.");
+//       } else {
+//         console.log("No documents to replace original collection with.");
+//       }
+
+//       // Drop the temporary collection
+//       await tempCollection.drop();
+//       console.log("Temporary collection dropped.");
+//     } else {
+//       console.log("No documents returned from aggregation. Skipping insert.");
+//     }
+//   } catch (err) {
+//     console.error("Error running the cleanup task:", err);
+//   }
+// }
 
 
 // Functions calls
@@ -417,7 +373,7 @@ async function main() {
       const currentHour = now.getHours();
 
       // Check if the current time falls within the allowed range
-      if (currentHour >= 9 && currentHour <= 23 && (currentHour - 9) % 2 === 0) {
+      if (currentHour >= 9 && currentHour <= 23 && (currentHour - 9) % 1 === 0) {
         console.log(`Starting sync operations at ${now.toLocaleTimeString()}`);
 
         // Individual try-catch for each function to ensure all operations log errors separately
