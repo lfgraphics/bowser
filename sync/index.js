@@ -410,8 +410,8 @@ async function main() {
 
         console.log(`..................Sync operations completed at ${new Date().toLocaleTimeString()}..................`);
 
-        // Wait until the next 2-hour window
-        const nextHour = currentHour + 2;
+        // Wait until the next 1-hour window
+        const nextHour = currentHour + 1;
         const nextRun = new Date(now);
         nextRun.setHours(nextHour, 0, 0, 0);
         const waitTime = nextRun - new Date();
@@ -419,7 +419,7 @@ async function main() {
         await new Promise(resolve => setTimeout(resolve, waitTime));
       } else {
         // Calculate the next valid sync time
-        const nextValidHour = currentHour < 9 ? 9 : Math.ceil((currentHour - 9) / 2) * 2 + 9;
+        const nextValidHour = currentHour < 9 ? 9 : Math.ceil((currentHour - 9) / 1) * 2 + 9;
         let nextRun = new Date(now);
 
         if (nextValidHour > 23) {
