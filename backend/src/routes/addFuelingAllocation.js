@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require("axios")
 const fuelingOrders = require('../models/fuelingOrders');
+const Vehicle = require('../models/vehicle')
 
 router.post('/', async (req, res) => {
     let newFuelingOrder;
@@ -151,6 +152,41 @@ router.post('/', async (req, res) => {
             message: error.message,
             error: error.message,
             stack: error.stack
+        });
+    }
+});
+
+router.post('/updateTripDriver', async (req, res) => {
+    const { vehicleNo, driver } = req.body;
+
+    try {
+        // Step 1: Find the vehicle by VehicleNo
+        const vehicle = await Vehicle.findOne({ VehicleNo: vehicleNo });
+
+        // Step 2: If vehicle is not found, return 404
+        if (!vehicle) {
+            return res.status(404).json({ message: "Vehicle not found" });
+        }
+
+        // Step 3: Update the tripDetails.driver field
+        vehicle.tripDetails = vehicle.tripDetails || {}; // Ensure tripDetails exists
+        vehicle.tripDetails.driver = driver;
+
+        // Step 4: Save the updated document to the database
+        const updatedVehicle = await vehicle.save();
+
+        // Step 5: Send a success response
+        res.status(200).json({
+            message: "Driver details updated successfully",
+            updatedVehicle
+        });
+
+    } catch (err) {
+        // Step 6: Handle errors gracefully
+        console.error("Error updating driver details:", err);
+        res.status(500).json({
+            message: "Server error while updating driver details",
+            error: err.message
         });
     }
 });

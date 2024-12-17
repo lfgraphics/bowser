@@ -153,9 +153,9 @@ export interface AttachedVehicle {
 }
 
 export interface TripDriver {
-    Name: string;
+    name: string;
     id: string | null;
-    MobileNo?: string;
+    mobile?: string;
 }
 
 export interface DispensesRecord {

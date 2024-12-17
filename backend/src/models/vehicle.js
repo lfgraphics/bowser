@@ -5,11 +5,7 @@ const vehicleSchema = new mongoose.Schema({
     VehicleNo: String,
     tripDetails: {
         // id: mongoose.Schema.Types.ObjectId,
-        driver: {
-            MobileNo: String ,
-            Name: String,
-            ITPLId: String
-        },
+        driver: String,
         open: Boolean
     }
 });

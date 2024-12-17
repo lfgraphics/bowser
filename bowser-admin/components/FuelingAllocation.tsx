@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { isAuthenticated, getCurrentUser, API_URL } from "@/lib/auth"
-import { AttachedVehicle, Driver, FuelingTypes, ResponseBowser, User } from "@/types"
+import { AttachedVehicle, Driver, FuelingTypes, User } from "@/types"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -23,7 +23,8 @@ import { searchItems } from '@/utils/searchUtils'
 import { Vehicle } from "@/types"
 import Loading from "@/app/loading"
 import { BASE_URL } from "@/lib/api"
-import { updateDriverMobile } from "@/utils"
+import { updateDriverMobile, updateTripDriver } from "@/utils"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@radix-ui/react-accordion"
 
 export default function FuelingAllocation() {
     const [isSearching, setIsSearching] = useState(false);
@@ -155,7 +156,7 @@ export default function FuelingAllocation() {
         setIsSearching(true);
         try {
             const vehicles = await searchItems<Vehicle>({
-                url: 'https://bowser-backend-2cdr.onrender.com/searchVehicleNumber', //https://bowser-backend-2cdr.onrender.com
+                url: 'http://localhost:5000/searchVehicleNumber', //https://bowser-backend-2cdr.onrender.com
                 searchTerm: vehicleNumber,
                 errorMessage: 'No vehicle found with the given number'
             });
@@ -166,7 +167,7 @@ export default function FuelingAllocation() {
                     title: "Select a Vehicle",
                     items: vehicles,
                     onSelect: handleVehicleSelection,
-                    renderItem: (vehicle) => `${vehicle.VehicleNo} - ${vehicle.tripDetails.driver?.Name} - ${vehicle.tripDetails.driver?.MobileNo}`,
+                    renderItem: (vehicle) => `${vehicle.VehicleNo} - ${vehicle.tripDetails.driver?.name} - ${vehicle.tripDetails.driver?.mobile}`,
                     keyExtractor: (vehicle) => vehicle.VehicleNo,
                 });
             }
@@ -256,8 +257,8 @@ export default function FuelingAllocation() {
     const handleVehicleSelection = (vehicle: Vehicle) => {
         setVehicleNumber(vehicle.VehicleNo);
         if (vehicle.tripDetails) {
-            const idMatch = vehicle.tripDetails.driver.Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
-            let cleanName = vehicle.tripDetails.driver.Name.trim();
+            const idMatch = vehicle.tripDetails.driver.name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
+            let cleanName = vehicle.tripDetails.driver.name.trim();
             let recognizedId = '';
             if (idMatch) {
                 recognizedId = idMatch[0].replace(/[()]/g, '').toUpperCase();
@@ -267,10 +268,8 @@ export default function FuelingAllocation() {
             setDriverId(recognizedId || vehicle.tripDetails.driver.id || cleanName);
             setDriverName(cleanName);
 
-            if (vehicle.tripDetails.driver.MobileNo) {
-                setDriverId(vehicle.tripDetails.driver.id || '');
-                setDriverName(vehicle.tripDetails.driver.Name);
-                setDriverMobile(vehicle.tripDetails.driver.MobileNo);
+            if (vehicle.tripDetails.driver.mobile) {
+                setDriverMobile(vehicle.tripDetails.driver.mobile);
                 setDriverMobileNotFound(false);
             } else {
                 setDriverMobile('');
@@ -286,6 +285,32 @@ export default function FuelingAllocation() {
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
     }
 
+    const handleUpdateMobile = async () => {
+        setSubmitting(true);
+        try {
+            await updateDriverMobile(driverId, driverMobile);
+        } catch (error) {
+            setAlertMessage("Failed to update driver mobile number. Please try again.");
+            setAlertDialogOpen(true);
+            return;
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    const handleUpdateTrip = async () => {
+        setSubmitting(true);
+        try {
+            await updateTripDriver(vehicleNumber, `${driverName + "-" + driverId}`)
+        } catch (error) {
+            setAlertMessage("Failed to update trip details. Please try again.");
+            setAlertDialogOpen(true);
+            return;
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
@@ -297,17 +322,6 @@ export default function FuelingAllocation() {
             setAlertDialogOpen(true);
             setSubmitting(false);
             return;
-        }
-
-        if (driverMobileNotFound && driverMobile) {
-            try {
-                await updateDriverMobile(driverId, driverMobile);
-            } catch (error) {
-                setSubmitting(false);
-                setAlertMessage("Failed to update driver mobile number. Please try again.");
-                setAlertDialogOpen(true);
-                return;
-            }
         }
 
         const allocationData = {
@@ -397,6 +411,17 @@ export default function FuelingAllocation() {
                     <CardTitle>Fuel Allocation</CardTitle>
                     <CardDescription>Allocate fueling requirements</CardDescription>
                 </CardHeader>
+                <Accordion type="single" collapsible className="p-4 my-2 w-full">
+                    <AccordionItem value="item-1">
+                        <AccordionTrigger className="w-full text-left mb-2">Update Details?</AccordionTrigger>
+                        <AccordionContent>
+                            <div className="flex justify-around items-center">
+                                <Button onClick={() => handleUpdateMobile()} variant="outline">Driver Mobile</Button>
+                                <Button onClick={() => handleUpdateTrip()} variant="outline">Trip Driver</Button>
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
                 <form onSubmit={handleSubmit}>
                     <CardContent>
                         {/* Nav for diffrent type */}
