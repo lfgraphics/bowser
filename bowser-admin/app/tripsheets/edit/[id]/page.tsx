@@ -18,6 +18,7 @@ import {
 import Loading from '@/app/loading';
 import { Checkbox } from '@/components/ui/checkbox';
 import { isAuthenticated } from '@/lib/auth';
+import { BASE_URL } from '@/lib/api';
 
 export const page = ({ params }: { params: { id: string } }) => {
     const checkAuth = () => {
@@ -41,7 +42,7 @@ export const page = ({ params }: { params: { id: string } }) => {
         const fetchRecords = async () => {
             setLoading(true);
             try {
-                const response = await axios.get(`https://bowser-backend-2cdr.onrender.com/tripsheet/find-by-id/${params.id}`);
+                const response = await axios.get(`${BASE_URL}/tripsheet/find-by-id/${params.id}`);
                 const sheetData = response.data.sheet;
                 // Update the state with the correct structure
                 setRecord({
@@ -76,7 +77,7 @@ export const page = ({ params }: { params: { id: string } }) => {
         if (!record) return;
         try {
             const updatedTripSheet = { ...record, bowserDriver };
-            await axios.patch(`https://bowser-backend-2cdr.onrender.com/tripSheet/update/${params.id}`, updatedTripSheet); //https://bowser-backend-2cdr.onrender.com http://localhost:5000
+            await axios.patch(`${BASE_URL}/tripSheet/update/${params.id}`, updatedTripSheet); //https://bowser-backend-2cdr.onrender.com http://localhost:5000
             setShowSuccessAlert(true);
             setEditing(false)
         } catch (error) {
@@ -87,7 +88,7 @@ export const page = ({ params }: { params: { id: string } }) => {
 
     const handleDelete = async () => {
         try {
-            await axios.delete(`https://bowser-backend-2cdr.onrender.com/tripSheet/delete/${params.id}`);
+            await axios.delete(`${BASE_URL}/tripSheet/delete/${params.id}`);
             setShowSuccessAlert(true);
             window.history.back()
         } catch (error) {
@@ -140,16 +141,6 @@ export const page = ({ params }: { params: { id: string } }) => {
                             }}
                         />}
                         <Label>Handover Date, Time: {(editing == false && `${driver.handOverDate}`)}</Label>
-                        {editing && <Input
-                            type="datetime-local"
-                            value={driver.handOverDate && driver.handOverDate.toISOString().slice(0, 16)} // Format the Date object to match the input type
-                            onChange={(e) => {
-                                const updatedDrivers = [...bowserDriver];
-                                updatedDrivers[index].handOverDate = new Date(e.target.value); // Convert string to Date
-                                setBowserDriver(updatedDrivers);
-                            }}
-                        />
-                        }
                     </div>
                 ))}
                 {editing && <Button onClick={addBowserDriver}>Add Another Driver</Button>}
