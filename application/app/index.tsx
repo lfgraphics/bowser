@@ -1,7 +1,7 @@
 import 'react-native-get-random-values';
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Modal, Alert, ScrollView, Image, Platform, Linking } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Modal, Alert, ScrollView, Image, Linking } from 'react-native';
 import { Link, useNavigation, useRouter } from 'expo-router';
 import { checkUserLoggedIn } from '../src/utils/authUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -115,6 +115,7 @@ export default function App() {
 
   useEffect(() => {
     const initializeApp = async () => {
+      checkUserLoggedIn()
       showUpdateLink()
       try {
         await syncOfflineData();
@@ -123,12 +124,6 @@ export default function App() {
         if (userDataString) {
           setUserData(JSON.parse(userDataString));
         }
-
-        if (!checkUserLoggedIn) {
-          router.replace('/auth' as any);
-          return;
-        }
-
         await getOfflineDataLength()
         await requestPermissions();
       } catch (error) {

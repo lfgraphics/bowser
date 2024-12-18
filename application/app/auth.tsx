@@ -8,7 +8,7 @@ import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { checkAndRegisterDevice } from '@/src/utils/authUtils';
-import { registerForPushNotificationsAsync } from '@/src/utils/notifications';
+import { baseUrl } from '@/src/utils/helpers';
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -50,7 +50,7 @@ export default function AuthScreen() {
       });
 
       const endpoint = isLogin ? 'login' : 'signup';
-      const response = await fetch(`https://bowser-backend-2cdr.onrender.com/auth/${endpoint}`, { //https://bowser-backend-2cdr.onrender.com  //http://192.168.137.1:5000
+      const response = await fetch(`${baseUrl}/auth/${endpoint}`, { //https://bowser-backend-2cdr.onrender.com  //http://192.168.137.1:5000
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

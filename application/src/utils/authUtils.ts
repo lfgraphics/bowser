@@ -1,24 +1,21 @@
 // import { registerForPushNotificationsAsync } from '@/app/utils/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { registerIndieID } from 'native-notify';
 import { Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from './notifications';
 import { baseUrl } from './helpers';
-let isLoggedIn = false;
+import { router } from 'expo-router';
 
-export const checkUserLoggedIn = async (isLoggingIn = false) => {
+export const checkUserLoggedIn = async () => {
   try {
     const userToken = await AsyncStorage.getItem('userToken');
     const userData = await AsyncStorage.getItem('userData');
     const deviceUUID = await AsyncStorage.getItem('deviceUUID');
 
     if (!userToken || !deviceUUID || !userData) {
+      await logoutUser();
+      router.replace('/auth');
       return false;
-    }
-
-    if (isLoggingIn) {
-      return true; // Skip token verification during login process
     }
 
     const payload = JSON.parse(atob(userToken.split('.')[1]));
@@ -36,7 +33,7 @@ export const checkUserLoggedIn = async (isLoggingIn = false) => {
     }
 
     if (isOnline) {
-      const response = await fetch('https://bowser-backend-2cdr.onrender.com/auth/verify-token', { //https://bowser-backend-2cdr.onrender.com
+      const response = await fetch(`${baseUrl}/auth/verify-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,22 +43,22 @@ export const checkUserLoggedIn = async (isLoggingIn = false) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        Alert.alert('Server response error:', errorData);
 
         if (errorData.unauthorizedAttempt) {
           Alert.alert('Authentication Error', 'Unauthorized device attempt detected');
         }
-
+        await logoutUser();
         return false;
       }
 
       const data = await response.json();
       return data.valid;
     }
-
+    await logoutUser();
     return false;
   } catch (error) {
     Alert.alert('Error checking user login status:', `${error}`);
+    await logoutUser();
     return false;
   }
 };
@@ -124,14 +121,14 @@ export const signupUser = async (email: string, password: string): Promise<void>
   // Implement your signup logic here
   // This could involve making an API call to your backend
   console.log('Signing up with:', email, password);
-  isLoggedIn = true;
 };
 
 export const logoutUser = async (): Promise<void> => {
   // Remove push token from AsyncStorage on logout
   await AsyncStorage.removeItem('pushToken');
+  await AsyncStorage.removeItem('userData');
+  router.replace('/auth');
   // Implement your logout logic here
-  isLoggedIn = false;
 };
 
 async function sendTokenToBackend(phoneNumber: string) {
