@@ -2,7 +2,7 @@ import axios from 'axios';
 import { User, LoginResponse, SignupResponse } from '../types/auth';
 import { registerPushSubscription, unregisterPushSubscription } from '@/utils/pushNotifications';
 
-export const API_URL = 'http://192.168.137.1:5000'; //https://bowser-backend-2cdr.onrender.com //http://192.168.137.1:5000
+export const API_URL = 'https://bowser-backend-2cdr.onrender.com'; //https://bowser-backend-2cdr.onrender.com //http://192.168.137.1:5000
 
 export async function signup(userData: { userId: string; password: string; name: string; phoneNumber: string }): Promise<SignupResponse> {
     try {
