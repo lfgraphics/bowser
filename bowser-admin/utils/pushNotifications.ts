@@ -17,6 +17,23 @@ export async function registerPushSubscription(mobileNumber: string): Promise<vo
                 return;
             }
 
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registered:', registration);
+
+                        // Check if ready resolves
+                        navigator.serviceWorker.ready
+                            .then(readyRegistration => {
+                                console.log('Service Worker ready:', readyRegistration);
+                            })
+                            .catch(error => console.error('Service Worker ready error:', error));
+                    })
+                    .catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            }
+
             // Wait for service worker registration
             const registration = await navigator.serviceWorker.ready;
 

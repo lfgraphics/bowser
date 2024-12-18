@@ -14,6 +14,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: 'ITPL DCS Admin',
     description: 'A Progressive Web App for managing wechicles fuel allocation',
     start_url: '/',
+    scope: '/',
     display: 'standalone',
     background_color: '#0000',
     theme_color: '#000000',
@@ -109,6 +110,13 @@ export default function manifest(): MetadataRoute.Manifest {
           }
         ]
       },
+    ],
+    prefer_related_applications: true,
+    related_applications: [
+      {
+        platform: "webapp",
+        url: "https://itpl-bowser-admin.vercel.app/manifest.json"
+      }
     ]
   }
 }
