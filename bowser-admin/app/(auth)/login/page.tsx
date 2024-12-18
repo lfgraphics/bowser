@@ -25,7 +25,7 @@ export default function Login() {
     e.preventDefault()
     try {
       const response = await login(userId, password)
-      if (response.user.verified) {
+      if (response.user) {
         window.location.href = "/dashboard"
       } else {
         alert("Account not verified. Please contact an administrator to verify your account.")

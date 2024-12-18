@@ -13,7 +13,7 @@ export async function registerPushSubscription(mobileNumber: string): Promise<vo
 
             if (permission !== 'granted') {
                 console.error('Notification permission denied or dismissed.');
-                alert('Please enable notifications in your browser settings to proceed.');
+                alert('Please enable notifications in your browser settings to proceed\nand login again to register to recive notifications');
                 return;
             }
 
@@ -59,11 +59,10 @@ export async function unregisterPushSubscription(mobileNumber: string): Promise<
         const response = await fetch(`${API_URL}/notifications/unregister`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mobileNumber }),
+            body: JSON.stringify({ mobileNumber, platform: "web" }),
         });
 
         if (response.ok) {
-            const result = await response.json();
             return { success: true };
         } else {
             const errorResult = await response.json();

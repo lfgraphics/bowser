@@ -3,10 +3,6 @@ const router = express.Router();
 const PushSubscription = require('../models/pushSubscription');
 const { sendWebPushNotification, sendNativePushNotification } = require('../utils/pushNotifications');
 
-router.get('/:phoneNumber', async (req, res) => {
-
-})
-
 // Register subscription (web or native)
 router.post('/register', async (req, res) => {
     const { mobileNumber, subscription, platform } = req.body;
