@@ -23,6 +23,7 @@
     "moment-timezone": "^0.5.46",
     "mongodb": "^6.9.0",
     "mongoose": "^8.7.1",
+    "mongoose-sequence": "^6.0.1",
     "sharp": "^0.33.5",
     "tesseract.js": "^5.1.1",
     "web-push": "^3.6.7",

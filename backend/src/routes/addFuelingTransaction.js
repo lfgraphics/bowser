@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const FuelingTransaction = require('../models/fuelingTransaction');
 const { fetchLocationData, addRecordToTrip, } = require('../utils/fuelTransactions');
+const { sendWebPushNotification } = require('../utils/pushNotifications');
 
 router.post('/', async (req, res) => {
     try {
@@ -36,6 +37,19 @@ router.post('/', async (req, res) => {
         await addRecordToTrip(fuelingTransaction);
 
         res.status(200).json({ message: 'Data Submitted successfully' });
+
+        let primaryHead = fuelingTransaction.category == "Bulk Sale" ? `Party: ${fuelingTransaction.party}` : `Vehicle Number: ${fuelingTransaction.vehicleNumber}`;
+        let midHead = fuelingTransaction.category == "Attatch" ? `Vendor: ${fuelingTransaction.party}\n` : ``;
+        let secondaryHead = fuelingTransaction.category == "Bulk Sale" ? `` : `Driver: ${fuelingTransaction.driverName}\n`;
+        let headEnd = `was done by: ${fuelingTransaction.bowser.driver.name}\nLocation: ${location} at: ${fuelingTransaction.fuelingDateTime}`;
+        let userId = fuelingTransaction.allocationAdmin.id;
+        let message = `Order to:\n${primaryHead}\n${midHead}${secondaryHead}${headEnd}`
+        let options = {
+            title: "Your Order has bees successfully followed",
+            data: {}
+        };
+        if (userId.length > 2) await sendWebPushNotification(userId, message, options)
+            
     } catch (err) {
         console.error('Error saving fueling record data:', err);
 

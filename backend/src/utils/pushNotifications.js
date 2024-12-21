@@ -18,9 +18,9 @@ webpush.setVapidDetails(
  * @param {object} [options] - Optional parameters for the notification (e.g., title, icon).
  * @returns {Promise<object>} - A promise that resolves with the result of the notification sending.
  */
-async function sendWebPushNotification(mobileNumber, message, options = {}) {
+async function sendWebPushNotification(userId, message, options = {}) {
     try {
-        const subscriptionData = await PushSubscription.findOne({ mobileNumber, platform: 'web' });
+        const subscriptionData = await PushSubscription.findOne({ userId, platform: 'web' });
 
         if (!subscriptionData || !subscriptionData.subscription) {
             throw new Error('No web subscription found for this mobile number.');
@@ -38,7 +38,7 @@ async function sendWebPushNotification(mobileNumber, message, options = {}) {
         return { success: true, message: 'Web notification sent successfully.' };
     } catch (error) {
         console.error('Error sending web push notification:', error.message);
-        return { success: false, error: error.message };
+        return { success: false, error };
     }
 }
 

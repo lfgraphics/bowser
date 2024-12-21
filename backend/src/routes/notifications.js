@@ -45,16 +45,16 @@ router.post('/unregister', async (req, res) => {
 
 // Send notification
 router.post('/send', async (req, res) => {
-    const { mobileNumber, message, platform, options } = req.body;
+    const { mobileNumber, userId, message, platform, options } = req.body;
 
-    if (!mobileNumber || !message || !platform) {
-        return res.status(400).json({ error: 'Mobile number, message, and platform are required.' });
+    if ((!mobileNumber && !userId) || !message || !platform) {
+        return res.status(400).json({ error: 'Mobile number/UserId, message, and platform are required.' });
     }
 
     try {
         let result;
         if (platform === 'web') {
-            result = await sendWebPushNotification(mobileNumber, message, options);
+            result = await sendWebPushNotification(userId, message, options);
         } else if (platform === 'native') {
             result = await sendNativePushNotification(mobileNumber, message, options);
         } else {
@@ -69,6 +69,78 @@ router.post('/send', async (req, res) => {
     } catch (error) {
         console.error('Error sending notification:', error.message);
         res.status(500).json({ error: 'Failed to send notification.' });
+    }
+});
+
+router.post('/bulk-send', async (req, res) => {
+    const { groups, recipients, message, platform, options } = req.body;
+
+    if ((!groups && (!recipients || !Array.isArray(recipients))) || !message || !platform) {
+        return res.status(400).json({ error: 'Groups, recipients array, message, and platform are required.' });
+    }
+
+    try {
+        let allRecipients = [];
+
+        // Fetch recipients from specified groups
+        if (groups && Array.isArray(groups) && groups.length > 0) {
+            const groupRecipients = await PushSubscription.find({
+                groups: { $in: groups },
+            }).select('mobileNumber userId -_id'); // Fetch only mobileNumber and userId fields
+
+            // Add group recipients to the list
+            allRecipients.push(...groupRecipients.map((rec) => ({
+                mobileNumber: rec.mobileNumber,
+                userId: rec.userId,
+            })));
+        }
+
+        // Add directly specified recipients
+        if (recipients && Array.isArray(recipients) && recipients.length > 0) {
+            allRecipients.push(...recipients);
+        }
+
+        if (allRecipients.length === 0) {
+            return res.status(400).json({ error: 'No recipients found for the specified groups or recipients.' });
+        }
+
+        let results = [];
+        let errors = [];
+
+        // Process each recipient
+        for (const recipient of allRecipients) {
+            const { mobileNumber, userId } = recipient;
+
+            if (!mobileNumber && !userId) {
+                errors.push({ recipient, error: 'Missing mobileNumber or userId.' });
+                continue;
+            }
+
+            try {
+                let result;
+                if (platform === 'web') {
+                    result = await sendWebPushNotification(userId, message, options);
+                } else if (platform === 'native') {
+                    result = await sendNativePushNotification({ mobileNumber, message, options });
+                } else {
+                    errors.push({ recipient, error: 'Invalid platform specified.' });
+                    continue;
+                }
+
+                if (result.success) {
+                    results.push({ recipient, result });
+                } else {
+                    errors.push({ recipient, error: result.error });
+                }
+            } catch (error) {
+                errors.push({ recipient, error: error.message });
+            }
+        }
+
+        res.status(200).json({ success: true, results, errors });
+    } catch (error) {
+        console.error('Error sending bulk notifications:', error.message);
+        res.status(500).json({ error: 'Failed to send bulk notifications.' });
     }
 });
 
