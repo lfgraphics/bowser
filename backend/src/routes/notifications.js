@@ -5,7 +5,7 @@ const { sendWebPushNotification, sendNativePushNotification } = require('../util
 
 // Register subscription (web or native)
 router.post('/register', async (req, res) => {
-    const { mobileNumber, subscription, platform } = req.body;
+    const { mobileNumber, userId, subscription, platform } = req.body;
     console.log(mobileNumber, platform, subscription)
 
     if (!mobileNumber || !subscription || !platform) {
@@ -15,7 +15,7 @@ router.post('/register', async (req, res) => {
     try {
         const updatedSubscription = await PushSubscription.findOneAndUpdate(
             { mobileNumber, platform },
-            { mobileNumber, subscription, platform, createdAt: new Date() },
+            { mobileNumber, userId, subscription, platform },
             { upsert: true, new: true }
         );
 
@@ -28,15 +28,38 @@ router.post('/register', async (req, res) => {
 
 // Unregister subscription
 router.post('/unregister', async (req, res) => {
-    const { mobileNumber, platform } = req.body;
+    const { mobileNumber, userId, platform } = req.body;
+    console.log("unregistering", mobileNumber, userId)
 
-    if (!mobileNumber || !platform) {
+    if ((!userId && !mobileNumber) || !platform) {
         return res.status(400).json({ error: 'Mobile number and platform are required.' });
     }
 
     try {
-        await PushSubscription.deleteOne({ mobileNumber, platform });
+        if(mobileNumber) await PushSubscription.deleteOne({ mobileNumber, platform });
+        if (userId) await PushSubscription.deleteOne({ userId, platform });
         res.status(200).json({ success: true, message: 'Subscription unregistered successfully.' });
+    } catch (error) {
+        console.error('Error unregistering subscription:', error);
+        res.status(500).json({ error: 'Failed to unregister subscription.' });
+    }
+});
+
+router.get('/', async (req, res) => {
+    const { mobileNumber, userId } = req.body;
+
+    if (!userId && !mobileNumber) {
+        return res.status(400).json({ error: 'Mobile number and platform are required.' });
+    }
+
+    try {
+        if (mobileNumber) {
+            let sucscription = await PushSubscription.find({ mobileNumber })
+            res.status(200).json(sucscription);
+        } else {
+            let sucscription = await PushSubscription.find({ userId })
+            res.status(200).json(sucscription);
+        }
     } catch (error) {
         console.error('Error unregistering subscription:', error);
         res.status(500).json({ error: 'Failed to unregister subscription.' });
