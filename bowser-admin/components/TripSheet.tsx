@@ -41,7 +41,7 @@ const TripSheetPage = () => {
         tripSheetId: '',
         unsettled: false,
     });
-    const [sort, setSort] = useState<Sort>({ field: 'tripSheetGenerationDateTime', order: 'desc' });
+    const [sort, setSort] = useState<Sort>({ field: 'createdAt', order: 'desc' });
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
 
@@ -65,9 +65,9 @@ const TripSheetPage = () => {
     };
 
     return (
-        <div className="bg-background text-foreground p-6">
+        <div className="bg-background p-6 text-foreground">
             <div className="flex justify-between items-start">
-                <h1 className="text-2xl font-bold mb-4">Trip Sheets</h1>
+                <h1 className="mb-4 font-bold text-2xl">Trip Sheets</h1>
                 <Link href={`/tripsheets/create`}>
                     <Button variant="secondary">
                         <Plus className="mr-2" /> Create New Sheet
@@ -75,7 +75,7 @@ const TripSheetPage = () => {
                 </Link>
             </div>
             <Toaster />
-            <div className="mb-4 flex space-x-4">
+            <div className="flex space-x-4 mb-4">
                 <Input
                     placeholder="Driver Name"
                     value={filters.driverName}
@@ -141,8 +141,8 @@ const TripSheetPage = () => {
                                 </TableCell>
                                 <TableCell>{`${formatDate(sheet.tripSheetGenerationDateTime!)}`}</TableCell>
                                 <TableCell>{`${sheet.settelment.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : "Un Settled"}`}</TableCell>
-                                <TableCell>{sheet.bowserDriver[0].name}</TableCell>
-                                <TableCell>{sheet.bowserDriver[0].phoneNo}</TableCell>
+                                <TableCell>{sheet.bowser.driver[0]?.name}</TableCell>
+                                <TableCell>{sheet.bowser.driver[0]?.phoneNo}</TableCell>
                                 <TableCell>{sheet.bowser.regNo}</TableCell>
                                 <TableCell>{sheet.dispenses?.length || "0"}</TableCell>
                                 <TableCell className="flex space-x-2">
