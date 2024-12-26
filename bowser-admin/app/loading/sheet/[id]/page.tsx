@@ -8,52 +8,90 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-import { capturePhoto } from "@/lib/cameraUtils"; // <-- import the function here
+import { capturePhoto } from "@/lib/cameraUtils";
 import { BASE_URL } from "@/lib/api";
 import { Bowser, LoadingOrder, OrderBowserResponse } from "@/types";
 import Loading from "@/app/loading";
+
+// -- Our localforage helpers
+import {
+    saveFormData,
+    loadFormData,
+    clearFormData
+} from "@/lib/storage";
+
+// A single object type for the entire page’s form state
+interface LoadingSheetFormData {
+    // Server-fetched data (optional to store, but we can store to restore if user refreshes)
+    order: LoadingOrder | null;
+    bowser: Bowser | null;
+
+    // Form fields
+    odoMeter: string | number;
+    fuleingMachine: string;
+    pumpReadingBefore: string | number;
+    pumpReadingAfter: string | number;
+
+    chamberwiseDipListBefore: { chamberId: string; levelHeight: string | number; qty: number }[];
+    chamberwiseDipListAfter: { chamberId: string; levelHeight: string | number; qty: number }[];
+
+    chamberwiseSealList: {
+        chamberId: string;
+        seals: { sealId: string; sealPhoto?: string }[];
+    }[];
+
+    pumpSlips: {
+        chamberId: string;
+        slips: { qty: string | number; slipPhoto: string }[];
+    }[];
+}
+
+const STORAGE_KEY = "loadingSheetPageData"; // Unique key in localforage
 
 export default function LoadingSheetPage() {
     const router = useRouter();
     const params = useParams(); // The [id] from the URL
     const orderId = params.id;
 
-    // Data from /orders/:id
-    const [order, setOrder] = useState<LoadingOrder | null>(null);
-    const [bowser, setBowser] = useState<Bowser | null>(null);
-
-    // UI states
+    // -----------------------------------------
+    // Loading + Error
+    // -----------------------------------------
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // LoadingSheet schema fields (global)
-    const [odoMeter, setOdoMeter] = useState<number | string>("");
+    // -----------------------------------------
+    // Server-Fetched Data
+    // -----------------------------------------
+    const [order, setOrder] = useState<LoadingOrder | null>(null);
+    const [bowser, setBowser] = useState<Bowser | null>(null);
+
+    // -----------------------------------------
+    // Form Fields
+    // -----------------------------------------
+    const [odoMeter, setOdoMeter] = useState<string | number>("");
     const [fuleingMachine, setFuleingMachine] = useState("");
-    const [pumpReadingBefore, setPumpReadingBefore] = useState<number | string>("");
-    const [pumpReadingAfter, setPumpReadingAfter] = useState<number | string>("");
+    const [pumpReadingBefore, setPumpReadingBefore] = useState<string | number>("");
+    const [pumpReadingAfter, setPumpReadingAfter] = useState<string | number>("");
 
     // Chamberwise Dip BEFORE
     const [chamberwiseDipListBefore, setChamberwiseDipListBefore] = useState<
-        { chamberId: string; levelHeight: number | string; qty: number }[]
+        { chamberId: string; levelHeight: string | number; qty: number }[]
     >([]);
 
     // Chamberwise Dip AFTER
     const [chamberwiseDipListAfter, setChamberwiseDipListAfter] = useState<
-        { chamberId: string; levelHeight: number | string; qty: number }[]
+        { chamberId: string; levelHeight: string | number; qty: number }[]
     >([]);
 
-    // Chamberwise Seal List (including photo if needed)
+    // Chamberwise Seal List
     const [chamberwiseSealList, setChamberwiseSealList] = useState<
         {
             chamberId: string;
-            seals: {
-                sealId: string;
-                sealPhoto?: string; // added if you want to store a photo
-            }[];
+            seals: { sealId: string; sealPhoto?: string }[];
         }[]
     >([]);
 
-    // Pump Slips (multiple slips per chamber)
+    // Pump Slips
     const [pumpSlips, setPumpSlips] = useState<
         {
             chamberId: string;
@@ -61,81 +99,136 @@ export default function LoadingSheetPage() {
         }[]
     >([]);
 
-    // ----------------------------------
-    // 1) Fetch /orders/:id => { order, bowser }
-    // ----------------------------------
+    // -----------------------------------------
+    // 1) On mount: load from IndexedDB if exists, then fetch server
+    // -----------------------------------------
     useEffect(() => {
-        if (!orderId) return;
-        async function fetchData() {
-            try {
-                setLoading(true);
-                setError(null);
+        let didCancel = false;
 
-                const res = await fetch(`${BASE_URL}/loading/orders/${orderId}`, {
-                    method: "GET",
-                });
-                if (!res.ok) {
-                    throw new Error(`Failed to fetch order. Status: ${res.status}`);
+        (async function initPage() {
+            try {
+                // 1. Attempt to load from localforage
+                const saved = await loadFormData<LoadingSheetFormData>(STORAGE_KEY);
+                if (!didCancel && saved) {
+                    // Rehydrate all fields
+                    setOrder(saved.order);
+                    setBowser(saved.bowser);
+
+                    setOdoMeter(saved.odoMeter);
+                    setFuleingMachine(saved.fuleingMachine);
+                    setPumpReadingBefore(saved.pumpReadingBefore);
+                    setPumpReadingAfter(saved.pumpReadingAfter);
+                    setChamberwiseDipListBefore(saved.chamberwiseDipListBefore);
+                    setChamberwiseDipListAfter(saved.chamberwiseDipListAfter);
+                    setChamberwiseSealList(saved.chamberwiseSealList);
+                    setPumpSlips(saved.pumpSlips);
                 }
 
-                const data: OrderBowserResponse = await res.json();
-                const { order, bowser } = data;
+                // 2. Fetch the server data if we haven’t stored it or want a fresh version
+                if (orderId && (!saved || !saved.order)) {
+                    setLoading(true);
+                    setError(null);
 
-                setOrder(order);
-                setBowser(bowser);
+                    const res = await fetch(`${BASE_URL}/loading/orders/${orderId}`, {
+                        method: "GET",
+                    });
+                    if (!res.ok) {
+                        throw new Error(`Failed to fetch order. Status: ${res.status}`);
+                    }
+                    const data: OrderBowserResponse = await res.json();
+                    const { order, bowser } = data;
 
-                // Initialize the chamberwise states
-                if (bowser?.chambers?.length > 0) {
-                    setChamberwiseDipListBefore(
-                        bowser.chambers.map((ch) => ({
-                            chamberId: ch.chamberId,
-                            levelHeight: "",
-                            qty: 0,
-                        }))
-                    );
+                    // If user has no local data, or we want to override
+                    if (!didCancel) {
+                        setOrder(order);
+                        setBowser(bowser);
 
-                    setChamberwiseDipListAfter(
-                        bowser.chambers.map((ch) => ({
-                            chamberId: ch.chamberId,
-                            levelHeight: "",
-                            qty: 0,
-                        }))
-                    );
+                        // Initialize the states if not already set
+                        if (bowser?.chambers?.length > 0 && (!saved || !saved.bowser)) {
+                            setChamberwiseDipListBefore(
+                                bowser.chambers.map((ch) => ({
+                                    chamberId: ch.chamberId,
+                                    levelHeight: "",
+                                    qty: 0,
+                                }))
+                            );
 
-                    // Seal list: default 1 seal per chamber
-                    setChamberwiseSealList(
-                        bowser.chambers.map((ch) => ({
-                            chamberId: ch.chamberId,
-                            // if you want a photo, add `sealPhoto: ""`
-                            seals: [{ sealId: "", sealPhoto: "" }],
-                        }))
-                    );
+                            setChamberwiseDipListAfter(
+                                bowser.chambers.map((ch) => ({
+                                    chamberId: ch.chamberId,
+                                    levelHeight: "",
+                                    qty: 0,
+                                }))
+                            );
 
-                    // Pump slips: default 1 slip per chamber
-                    setPumpSlips(
-                        bowser.chambers.map((ch) => ({
-                            chamberId: ch.chamberId,
-                            slips: [{ qty: "", slipPhoto: "" }],
-                        }))
-                    );
+                            setChamberwiseSealList(
+                                bowser.chambers.map((ch) => ({
+                                    chamberId: ch.chamberId,
+                                    seals: [{ sealId: "", sealPhoto: "" }],
+                                }))
+                            );
+
+                            setPumpSlips(
+                                bowser.chambers.map((ch) => ({
+                                    chamberId: ch.chamberId,
+                                    slips: [{ qty: "", slipPhoto: "" }],
+                                }))
+                            );
+                        }
+                    }
                 }
             } catch (err: any) {
-                setError(err.message ?? "Error fetching data");
+                console.error("Error loading from localForage or fetching data:", err);
+                if (!didCancel) setError(err.message || "Error loading data");
             } finally {
-                setLoading(false);
+                if (!didCancel) setLoading(false);
             }
-        }
+        })();
 
-        fetchData();
+        return () => {
+            didCancel = true;
+        };
     }, [orderId]);
 
-    // ----------------------------------
-    // 2) Handle "Take Photo" for a Seal
-    // ----------------------------------
+    // -----------------------------------------
+    // 2) Continuously save to IndexedDB whenever relevant state changes
+    // -----------------------------------------
+    useEffect(() => {
+        // We'll build one object with all the data
+        const formData: LoadingSheetFormData = {
+            order,
+            bowser,
+            odoMeter,
+            fuleingMachine,
+            pumpReadingBefore,
+            pumpReadingAfter,
+            chamberwiseDipListBefore,
+            chamberwiseDipListAfter,
+            chamberwiseSealList,
+            pumpSlips,
+        };
+        saveFormData(STORAGE_KEY, formData).catch((err) => {
+            console.error("Failed to save form data:", err);
+        });
+    }, [
+        order,
+        bowser,
+        odoMeter,
+        fuleingMachine,
+        pumpReadingBefore,
+        pumpReadingAfter,
+        chamberwiseDipListBefore,
+        chamberwiseDipListAfter,
+        chamberwiseSealList,
+        pumpSlips
+    ]);
+
+    // -----------------------------------------
+    // 3) Handle Camera for Seals
+    // -----------------------------------------
     async function handleSealPhoto(chamberIdx: number, sealIdx: number) {
         try {
             const base64 = await capturePhoto();
-            // Store the photo in the seal
             setChamberwiseSealList((prev) => {
                 const copy = [...prev];
                 copy[chamberIdx].seals[sealIdx].sealPhoto = base64;
@@ -146,13 +239,12 @@ export default function LoadingSheetPage() {
         }
     }
 
-    // ----------------------------------
-    // 3) Handle "Take Photo" for a Slip
-    // ----------------------------------
+    // -----------------------------------------
+    // 4) Handle Camera for Slips
+    // -----------------------------------------
     async function handleSlipPhoto(chamberIdx: number, slipIdx: number) {
         try {
             const base64 = await capturePhoto();
-            // Store the photo in the slip
             setPumpSlips((prev) => {
                 const copy = [...prev];
                 copy[chamberIdx].slips[slipIdx].slipPhoto = base64;
@@ -163,18 +255,21 @@ export default function LoadingSheetPage() {
         }
     }
 
-    // ----------------------------------
-    // 4) Submit the form => POST /loading/sheets
-    // ----------------------------------
+    // -----------------------------------------
+    // 5) Handle Submit => POST
+    // -----------------------------------------
     async function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        if (!order) return;
+        if (!order) {
+            setError("No valid order data. Cannot submit.");
+            return;
+        }
 
-        setError(null);
         setLoading(true);
+        setError(null);
 
         try {
-            // If you store the "loadingIncharge" in localStorage, retrieve it
+            // If you store the "loadingIncharge" in localStorage
             const storedUserJson = localStorage.getItem("adminUser");
             let loadingIncharge = { id: "dummyUserId", name: "Dummy Incharge" };
             if (storedUserJson) {
@@ -190,9 +285,7 @@ export default function LoadingSheetPage() {
                 regNo: order.regNo,
                 odoMeter: Number(odoMeter),
                 fuleingMachine,
-                pumpReadingBefore: pumpReadingBefore
-                    ? Number(pumpReadingBefore)
-                    : undefined,
+                pumpReadingBefore: pumpReadingBefore ? Number(pumpReadingBefore) : undefined,
                 pumpReadingAfter: Number(pumpReadingAfter),
 
                 chamberwiseDipListBefore: chamberwiseDipListBefore.map((dip) => ({
@@ -205,17 +298,14 @@ export default function LoadingSheetPage() {
                     levelHeight: Number(dip.levelHeight),
                 })),
 
-                // Flatten out the seal data if needed
-                // Now we might have { sealId, sealPhoto } for each
                 chamberwiseSealList: chamberwiseSealList.flatMap((ch) =>
                     ch.seals.map((sealObj) => ({
                         chamberId: ch.chamberId,
                         sealId: sealObj.sealId,
-                        sealPhoto: sealObj.sealPhoto, // <--- Only if your schema supports storing it
+                        sealPhoto: sealObj.sealPhoto,
                     }))
                 ),
 
-                // Flatten the slip data
                 pumpSlips: pumpSlips.flatMap((ch) =>
                     ch.slips.map((slip) => ({
                         chamberId: ch.chamberId,
@@ -232,7 +322,6 @@ export default function LoadingSheetPage() {
                 },
             };
 
-            // POST to create loading sheet
             const res = await fetch(`${BASE_URL}/loading/sheet`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -247,7 +336,10 @@ export default function LoadingSheetPage() {
             const createdSheet = await res.json();
             console.log("Created LoadingSheet:", createdSheet);
 
-            // Redirect or show success
+            // Clear the stored data after success
+            await clearFormData(STORAGE_KEY);
+
+            // Navigate away or show success
             router.push("/loading/orders");
         } catch (err: any) {
             console.error("Error creating loading sheet:", err);
@@ -257,18 +349,44 @@ export default function LoadingSheetPage() {
         }
     }
 
-    const resetForm = () => {
-        window.location.reload()
+    // -----------------------------------------
+    // 6) Reset the Form => clear in-memory + IndexedDB
+    // -----------------------------------------
+    function resetForm() {
+        setOrder(null);
+        setBowser(null);
+
+        setOdoMeter("");
+        setFuleingMachine("");
+        setPumpReadingBefore("");
+        setPumpReadingAfter("");
+        setChamberwiseDipListBefore([]);
+        setChamberwiseDipListAfter([]);
+        setChamberwiseSealList([]);
+        setPumpSlips([]);
+
+        // Also remove from localforage
+        clearFormData(STORAGE_KEY).catch((err) => {
+            console.error("Failed to clear form data:", err);
+        });
     }
 
-    // ----------------------------------
-    // Rendering
-    // ----------------------------------
+    // -----------------------------------------
+    // 7) Rendering
+    // -----------------------------------------
+    // If still loading and we have no local data
+    if (loading && !order && !bowser) {
+        return <Loading />;
+    }
 
-    // if (error) {
-    //     return <p className="p-4 text-red-600">Error: {error}</p>;
-    // }
+    // If still loading but we do have data, you could show partial form, or a spinner overlay
+    // if (loading) { ... optional ... }
 
+    if (error) {
+        return <p className="p-4 text-red-600">Error: {error}</p>;
+    }
+
+    // If we never got an order or bowser
     if (!order || !bowser) {
         return <p className="p-4">No data found.</p>;
     }
@@ -377,7 +495,7 @@ export default function LoadingSheetPage() {
                             ))}
                         </div>
 
-                        {/* Chamberwise Seal List (multiple seals per chamber) */}
+                        {/* Chamberwise Seal List */}
                         <div className="p-2 border rounded">
                             <h4 className="mb-2 font-semibold">Chamberwise Seal List</h4>
                             {chamberwiseSealList.map((ch, chamberIdx) => (
@@ -404,7 +522,6 @@ export default function LoadingSheetPage() {
                                                 }}
                                             />
 
-                                            {/* Show seal photo if captured */}
                                             {seal.sealPhoto && (
                                                 <img
                                                     src={seal.sealPhoto}
@@ -413,7 +530,6 @@ export default function LoadingSheetPage() {
                                                 />
                                             )}
 
-                                            {/* Button: capture photo for this seal */}
                                             <Button
                                                 variant="outline"
                                                 onClick={async (e) => {
@@ -448,7 +564,7 @@ export default function LoadingSheetPage() {
                             ))}
                         </div>
 
-                        {/* Pump Slips (multiple slips per chamber) */}
+                        {/* Pump Slips */}
                         <div className="p-2 border rounded">
                             <h4 className="mb-2 font-semibold">Pump Slips</h4>
                             {pumpSlips.map((ch, chamberIdx) => (
@@ -476,7 +592,6 @@ export default function LoadingSheetPage() {
                                                     }}
                                                 />
 
-                                                {/* Show slip photo if captured */}
                                                 {slip.slipPhoto && (
                                                     <img
                                                         src={slip.slipPhoto}
@@ -485,7 +600,6 @@ export default function LoadingSheetPage() {
                                                     />
                                                 )}
 
-                                                {/* Button: capture photo for this slip */}
                                                 <Button
                                                     variant="outline"
                                                     onClick={async (e) => {
@@ -523,9 +637,10 @@ export default function LoadingSheetPage() {
 
                         {/* Error Display */}
                         {error && <p className="text-red-600">{error}</p>}
+
                         <div className="flex gap-4">
                             {/* Reset */}
-                            <Button variant="outline" onClick={(e) => { e.preventDefault(); resetForm() }} type="reset" disabled={loading}>
+                            <Button variant="outline" onClick={(e) => { e.preventDefault(); resetForm(); }} disabled={loading}>
                                 {loading ? "Submitting..." : "Reset"}
                             </Button>
 
