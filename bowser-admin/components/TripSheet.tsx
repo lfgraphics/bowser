@@ -141,8 +141,8 @@ const TripSheetPage = () => {
                                 </TableCell>
                                 <TableCell>{`${formatDate(sheet.tripSheetGenerationDateTime!)}`}</TableCell>
                                 <TableCell>{`${sheet.settelment.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : "Un Settled"}`}</TableCell>
-                                <TableCell>{sheet.bowser.driver[0]?.name}</TableCell>
-                                <TableCell>{sheet.bowser.driver[0]?.phoneNo}</TableCell>
+                                <TableCell>{sheet.bowser.driver.length > 0 ? sheet.bowser.driver[0]?.name : "Old Data is not captured properly"}</TableCell>
+                                <TableCell>{sheet.bowser.driver.length > 0 ? sheet.bowser.driver[0]?.phoneNo : "Old Data is not captured properly"}</TableCell>
                                 <TableCell>{sheet.bowser.regNo}</TableCell>
                                 <TableCell>{sheet.dispenses?.length || "0"}</TableCell>
                                 <TableCell className="flex space-x-2">
