@@ -19,8 +19,9 @@ import Loading from '@/app/loading';
 import { Checkbox } from '@/components/ui/checkbox';
 import { isAuthenticated } from '@/lib/auth';
 import { BASE_URL } from '@/lib/api';
+import Link from 'next/link';
 
-export const page = ({ params }: { params: { id: string } }) => {
+const page = ({ params }: { params: { id: string } }) => {
     const checkAuth = () => {
         const authenticated = isAuthenticated();
         if (!authenticated) {
@@ -31,9 +32,9 @@ export const page = ({ params }: { params: { id: string } }) => {
         checkAuth();
     }, []);
 
-    const [record, setRecord] = useState<TripSheet>();
+    const [record, setRecord] = useState<TripSheet | undefined>();
     const [loading, setLoading] = useState<boolean>(true);
-    const [bowserDriver, setBowserDriver] = useState<TripSheet['bowserDriver']>([]);
+    const [bowserDriver, setBowserDriver] = useState<TripSheet['bowser']['driver']>([]);
     const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
     const [editing, setEditing] = useState<boolean>(false);
@@ -43,22 +44,22 @@ export const page = ({ params }: { params: { id: string } }) => {
             setLoading(true);
             try {
                 const response = await axios.get(`${BASE_URL}/tripsheet/find-by-id/${params.id}`);
-                const sheetData = response.data.sheet;
+                const sheetData = response.data;
                 // Update the state with the correct structure
                 setRecord({
                     _id: sheetData._id,
-                    tripSheetId: sheetData.tripSheetId || '',
-                    tripSheetGenerationDateTime: sheetData.tripSheetGenerationDateTime || '',
+                    tripSheetId: sheetData.tripSheetId || 0,
+                    tripSheetGenerationDateTime: sheetData.tripSheetGenerationDateTime || undefined,
                     bowser: {
                         regNo: sheetData.bowser?.regNo || '',
+                        odometerStartReading: sheetData.bowser?.odometerStartReading || 0,
+                        driver: sheetData.bowserDriver || [],
+                        pumpEndReading: sheetData.bowserPumpEndReading || 0,
                     },
-                    bowserDriver: sheetData.bowserDriver || [],
-                    chamberWiseDipList: sheetData.chamberWiseDipList || [],
-                    chamberWiseSealList: sheetData.chamberWiseSealList || [],
-                    proposedDepartureDateTime: sheetData.proposedDepartureDateTime || '',
-                    settelment: sheetData.settelment || { settled: false },
-                    bowserOdometerStartReading: sheetData.bowserOdometerStartReading || 0,
                     fuelingAreaDestination: sheetData.fuelingAreaDestination || '',
+                    proposedDepartureTime: sheetData.proposedDepartureDateTime || '',
+                    settelment: sheetData.settelment || { settled: false, dateTime: new Date(), details: { pumpReading: '', chamberwiseDipList: [], totalQty: 0 } },
+                    bowserOdometerStartReading: sheetData.bowserOdometerStartReading || 0,
                     bowserPumpEndReading: sheetData.bowserPumpEndReading || '',
                 });
                 setBowserDriver(sheetData.bowserDriver || []);
@@ -76,8 +77,14 @@ export const page = ({ params }: { params: { id: string } }) => {
     const handleUpdate = async () => {
         if (!record) return;
         try {
-            const updatedTripSheet = { ...record, bowserDriver };
-            await axios.patch(`${BASE_URL}/tripSheet/update/${params.id}`, updatedTripSheet); //https://bowser-backend-2cdr.onrender.com http://localhost:5000
+            const updatedTripSheet: TripSheet = {
+                ...record,
+                bowser: {
+                    ...record.bowser,
+                    driver: bowserDriver,
+                },
+            };
+            await axios.patch(`${BASE_URL}/tripSheet/update/${params.id}`, updatedTripSheet);
             setShowSuccessAlert(true);
             setEditing(false)
         } catch (error) {
@@ -107,7 +114,7 @@ export const page = ({ params }: { params: { id: string } }) => {
 
     return (
         <div className='flex flex-col gap-3'>
-            <div className='flex gap-3 items-center'>
+            <div className='flex items-center gap-3'>
                 <h1>Trip Sheet: {record?.tripSheetId}</h1>
                 <Button variant="ghost" onClick={() => setEditing(!editing)}>
                     {editing ? 'Cancel' : 'Edit'}
@@ -147,13 +154,13 @@ export const page = ({ params }: { params: { id: string } }) => {
             </div>
 
             {/* Additional Fields for TripSheet */}
-            <Label>Bowser Odometer Start Reading: {!editing && record?.bowserOdometerStartReading}</Label>
+            <Label>Bowser Odometer Start Reading: {!editing && record?.bowser.odometerStartReading}</Label>
             {
                 editing &&
                 <Input
                     type="number"
-                    value={record?.bowserOdometerStartReading}
-                    onChange={(e) => setRecord({ ...record, bowserOdometerStartReading: Number(e.target.value) })}
+                    value={record?.bowser.odometerStartReading}
+                    onChange={(e) => setRecord({ ...record, bowser: { ...record?.bowser, odometerStartReading: Number(e.target.value) } })}
                 />
             }
 
@@ -165,25 +172,25 @@ export const page = ({ params }: { params: { id: string } }) => {
                 />
             }
 
-            <Label>Bowser Pump End Reading: {!editing && record?.bowserPumpEndReading}</Label>
+            <Label>Bowser Pump End Reading: {!editing && record?.bowser.pumpEndReading}</Label>
             {editing &&
                 <Input
-                    value={record?.bowserPumpEndReading}
+                    value={record?.bowser.pumpEndReading}
                     onChange={(e) => setRecord({ ...record, bowserPumpEndReading: e.target.value })}
                 />
             }
 
-            <Label>Proposed Departure Date Time: {!editing && record?.proposedDepartureDateTime}</Label>
+            <Label>Proposed Departure Date Time: {!editing && record?.proposedDepartureTime}</Label>
             {editing &&
                 <Input
                     type="datetime-local"
-                    value={record?.proposedDepartureDateTime}
-                    onChange={(e) => setRecord({ ...record, proposedDepartureDateTime: e.target.value })}
+                    value={record?.proposedDepartureTime}
+                    onChange={(e) => setRecord({ ...record, proposedDepartureTime: e.target.value })}
                 />
             }
 
-            <p className='mt-4 font-bold'>Settelment:</p>
-            <div className='flex gap-3'>
+            <p className='mt-4 font-bold'>Settelment:</p> <Link href={`/tripsheets/settle/${params.id}`}><Button variant="link">Settle</Button></Link>
+            {/* <div className='flex gap-3'>
                 <Label>Settled: </Label>
                 <Checkbox
                     checked={record?.settelment?.settled}
@@ -193,30 +200,32 @@ export const page = ({ params }: { params: { id: string } }) => {
             </div>
             {record?.settelment?.settled &&
                 <>
-                    <Label>Settlement Date Time: {!editing && record?.settelment?.dateTime}</Label>
+                    <Label>Settlement Date Time: {!editing && record?.settelment?.dateTime.toString()}</Label>
                     {editing && <Input
                         type="datetime-local"
-                        value={record?.settelment?.dateTime}
-                        onChange={(e) => setRecord({ ...record, settelment: { ...record?.settelment, dateTime: e.target.value } })}
+                        value={record?.settelment?.dateTime?.toLocaleDateString()}
+                        onChange={(e) => setRecord({ ...record, settelment: { ...record?.settelment, dateTime: new Date(e.target.value) } })}
+                        disabled={!editing}
                     />}
 
-                    <Label>Odometer Closing: {!editing && record?.settelment?.odometerClosing?.[0]}</Label>
+                    <Label>Odometer Closing: {!editing && record?.settelment?.details?.pumpReading}</Label>
                     {editing && <Input
                         type="number"
-                        value={record?.settelment?.odometerClosing?.[0] || ''}
-                        onChange={(e) => setRecord({ ...record, settelment: { ...record?.settelment, odometerClosing: { 0: Number(e.target.value) } } })}
+                        value={record?.settelment?.details?.pumpReading || ''}
+                        onChange={(e) => setRecord({ ...record, settelment: { ...record?.settelment, details: { ...record?.settelment?.details, pumpReading: e.target.value } } })}
+                        disabled={!editing}
                     />}
 
-                    <Label>Bowser New End Reading: {!editing && record?.settelment?.bowserNewEndReading?.[0]}</Label>
+                    <Label>Bowser pump end reading: {!editing && record?.settelment?.bowserNewEndReading?.[0]}</Label>
                     {editing && <Input
                         type="number"
                         value={record?.settelment?.bowserNewEndReading?.[0] || ''}
                         onChange={(e) => setRecord({ ...record, settelment: { ...record?.settelment, bowserNewEndReading: { 0: Number(e.target.value) } } })}
                     />}
                 </>
-            }
+            } */}
 
-            <div className="felx flex-row gap-3">
+            <div className="flex-row gap-3 felx">
                 <Button className='mr-3' disabled={!editing} onClick={handleUpdate}>Update Trip Sheet</Button>
                 <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                     <AlertDialogTrigger asChild>

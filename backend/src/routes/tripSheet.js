@@ -153,7 +153,7 @@ router.get('/find-by-id/:id', async (req, res) => {
         const sheet = await TripSheet.findById(new mongoose.Types.ObjectId(id));
 
 
-        res.status(200).json({ sheet });
+        res.status(200).json(sheet);
 
     } catch (err) {
         console.error('Error searching bowsers, trip details, or bowser drivers:', err);
