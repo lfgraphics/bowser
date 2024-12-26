@@ -23,7 +23,7 @@ export default function FuelingScreen() {
   const [fuelMeterImage, setFuelMeterImage] = useState<string[] | null>(null);
   const [slipImage, setSlipImage] = useState<string | null>(null);
   const [vehicleNumber, setVehicleNumber] = useState('');
-  const [odometer, setOdodmeter] = useState('');
+  const [odometer, setOdodmeter] = useState<Number | null>(null);
   const [adminId, setAdminId] = useState('');
   const [adminName, setAdminName] = useState('');
   const [driverName, setDriverName] = useState('');
@@ -289,7 +289,7 @@ export default function FuelingScreen() {
     setFuelMeterImage(null);
     setSlipImage(null);
     setVehicleNumber('');
-    setOdodmeter('');
+    setOdodmeter(null);
     setPartyName('');
     setDriverId('');
     setDriverName('');
@@ -623,8 +623,8 @@ export default function FuelingScreen() {
                 style={[styles.input, { color: colors.text }]}
                 placeholder={'4567835'}
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                value={odometer}
-                onChangeText={(text) => { setOdodmeter(text.toUpperCase()); }}
+                value={String(odometer)}
+                onChangeText={(text) => { setOdodmeter(Number(text)); }}
                 returnKeyType="next"
                 keyboardType="number-pad"
                 onSubmitEditing={() => driverIdInputRef.current?.focus()}

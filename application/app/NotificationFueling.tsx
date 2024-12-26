@@ -54,7 +54,7 @@ const NotificationFuelingScreen = () => {
     const colorScheme = useColorScheme();
     const [vehicleNumberPlateImage, setVehicleNumberPlateImage] = useState<string | null>(null);
     const [fuelMeterImage, setFuelMeterImage] = useState<string[] | null>(null);
-    const [odometer, setOdodmeter] = useState('');
+    const [odometer, setOdodmeter] = useState<Number | null>(null);
     const [fuelQuantity, setFuelQuantity] = useState<string>(quantity);
     const [driverMobileNo, setDriverMobileNo] = useState(driverMobile);
     const [gpsLocation, setGpsLocation] = useState('');
@@ -404,8 +404,8 @@ const NotificationFuelingScreen = () => {
                                 style={[styles.input, { color: colors.text }]}
                                 placeholder={'4567835'}
                                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                                value={odometer}
-                                onChangeText={(text) => { setOdodmeter(text); }}
+                                value={String(odometer)}
+                                onChangeText={(text) => { setOdodmeter(Number(text)); }}
                                 returnKeyType="next"
                                 keyboardType="number-pad"
                                 onSubmitEditing={() => driverIdInputRef.current?.focus()}

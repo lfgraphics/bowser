@@ -24,7 +24,7 @@ import { Vehicle } from "@/types"
 import Loading from "@/app/loading"
 import { BASE_URL } from "@/lib/api"
 import { updateDriverMobile, updateTripDriver } from "@/utils"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@radix-ui/react-accordion"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 export default function FuelingAllocation() {
     const [isSearching, setIsSearching] = useState(false);
@@ -401,18 +401,18 @@ export default function FuelingAllocation() {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-full bg-background py-4">
+        <div className="flex justify-center items-center bg-background py-4 min-h-full">
             {(submitting || isSearching) && (
                 <Loading />
             )}
-            <Card className="w-[450px] bg-">
+            <Card className="bg- w-[450px]">
                 <CardHeader>
                     <CardTitle>Fuel Allocation</CardTitle>
                     <CardDescription>Allocate fueling requirements</CardDescription>
                 </CardHeader>
-                <Accordion type="single" collapsible className="p-4 my-2 w-full">
+                <Accordion type="single" collapsible className="mb-2 p-4 w-full">
                     <AccordionItem value="item-1">
-                        <AccordionTrigger className="w-full text-left mb-2">Update Details?</AccordionTrigger>
+                        <AccordionTrigger className="mb-2 w-full text-left">Update Details?</AccordionTrigger>
                         <AccordionContent>
                             <div className="flex justify-around items-center">
                                 <Button onClick={() => handleUpdateMobile()} variant="outline">Driver Mobile</Button>
@@ -424,7 +424,7 @@ export default function FuelingAllocation() {
                 <form onSubmit={handleSubmit}>
                     <CardContent>
                         {/* Nav for diffrent type */}
-                        <div className="px-4 rounded-md flex justify-around my-6 mt-0 bg-card">
+                        <div className="flex justify-around bg-card my-6 mt-0 px-4 rounded-md">
                             {(['Own', 'Attatch', 'Bulk Sale'] as FuelingTypes[]).map((option) => (
                                 <Button
                                     type="button"
@@ -436,7 +436,7 @@ export default function FuelingAllocation() {
                                 </Button>
                             ))}
                         </div>
-                        <div className="grid w-full items-center gap-4">
+                        <div className="items-center gap-4 grid w-full">
                             {fueling !== "Bulk Sale" &&
                                 <div className="flex flex-col space-y-1.5">
                                     <Label htmlFor="vehicleNumber">Vehicle Number</Label>
@@ -537,7 +537,7 @@ export default function FuelingAllocation() {
                                 </div>
                             </div>
                         </div>
-                        <h3 className="text-lg font-semibold mt-4 mb-2">Allocate the order to:</h3>
+                        <h3 className="mt-4 mb-2 font-semibold text-lg">Allocate the order to:</h3>
                         <div className="flex flex-col space-y-1.5 mb-4">
                             <Label htmlFor="bowserRegNo">Bowser Registration Number</Label>
                             <Input

@@ -27,10 +27,9 @@ self.addEventListener('push', function (event) {
 
 self.addEventListener('notificationclick', function (event) {
   console.log('Notification click received:', event);
-  // Close the notification
-  event.notification.close();
   // Extract the URL from the notification's data
   const targetUrl = event.notification.data?.url || 'https://itpl-bowser-admin.vercel.app';
+  console.log(event)
   // Open the URL dynamically
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
@@ -46,4 +45,6 @@ self.addEventListener('notificationclick', function (event) {
       }
     })
   );
+  // Close the notification
+  event.notification.close();
 });

@@ -34,4 +34,33 @@ const calculateQty = (bowserChambers, chamberId, levelHeight) => {
     return qty;
 };
 
-module.exports = { calculateQty };
+const calculateChamberLevels = (chambers) => {
+    chambers.forEach((chamber) => {
+        chamber.levels.sort((a, b) => a.levelNo - b.levelNo);
+
+        let previousTotalQty = 0;
+        let previousHeight = 0;
+
+        chamber.levels.forEach((level, index) => {
+            // Calculate levelTotalQty
+            level.levelTotalQty = previousTotalQty + level.levelAdditionQty;
+
+            // Calculate levelCalibrationQty
+            if (index === 0) {
+                level.levelCalibrationQty = level.levelHeight > 0 ? level.levelTotalQty / level.levelHeight : 0;
+            } else {
+                const qtyDiff = level.levelTotalQty - previousTotalQty;
+                const heightDiff = level.levelHeight - previousHeight;
+                level.levelCalibrationQty = heightDiff > 0 ? qtyDiff / heightDiff : 0;
+            }
+
+            // Update previous values
+            previousTotalQty = level.levelTotalQty;
+            previousHeight = level.levelHeight;
+        });
+    });
+
+    return chambers;
+};
+
+module.exports = { calculateQty, calculateChamberLevels };

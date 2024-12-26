@@ -13,7 +13,6 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { Input } from "./ui/input"
 
 export function DatePickerWithRange({
     className,
@@ -52,14 +51,14 @@ export function DatePickerWithRange({
                                 format(date.from, "LLL dd, y")
                             )
                         ) : (
-                            <span>(Comming Soon) Pick a date range</span>
+                            <span>Pick a date range</span>
                         )}
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="p-0 w-auto" align="start">
                     {/* <Input value={months} onChange={(e) => setMonths(Number(e.target.value))}></Input> */}
                     <Calendar
-                        disabled
+                        // disabled
                         initialFocus
                         mode="range"
                         selected={date}

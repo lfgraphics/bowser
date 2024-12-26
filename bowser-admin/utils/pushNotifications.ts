@@ -1,6 +1,6 @@
 import { API_URL } from "@/lib/auth";
 
-export async function registerPushSubscription(mobileNumber: string): Promise<void> {
+export async function registerPushSubscription(mobileNumber: string, roles:string[]): Promise<void> {
     if (!mobileNumber) {
         console.error('Mobile number is required to register push subscription.');
         return;
@@ -47,7 +47,7 @@ export async function registerPushSubscription(mobileNumber: string): Promise<vo
             const response = await fetch(`${API_URL}/notifications/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mobileNumber, subscription, platform: "web" }),
+                body: JSON.stringify({ mobileNumber, groups:roles, subscription, platform: "web" }),
             });
 
             if (!response.ok) {

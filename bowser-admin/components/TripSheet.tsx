@@ -13,7 +13,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Toaster } from "@/components/ui/toaster"
-import { ArrowDown01, ArrowUp10, Check, Edit, Plus, X } from 'lucide-react';
+import { ArrowDown01, ArrowUp10, Check, Edit, X } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { TripSheet, Filters, Sort } from '@/types/index';
@@ -68,11 +68,11 @@ const TripSheetPage = () => {
         <div className="bg-background p-6 text-foreground">
             <div className="flex justify-between items-start">
                 <h1 className="mb-4 font-bold text-2xl">Trip Sheets</h1>
-                <Link href={`/tripsheets/create`}>
+                {/* <Link href={`/tripsheets/create`}>
                     <Button variant="secondary">
                         <Plus className="mr-2" /> Create New Sheet
                     </Button>
-                </Link>
+                </Link> */}
             </div>
             <Toaster />
             <div className="flex space-x-4 mb-4">
@@ -112,10 +112,13 @@ const TripSheetPage = () => {
                         </TableHead>
                         <TableHead>Created on</TableHead>
                         <TableHead>Settled on</TableHead>
+                        <TableHead>Bowser Reg No</TableHead>
                         <TableHead>Driver Name</TableHead>
                         <TableHead>Driver Mobile</TableHead>
-                        <TableHead>Bowser Reg No</TableHead>
+                        <TableHead>Loaded Ltr</TableHead>
                         <TableHead>Dispenses</TableHead>
+                        <TableHead>Sold Ltr</TableHead>
+                        <TableHead>Balance Ltr</TableHead>
                         <TableHead>Actions</TableHead>
                         <TableHead>Verification</TableHead>
                         <TableHead>Post/ed</TableHead>
@@ -139,12 +142,15 @@ const TripSheetPage = () => {
                                         {sheet.tripSheetId}
                                     </Link>
                                 </TableCell>
-                                <TableCell>{`${formatDate(sheet.tripSheetGenerationDateTime!)}`}</TableCell>
-                                <TableCell>{`${sheet.settelment.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : "Un Settled"}`}</TableCell>
-                                <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.name : "Old Data is not captured properly"}</TableCell>
-                                <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.phoneNo : "Old Data is not captured properly"}</TableCell>
+                                <TableCell>{`${formatDate(sheet.tripSheetGenerationDateTime ? sheet.tripSheetGenerationDateTime : sheet.createdAt)}`}</TableCell>
+                                <TableCell>{`${sheet.settelment?.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : "Un Settled"}`}</TableCell>
                                 <TableCell>{sheet.bowser.regNo}</TableCell>
+                                <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.name : "Old Data is not captured"}</TableCell>
+                                <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.phoneNo : "Old Data is not captured"}</TableCell>
+                                <TableCell>{sheet.totalLoadQuantity?.toFixed(2)}</TableCell>
                                 <TableCell>{sheet.dispenses?.length || "0"}</TableCell>
+                                <TableCell>{sheet.saleQty?.toFixed(2)}</TableCell>
+                                <TableCell>{sheet.balanceQty?.toFixed(2)}</TableCell>
                                 <TableCell className="flex space-x-2">
                                     <Link href={`/tripsheets/edit/${sheet._id}`}>
                                         <Button variant="ghost">

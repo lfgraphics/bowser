@@ -79,6 +79,13 @@ router.post('/login', async (req, res) => {
         // Create and send JWT token
         const token = jwt.sign({ userId: user.userId, roles: user.roles.map(r => r.toString()) }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
+        let roleNames = [];
+        let roles = [];
+        if (user.roles && user.roles.length > 0) {
+            roles = await Role.find({ _id: { $in: user.roles } });
+            roleNames = roles.map(role => role.name);
+        }
+
         res.json({
             message: 'Login successful',
             token,
@@ -87,7 +94,7 @@ router.post('/login', async (req, res) => {
                 userId: user.userId,
                 name: user.name,
                 phoneNumber: user.phoneNumber,
-                roles: user.roles.map(r => r.toString()),
+                roles: roleNames,
                 verified: user.verified
             }
         });

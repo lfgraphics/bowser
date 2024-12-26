@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const FuelingTransaction = require('../models/fuelingTransaction');
+const FuelingTransaction = require('../models/Transaction');
 const { fetchLocationData, addRecordToTrip, } = require('../utils/fuelTransactions');
 const { sendWebPushNotification } = require('../utils/pushNotifications');
 
@@ -46,10 +46,10 @@ router.post('/', async (req, res) => {
         let message = `Order to:\n${primaryHead}\n${midHead}${secondaryHead}${headEnd}`
         let options = {
             title: "Your Order has bees successfully followed",
-            data: {}
+            data: { url: `/dispense-records/${fuelingTransaction._id.toString()}` }
         };
         if (userId.length > 2) await sendWebPushNotification(userId, message, options)
-            
+
     } catch (err) {
         console.error('Error saving fueling record data:', err);
 

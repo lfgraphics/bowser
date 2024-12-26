@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const PushSubscription = require('../models/pushSubscription');
-const { sendWebPushNotification, sendNativePushNotification } = require('../utils/pushNotifications');
+const { sendWebPushNotification, sendNativePushNotification, sendBulkNotifications } = require('../utils/pushNotifications');
 
 // Register subscription (web or native)
 router.post('/register', async (req, res) => {
-    const { mobileNumber, userId, subscription, platform } = req.body;
+    const { mobileNumber, userId, subscription, platform, groups } = req.body;
     console.log(mobileNumber, platform, subscription)
 
     if (!mobileNumber || !subscription || !platform) {
@@ -15,7 +15,7 @@ router.post('/register', async (req, res) => {
     try {
         const updatedSubscription = await PushSubscription.findOneAndUpdate(
             { mobileNumber, platform },
-            { mobileNumber, userId, subscription, platform },
+            { mobileNumber, userId, subscription, platform, groups },
             { upsert: true, new: true }
         );
 
@@ -36,7 +36,7 @@ router.post('/unregister', async (req, res) => {
     }
 
     try {
-        if(mobileNumber) await PushSubscription.deleteOne({ mobileNumber, platform });
+        if (mobileNumber) await PushSubscription.deleteOne({ mobileNumber, platform });
         if (userId) await PushSubscription.deleteOne({ userId, platform });
         res.status(200).json({ success: true, message: 'Subscription unregistered successfully.' });
     } catch (error) {
@@ -103,67 +103,12 @@ router.post('/bulk-send', async (req, res) => {
     }
 
     try {
-        let allRecipients = [];
-
-        // Fetch recipients from specified groups
-        if (groups && Array.isArray(groups) && groups.length > 0) {
-            const groupRecipients = await PushSubscription.find({
-                groups: { $in: groups },
-            }).select('mobileNumber userId -_id'); // Fetch only mobileNumber and userId fields
-
-            // Add group recipients to the list
-            allRecipients.push(...groupRecipients.map((rec) => ({
-                mobileNumber: rec.mobileNumber,
-                userId: rec.userId,
-            })));
-        }
-
-        // Add directly specified recipients
-        if (recipients && Array.isArray(recipients) && recipients.length > 0) {
-            allRecipients.push(...recipients);
-        }
-
-        if (allRecipients.length === 0) {
-            return res.status(400).json({ error: 'No recipients found for the specified groups or recipients.' });
-        }
-
-        let results = [];
-        let errors = [];
-
-        // Process each recipient
-        for (const recipient of allRecipients) {
-            const { mobileNumber, userId } = recipient;
-
-            if (!mobileNumber && !userId) {
-                errors.push({ recipient, error: 'Missing mobileNumber or userId.' });
-                continue;
-            }
-
-            try {
-                let result;
-                if (platform === 'web') {
-                    result = await sendWebPushNotification(userId, message, options);
-                } else if (platform === 'native') {
-                    result = await sendNativePushNotification({ mobileNumber, message, options });
-                } else {
-                    errors.push({ recipient, error: 'Invalid platform specified.' });
-                    continue;
-                }
-
-                if (result.success) {
-                    results.push({ recipient, result });
-                } else {
-                    errors.push({ recipient, error: result.error });
-                }
-            } catch (error) {
-                errors.push({ recipient, error: error.message });
-            }
-        }
+        const { results, errors } = await sendBulkNotifications(groups, recipients, message, platform, options);
 
         res.status(200).json({ success: true, results, errors });
     } catch (error) {
         console.error('Error sending bulk notifications:', error.message);
-        res.status(500).json({ error: 'Failed to send bulk notifications.' });
+        res.status(500).json({ error: error.message });
     }
 });
 

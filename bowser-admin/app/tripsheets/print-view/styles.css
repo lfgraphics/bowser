@@ -1,0 +1,16 @@
+td {
+  font-size: medium;
+  text-align: left;
+  border: 1px solid #80808096;
+}
+input:not([readonly]) {
+  background-color: aqua;
+  border-radius: 0;
+  color: black;
+  margin: 0;
+}
+input {
+  border: 0;
+  border-radius: 0;
+  text-align: right;
+}

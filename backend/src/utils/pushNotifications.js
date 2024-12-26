@@ -12,8 +12,9 @@ webpush.setVapidDetails(
 );
 
 /**
- * Send a push notification to a browser user.
+ * Send a push notification to a user.
  * @param {string} mobileNumber - The mobile number of the user.
+ * @param {string} userId - The userId of the user.
  * @param {string} message - The notification message to send.
  * @param {object} [options] - Optional parameters for the notification (e.g., title, icon).
  * @returns {Promise<object>} - A promise that resolves with the result of the notification sending.
@@ -31,6 +32,7 @@ async function sendWebPushNotification(userId, message, options = {}) {
         const payload = JSON.stringify({
             title: options.title || 'Notification',
             body: message,
+            url: options.url || 'https://itpl-bowser-admin.vercel.app',
             icon: options.icon || '/icon-512x512.png',
         });
 
@@ -44,9 +46,9 @@ async function sendWebPushNotification(userId, message, options = {}) {
 
 /**
  * Send Native Push Notification
- * @param {string} mobileNumber
- * @param {string} message
- * @param {object} [options]
+ * @param {string} mobileNumber - The mobile number of the user.
+ * @param {string} message - The notification message to send.
+ * @param {object} [options] - Optional parameters for the notification (e.g., title, icon).
  */
 async function sendNativePushNotification({ mobileNumber, message, options = {} }) {
     try {
@@ -79,4 +81,86 @@ async function sendNativePushNotification({ mobileNumber, message, options = {} 
     }
 }
 
-module.exports = { sendWebPushNotification, sendNativePushNotification };
+/**
+ * Send notifications to recipients from groups or directly specified recipients.
+ * @param {Array} groups - Array of group names.
+ * @param {Array} recipients - Array of directly specified recipients.
+ * @param {string} message - The message to send.
+ * @param {string} platform - The platform ('web' or 'native').
+ * @param {object} options - Additional options for notifications (e.g., title, icon, etc.).
+ * @returns {Promise<object>} - Results of notifications sent and errors.
+ */
+async function sendBulkNotifications({ groups: groups = [], recipients: recipients = [], message: message, platform: platform, options: options = {} }) {
+    if (!message || !platform) {
+        throw new Error('Message and platform are required.');
+    }
+
+    let allRecipients = [];
+
+    // Fetch recipients from specified groups
+    if (groups && Array.isArray(groups) && groups.length > 0) {
+        const groupRecipients = await PushSubscription.find({
+            groups: { $in: groups },
+        }).select('mobileNumber userId -_id'); // Fetch only mobileNumber and userId fields
+
+        // Add group recipients to the list
+        allRecipients.push(...groupRecipients.map((rec) => ({
+            mobileNumber: rec.mobileNumber,
+            userId: rec.userId,
+        })));
+    }
+
+    // Add directly specified recipients
+    if (recipients && Array.isArray(recipients) && recipients.length > 0) {
+        allRecipients.push(...recipients);
+    }
+
+    // Deduplicate recipients (by mobileNumber or userId)
+    allRecipients = [
+        ...new Map(
+            allRecipients.map((item) => [item.mobileNumber || item.userId, item])
+        ).values(),
+    ];
+
+    if (allRecipients.length === 0) {
+        throw new Error('No recipients found for the specified groups or recipients.');
+    }
+
+    // Initialize results and errors
+    let results = [];
+    let errors = [];
+
+    // Process each recipient
+    for (const recipient of allRecipients) {
+        const { mobileNumber, userId } = recipient;
+
+        if (!mobileNumber && !userId) {
+            errors.push({ recipient, error: 'Missing mobileNumber or userId.' });
+            continue;
+        }
+
+        try {
+            let result;
+            if (platform === 'web') {
+                result = await sendWebPushNotification(userId, message, options);
+            } else if (platform === 'native') {
+                result = await sendNativePushNotification({ mobileNumber, message, options });
+            } else {
+                errors.push({ recipient, error: 'Invalid platform specified.' });
+                continue;
+            }
+
+            if (result.success) {
+                results.push({ recipient, result });
+            } else {
+                errors.push({ recipient, error: result.error });
+            }
+        } catch (error) {
+            errors.push({ recipient, error: error.message });
+        }
+    }
+
+    return { results, errors };
+}
+
+module.exports = { sendWebPushNotification, sendNativePushNotification, sendBulkNotifications };

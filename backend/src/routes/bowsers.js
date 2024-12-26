@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const Bowser = require('../models/bowser');
+const Bowser = require('../models/Bowsers');
 const mongoose = require('mongoose')
+const { calculateChamberLevels } = require('../utils/calibration');
 
 // Create a bowser
 router.post('/create', async (req, res) => {
@@ -46,10 +47,10 @@ router.post('/create', async (req, res) => {
 // Get all users with roles populated
 router.get('/', async (req, res) => {
     try {
-        const bowsers = await Bowser.find().populate('currentTrip').exec();
+        const bowsers = await Bowser.find().sort({ createdAt: -1 }).lean().populate('currentTrip').exec();
         res.status(200).json(bowsers);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch users', details: error });
+        res.status(500).json({ error: 'Failed to fetch Bowsers', details: error });
     }
 });
 
@@ -66,22 +67,31 @@ router.get('/:id', async (req, res) => {
 // Update or add details
 router.put('/:id', async (req, res) => {
     const id = req.params.id;
-    const { data } = req.body;
+    const { chambers, regNo } = req.body;
 
     try {
-        // Find and update the Bowser by its ID
-        const updatedBowser = await Bowser.findByIdAndUpdate(
-            new mongoose.Types.ObjectId(id), // Ensure the ID is a valid ObjectId
-            { $set: data }, // Update the document with the provided data
-            { new: true } // Return the updated document
-        )
+        if (!chambers || !regNo) {
+            throw new Error("Missing required fields in request body");
+        }
 
-        if (!updatedBowser) return res.status(404).json({ error: 'Bowser not found' });
+        // Perform the calibration
+        const updatedChambers = calculateChamberLevels(chambers);
+
+        // Update the Bowser document
+        const updatedBowser = await Bowser.findByIdAndUpdate(
+            id,
+            { $set: { chambers: updatedChambers, regNo } },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedBowser) {
+            return res.status(404).json({ error: 'Bowser not found' });
+        }
 
         res.status(200).json(updatedBowser);
     } catch (error) {
         console.error('Error updating Bowser:', error);
-        res.status(500).json({ error: 'Failed to update Bowser', details: error });
+        res.status(500).json({ error: 'Failed to update Bowser', details: error.message });
     }
 });
 

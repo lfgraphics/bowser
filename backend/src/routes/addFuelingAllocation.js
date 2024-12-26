@@ -95,18 +95,6 @@ router.post('/', async (req, res) => {
                     options: { title: 'New Fueling Order', data: JSON.stringify(pushData) }
                 }
             )
-            // const sentNotificationResponse = await axios.post(
-            //     `https://app.nativenotify.com/api/indie/notification`,
-            //     {
-            //         subID: newFuelingOrder.bowser.driver.phoneNo,
-            //         appId: 25239,
-            //         appToken: 'FWwj7ZcRXQi7FsC4ZHQlsi',
-            //         title: 'New Fueling Order',
-            //         message: `Vehicle Number: ${vehicleNumber}\nDriver: ${driverName}\nAllocated by ${allocationAdmin.name} (${allocationAdmin.id})`,
-            //         pushData: JSON.stringify(pushData), // Properly stringify the pushData object
-            //     }
-            // );
-
             // Check if the notification was successfully sent
             if (sentNotificationResponse.success) {
                 console.log('Notification sent successfully:', sentNotificationResponse.response);
