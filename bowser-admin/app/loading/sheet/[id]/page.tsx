@@ -19,6 +19,7 @@ import {
     loadFormData,
     clearFormData
 } from "@/lib/storage";
+import { openEmbeddedCamera } from "@/components/EmbeddedCamera";
 
 // A single object type for the entire page’s form state
 interface LoadingSheetFormData {
@@ -228,7 +229,7 @@ export default function LoadingSheetPage() {
     // -----------------------------------------
     async function handleSealPhoto(chamberIdx: number, sealIdx: number) {
         try {
-            const base64 = await capturePhoto();
+            const base64 = await openEmbeddedCamera();
             setChamberwiseSealList((prev) => {
                 const copy = [...prev];
                 copy[chamberIdx].seals[sealIdx].sealPhoto = base64;
@@ -244,7 +245,7 @@ export default function LoadingSheetPage() {
     // -----------------------------------------
     async function handleSlipPhoto(chamberIdx: number, slipIdx: number) {
         try {
-            const base64 = await capturePhoto();
+            const base64 = await openEmbeddedCamera();
             setPumpSlips((prev) => {
                 const copy = [...prev];
                 copy[chamberIdx].slips[slipIdx].slipPhoto = base64;
