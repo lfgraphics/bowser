@@ -45,7 +45,7 @@ const loadingSheetSchema = new mongoose.Schema({
             {
                 chamberId: { type: String, required: true },
                 qty: { type: Number, required: true },
-                slipPhoto: { type: String, required: true },
+                slipPhoto: { type: String, required: false },
             }
         ],
         _id: false // Correctly prevents automatic _id creation for subdocuments
