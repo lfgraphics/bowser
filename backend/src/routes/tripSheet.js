@@ -4,7 +4,10 @@ const TripSheet = require('../models/TripSheets');
 const mongoose = require('mongoose');
 const User = require('../models/user');
 const Bowser = require('../models/bowser');
-const LoadingSheet = require('../models/LoadingSheet')
+const LoadingSheet = require('../models/LoadingSheet');
+const Bowsers = require('../models/Bowsers');
+const { calculateQty } = require('../utils/calibration');
+const TripSheets = require('../models/TripSheets');
 
 const checkExistingTrip = async (regNo) => {
     const bowser = await Bowser.findOne({ regNo });
@@ -231,6 +234,36 @@ router.get('/find-sheet-id-by-userId/:id', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.post('/settle/:id', async (req, res) => {
+    let id = req.params.id;
+    let { chamberwiseDipList, userDetails } = req.body;
+    try {
+        let tripsheet = await TripSheet.findById(new mongoose.Types.ObjectId(id));
+        if (!tripsheet) {
+            throw new Error(`can't find the trip sheet`);
+        }
+        let bowserRegNo = tripsheet.bowser.regNo;
+        let bowser = await Bowsers.findOne({ regNo: bowserRegNo });
+        if (!bowser) {
+            throw new Error(`can't find the bowser`);
+        }
+        for (const dip of chamberwiseDipList) {
+            if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
+                dip.qty = calculateQty(bowser.chambers, dip.chamberId, dip.levelHeight);
+            }
+        }
+
+        // Update the tripsheet with the new chamberwiseDipList
+        tripsheet.settelment.details.chamberwiseDipList = chamberwiseDipList;
+        await tripsheet.save(); // Save the updated tripsheet
+
+        res.status(200).json({ message: 'Settlement processed successfully', tripsheet });
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({ message: error.message });
     }
 });
 

@@ -22,7 +22,7 @@ const tripSheetSchema = new mongoose.Schema({
         pumpEndReading: { type: Number, required: true },
         chamberwiseDipList: {
             type: [
-                { chamberId: String, levelHeight: String, qty: String }
+                { chamberId: String, levelHeight: Number, qty: Number }
             ],
             _id: false,
         },
@@ -34,7 +34,7 @@ const tripSheetSchema = new mongoose.Schema({
         },
     },
     fuelingAreaDestination: { type: String, required: false },
-    proposedDepartureTime: { type: String, required: false },
+    proposedDepartureTime: { type: Date, required: false },
     loading: {
         sheetId: { type: mongoose.Schema.Types.ObjectId, ref: 'LoadingSheet', required: true },
         quantityByDip: { type: Number, required: true },
@@ -59,7 +59,7 @@ const tripSheetSchema = new mongoose.Schema({
         type: {
             dateTime: { type: Date },
             details: {
-                pumpReading: { type: String },
+                pumpReading: { type: Number },
                 chamberwiseDipList: {
                     type: [
                         { chamberId: String, levelHeight: Number, qty: Number }

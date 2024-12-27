@@ -29,8 +29,8 @@ router.get('/', async (req, res) => {
         ];
     }
 
-    if (tripSheetId) {
-        filter['tripSheetId'] = { $regex: tripSheetId, $options: 'i' };
+    if (tripSheetId && tripSheetId !== null && tripSheetId !== undefined) {
+        filter['tripSheetId'] = Number(tripSheetId);
     }
 
     if (driverName) {
@@ -49,13 +49,12 @@ router.get('/', async (req, res) => {
 
 
     if (category !== undefined && category !== 'all') {
-        console.log(category)
         filter['category'] = category;
     }
 
     const sortOrder = order === 'asc' ? 1 : -1;
 
-    console.log(filter)
+    console.log("filter: ", filter)
 
     try {
         const records = await FuelingTransaction.find(filter, {
@@ -84,6 +83,7 @@ router.get('/', async (req, res) => {
                 currentPage: Number(page),
                 records,
             });
+            console.log(records.length)
         }
     } catch (error) {
         console.error('Error fetching fueling records:', error);

@@ -14,7 +14,7 @@ const fuelingTransactionSchema = new mongoose.Schema({
     },
     party: { type: String, require: true, default: "Own" },
     odometer: { type: String },
-    tripSheetId: { type: String },
+    tripSheetId: { type: Number },
     vehicleNumberPlateImage: { type: String, required: false },
     vehicleNumber: { type: String, required: false },
     driverId: { type: String, required: false },
@@ -32,7 +32,7 @@ const fuelingTransactionSchema = new mongoose.Schema({
             message: 'Quantity type must be either Full or Part'
         }
     },
-    fuelQuantity: { type: String, required: false },
+    fuelQuantity: { type: Number, required: false },
     gpsLocation: {
         type: String, required: false,
         validate: {
