@@ -239,7 +239,7 @@ router.get('/find-sheet-id-by-userId/:id', async (req, res) => {
 
 router.post('/settle/:id', async (req, res) => {
     let id = req.params.id;
-    let { chamberwiseDipList, userDetails } = req.body;
+    let { chamberwiseDipList, pumpReading, dateTime, userDetails } = req.body;
     try {
         let tripsheet = await TripSheet.findById(new mongoose.Types.ObjectId(id));
         if (!tripsheet) {
@@ -252,13 +252,18 @@ router.post('/settle/:id', async (req, res) => {
         }
         for (const dip of chamberwiseDipList) {
             if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
-                dip.qty = calculateQty(bowser.chambers, dip.chamberId, dip.levelHeight);
+                dip.qty = calculateQty(bowser.chambers, dip.chamberId, dip.levelHeight).toFixed(2);
             }
         }
 
         // Update the tripsheet with the new chamberwiseDipList
+        tripsheet.settelment.dateTime = dateTime;
         tripsheet.settelment.details.chamberwiseDipList = chamberwiseDipList;
+        tripsheet.settelment.details.pumpReading = pumpReading;
+        tripsheet.settelment.settled = true;
         await tripsheet.save(); // Save the updated tripsheet
+        console.log(tripsheet.settelment)
+        console.log(tripsheet.settelment.details.chamberwiseDipList)
 
         res.status(200).json({ message: 'Settlement processed successfully', tripsheet });
     } catch (error) {

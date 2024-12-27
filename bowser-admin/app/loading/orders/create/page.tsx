@@ -28,6 +28,7 @@ export default function CreateLoadingOrderPage() {
     // Local form fields
     const [regNo, setRegNo] = useState("");
     const [loadingDesc, setLoadingDesc] = useState("");
+    const [loadingLocation, setLoadingLocation] = useState("");
 
     // Admin user data from localStorage
     const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
@@ -35,6 +36,7 @@ export default function CreateLoadingOrderPage() {
     // Loading & error states
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
     const [searchModalConfig, setSearchModalConfig] = useState<{
         isOpen: boolean;
         title: string;
@@ -76,6 +78,7 @@ export default function CreateLoadingOrderPage() {
             const body = {
                 regNo,
                 loadingDesc,
+                loadingLocation,
                 bccAuthorizedOfficer: {
                     id: adminUser?.userId ?? "", // or adminUser?._id
                     name: adminUser?.name ?? "",
@@ -183,6 +186,15 @@ export default function CreateLoadingOrderPage() {
                                 placeholder="Description"
                                 value={loadingDesc}
                                 onChange={(e) => setLoadingDesc(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex flex-col space-y-1">
+                            <Label htmlFor="loadingLocation">Loading Location</Label>
+                            <Input
+                                id="loadingLocation"
+                                placeholder="Bowser Control Center or Petrol pump"
+                                value={loadingLocation}
+                                onChange={(e) => setLoadingLocation(e.target.value)}
                             />
                         </div>
 

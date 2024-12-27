@@ -102,7 +102,7 @@ async function sendBulkNotifications({ groups: groups = [], recipients: recipien
         const groupRecipients = await PushSubscription.find({
             groups: { $in: groups },
         }).select('mobileNumber userId -_id'); // Fetch only mobileNumber and userId fields
-
+        console.log(groupRecipients)
         // Add group recipients to the list
         allRecipients.push(...groupRecipients.map((rec) => ({
             mobileNumber: rec.mobileNumber,

@@ -69,7 +69,7 @@ const tripSheetSchema = new mongoose.Schema({
                 totalQty: { type: Number },
             },
             settled: { type: Boolean, default: false },
-        }, require: false
+        }, _id: false
     },
     posted: { type: Boolean, default: false },
 });

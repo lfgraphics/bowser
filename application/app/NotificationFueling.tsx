@@ -54,7 +54,7 @@ const NotificationFuelingScreen = () => {
     const colorScheme = useColorScheme();
     const [vehicleNumberPlateImage, setVehicleNumberPlateImage] = useState<string | null>(null);
     const [fuelMeterImage, setFuelMeterImage] = useState<string[] | null>(null);
-    const [odometer, setOdodmeter] = useState<Number | null>(null);
+    const [odometer, setOdodmeter] = useState<string>('');
     const [fuelQuantity, setFuelQuantity] = useState<string>(quantity);
     const [driverMobileNo, setDriverMobileNo] = useState(driverMobile);
     const [gpsLocation, setGpsLocation] = useState('');
@@ -145,7 +145,7 @@ const NotificationFuelingScreen = () => {
         if (currentGpsLocation) {
             const formData: FormData = {
                 party,
-                odometer,
+                odometer: Number(odometer),
                 orderId,
                 category,
                 vehicleNumberPlateImage,
@@ -387,8 +387,6 @@ const NotificationFuelingScreen = () => {
                                     ref={vehicleNumberInputRef}
                                     onPress={() => !vehicleNumberPlateImage && openNumberPlateCamera()}
                                     style={[styles.input, { color: colors.text }]}
-                                    placeholder={'5678'}
-                                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                                     value={vehicleNumber}
                                     returnKeyType="next"
                                     onSubmitEditing={() => odometerInputRef.current?.focus()}
@@ -402,10 +400,8 @@ const NotificationFuelingScreen = () => {
                                 ref={odometerInputRef}
                                 onPress={() => !vehicleNumberPlateImage && openNumberPlateCamera()}
                                 style={[styles.input, { color: colors.text }]}
-                                placeholder={'4567835'}
-                                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                                value={String(odometer)}
-                                onChangeText={(text) => { setOdodmeter(Number(text)); }}
+                                value={odometer}
+                                onChangeText={(text) => { setOdodmeter(text); }}
                                 returnKeyType="next"
                                 keyboardType="number-pad"
                                 onSubmitEditing={() => driverIdInputRef.current?.focus()}
@@ -418,8 +414,6 @@ const NotificationFuelingScreen = () => {
                                 readOnly
                                 ref={partyNameInputRef}
                                 style={[styles.input, { color: colors.text }]}
-                                placeholder={`रिलायंक/ Flipkart`}
-                                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                                 value={party}
                                 returnKeyType="next"
                                 onSubmitEditing={() => driverIdInputRef.current?.focus()}
@@ -437,8 +431,6 @@ const NotificationFuelingScreen = () => {
                                     <TextInput
                                         ref={driverIdInputRef}
                                         style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                                        placeholder={`0246`}
-                                        placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                                         value={driverId}
                                         keyboardType="default"
                                         onSubmitEditing={() => driverNameInputRef.current?.focus()}
@@ -453,8 +445,6 @@ const NotificationFuelingScreen = () => {
                                 readOnly
                                 ref={driverNameInputRef}
                                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                                placeholder="Enter driver name"
-                                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                                 value={driverName}
                                 returnKeyType="next"
                                 onSubmitEditing={() => driverMobileInputRef.current?.focus()}
@@ -467,8 +457,6 @@ const NotificationFuelingScreen = () => {
                                 readOnly
                                 ref={driverMobileInputRef}
                                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                                placeholder="Enter mobile number"
-                                placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                                 keyboardType="phone-pad"
                                 value={driverMobileNo}
                                 onChangeText={setDriverMobileNo}
@@ -507,8 +495,6 @@ const NotificationFuelingScreen = () => {
                                     ref={fuelQuantityInputRef}
                                     readOnly
                                     style={[styles.input, styles.quarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                                    placeholder="Quantity type"
-                                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                                     value={quantityType == "Full" ? "फुल" : "पार्ट"}
                                     returnKeyType="next"
                                     onSubmitEditing={() => fuelQuantityInputRef.current?.focus()}
@@ -517,8 +503,6 @@ const NotificationFuelingScreen = () => {
                                 <TextInput
                                     ref={fuelQuantityInputRef}
                                     style={[styles.input, styles.threeQuarterInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                                    placeholder="Fuel quantity"
-                                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                                     keyboardType="numeric"
                                     value={fuelQuantity == "0" ? "" : fuelQuantity}
                                     returnKeyType="done"
@@ -535,8 +519,6 @@ const NotificationFuelingScreen = () => {
                                     readOnly
                                     ref={adminIdInputRef}
                                     style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                                    placeholder="5"
-                                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                                     keyboardType="default"
                                     value={allocationAdminId}
                                     returnKeyType="next"
@@ -547,8 +529,6 @@ const NotificationFuelingScreen = () => {
                                     readOnly
                                     ref={adminNameInputRef}
                                     style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                                    placeholder="Enter Allocation Admin Name"
-                                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                                     keyboardType="default"
                                     value={allocationAdminName}
                                     returnKeyType="next"

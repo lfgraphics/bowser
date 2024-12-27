@@ -5,6 +5,7 @@ const loadingOrderSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now, timezone: "Asia/Kolkata" },
     regNo: { type: String, require: true, ref:'Bowser' },
     loadingDesc: { type: String, require: false },
+    loadingLocation: { type: String, require: true },
     bccAuthorizedOfficer: {
         id: { type: String, required: true },
         name: { type: String, required: true }

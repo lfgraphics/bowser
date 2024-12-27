@@ -50,6 +50,7 @@ export async function login (
       if (response.data.user.phoneNumber) {
         await registerPushSubscription(
           response.data.user.phoneNumber,
+          response.data.user.userId,
           response.data.user.roles
         )
       }

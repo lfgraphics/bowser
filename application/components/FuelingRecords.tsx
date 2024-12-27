@@ -26,7 +26,7 @@ interface DispensesRecord {
 }
 
 const FuelingRecords: React.FC = () => {
-    const [tripSheetId, setTripSheetId] = useState<string | null>(null);
+    const [tripSheetId, setTripSheetId] = useState<number | null>(null);
     const [records, setRecords] = useState<DispensesRecord[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     // const { colors } = useTheme();

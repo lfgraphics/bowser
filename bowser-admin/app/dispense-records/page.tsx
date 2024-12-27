@@ -35,7 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { formatDate } from "@/lib/utils";
 
-const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: string, allocator: string } }) => {
+const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: number, allocator: string } }) => {
     const tripNumber = searchParams.tripNumber;
     const allocator = searchParams.allocator;
 
@@ -44,12 +44,12 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
     const [totalRecords, setTotalRecords] = useState();
     const [currentPage, setCurrentPage] = useState(1);
     const [category, setCategory] = useState('all');
-    const [filter, setFilter] = useState({ bowserNumber: "", driverName: "", tripSheetId: tripNumber, verified: "all", vehicleNo: "" });
+    const [filter, setFilter] = useState({ bowserNumber: "", driverName: "", tripSheetId: Number(tripNumber), verified: "all", vehicleNo: "" });
     const [sortBy, setSortBy] = useState("fuelingDateTime");
     const [order, setOrder] = useState("desc");
     const [localBowserNumber, setLocalBowserNumber] = useState("");
     const [localDriverName, setLocalDriverName] = useState("");
-    const [localTripSheetId, setLocalTripSheetId] = useState(tripNumber);
+    const [localTripSheetId, setLocalTripSheetId] = useState<number | undefined>(tripNumber);
     const [localVehicleNo, setLocalVehicleNo] = useState("");
     const [limit, setLimit] = useState(20);
     const [loading, setLoading] = useState(true);
@@ -76,21 +76,22 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
     const fetchRecords = async () => {
         setLoading(true);
         try {
-            const response = await axios.get("https://bowser-backend-2cdr.onrender.com/listDispenses", { //https://bowser-backend-2cdr.onrender.com
-                params: {
-                    allocator,
-                    page: currentPage,
-                    limit: limit,
-                    sortBy,
-                    order,
-                    bowserNumber: filter.bowserNumber,
-                    driverName: filter.driverName,
-                    tripSheetId: filter.tripSheetId,
-                    vehicleNo: filter.vehicleNo,
-                    verified: verificationStatus,
-                    category,
-                },
-            });
+            let params = {
+                allocator,
+                page: currentPage,
+                limit: limit,
+                sortBy,
+                order,
+                bowserNumber: filter.bowserNumber,
+                driverName: filter.driverName,
+                tripSheetId: Number(filter.tripSheetId) || null,
+                vehicleNo: filter.vehicleNo,
+                verified: verificationStatus,
+                category,
+            };
+            console.log('params: ', params)
+            const response = await axios.get(`${BASE_URL}/listDispenses`, { params: params });
+            console.log('records: ', response.data.records)
 
             setRecords(response.data.records);
             setTotalPages(response.data.totalPages);
@@ -241,11 +242,11 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
                 <Loading />
             )}
             <Toaster />
-            <div className="bigScreen bg-background z-10 hidden lg:block sticky top-0 pt-[60px] pb-2">
-                <div className="mb-4 flex flex-col gap-3 justify-between  sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+            <div className="lg:block top-0 z-10 sticky hidden bg-background pt-[60px] pb-2 bigScreen">
+                <div className="flex sm:flex-row flex-col justify-between gap-3 sm:space-x-2 space-y-2 sm:space-y-0 mb-4">
                     {/* Sort By Dropdown */}
                     <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full">
+                        <SelectTrigger className="flex justify-between items-center p-2 border rounded w-full">
                             <SelectValue placeholder="Sort By" />
                         </SelectTrigger>
                         <SelectContent>
@@ -257,7 +258,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
 
                     {/* Order Dropdown */}
                     <Select value={order} onValueChange={setOrder}>
-                        <SelectTrigger className="flex items-center justify-between border rounded p-2  w-full">
+                        <SelectTrigger className="flex justify-between items-center p-2 border rounded w-full">
                             <SelectValue placeholder="Order" />
                         </SelectTrigger>
                         <SelectContent>
@@ -266,7 +267,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
                         </SelectContent>
                     </Select>
                     <Select onValueChange={setVerificationStatus}>
-                        <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full">
+                        <SelectTrigger className="flex justify-between items-center p-2 border rounded w-full">
                             <SelectValue placeholder="Verification Status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -276,7 +277,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
                         </SelectContent>
                     </Select>
                     <Select onValueChange={setCategory}>
-                        <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full">
+                        <SelectTrigger className="flex justify-between items-center p-2 border rounded w-full">
                             <SelectValue className="text-muted" placeholder="Category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -286,9 +287,9 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
                             <SelectItem value="Bulk Sale">Bulk Sale</SelectItem>
                         </SelectContent>
                     </Select>
-                    <div className="flex items-center justify-between min-w-[200px]">Records limit <Input type="number" className="w-20 ml-4" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
+                    <div className="flex justify-between items-center min-w-[200px]">Records limit <Input type="number" className="ml-4 w-20" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
                 </div>
-                <div className="mb-4 flex flex-col justify-between sm:flex-row flex-wrap gap-3 sm:space-x-2 space-y-2 sm:space-y-0">
+                <div className="flex sm:flex-row flex-col flex-wrap justify-between gap-3 sm:space-x-2 space-y-2 sm:space-y-0 mb-4">
                     <Input
                         placeholder="Filter by Bowser Number"
                         value={localBowserNumber}
@@ -312,20 +313,20 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
                         className="w-full sm:w-auto"
                     />
                     {/* <DatePickerWithRange onDateChange={handleDateChange} /> */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex justify-between items-center">
                         <Input
                             placeholder="Filter by Trip Sheet Id/ Number"
                             value={localTripSheetId}
-                            onChange={(e) => setLocalTripSheetId(e.target.value)}
+                            onChange={(e) => setLocalTripSheetId(Number(e.target.value))}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") {
-                                    setFilter({ ...filter, tripSheetId: localTripSheetId });
+                                    setFilter({ ...filter, tripSheetId: Number(localTripSheetId) });
                                 }
                             }}
                             className="w-full sm:w-auto"
                         />
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex justify-between items-center">
                         <Input
                             placeholder="Filter by Vehicle Number"
                             value={localVehicleNo}
@@ -338,7 +339,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
                             className="w-full sm:w-auto"
                         />
                     </div>
-                    <div className="flex items-center justify-between text-muted-foreground font-[200]">{records.length} out of {totalRecords} records </div>
+                    <div className="flex justify-between items-center font-[200] text-muted-foreground">{records.length} out of {totalRecords} records </div>
                     <Button variant="outline" onClick={toggleSelectAll}>
                         {selectAll ? <ListX size={32} /> : <ListChecks size={32} />}
                     </Button>
@@ -353,14 +354,14 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
                     </Button>
                 </div>
             </div>
-            <Accordion type="single" collapsible className="block lg:hidden smallScreen bg-background z-10 top-0 py-2">
+            <Accordion type="single" collapsible className="block top-0 z-10 lg:hidden bg-background py-2 smallScreen">
                 <AccordionItem value="item-1">
                     <AccordionTrigger>Filters and sorting</AccordionTrigger>
                     <AccordionContent>
-                        <div className="mb-4 flex flex-col sm:flex-row flex-wrap sm:space-x-2 space-y-2 sm:space-y-0 w-full">
+                        <div className="flex sm:flex-row flex-col flex-wrap sm:space-x-2 space-y-2 sm:space-y-0 mb-4 w-full">
                             {/* Sort By Dropdown */}
                             <Select value={sortBy} onValueChange={setSortBy}>
-                                <SelectTrigger className="flex items-center justify-between border rounded p-2  w-full self-center">
+                                <SelectTrigger className="flex justify-between items-center p-2 border rounded w-full self-center">
                                     <SelectValue placeholder="Sort By" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -372,7 +373,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
 
                             {/* Order Dropdown */}
                             <Select value={order} onValueChange={setOrder}>
-                                <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full self-center">
+                                <SelectTrigger className="flex justify-between items-center p-2 border rounded w-full self-center">
                                     <SelectValue placeholder="Order" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -381,7 +382,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
                                 </SelectContent>
                             </Select>
                             <Select onValueChange={setVerificationStatus}>
-                                <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full self-center">
+                                <SelectTrigger className="flex justify-between items-center p-2 border rounded w-full self-center">
                                     <SelectValue placeholder="Verification Status" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -391,7 +392,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
                                 </SelectContent>
                             </Select>
                             <Select onValueChange={setCategory}>
-                                <SelectTrigger className="flex items-center justify-between border rounded p-2 w-full">
+                                <SelectTrigger className="flex justify-between items-center p-2 border rounded w-full">
                                     <SelectValue className="text-muted" placeholder="Fueling Type" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -402,7 +403,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="mb-4 flex flex-col gap-3 justify-between sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 flex-wrap">
+                        <div className="flex sm:flex-row flex-col flex-wrap justify-between gap-3 sm:space-x-2 space-y-2 sm:space-y-0 mb-4">
                             <Input
                                 placeholder="Filter by Bowser Number"
                                 value={localBowserNumber}
@@ -439,16 +440,16 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
                             <Input
                                 placeholder="Filter by Trip Sheet Id/ Number"
                                 value={localTripSheetId}
-                                onChange={(e) => setLocalTripSheetId(e.target.value)}
+                                onChange={(e) => setLocalTripSheetId(Number(e.target.value))}
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") {
-                                        setFilter({ ...filter, tripSheetId: localTripSheetId });
+                                        setFilter({ ...filter, tripSheetId: Number(localTripSheetId) });
                                     }
                                 }}
                                 className="w-full sm:w-auto"
                             />
-                            <div className="flex items-center justify-between min-w-[200px] max-w-full">Records limit <Input type="number" className="w-20" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
-                            <div className="flex items-center justify-between text-gray-300 font-[200]">Total found record{records.length > 1 ? "s" : ""} {records.length} out of {totalRecords} records </div>
+                            <div className="flex justify-between items-center min-w-[200px] max-w-full">Records limit <Input type="number" className="w-20" value={limit} onChange={(e) => setLimit(Number(e.target.value))}></Input> </div>
+                            <div className="flex justify-between items-center font-[200] text-gray-300">Total found record{records.length > 1 ? "s" : ""} {records.length} out of {totalRecords} records </div>
                             <Button onClick={exportToExcel} className="w-full sm:w-auto">
                                 Export to Excel
                             </Button>
@@ -503,7 +504,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: s
                             <TableCell>{record.odometer}</TableCell>
                             <TableCell>{record.quantityType}</TableCell>
                             <TableCell>{record.fuelQuantity}</TableCell>
-                            <TableCell className="flex gap-2 items-center">
+                            <TableCell className="flex items-center gap-2">
                                 <Link href={`/dispense-records/${record._id}`}>
                                     <Button variant={selectedRows.has(`${record._id}`) ? "secondary" : "outline"} size="sm">
                                         <Eye />

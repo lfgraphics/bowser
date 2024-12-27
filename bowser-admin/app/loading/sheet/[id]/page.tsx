@@ -405,7 +405,7 @@ export default function LoadingSheetPage() {
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         {/* Global Fields */}
                         <div className="p-2 border rounded">
-                            <div className="flex flex-col mb-2">
+                            <div className="flex flex-col gap-2 mb-4">
                                 <Label>Odometer</Label>
                                 <Input
                                     type="number"
@@ -415,17 +415,18 @@ export default function LoadingSheetPage() {
                                 />
                             </div>
 
-                            <div className="flex flex-col mb-2">
+                            <div className="flex flex-col gap-2 mb-4">
                                 <Label>Fueling Machine</Label>
                                 <Input
+                                    placeholder="Id or petrol pump desctioption"
                                     value={fuleingMachine}
                                     onChange={(e) => setFuleingMachine(e.target.value)}
                                     required
                                 />
                             </div>
 
-                            <div className="flex flex-col mb-2">
-                                <Label>Pump Reading (Before)</Label>
+                            <div className="flex flex-col gap-2 mb-4">
+                                <Label>Bowser Pump Reading (Before loading)</Label>
                                 <Input
                                     type="number"
                                     value={pumpReadingBefore}
@@ -433,8 +434,8 @@ export default function LoadingSheetPage() {
                                 />
                             </div>
 
-                            <div className="flex flex-col mb-2">
-                                <Label>Pump Reading (After)</Label>
+                            <div className="flex flex-col gap-2 mb-4">
+                                <Label>Bowser Pump Reading (After loading done)</Label>
                                 <Input
                                     type="number"
                                     value={pumpReadingAfter}
@@ -446,9 +447,9 @@ export default function LoadingSheetPage() {
 
                         {/* Chamberwise Dip BEFORE */}
                         <div className="p-2 border rounded">
-                            <h4 className="mb-2 font-semibold">Chamberwise Dip (Before)</h4>
+                            <h4 className="mb-2 font-semibold">Chamberwise Dip (Before loading)</h4>
                             {chamberwiseDipListBefore.map((dip, idx) => (
-                                <div key={dip.chamberId} className="flex space-x-2 mb-2">
+                                <div key={dip.chamberId} className="flex flex-col space-y-1 mb-2">
                                     <Label className="w-24">{dip.chamberId}</Label>
                                     <Input
                                         type="number"
@@ -472,9 +473,9 @@ export default function LoadingSheetPage() {
 
                         {/* Chamberwise Dip AFTER */}
                         <div className="p-2 border rounded">
-                            <h4 className="mb-2 font-semibold">Chamberwise Dip (After)</h4>
+                            <h4 className="mb-2 font-semibold">Chamberwise Dip (After loading done)</h4>
                             {chamberwiseDipListAfter.map((dip, idx) => (
-                                <div key={dip.chamberId} className="flex space-x-2 mb-2">
+                                <div key={dip.chamberId} className="flex flex-col space-y-1 mb-2">
                                     <Label className="w-24">{dip.chamberId}</Label>
                                     <Input
                                         type="number"
@@ -503,7 +504,7 @@ export default function LoadingSheetPage() {
                                 <div key={ch.chamberId} className="mb-4">
                                     <p className="font-semibold">{ch.chamberId}</p>
                                     {ch.seals.map((seal, sealIdx) => (
-                                        <div key={sealIdx} className="flex space-x-2 mb-2">
+                                        <div key={sealIdx} className="flex flex-col space-y-1 mb-2">
                                             <Label className="w-16">Seal #{sealIdx + 1}</Label>
                                             <Input
                                                 placeholder="Seal ID"
@@ -527,23 +528,39 @@ export default function LoadingSheetPage() {
                                                 <img
                                                     src={seal.sealPhoto}
                                                     alt="Seal Photo"
-                                                    className="border w-16 h-16"
+                                                    className="border w-full h-auto"
                                                 />
                                             )}
-
-                                            <Button
-                                                variant="outline"
-                                                onClick={async (e) => {
-                                                    e.preventDefault();
-                                                    await handleSealPhoto(chamberIdx, sealIdx);
-                                                }}
-                                            >
-                                                {seal.sealPhoto ? "Retake Photo" : "Take Photo"}
-                                            </Button>
+                                            <div className="flex flex-row justify-around w-full">
+                                                <Button variant="secondary"
+                                                    className="flex-[0.4]"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        setChamberwiseSealList((prev) => {
+                                                            const copy = [...prev];
+                                                            copy[chamberIdx] = {
+                                                                ...copy[chamberIdx],
+                                                                seals: copy[chamberIdx].seals.filter((_, index) => index !== sealIdx),
+                                                            };
+                                                            return copy;
+                                                        });
+                                                    }}>- Remove</Button>
+                                                <Button
+                                                    className="flex-[0.4]"
+                                                    variant="default"
+                                                    onClick={async (e) => {
+                                                        e.preventDefault();
+                                                        await handleSealPhoto(chamberIdx, sealIdx);
+                                                    }}
+                                                >
+                                                    {seal.sealPhoto ? "Retake Photo" : "Take Photo"}
+                                                </Button>
+                                            </div>
                                         </div>
                                     ))}
                                     <Button
                                         variant="outline"
+                                        className="w-full"
                                         onClick={(e) => {
                                             e.preventDefault();
                                             setChamberwiseSealList((prev) => {
@@ -573,7 +590,7 @@ export default function LoadingSheetPage() {
                                     <p className="font-semibold">{ch.chamberId}</p>
                                     {ch.slips.map((slip, slipIdx) => (
                                         <div key={slipIdx} className="flex flex-col mb-2">
-                                            <div className="flex space-x-2">
+                                            <div className="flex flex-col space-y-1 mb-2">
                                                 <Input
                                                     type="number"
                                                     placeholder="Qty"
@@ -597,23 +614,42 @@ export default function LoadingSheetPage() {
                                                     <img
                                                         src={slip.slipPhoto}
                                                         alt="Slip Photo"
-                                                        className="border w-16 h-16"
+                                                        className="border w-full h-auto"
                                                     />
                                                 )}
 
-                                                <Button
-                                                    variant="outline"
-                                                    onClick={async (e) => {
-                                                        e.preventDefault();
-                                                        await handleSlipPhoto(chamberIdx, slipIdx);
-                                                    }}
-                                                >
-                                                    {slip.slipPhoto ? "Retake Photo" : "Take Photo"}
-                                                </Button>
+                                                <div className="flex flex-row justify-around w-full">
+                                                    <Button variant="secondary"
+                                                        className="flex-[0.4]"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            setPumpSlips((prev) => {
+                                                                const copy = [...prev];
+                                                                copy[chamberIdx] = {
+                                                                    ...copy[chamberIdx],
+                                                                    slips: [
+                                                                        ...copy[chamberIdx].slips.filter((_, index) => index !== slipIdx),
+                                                                    ],
+                                                                };
+                                                                return copy;
+                                                            });
+                                                        }}>- Remove</Button>
+                                                    <Button
+                                                        className="flex-[0.4]"
+                                                        variant="default"
+                                                        onClick={async (e) => {
+                                                            e.preventDefault();
+                                                            await handleSlipPhoto(chamberIdx, slipIdx);
+                                                        }}
+                                                    >
+                                                        {slip.slipPhoto ? "Retake Photo" : "Take Photo"}
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
                                     <Button
+                                        className="w-full"
                                         variant="outline"
                                         onClick={(e) => {
                                             e.preventDefault();
@@ -639,14 +675,14 @@ export default function LoadingSheetPage() {
                         {/* Error Display */}
                         {error && <p className="text-red-600">{error}</p>}
 
-                        <div className="flex gap-4">
+                        <div className="flex justify-around gap-4 w-full">
                             {/* Reset */}
-                            <Button variant="outline" onClick={(e) => { e.preventDefault(); resetForm(); }} disabled={loading}>
+                            <Button variant="outline" className="flex-[0.4]" onClick={(e) => { e.preventDefault(); resetForm(); }} disabled={loading}>
                                 {loading ? "Submitting..." : "Reset"}
                             </Button>
 
                             {/* Submit */}
-                            <Button type="submit" disabled={loading}>
+                            <Button type="submit" disabled={loading} className="flex-[0.4]">
                                 {loading ? "Submitting..." : "Submit"}
                             </Button>
                         </div>

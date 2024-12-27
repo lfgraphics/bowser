@@ -9,16 +9,17 @@ const Bowsers = require('../models/Bowsers');
 // Create a new LoadingOrder
 router.post('/orders', async (req, res) => {
     try {
-        const { regNo, loadingDesc, bccAuthorizedOfficer } = req.body;
+        const { regNo, loadingDesc, loadingLocation, bccAuthorizedOfficer } = req.body;
         console.log(req.body)
 
-        if (!regNo || !loadingDesc || !bccAuthorizedOfficer || !bccAuthorizedOfficer.id || !bccAuthorizedOfficer.name) {
+        if (!regNo || !loadingLocation || !bccAuthorizedOfficer || !bccAuthorizedOfficer.id || !bccAuthorizedOfficer.name) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
         const newBowserLoadingOrder = new LoadingOrder({
             regNo,
             loadingDesc,
+            loadingLocation,
             bccAuthorizedOfficer: {
                 id: bccAuthorizedOfficer.id,
                 name: bccAuthorizedOfficer.name,
@@ -27,10 +28,11 @@ router.post('/orders', async (req, res) => {
         });
 
         try {
+            let desc = loadingDesc ? `\nDescription: ${loadingDesc}` : ""
             await newBowserLoadingOrder.save();
             await sendBulkNotifications({
                 groups: ["loadingIncharge"],
-                message: `Bowser: ${regNo}\nDescription: ${loadingDesc}\nOrdered by: ${bccAuthorizedOfficer.name} Id: ${bccAuthorizedOfficer.id}`,
+                message: `Bowser: ${regNo}\nLoad the bowser from: ${loadingLocation}${desc}\nOrdered by: ${bccAuthorizedOfficer.name} Id: ${bccAuthorizedOfficer.id}`,
                 options: {
                     title: "New Bowser Loading Order Arrived",
                     url: `/loading/sheet/${newBowserLoadingOrder._id}`,

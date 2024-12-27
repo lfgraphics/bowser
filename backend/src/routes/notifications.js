@@ -15,9 +15,18 @@ router.post('/register', async (req, res) => {
     try {
         const updatedSubscription = await PushSubscription.findOneAndUpdate(
             { mobileNumber, platform },
-            { mobileNumber, userId, subscription, platform, groups },
+            { mobileNumber, userId, subscription, groups, platform },
             { upsert: true, new: true }
         );
+
+        if (!updatedSubscription) { throw new Error(`can't register for notificatio`) } else {
+            if (platform == "web") sendWebPushNotification(userId, "You will now recieve necessar notifications on this device", options = {
+                title: "Notification Subscription Successfull",
+                url: `/`
+            }
+            )
+            if (platform == "native") sendNativePushNotification(mobileNumber, "You will now recieve necessar notifications on this device", options = { title: "Notification Subscription Successfull", })
+        }
 
         res.status(200).json({ success: true, message: 'Subscription registered successfully.', data: updatedSubscription });
     } catch (error) {
