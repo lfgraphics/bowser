@@ -185,7 +185,6 @@ export default function FuelingAllocation() {
                 searchTerm: vehicleNumber,
                 errorMessage: 'No vehicle found with the given number'
             });
-            console.log(vehicles)
             if (vehicles.length > 0) {
                 setSearchModalConfig({
                     isOpen: true,

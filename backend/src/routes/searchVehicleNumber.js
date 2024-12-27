@@ -21,10 +21,14 @@ router.get('/:vehicleNumber', async (req, res) => {
                 let driverName = driverString; // Default name is the full string
                 let lastUsedMobileNo = null;
 
-                // Fetch driver details from the drivers collection
+                // Extract ITPL number from the driver string
+                const itplMatch = driverString.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
+                const itplNumber = itplMatch ? itplMatch[0].replace(/[()]/g, '').toUpperCase() : null;
+
+                // Fetch driver details from the drivers collection using the extracted ITPL number
                 const driver = await Driver.findOne({
-                    "Name": { $regex: driverString, $options: 'i' }
-                }).exec();
+                    Name: { $regex: itplNumber, $options: 'i' }
+                });
 
                 if (driver && driver.MobileNo && Array.isArray(driver.MobileNo)) {
                     // Find the mobile number marked as LastUsed: true
