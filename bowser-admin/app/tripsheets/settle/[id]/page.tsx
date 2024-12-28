@@ -17,6 +17,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
         { chamberId: string; levelHeight: number }[]
     >([]);
     const [pumpReading, setPumpReading] = useState<number>()
+    const [odometer, setOdometer] = useState<number>()
     const [dateTime, setDateTime] = useState<string>()
 
     const checkAuth = () => {
@@ -80,6 +81,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
             await axios.post(`${BASE_URL}/tripsheet/settle/${params.id}`, {
                 chamberwiseDipList,
                 pumpReading,
+                odometer,
                 dateTime,
                 userDetails,
             });
@@ -123,9 +125,18 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
                 <Input
                     id={`pumpEndReading`}
                     type="number"
-                    placeholder="End reading"
+                    placeholder="Pump End reading"
                     value={pumpReading}
                     onChange={(e) => { setPumpReading(Number(e.target.value)) }}
+                    required
+                />
+                <Label htmlFor={`odoMeterReading`}>Bowser odometer reading</Label>
+                <Input
+                    id={`odoMeterReading`}
+                    type="number"
+                    placeholder="Odometer End reading"
+                    value={odometer}
+                    onChange={(e) => { setOdometer(Number(e.target.value)) }}
                     required
                 />
                 <Label htmlFor={`pumpEndReading`}>Settlment Date, Time</Label>

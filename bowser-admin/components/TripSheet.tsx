@@ -12,7 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { Toaster } from "@/components/ui/toaster"
 import { ArrowDown01, ArrowUp10, Check, Edit, X } from 'lucide-react';
 import axios from 'axios';
@@ -21,6 +21,8 @@ import { TripSheet, Filters, Sort } from '@/types/index';
 import { isAuthenticated } from '@/lib/auth';
 import { BASE_URL } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import { AlertDialog, AlertDialogTrigger, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel, AlertDialogContent } from '@radix-ui/react-alert-dialog';
+import { AlertDialogHeader } from './ui/alert-dialog';
 
 
 const TripSheetPage = () => {
@@ -42,19 +44,24 @@ const TripSheetPage = () => {
         tripSheetId: '',
         unsettled: false,
     });
-    const [sort, setSort] = useState<Sort>({ field: 'createdAt', order: 'desc' });
+    const [searchParam, setSearchParam] = useState<string>('');
+    const [sort, setSort] = useState<Sort>({ field: '', order: 'desc' });
     const [loading, setLoading] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
+    const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false);
+    const [settlment, setSettlment] = useState<boolean>(false);
+    const [deletingSheetId, setDeletingSheetId] = useState<string>('');
     const { toast } = useToast();
 
     useEffect(() => {
         loadSheets();
-    }, [filters, sort]);
+    }, [searchParam, settlment]);
 
     const loadSheets = async () => {
         setLoading(true);
         try {
             const response = await axios.get(`${BASE_URL}/tripsheet/all`, {
-                params: { ...filters, sortField: sort.field, sortOrder: sort.order },
+                params: { searchParam, settlment },
             });
             setSheets(response.data);
             console.log(response.data);
@@ -69,19 +76,32 @@ const TripSheetPage = () => {
         alert('This Funcitonality is nor avaliable for now')
     }
 
+    const handleDelete = async () => {
+        try {
+            await axios.delete(`${BASE_URL}/tripSheet/delete/${deletingSheetId}`);
+            setShowSuccessAlert(true);
+            window.history.back()
+        } catch (error) {
+            console.error('Error deleting Trip Sheet:', error);
+            alert(`Error deleting Trip Sheet: ${error}`);
+        } finally {
+            setShowDeleteDialog(false);
+        }
+    };
+
+    const openDeleteDialogue = (sheetId: string) => {
+        setDeletingSheetId(sheetId)
+        setShowDeleteDialog(true)
+    }
+
     return (
         <div className="bg-background p-6 text-foreground">
             <div className="flex justify-between items-start">
                 <h1 className="mb-4 font-bold text-2xl">Trip Sheets</h1>
-                {/* <Link href={`/tripsheets/create`}>
-                    <Button variant="secondary">
-                        <Plus className="mr-2" /> Create New Sheet
-                    </Button>
-                </Link> */}
             </div>
             <Toaster />
             <div className="flex space-x-4 mb-4">
-                <Input
+                {/* <Input
                     placeholder="Driver Name"
                     value={filters.driverName}
                     onChange={(e) => setFilters({ ...filters, driverName: e.target.value })}
@@ -95,8 +115,9 @@ const TripSheetPage = () => {
                     placeholder="Trip Sheet ID"
                     value={filters.tripSheetId}
                     onChange={(e) => setFilters({ ...filters, tripSheetId: e.target.value })}
-                />
-                <Select onValueChange={(value) => setFilters({ ...filters, unsettled: value === 'true' })}>
+                /> */}
+                <Input type='string' placeholder='Search...' value={searchParam} onChange={(e) => setSearchParam(e.target.value)} />
+                <Select onValueChange={(value) => setSettlment(value === 'true')}>
                     <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Select Status" />
                     </SelectTrigger>
@@ -112,9 +133,7 @@ const TripSheetPage = () => {
                 <TableHeader>
                     <TableRow>
                         <TableHead>SN</TableHead>
-                        <TableHead onClick={() => setSort({ field: 'tripSheetId', order: sort.order === 'asc' ? 'desc' : 'asc' })}>
-                            <div className='flex gap-3'>Trip Sheet ID {sort.order === "asc" ? <ArrowUp10 /> : <ArrowDown01 />}</div>
-                        </TableHead>
+                        <TableHead>Trip Sheet ID</TableHead>
                         <TableHead>Location</TableHead>
                         <TableHead>Created on</TableHead>
                         <TableHead>Settled on</TableHead>
@@ -127,7 +146,6 @@ const TripSheetPage = () => {
                         <TableHead>Balance</TableHead>
                         <TableHead>Actions</TableHead>
                         <TableHead>Verified</TableHead>
-                        {/* <TableHead>Post/ed</TableHead> */}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -166,8 +184,6 @@ const TripSheetPage = () => {
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent className='bg-card'>
-                                            {/* <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                                            <DropdownMenuSeparator /> */}
                                             <DropdownMenuItem>
                                                 <Button variant="outline" className='w-full text-center'>
                                                     <Link href={`/tripsheets/settle/${sheet._id}`}>Settle</Link>
@@ -186,6 +202,9 @@ const TripSheetPage = () => {
                                             <DropdownMenuItem>
                                                 <Button disabled={sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? false : true} variant="outline" className='w-full text-center' onClick={() => postDispenses(sheet._id!)}>Post</Button>
                                             </DropdownMenuItem>
+                                            <DropdownMenuItem>
+                                                <Button disabled className='w-full' variant="destructive" onClick={() => openDeleteDialogue(sheet._id!)}>Delete</Button>
+                                            </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>
@@ -195,7 +214,38 @@ const TripSheetPage = () => {
                     )}
                 </TableBody>
             </Table>
-        </div>
+            {
+                showDeleteDialog && deletingSheetId && (
+                    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Are you sure you want to delete this trip sheet? This action cannot be undone.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogAction onClick={() => handleDelete()}>Delete</AlertDialogAction>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )
+            }
+            {
+                showSuccessAlert && (
+                    <AlertDialog open={showSuccessAlert} onOpenChange={setShowSuccessAlert}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Success!</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Operation completed successfully.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogAction onClick={() => setShowSuccessAlert(false)}>Close</AlertDialogAction>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )
+            }
+        </div >
     );
 };
 

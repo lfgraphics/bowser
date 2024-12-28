@@ -59,6 +59,7 @@ const tripSheetSchema = new mongoose.Schema({
         type: {
             dateTime: { type: Date },
             details: {
+                odometer: { type: Number },
                 pumpReading: { type: Number },
                 chamberwiseDipList: {
                     type: [
@@ -131,36 +132,6 @@ tripSheetSchema.pre('updateOne', async function (next) {
             const dispensedQuantity = this.dispenses?.reduce((sum, dispense) => sum + (dispense.fuelQuantity || 0), 0) || 0;
             this.saleQty = dispensedQuantity;  // "Sale" is how much was dispensed
             this.balanceQty = this.totalLoadQuantity - this.saleQty;
-
-            // 2. If settlement is being toggled to `true`, calculate DIP quantities
-            //    Check the update object if we are setting settelment.settled = true
-            if (
-                (update.$set?.['settelment.settled'] === true) ||
-                (update.settelment && update.settelment.settled === true)
-            ) {
-                // Make sure we have a Bowser
-                const bowserChambers = await Bowser.findOne({ regNo: tripSheet.bowser.regNo });
-                if (!bowserChambers) {
-                    console.error('Bowser not found for regNo:', tripSheet.bowser.regNo);
-                } else {
-                    // If the update also sets chamberwiseDipList, use that new list;
-                    // otherwise use what's already in `tripSheet`.
-                    const newChamberwiseDipList =
-                        update.$set?.['settelment.details.chamberwiseDipList'] ||
-                        tripSheet.settelment?.details?.chamberwiseDipList ||
-                        [];
-
-                    for (const dip of newChamberwiseDipList) {
-                        if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
-                            dip.qty = calculateQty(bowserChambers, dip.chamberId, dip.levelHeight);
-                        }
-                    }
-
-                    // Apply the updated DIP array back to tripSheet before saving,
-                    // so that the doc in the DB is actually updated.
-                    tripSheet.settelment.details.chamberwiseDipList = newChamberwiseDipList;
-                }
-            }
 
             await tripSheet.save();
         }

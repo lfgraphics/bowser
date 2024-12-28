@@ -115,17 +115,29 @@ router.post('/create', async (req, res) => {
 
 router.get('/all', async (req, res) => {
     const {
-        regNo,
-        unsettled,
+        searchParam,
+        settlment,
         page = 1,
         limit = 20,
-        sortField = 'createdAt',
+        sortField = 'tripSheetId',
         sortOrder = 'desc'
     } = req.query;
 
     const filter = {};
-    if (regNo) filter['bowser.regNo'] = { $regex: regNo, $options: 'i' };
-    if (unsettled === 'true') filter['settelment.settled'] = false;
+    if (searchParam) {
+        filter.$or = [
+            { 'bowser.regNo': { $regex: searchParam, $options: 'i' } },
+            { 'bowser.driver.name': { $regex: searchParam, $options: 'i' } },
+            { tripSheetId: Number(searchParam) },
+            { fuelingAreaDestination: { $regex: searchParam, $options: 'i' } }
+        ];
+    }
+    if (settlment === 'true') {
+        filter['$or'] = [
+            { 'settelment.settled': false },
+            { 'settelment.settled': { $exists: false } }
+        ];
+    }
 
     try {
         const tripSheets = await TripSheet.find(filter)
@@ -250,7 +262,7 @@ router.get('/find-sheet-id-by-userId/:id', async (req, res) => {
 
 router.post('/settle/:id', async (req, res) => {
     let id = req.params.id;
-    let { chamberwiseDipList, pumpReading, dateTime, userDetails } = req.body;
+    let { chamberwiseDipList, pumpReading, dateTime, odometer, userDetails } = req.body;
     try {
         let tripsheet = await TripSheet.findById(new mongoose.Types.ObjectId(id));
         if (!tripsheet) {
@@ -273,11 +285,12 @@ router.post('/settle/:id', async (req, res) => {
             return acc + parseFloat(chamber.qty);
         }, 0);
         let settlement = {
-            dateTime: dateTime,
+            dateTime,
             details: {
-                chamberwiseDipList: chamberwiseDipList,
-                pumpReading: pumpReading,
+                chamberwiseDipList,
+                pumpReading,
                 totalQty,
+                odometer,
                 settled: true
             }
         };
