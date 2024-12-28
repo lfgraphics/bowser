@@ -12,6 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { Toaster } from "@/components/ui/toaster"
 import { ArrowDown01, ArrowUp10, Check, Edit, X } from 'lucide-react';
 import axios from 'axios';
@@ -64,6 +65,10 @@ const TripSheetPage = () => {
         }
     };
 
+    const postDispenses = async (sheetId: string) => {
+        alert('This Funcitonality is nor avaliable for now')
+    }
+
     return (
         <div className="bg-background p-6 text-foreground">
             <div className="flex justify-between items-start">
@@ -110,18 +115,19 @@ const TripSheetPage = () => {
                         <TableHead onClick={() => setSort({ field: 'tripSheetId', order: sort.order === 'asc' ? 'desc' : 'asc' })}>
                             <div className='flex gap-3'>Trip Sheet ID {sort.order === "asc" ? <ArrowUp10 /> : <ArrowDown01 />}</div>
                         </TableHead>
+                        <TableHead>Location</TableHead>
                         <TableHead>Created on</TableHead>
                         <TableHead>Settled on</TableHead>
                         <TableHead>Bowser Reg No</TableHead>
                         <TableHead>Driver Name</TableHead>
                         <TableHead>Driver Mobile</TableHead>
-                        <TableHead>Loaded Ltr</TableHead>
+                        <TableHead>Loaded</TableHead>
                         <TableHead>Dispenses</TableHead>
-                        <TableHead>Sold Ltr</TableHead>
-                        <TableHead>Balance Ltr</TableHead>
+                        <TableHead>Sold</TableHead>
+                        <TableHead>Balance</TableHead>
                         <TableHead>Actions</TableHead>
-                        <TableHead>Verification</TableHead>
-                        <TableHead>Post/ed</TableHead>
+                        <TableHead>Verified</TableHead>
+                        {/* <TableHead>Post/ed</TableHead> */}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -138,10 +144,11 @@ const TripSheetPage = () => {
                             <TableRow key={sheet._id}>
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>
-                                    <Link href={`/dispense-records?tripNumber=${sheet.tripSheetId}`}>
+                                    <Link href={`/dispense-records?tripNumber=${sheet.tripSheetId}`} className='text-blue-500 underline'>
                                         {sheet.tripSheetId}
                                     </Link>
                                 </TableCell>
+                                <TableCell>{sheet.fuelingAreaDestination}</TableCell>
                                 <TableCell>{`${formatDate(sheet.tripSheetGenerationDateTime ? sheet.tripSheetGenerationDateTime : sheet.createdAt)}`}</TableCell>
                                 <TableCell>{`${sheet.settelment?.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : "Un Settled"}`}</TableCell>
                                 <TableCell>{sheet.bowser.regNo}</TableCell>
@@ -152,14 +159,37 @@ const TripSheetPage = () => {
                                 <TableCell>{sheet.saleQty?.toFixed(2)}</TableCell>
                                 <TableCell>{sheet.balanceQty?.toFixed(2)}</TableCell>
                                 <TableCell className="flex space-x-2">
-                                    <Link href={`/tripsheets/edit/${sheet._id}`}>
-                                        <Button variant="ghost">
-                                            <Edit />
-                                        </Button>
-                                    </Link>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger>
+                                            <Button variant="outline" className='w-full text-center'>
+                                                Update
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent className='bg-card'>
+                                            {/* <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                                            <DropdownMenuSeparator /> */}
+                                            <DropdownMenuItem>
+                                                <Button variant="outline" className='w-full text-center'>
+                                                    <Link href={`/tripsheets/settle/${sheet._id}`}>Settle</Link>
+                                                </Button>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem>
+                                                <Button disabled variant="outline" className='w-full text-center'>
+                                                    <Link href={`/tripsheets/addition/${sheet._id}`}>Reload (+)</Link>
+                                                </Button>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem>
+                                                <Button disabled variant="outline" className='w-full text-center'>
+                                                    <Link href={`/tripsheets/add-driver/${sheet._id}`}>Add Driver</Link>
+                                                </Button>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem>
+                                                <Button disabled={sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? false : true} variant="outline" className='w-full text-center' onClick={() => postDispenses(sheet._id!)}>Post</Button>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </TableCell>
                                 <TableCell>{sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? <Check /> : (sheet.dispenses && sheet.dispenses.length > 0 ? <X /> : null)}</TableCell>
-                                <TableCell><Button disabled variant="outline">Post</Button></TableCell>
                             </TableRow>
                         ))
                     )}

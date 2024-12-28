@@ -345,6 +345,7 @@ export default function LoadingSheetPage() {
         } catch (err: any) {
             console.error("Error creating loading sheet:", err);
             setError(err.message || "Error creating loading sheet.");
+            console.log(err.missingFields)
         } finally {
             setLoading(false);
         }
@@ -375,10 +376,6 @@ export default function LoadingSheetPage() {
     // -----------------------------------------
     // 7) Rendering
     // -----------------------------------------
-    // If still loading and we have no local data
-    if (loading && !order && !bowser) {
-        return <Loading />;
-    }
 
     // If still loading but we do have data, you could show partial form, or a spinner overlay
     // if (loading) { ... optional ... }
@@ -388,17 +385,18 @@ export default function LoadingSheetPage() {
     }
 
     // If we never got an order or bowser
-    if (!order || !bowser) {
-        return <p className="p-4">No data found.</p>;
-    }
 
     return (
         <div className="mx-auto py-8 container">
-            {loading && <Loading />}
+            {(loading && !order && !bowser) && <Loading />}
+            {(!order || !bowser) &&
+                <p className="p-4">No data found.</p>
+            }
+
             <Card>
                 <CardHeader>
                     <CardTitle>
-                        Create Loading Sheet for: {order.regNo} (Order #{order._id})
+                        Create Loading Sheet for: {order?.regNo}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -418,7 +416,7 @@ export default function LoadingSheetPage() {
                             <div className="flex flex-col gap-2 mb-4">
                                 <Label>Fueling Machine</Label>
                                 <Input
-                                    placeholder="Id or petrol pump desctioption"
+                                    placeholder="Machine Id or petrol pump desctioption"
                                     value={fuleingMachine}
                                     onChange={(e) => setFuleingMachine(e.target.value)}
                                     required
@@ -528,7 +526,7 @@ export default function LoadingSheetPage() {
                                                 <img
                                                     src={seal.sealPhoto}
                                                     alt="Seal Photo"
-                                                    className="border w-full h-auto"
+                                                    className="border rounded-md w-full h-auto"
                                                 />
                                             )}
                                             <div className="flex flex-row justify-around w-full">
@@ -584,7 +582,7 @@ export default function LoadingSheetPage() {
 
                         {/* Pump Slips */}
                         <div className="p-2 border rounded">
-                            <h4 className="mb-2 font-semibold">Pump Slips</h4>
+                            <h4 className="mb-2 font-semibold">Loading Slips</h4>
                             {pumpSlips.map((ch, chamberIdx) => (
                                 <div key={ch.chamberId} className="mb-4">
                                     <p className="font-semibold">{ch.chamberId}</p>
@@ -614,7 +612,7 @@ export default function LoadingSheetPage() {
                                                     <img
                                                         src={slip.slipPhoto}
                                                         alt="Slip Photo"
-                                                        className="border w-full h-auto"
+                                                        className="border rounded-md w-full h-auto"
                                                     />
                                                 )}
 

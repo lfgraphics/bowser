@@ -7,7 +7,15 @@ const Bowser = require('../models/bowser');
 const LoadingSheet = require('../models/LoadingSheet');
 const Bowsers = require('../models/Bowsers');
 const { calculateQty } = require('../utils/calibration');
-const TripSheets = require('../models/TripSheets');
+const { sendNativePushNotification } = require('../utils/pushNotifications');
+
+const notifyDriver = async ({ phoneNumber, bowser, tripsheetId, location }) => {
+    let options = {
+        title: "नयी ट्रिप.."
+    }
+    let message = `आप को ${tripsheetId} ट्रिपशीट, और बाउज़र ${bowser} दिया गया है\nआप को ${location} जाना है`
+    await sendNativePushNotification({ mobileNumber: phoneNumber, message, options })
+}
 
 const checkExistingTrip = async (regNo) => {
     const bowser = await Bowser.findOne({ regNo });
@@ -28,6 +36,7 @@ const updateBowserDriver = async (phoneNo, regNo) => {
         { $set: { bowserId: regNo } },
         { new: true, upsert: true }
     );
+
 };
 
 const updateBowserCurrentTrip = async (regNo, tripSheetId) => {
@@ -69,6 +78,8 @@ router.post('/create', async (req, res) => {
 
         // Update Bowser with the current trip
         await updateBowserCurrentTrip(bowser.regNo, newSheet._id);
+
+        await notifyDriver({ phoneNumber: newSheet.bowser.driver[0]?.phoneNo, bowser: newSheet.bowser.regNo, tripsheetId: newSheet.tripSheetId, location: newSheet.fuelingAreaDestination })
 
         try {
             const updatedSheet = await LoadingSheet.findOneAndUpdate(
@@ -256,11 +267,22 @@ router.post('/settle/:id', async (req, res) => {
             }
         }
 
+
         // Update the tripsheet with the new chamberwiseDipList
-        tripsheet.settelment.dateTime = dateTime;
-        tripsheet.settelment.details.chamberwiseDipList = chamberwiseDipList;
-        tripsheet.settelment.details.pumpReading = pumpReading;
-        tripsheet.settelment.settled = true;
+        let totalQty = chamberwiseDipList.reduce((acc, chamber) => {
+            return acc + parseFloat(chamber.qty);
+        }, 0);
+        let settlement = {
+            dateTime: dateTime,
+            details: {
+                chamberwiseDipList: chamberwiseDipList,
+                pumpReading: pumpReading,
+                totalQty,
+                settled: true
+            }
+        };
+        console.log(totalQty);
+        tripsheet.settelment = settlement;
         await tripsheet.save(); // Save the updated tripsheet
         console.log(tripsheet.settelment)
         console.log(tripsheet.settelment.details.chamberwiseDipList)

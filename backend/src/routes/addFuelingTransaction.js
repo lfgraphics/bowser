@@ -48,7 +48,7 @@ router.post('/', async (req, res) => {
             title: "Your Order has bees successfully followed",
             data: { url: `/dispense-records/${fuelingTransaction._id.toString()}` }
         };
-        if (userId.length > 2) await sendWebPushNotification(userId, message, options)
+        if (userId.length > 2) await sendWebPushNotification({ userId, message, options })
 
     } catch (err) {
         console.error('Error saving fueling record data:', err);

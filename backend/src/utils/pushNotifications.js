@@ -19,7 +19,8 @@ webpush.setVapidDetails(
  * @param {object} [options] - Optional parameters for the notification (e.g., title, icon).
  * @returns {Promise<object>} - A promise that resolves with the result of the notification sending.
  */
-async function sendWebPushNotification(userId, message, options = {}) {
+async function sendWebPushNotification({ userId: userId, message: message, options: options = {} }) {
+    console.log(userId, message)
     try {
         const subscriptionData = await PushSubscription.findOne({ userId, platform: 'web' });
 

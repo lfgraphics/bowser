@@ -184,18 +184,25 @@ router.post('/sheet', async (req, res) => {
         } = req.body;
 
         // Validate required fields
-        if (
-            !regNo ||
-            !odoMeter ||
-            !fuleingMachine ||
-            !pumpReadingAfter ||
-            !loadingIncharge?.id ||
-            !loadingIncharge?.name ||
-            !bccAuthorizedOfficer?.orderId ||
-            !bccAuthorizedOfficer?.id ||
-            !bccAuthorizedOfficer?.name
-        ) {
-            return res.status(400).json({ error: 'Missing required fields' });
+        const missingFields = [];
+
+        if (!regNo) missingFields.push('regNo');
+        if (!odoMeter) missingFields.push('odoMeter');
+        if (!fuleingMachine) missingFields.push('fuleingMachine');
+        // if (!pumpReadingAfter) missingFields.push('pumpReadingAfter');
+        if (!loadingIncharge?.id) missingFields.push('loadingIncharge.id');
+        if (!loadingIncharge?.name) missingFields.push('loadingIncharge.name');
+        if (!bccAuthorizedOfficer?.orderId) missingFields.push('bccAuthorizedOfficer.orderId');
+        if (!bccAuthorizedOfficer?.id) missingFields.push('bccAuthorizedOfficer.id');
+        if (!bccAuthorizedOfficer?.name) missingFields.push('bccAuthorizedOfficer.name');
+
+        if (missingFields.length > 0) {
+            console.log(req.body);
+            console.log(missingFields)
+            return res.status(400).json({
+                error: 'Missing required fields',
+                missingFields: missingFields
+            });
         }
 
         const newLoadingSheet = new LoadingSheet({
@@ -218,7 +225,6 @@ router.post('/sheet', async (req, res) => {
 
         try {
             // Save the LoadingSheet
-            await newLoadingSheet.save();
 
             try {
                 // Send notification only if save is successful
@@ -227,10 +233,13 @@ router.post('/sheet', async (req, res) => {
                     url: `/tripsheets/create/${newLoadingSheet._id}`,
                 };
                 const message = `Bowser: ${regNo}\nFulfilled by: ${loadingIncharge.name} Id: ${loadingIncharge.id}`;
-                await sendWebPushNotification(bccAuthorizedOfficer.id, message, options);
+                let notificationSent = await sendWebPushNotification({ userId: bccAuthorizedOfficer.id, message, options });
 
-                // Respond with the saved LoadingSheet
-                res.status(201).json(newLoadingSheet);
+                if (notificationSent.success) {
+                    await newLoadingSheet.save();
+                    // Respond with the saved LoadingSheet
+                    res.status(201).json(newLoadingSheet);
+                } else { res.status(500).json({ error: 'Request faild couse Faild to send notificaiton to BCC' }) }
             } catch (notificationError) {
                 console.error("Error sending notification:", notificationError);
 

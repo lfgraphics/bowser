@@ -3,7 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const Role = require('../models/role');
-const TripSheet = require('../models/tripsheet');
+const TripSheet = require('../models/TripSheets');
 const UnAuthorizedLogin = require('../models/unauthorizedLogin');
 const argon2 = require('argon2');
 const crypto = require('crypto');
@@ -112,12 +112,12 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign({ phoneNumber: user.phoneNumber, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
         const loginTime = new Date().toISOString();
 
-        const userTripSheets = await TripSheet.find({ 'bowserDriver.phoneNo': user.phoneNumber })
+        const userTripSheets = await TripSheet.find({ 'bowser.driver.phoneNo': user.phoneNumber })
             .select('tripSheetId')
-            .where('settelment.settled', false);
+            .where('settelment.settled', { $exists: false });
 
         if (userTripSheets.length === 0) {
-            return res.status(404).json({ message: "No unsettled trip sheet found for the user \nCan't login" });
+            return res.status(404).json({ message: "No unsettled trip sheet found for you \nCan't login" });
         }
 
         const userTripSheetId = userTripSheets[0].tripSheetId;

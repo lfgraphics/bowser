@@ -195,13 +195,13 @@ export default function TripSheetCreatePage() {
         <div className="mx-auto py-8 container">
             <Card>
                 <CardHeader>
-                    <CardTitle>Create TripSheet (from LoadingSheet #{loadingSheet._id})</CardTitle>
+                    <CardTitle>Create TripSheet</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Bowser / Odometer */}
-                        <div className="p-2 border rounded">
-                            <div className="flex flex-col mb-2">
+                        <div className="flex flex-col gap-2 p-2 border rounded">
+                            <div className="flex flex-col gap-2 mb-3">
                                 <Label>Bowser RegNo</Label>
                                 <Input
                                     readOnly
@@ -210,7 +210,7 @@ export default function TripSheetCreatePage() {
                                     required
                                 />
                             </div>
-                            <div className="flex flex-col mb-2">
+                            <div className="flex flex-col gap-2 mb-3">
                                 <Label>Odometer Start Reading</Label>
                                 <Input
                                     readOnly
@@ -219,7 +219,7 @@ export default function TripSheetCreatePage() {
                                     onChange={(e) => setOdometerStartReading(Number(e.target.value))}
                                 />
                             </div>
-                            <div className="flex flex-col mb-2">
+                            <div className="flex flex-col gap-2 mb-3">
                                 <Label>Pump End Reading</Label>
                                 <Input
                                     value={pumpEndReading}
@@ -234,7 +234,7 @@ export default function TripSheetCreatePage() {
                             <h4 className="mb-2 font-semibold">Loading Sheet Info</h4>
                             {/* Pre-filled from loadingSheet */}
                             <p className="text-sm">LoadingSheet ID: {loadingSheet._id}</p>
-                            <div className="flex flex-col mb-2">
+                            <div className="flex flex-col gap-2 mb-3">
                                 <Label>Quantity By Dip</Label>
                                 <Input
                                     readOnly
@@ -243,7 +243,7 @@ export default function TripSheetCreatePage() {
                                     onChange={(e) => setQuantityByDip(Number(e.target.value))}
                                 />
                             </div>
-                            <div className="flex flex-col mb-2">
+                            <div className="flex flex-col gap-2 mb-3">
                                 <Label>Quantity By Slip</Label>
                                 <Input
                                     readOnly
@@ -287,14 +287,14 @@ export default function TripSheetCreatePage() {
                         ))}
                         {/* Additional fields (fuelingAreaDestination, etc.) */}
                         <div className="p-2 border rounded">
-                            <div className="flex flex-col mb-2">
+                            <div className="flex flex-col gap-2 mb-3">
                                 <Label>Fueling Area Destination</Label>
                                 <Input
                                     value={fuelingAreaDestination}
                                     onChange={(e) => setFuelingAreaDestination(e.target.value)}
                                 />
                             </div>
-                            <div className="flex flex-col mb-2">
+                            <div className="flex flex-col gap-2 mb-3">
                                 <Label>Proposed Departure Time</Label>
                                 <Input
                                     type="datetime-local"

@@ -31,7 +31,6 @@ const addRecordToTrip = async (fuelingTransaction) => {
             console.log("Trip not found");
             return;
         }
-
         // Ensure `recordId` is a valid ObjectId
         if (!mongoose.Types.ObjectId.isValid(fuelingTransaction._id)) {
             console.log("Invalid recordId");
@@ -39,17 +38,30 @@ const addRecordToTrip = async (fuelingTransaction) => {
         }
 
         // Check if the recordId is already in the `dispenses` array
-        if (!trip.dispenses.includes(fuelingTransaction._id)) {
-            // Push the `recordId` to the `dispenses` array
-            trip.dispenses.push(fuelingTransaction._id);
+        const existingDispenseIndex = trip.dispenses.findIndex(dispense => dispense.transaction.toString() === fuelingTransaction._id.toString());
 
-            // Save the trip document
-            await trip.save();
-
+        if (existingDispenseIndex === -1) {
+            // Add the `recordId` to the `dispenses` array
+            trip.dispenses.push({
+                transaction: fuelingTransaction._id,
+                fuelQuantity: fuelingTransaction.fuelQuantity,
+                isVerified: fuelingTransaction.verified,
+                isPosted: fuelingTransaction.posted,
+            });
             console.log("RecordId added to trips dispenses successfully!");
         } else {
-            console.log("RecordId already exists in dispenses.");
+            // Update the existing dispense
+            trip.dispenses[existingDispenseIndex] = {
+                transaction: fuelingTransaction._id,
+                fuelQuantity: fuelingTransaction.fuelQuantity,
+                isVerified: fuelingTransaction.verified,
+                isPosted: fuelingTransaction.posted,
+            };
+            console.log("RecordId updated in trips dispenses successfully!");
         }
+
+        // Save the trip document
+        await trip.save();
     } catch (error) {
         console.error("Error updating trip dispenses:", error);
     }
