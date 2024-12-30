@@ -246,8 +246,7 @@ router.patch('/verify/:id', async (req, res) => {
     }
 });
 router.post('/verify', async (req, res) => {
-    const { ids } = req.body;
-    let { by } = req.body
+    const { ids, by } = req.body;
 
     if (!Array.isArray(ids) || ids.length === 0) {
         return res.status(400).json({ heading: "Failed!", message: "Invalid or empty ids array" });

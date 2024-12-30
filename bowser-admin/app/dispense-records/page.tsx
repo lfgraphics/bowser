@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { DispensesRecord } from "@/types";
+import { DispensesRecord, User } from "@/types";
 import {
     Table,
     TableBody,
@@ -56,6 +56,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
     const [verificationStatus, setVerificationStatus] = useState("all");
     const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
     const [selectAll, setSelectAll] = useState(false);
+    const [user, setUser] = useState<User>()
     const { toast } = useToast();
 
     const checkAuth = () => {
@@ -66,6 +67,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
     };
     useEffect(() => {
         checkAuth();
+        setUser(JSON.parse(localStorage.getItem('adminUser')!))
     }, []);
 
     useEffect(() => {
@@ -185,7 +187,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
     const verifyOne = async (id: string) => {
         try {
             setLoading(true)
-            let response = await axios.patch(`${BASE_URL}/listDispenses/verify/${id}`)
+            let response = await axios.patch(`${BASE_URL}/listDispenses/verify/${id}`, { by: { id: user?.userId, name: user?.name } })
             if (response.status == 200) {
                 setRecords((prevRecords) =>
                     prevRecords.map((record) =>
@@ -221,7 +223,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
         }
 
         try {
-            let response = await axios.post(`${BASE_URL}/listDispenses/verify/`, { ids: idsToVerify });
+            let response = await axios.post(`${BASE_URL}/listDispenses/verify/`, { ids: idsToVerify, by: { id: user?.userId, name: user?.name } });
             if (response.status === 200) {
                 setRecords((prevRecords) =>
                     prevRecords.map((record) =>
