@@ -51,20 +51,19 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { userId, password, appName } = req.body;
-
-        // Find user and populate roles
+        console.log(req.body)
+        // 1. Find user and check validity
         const user = await User.findOne({ userId }).populate('roles');
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // Verify password
         const validPassword = await argon2.verify(user.password, password);
         if (!validPassword) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // Check if user has access to the app
+        // 2. Check if user has access to the requested app
         const hasAccess = user.roles.some(async role => {
             const roleDoc = await Role.findById(role);
             return roleDoc.permissions.apps.some(app =>
@@ -76,9 +75,7 @@ router.post('/login', async (req, res) => {
             return res.status(403).json({ message: 'User does not have access to this application' });
         }
 
-        // Create and send JWT token
-        const token = jwt.sign({ userId: user.userId, roles: user.roles.map(r => r.toString()) }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
+        // 3. Gather the user's roles for the token payload
         let roleNames = [];
         let roles = [];
         if (user.roles && user.roles.length > 0) {
@@ -86,7 +83,25 @@ router.post('/login', async (req, res) => {
             roleNames = roles.map(role => role.name);
         }
 
-        res.json({
+        // 4. Create the JWT
+        const token = jwt.sign(
+            { userId: user.userId, roles: roleNames.map(r => r.toString()) },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        // 5. Set the token in an HTTP-only, secure cookie
+        //    Adjust cookie options according to your environment
+        res.cookie('token', token, {
+            httpOnly: true,           // prevents JS from reading the cookie
+            // secure: process.env.NODE_ENV === 'production', // only send over HTTPS in prod
+            // sameSite: 'strict',       // helps mitigate CSRF
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+            path: '/' // typically default
+        });
+
+        // 6. Return JSON (without the raw token, if you want to rely solely on the cookie)
+        return res.json({
             message: 'Login successful',
             token,
             user: {
@@ -103,5 +118,6 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 });
+
 
 module.exports = router;

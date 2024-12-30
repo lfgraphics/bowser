@@ -8,6 +8,7 @@ import ThemeChanger from '../ThemeChanger'
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 // import { DropdownfuelingTransactionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { User } from '@/types/auth'
+import OnlyAllowed from '../OnlyAllowed'
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false)
@@ -39,78 +40,93 @@ export function Sidebar() {
         </SheetTrigger>
         <SheetContent side="left" className="top-0 left-0 z-50 fixed bg-background shadow w-60 h-full">
           <SheetHeader>
-            <SheetTitle>Bowser Admin</SheetTitle>
+            <SheetTitle>{JSON.parse(localStorage?.getItem('adminUser')!).roles[0]}</SheetTitle>
           </SheetHeader>
-          <SheetDescription></SheetDescription>
+          <SheetDescription>{JSON.parse(localStorage?.getItem('adminUser')!).roles.join(', ')}</SheetDescription>
           <div className="flex flex-col p-3 h-full">
-            <nav className="flex-1">
+            <nav className="h-[90%]">
               <ul className="space-y-1 text-sm">
-                <li onClick={toggleSidebar}>
-                  <Link href="/dashboard">
-                    <Button variant="ghost" className="justify-start w-full">
-                      <Home className="mr-2 w-4 h-4" />
-                      Home
-                    </Button>
-                  </Link>
-                </li>
-
+                <OnlyAllowed allowedRoles={["Admin", "Diesel Control Center Staff"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/dashboard">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <Home className="mr-2 w-4 h-4" />
+                        Home
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
                 {/* Dynamica access Routes in upcoming updates starts here ................ */}
-                <li onClick={toggleSidebar}>
-                  <Link href={`/dispense-records?allocator=${id}`}>
-                    <Button variant="ghost" className="justify-start w-full">
-                      <ClipboardList className="mr-2 w-4 h-4" />
-                      My Allocations
-                    </Button>
-                  </Link>
-                </li>
-                <li onClick={toggleSidebar}>
-                  <Link href="/dispense-records">
-                    <Button variant="ghost" className="justify-start w-full">
-                      <SheetIcon className="mr-2 w-4 h-4" />
-                      Dispense Records
-                    </Button>
-                  </Link>
-                </li>
-                <li onClick={toggleSidebar}>
-                  <Link href="/loading/orders">
-                    <Button variant="ghost" className="justify-start w-full">
-                      <ListOrdered className="mr-2 w-4 h-4" />
-                      Loading Orders
-                    </Button>
-                  </Link>
-                </li>
-                <li onClick={toggleSidebar}>
-                  <Link href="/loading/sheet">
-                    <Button variant="ghost" className="justify-start w-full">
-                      <TableOfContents className="mr-2 w-4 h-4" />
-                      Loading Sheets
-                    </Button>
-                  </Link>
-                </li>
-                <li onClick={toggleSidebar}>
-                  <Link href="/tripsheets">
-                    <Button variant="ghost" className="justify-start w-full">
-                      <ListCheck className="mr-2 w-4 h-4" />
-                      Trip Sheets
-                    </Button>
-                  </Link>
-                </li>
-                <li onClick={toggleSidebar}>
-                  <Link href="/manage-bowsers">
-                    <Button variant="ghost" className="justify-start w-full">
-                      <CaravanIcon className="mr-2 w-4 h-4" />
-                      Manage Bowsers
-                    </Button>
-                  </Link>
-                </li>
-                <li onClick={toggleSidebar}>
-                  <Link href="/manage-users">
-                    <Button variant="ghost" className="justify-start w-full">
-                      <Users className="mr-2 w-4 h-4" />
-                      Manage Users
-                    </Button>
-                  </Link>
-                </li>
+                <OnlyAllowed allowedRoles={["Admin", "Diesel Control Center Staff"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href={`/dispense-records?allocator=${id}`}>
+                      <Button variant="ghost" className="justify-start w-full">
+                        <ClipboardList className="mr-2 w-4 h-4" />
+                        My Allocations
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed allowedRoles={["Admin", "Diesel Control Center Staff", "Data Entry", "BCC Authorized Officer"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/dispense-records">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <SheetIcon className="mr-2 w-4 h-4" />
+                        Dispense Records
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed allowedRoles={["Admin", "Loading Incharge", "Petrol Pump Personnel", "BCC Authorized Officer"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/loading/orders">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <ListOrdered className="mr-2 w-4 h-4" />
+                        Loading Orders
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/loading/sheet">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <TableOfContents className="mr-2 w-4 h-4" />
+                        Loading Sheets
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer", "Diesel Control Center Staff", "Data Entry"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/tripsheets">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <ListCheck className="mr-2 w-4 h-4" />
+                        Trip Sheets
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/manage-bowsers">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <CaravanIcon className="mr-2 w-4 h-4" />
+                        Manage Bowsers
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed allowedRoles={["Admin"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/manage-users">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <Users className="mr-2 w-4 h-4" />
+                        Manage Users
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
                 {/* Dynamica access Routes in upcoming updates ends here ................ */}
                 <li onClick={toggleSidebar}>
                   <Link href="/profile">
@@ -125,7 +141,7 @@ export function Sidebar() {
                 </li>
               </ul>
             </nav>
-            <div className="mt-auto">
+            <div className="mt-auto h-[10%]">
               <Button variant="outline" className="w-full" onClick={handleLogout}>
                 <LogOut className="mr-2 w-4 h-4" />
                 Logout

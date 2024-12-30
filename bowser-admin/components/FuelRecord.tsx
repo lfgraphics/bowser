@@ -2,18 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Check, X } from 'lucide-react';
-import { DispensesRecord } from '@/types';
+import { DispensesRecord, User } from '@/types';
 import Modal from './Modal';
 import Loading from '@/app/loading';
 import axios from 'axios';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { isAuthenticated } from '@/lib/auth';
 import { BASE_URL } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import OnlyAllowed from './OnlyAllowed';
+import { toast } from '@/hooks/use-toast';
 
 interface FuelRecordCardProps {
     record: DispensesRecord;
@@ -29,30 +30,16 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [editing, setEditing] = useState<boolean>(false);
     const [updatedRecord, setUpdatedRecord] = useState<DispensesRecord>(record);
-    const [superAdmin, setSuperAdmin] = useState<boolean>(false);
-
+    const [user, setUser] = useState<User>()
     const checkAuth = () => {
         const authenticated = isAuthenticated();
         if (!authenticated) {
             window.location.href = '/login';
         }
-        if (authenticated) {
-            let user = JSON.parse(localStorage.getItem("adminUser")!);
-
-            if (user && user.roles) {
-                const rolesString = user.roles.toString();
-                if (rolesString.includes("Super Admin")) {
-                    setSuperAdmin(true)
-                } else {
-                    setSuperAdmin(false)
-                }
-            } else {
-                console.error("Roles not found in user data.");
-            }
-        }
     };
     useEffect(() => {
         checkAuth();
+        setUser(JSON.parse(localStorage.getItem('adminUser')!))
     }, []);
 
     // Add useEffect to update updatedRecord when record changes
@@ -95,7 +82,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
         if (updatedRecord.gpsLocation !== record.gpsLocation) {
             updatedFields.gpsLocation = updatedRecord.gpsLocation;
         }
-        if (updatedRecord.verified !== record.verified || (updatedRecord.verified === false && !record.verified)) {
+        if (updatedRecord.verified !== record.verified || (updatedRecord.verified.status === false && !record.verified.status)) {
             updatedFields.verified = updatedRecord.verified;
         }
 
@@ -143,10 +130,31 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
         }
     }
 
+    const verifyOne = async (id: string) => {
+        try {
+            setLoading(true)
+            let response = await axios.patch(`${BASE_URL}/listDispenses/verify/${id}`, { by: { id: user?.userId, name: user?.name } })
+            if (response.status == 200) {
+                setUpdatedRecord((record) =>
+                    record._id === id ? { ...record, verified: { status: true } } : record
+                )
+                toast({ title: response.data.heading, description: response.data.message, variant: "success" });
+            }
+        } catch (err) {
+            if (err instanceof Error) {
+                toast({ title: "Error", description: err.message, variant: "destructive" });
+            } else {
+                toast({ title: "Error", description: "An unknown error occurred", variant: "destructive" });
+            }
+        } finally {
+            setLoading(true)
+        }
+    }
+
     return (
         <>
             {loading && <Loading />}
-            <Card className="p-4 shadow-lg mt-4">
+            <Card className="shadow-lg mt-8 p-4">
                 {/* Header */}
                 <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
@@ -158,7 +166,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                 <CardContent>
                     <div className='my-3'>
                         <span>Receaver: {editing ? (
-                            <div className='flex gap-3 flex-wrap md:flex-nowrap'>
+                            <div className='flex flex-wrap md:flex-nowrap gap-3'>
                                 <Input
                                     placeholder='Receaver Name'
                                     value={updatedRecord?.driverName}
@@ -188,7 +196,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                     {(updatedRecord || record) &&
                         <>
                             <div className="mb-4">
-                                {record.vehicleNumber && <p className="text-sm text-foreground"><strong>Vehicle Number:</strong> {editing ? (
+                                {record.vehicleNumber && <p className="text-foreground text-md"><strong>Vehicle Number:</strong> {editing ? (
                                     <Input
                                         placeholder='Vehicle Number'
                                         value={updatedRecord?.vehicleNumber}
@@ -201,11 +209,11 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                 )}</p>}
                                 <div className="flex flex-col gap-3 mt-2">
                                     {record?.category == "Bulk Sale" && "Saling Point"}
-                                    <img className="w-32 h-32 object-cover rounded-md" src={`${record?.vehicleNumberPlateImage}`} alt="Vehicle Plate"
+                                    <img className="rounded-md w-32 h-32 object-cover" src={`${record?.vehicleNumberPlateImage}`} alt="Vehicle Plate"
                                         onClick={() => openImageModal(record?.vehicleNumberPlateImage || '')}
                                     />
                                 </div>
-                                {record.category == "Own" && <p className='text-sm text-foreground my-3'>
+                                {record.category == "Own" && <p className='my-3 text-foreground text-sm'>
                                     <strong>Odo Meter:</strong> {editing ? (
                                         <Input
                                             placeholder='Odo Meter'
@@ -219,8 +227,8 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                             </div>
 
                             <div className="mb-4">
-                                <h2 className="text-md font-semibold">Dispense Details</h2>
-                                <p className="text-sm text-gray-600"><strong>Quantity:</strong> {editing ? (
+                                <h2 className="font-semibold text-md">Dispense Details</h2>
+                                <p className="text-sm"><strong>Quantity:</strong> {editing ? (
                                     <Input
                                         placeholder='Quantity'
                                         value={updatedRecord?.fuelQuantity}
@@ -231,13 +239,13 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                 ) : (
                                     `${updatedRecord?.fuelQuantity} Liter - ${updatedRecord?.quantityType}`
                                 )}</p>
-                                <p className="text-sm text-gray-600"><strong>Date & Time:</strong> {formatDate(record?.fuelingDateTime!)}</p>
-                                <h2 className="text-md font-semibold">Bowser Details</h2>
-                                <p className="text-sm text-gray-600"><strong>Registration Number:</strong> {record?.bowser.regNo || "Error"}</p>
-                                <p className="text-sm text-gray-600"><strong>Driver Name:</strong> {record?.bowser.driver.name}</p>
-                                <p className="text-sm text-gray-600"><strong>Driver Phone:</strong> {record?.bowser.driver.phoneNo}</p>
-                                <p className="text-sm text-gray-600 flex items-center">
-                                    <MapPin className="w-4 h-4 mr-1" />
+                                <p className="text-sm"><strong>Date & Time:</strong> {formatDate(record?.fuelingDateTime!)}</p>
+                                <h2 className="font-semibold text-md">Bowser Details</h2>
+                                <p className="text-gray-600 text-sm"><strong>Registration Number:</strong> {record?.bowser.regNo || "Error"}</p>
+                                <p className="text-gray-600 text-sm"><strong>Driver Name:</strong> {record?.bowser.driver.name}</p>
+                                <p className="text-gray-600 text-sm"><strong>Driver Phone:</strong> {record?.bowser.driver.phoneNo}</p>
+                                <p className="flex items-center text-sm">
+                                    <MapPin className="mr-1 w-4 h-4" />
                                     {editing ? (
                                         <Input
                                             placeholder='Location of Fueling'
@@ -254,7 +262,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
 
                             <div className="flex space-x-4">
                                 <div>
-                                    <h2 className="text-md font-semibold">Fuel Meter & Slip Image/s</h2>
+                                    <h2 className="font-semibold text-md">Fuel Meter & Slip Image/s</h2>
                                     <div className="flex gap-3">
                                         {record?.fuelMeterImage.map((img, index) => (
                                             <img
@@ -263,83 +271,77 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                                 key={index}
                                                 src={img}
                                                 alt="Fuel Meter"
-                                                className="w-32 h-32 object-cover rounded-md"
+                                                className="rounded-md w-32 h-32 object-cover"
                                                 onClick={() => openImageModal(img)}
                                             />
                                         ))}
                                     </div>
                                 </div>
                                 {record?.slipImage && <div>
-                                    <h2 className="text-md font-semibold">Slip Image</h2>
+                                    <h2 className="font-semibold text-md">Slip Image</h2>
                                     {record?.slipImage && <img
                                         width={128}
                                         height={128}
                                         src={record?.slipImage}
                                         alt="Slip"
-                                        className="w-32 h-32 object-cover rounded-md"
+                                        className="rounded-md w-32 h-32 object-cover"
                                         onClick={() => openImageModal(record.slipImage)}
                                     />}
                                 </div>}
                             </div>
 
                             {record?.allocationAdmin && (
-                                <p className="text-sm text-gray-500 mt-4">
+                                <p className="mt-4 text-gray-500 text-sm">
                                     Allocated by: {`${updatedRecord?.allocationAdmin?.name || ''} Id: ${updatedRecord?.allocationAdmin?.id || ''}`}
                                 </p>
                             )}
 
-                            <div className="recordVerificationStatus mt-6 flex items-center">
-                                <Label htmlFor="verification" >Record Verification Status: </Label>{editing ? (
-                                    <Checkbox
-                                        id='verification'
-                                        className='ml-3'
-                                        checked={updatedRecord?.verified}
-                                        onCheckedChange={(checked) => {
-                                            setUpdatedRecord({ ...updatedRecord, verified: checked });
-                                        }}
-                                    />
-                                ) : (
-                                    updatedRecord?.verified ? (
-                                        <Badge variant="succes" className="ml-2 flex items-center h-6 w-28">
-                                            <Check className="w-4 h-4 mr-1" /> Verified
+                            <div className="flex items-center mt-6 recordVerificationStatus">
+                                <Label htmlFor="verification" >Record Verification Status: </Label>{
+                                    record?.verified ? (
+                                        <Badge variant="succes" className="flex items-center ml-2 w-28 h-6">
+                                            <Check className="mr-1 w-4 h-4" /> Verified
                                         </Badge>
                                     ) : (
-                                        <Badge variant="destructive" className="ml-2 flex items-center h-6 w-28">
-                                            <X className="w-4 h-4 mr-1" /> Not Verified
+                                        <Badge variant="destructive" className="flex items-center ml-2 w-28 h-6">
+                                            <X className="mr-1 w-4 h-4" /> Not Verified
                                         </Badge>
                                     )
-                                )}
+                                }
                             </div>
+                            {!record?.verified?.status ? <Button onClick={() => { verifyOne(String(record._id)) }} variant="outline" className='mt-3 w-full'>Verify</Button> : null}
                         </>
                     }
                 </CardContent>
 
                 {/* Footer */}
-                <CardFooter className="mt-4 flex gap-6">
-                    <div className="flex space-x-2">
-                        <Button variant="ghost" onClick={() => setEditing(!editing)}>
-                            {editing ? 'Cancel' : 'Edit'}
+                <CardFooter className="flex gap-6 mt-4">
+                    <div className="flex justify-between space-x-2 w-full">
+                        <Button className='w-[30%]' variant="secondary" onClick={() => setEditing(!editing)}>
+                            {editing ? 'Cancel Editing' : 'Edit'}
                         </Button>
                         {editing && (
                             <>
-                                <Button variant="default" onClick={handleUpdate}>
+                                <Button className='w-[30%]' variant="default" onClick={handleUpdate}>
                                     Save
                                 </Button>
-                                {superAdmin && <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>Delete this record</Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Are you sure you want to delete this trip sheet? This action cannot be undone.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    </AlertDialogContent>
-                                </AlertDialog>}
+                                <OnlyAllowed allowedRoles={["Admin"]}>
+                                    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>Delete this record</Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Are you sure you want to delete this trip sheet? This action cannot be undone.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </OnlyAllowed>
                             </>
                         )}
                     </div>

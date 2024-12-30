@@ -234,6 +234,7 @@ export interface User {
 export interface Role {
   _id: mongoose.Schema.Types.ObjectId
   name: string
+  notes: string
   permissions: {
     apps: { name: string; access: 'read' | 'write' | 'admin' | null }[]
     functions: { name: string; allowed: boolean }[]
@@ -287,7 +288,13 @@ export interface DispensesRecord {
   quantityType: string
   gpsLocation: string
   fuelingDateTime: string
-  verified: boolean
+  verified: {
+    status: boolean
+    by?: {
+      id: string
+      name: string
+    }
+  }
   posted: boolean
   bowser: {
     regNo: string

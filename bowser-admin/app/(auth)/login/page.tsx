@@ -26,7 +26,19 @@ export default function Login() {
     try {
       const response = await login(userId, password)
       if (response.user) {
-        window.location.href = "/dashboard"
+        const allowedRoutes: { [key: string]: string } = {
+          "Admin": "/manage-users",
+          "Diesel Control Center Staff": "/dashboard",
+          "Data Entry": "/dispense-records",
+          "Loading Incharge": "/loading/orders",
+          "BCC Authorized Officer": "/loading/sheet",
+          "Petrol Pump Personnel": "/loading/orders",
+          // Add other roles and their first allowed routes here
+        };
+
+        const redirectUrl = response.user.roles.map(role => allowedRoutes[role]).find(url => url) || "/dashboard";
+
+        window.location.href = redirectUrl;
       } else {
         alert("Account not verified. Please contact an administrator to verify your account.")
       }
@@ -39,7 +51,7 @@ export default function Login() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
+    <div className="flex justify-center items-center bg-background min-h-screen">
       {loading && <Loading />}
       <Card className="w-[350px]">
         <CardHeader>
@@ -48,7 +60,7 @@ export default function Login() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent>
-            <div className="grid w-full items-center gap-4">
+            <div className="items-center gap-4 grid w-full">
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="userId">User ID</Label>
                 <Input id="userId" placeholder="Enter your user ID" value={userId} onChange={(e) => setUserId(e.target.value)} required />
@@ -61,7 +73,7 @@ export default function Login() {
           </CardContent>
           <CardFooter>
             <Button className="w-full" type="submit">
-              <LogIn className="mr-2 h-4 w-4" /> Login
+              <LogIn className="mr-2 w-4 h-4" /> Login
             </Button>
           </CardFooter>
         </form>

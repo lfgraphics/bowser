@@ -40,7 +40,8 @@ export async function login (
         userId,
         password,
         appName: 'Bowser Admin'
-      }
+      },
+      { withCredentials: true } // Include cookies in requests
     )
     if (response.data.token) {
       localStorage.setItem('adminToken', response.data.token)

@@ -32,12 +32,12 @@ export const updateUserVerification = async (phoneNo: string, verified: boolean)
     return response.json();
 };
 
-export const updateUserDevice = async (userId: string, newDeviceUUID: string): Promise<{ message: string }> => {
+export const updateUserDevice = async (phoneNumber: string, newDeviceUUID: string): Promise<{ message: string }> => {
     try {
         const response = await fetch(`${BASE_URL}/users/update-device`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, newDeviceUUID }),
+            body: JSON.stringify({ phoneNumber, newDeviceUUID }),
         });
 
         if (!response.ok) {

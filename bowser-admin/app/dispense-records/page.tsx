@@ -29,7 +29,7 @@ import {
 import Link from "next/link";
 import { isAuthenticated } from "@/lib/auth";
 import Loading from "../loading";
-import { Check, Eye, ListChecks, ListX, X } from "lucide-react";
+import { Check, Eye, ListChecks, ListX } from "lucide-react";
 import { BASE_URL } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
@@ -184,11 +184,12 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
 
     const verifyOne = async (id: string) => {
         try {
+            setLoading(true)
             let response = await axios.patch(`${BASE_URL}/listDispenses/verify/${id}`)
             if (response.status == 200) {
                 setRecords((prevRecords) =>
                     prevRecords.map((record) =>
-                        record._id === id ? { ...record, verified: true } : record
+                        record._id === id ? { ...record, verified: { status: true } } : record
                     )
                 );
                 toast({ title: response.data.heading, description: response.data.message, variant: "success" });
@@ -199,6 +200,8 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
             } else {
                 toast({ title: "Error", description: "An unknown error occurred", variant: "destructive" });
             }
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -222,7 +225,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
             if (response.status === 200) {
                 setRecords((prevRecords) =>
                     prevRecords.map((record) =>
-                        idsToVerify.includes(record._id) ? { ...record, verified: true } : record
+                        idsToVerify.includes(record._id) ? { ...record, verified: { status: true } } : record
                     )
                 );
                 toast({ title: response.data.heading, description: response.data.message, variant: "success" });
@@ -474,7 +477,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                         <TableHead>Odo Meter</TableHead>
                         <TableHead>Qty Type</TableHead>
                         <TableHead>Fuel Qty</TableHead>
-                        <TableHead>Action</TableHead>
+                        <TableHead>View</TableHead>
                         <TableHead>Verified</TableHead>
                         <TableHead>Posted</TableHead>
                     </TableRow>

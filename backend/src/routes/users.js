@@ -107,10 +107,10 @@ router.get('/un-authorized-logins', async (req, res) => {
 })
 
 router.patch('/update-device', async (req, res) => {
-    const { userId, newDeviceUUID } = req.body;
+    const { phoneNumber, newDeviceUUID } = req.body;
 
     try {
-        const user = await User.findOne({ userId });
+        const user = await User.findOne({ phoneNumber });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }

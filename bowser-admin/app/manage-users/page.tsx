@@ -52,7 +52,7 @@ const UsersList = () => {
 
             if (user && user.roles) {
                 const rolesString = user.roles.toString(); // Convert roles to string if it isn't already
-                if (rolesString.includes("Super Admin")) {
+                if (rolesString.includes("Admin")) {
                     setSuperAdmin(true)
                 } else {
                     setSuperAdmin(false)
@@ -175,10 +175,10 @@ const UsersList = () => {
         }
     };
 
-    const handleAssignDeviceUUID = async (userId: string, newDeviceUUID: string) => {
+    const handleAssignDeviceUUID = async (phoneNumber: string, newDeviceUUID: string) => {
         try {
             setLoading(true);
-            const response = await updateUserDevice(userId, newDeviceUUID);
+            const response = await updateUserDevice(phoneNumber, newDeviceUUID);
             toast({ title: "Success", description: response.message, variant: "success" });
         } catch (err) {
             if (err instanceof Error) {
@@ -209,10 +209,10 @@ const UsersList = () => {
     return (
         <>
             {loading && <Loading />}
-            {!superAdmin ? <p className="block mx-auto w-max p-3 border rounded-md mt-72 border-foreground scale-150">You do not have permission to view this page<br />Your should ask Super Admin for these actions</p> :
+            {!superAdmin ? <p className="block border-foreground mx-auto mt-72 p-3 border rounded-md w-max scale-150">You do not have permission to view this page<br />Your should ask Super Admin for these actions</p> :
                 <>
                     <Toaster />
-                    <div className="nav mx-auto mb-4 flex gap-4 bg-muted-foreground bg-opacity-35 w-max p-4 rounded-lg">
+                    <div className="flex gap-4 bg-muted-foreground bg-opacity-35 mx-auto mb-4 p-4 rounded-lg w-max nav">
                         {(['Users', 'Roles', 'Un Authorized'] as Nav[]).map((option) => (
                             <Button
                                 key={option}
@@ -221,16 +221,16 @@ const UsersList = () => {
                             >{option}
                             </Button>))}
                     </div>
-                    {nav === 'Users' && <div className="filter-container w-full flex flex-wrap gap-3 justify-around my-6">
+                    {nav === 'Users' && <div className="flex flex-wrap justify-around gap-3 my-6 w-full filter-container">
                         {/* Verification Filter */}
                         <div className="flex items-center gap-4 mt-4">
                             <Switch
                                 id="verified"
                                 checked={isVerified === true}
                                 onCheckedChange={(checked) => setIsVerified(checked ? true : null)}
-                                className="mr-2 hidden"
+                                className="hidden mr-2"
                             />
-                            <Label htmlFor="verified" className="flex gap-2 items-center">
+                            <Label htmlFor="verified" className="flex items-center gap-2">
                                 <CheckCircle size={20} className={isVerified === true ? 'text-green-500' : 'text-gray-400'} />
                                 <span>Verified</span>
                             </Label>
@@ -239,9 +239,9 @@ const UsersList = () => {
                                 id="unveried"
                                 checked={isVerified === false}
                                 onCheckedChange={(checked) => setIsVerified(checked ? false : null)}
-                                className="ml-8 mr-2 hidden"
+                                className="hidden mr-2 ml-8"
                             />
-                            <Label htmlFor="unveried" className="flex gap-2 items-center">
+                            <Label htmlFor="unveried" className="flex items-center gap-2">
                                 <XCircle size={20} className={isVerified === false ? 'text-red-500' : 'text-gray-400'} />
                                 <span>Unverified</span>
                             </Label>
@@ -249,20 +249,20 @@ const UsersList = () => {
 
                         {/* Search Input */}
                         <div className="relative w-auto">
-                            <Search size={20} className="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400" />
+                            <Search size={20} className="top-1/2 left-3 absolute text-gray-400 transform -translate-y-1/2" />
                             <Input
                                 type="text"
                                 placeholder="Search name, or phone number"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
-                                className="w-full pl-10"
+                                className="pl-10 w-full"
                             />
                         </div>
 
                         {/* Roles Filter */}
-                        <div className="roles-filter flex gap-3 items-center">
+                        <div className="flex items-center gap-3 roles-filter">
                             <label>Select Roles:</label>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                                 {roles.map(role => (
                                     <>
                                         <Checkbox
@@ -283,7 +283,7 @@ const UsersList = () => {
                             </div>
                         </div>
                     </div>}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="gap-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {nav === 'Users' && filteredUsers.map((user, index) => (
                             <UsersCard
                                 key={index}
@@ -299,7 +299,7 @@ const UsersList = () => {
                                     </div>
                                 }
                                 footer={
-                                    <div className="flex gap-2 justify-between">
+                                    <div className="flex justify-between gap-2">
                                         <Button variant='outline' onClick={() => handleUpdateVerification(user.phoneNumber, !user.verified)}>
                                             {user.verified ? 'Unverify' : 'Verify'}
                                         </Button>
@@ -331,7 +331,7 @@ const UsersList = () => {
                             <UsersCard
                                 key={index}
                                 header={`${role.name}`}
-                                description="None"
+                                description={role.notes}
                                 content={
                                     <>
                                         <p>
@@ -361,10 +361,10 @@ const UsersList = () => {
                                     </div>
                                 }
                                 footer={
-                                    <div className="flex gap-2 justify-between">
+                                    <div className="flex justify-between gap-2">
                                         <Button
                                             variant='outline'
-                                            onClick={() => handleAssignDeviceUUID(data.userId, data.attemptedDeviceUUID)}
+                                            onClick={() => handleAssignDeviceUUID(data.phoneNumber, data.attemptedDeviceUUID)}
                                         >
                                             Assign Device UUID
                                         </Button>

@@ -112,9 +112,13 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign({ phoneNumber: user.phoneNumber, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
         const loginTime = new Date().toISOString();
 
-        const userTripSheets = await TripSheet.find({ 'bowser.driver.phoneNo': user.phoneNumber })
-            .select('tripSheetId')
-            .where('settelment.settled', { $exists: false });
+        const userTripSheets = await TripSheet.find({
+            'bowser.driver.phoneNo': user.phoneNumber,
+            $or: [
+                { 'settelment.settled': { $exists: false } },
+                { 'settelment.settled': false }
+            ]
+        }).select('tripSheetId');
 
         if (userTripSheets.length === 0) {
             return res.status(404).json({ message: "No unsettled trip sheet found for you \nCan't login" });

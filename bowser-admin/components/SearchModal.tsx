@@ -27,11 +27,11 @@ export function SearchModal<T>({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <div className="mt-4 space-y-2">
+        <div className="space-y-2 mt-4 max-h-[70svh] overflow-y-scroll">
           {items.map((item) => (
             <Button
               key={keyExtractor(item)}
-              className="w-full justify-start"
+              className="justify-start w-full"
               variant="outline"
               onClick={() => onSelect(item)}
             >

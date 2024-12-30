@@ -23,6 +23,7 @@ import { BASE_URL } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { AlertDialog, AlertDialogTrigger, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel, AlertDialogContent } from '@radix-ui/react-alert-dialog';
 import { AlertDialogHeader } from './ui/alert-dialog';
+import OnlyAllowed from './OnlyAllowed';
 
 
 const TripSheetPage = () => {
@@ -144,7 +145,9 @@ const TripSheetPage = () => {
                         <TableHead>Dispenses</TableHead>
                         <TableHead>Sold</TableHead>
                         <TableHead>Balance</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
+                            <TableHead>Actions</TableHead>
+                        </OnlyAllowed>
                         <TableHead>Verified</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -176,38 +179,42 @@ const TripSheetPage = () => {
                                 <TableCell>{sheet.dispenses?.length || "0"}</TableCell>
                                 <TableCell>{sheet.saleQty?.toFixed(2)}</TableCell>
                                 <TableCell>{sheet.balanceQty?.toFixed(2)}</TableCell>
-                                <TableCell className="flex space-x-2">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger>
-                                            <Button variant="outline" className='w-full text-center'>
-                                                Update
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent className='bg-card'>
-                                            <DropdownMenuItem>
+                                <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
+                                    <TableCell className="flex space-x-2">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger>
                                                 <Button variant="outline" className='w-full text-center'>
-                                                    <Link href={`/tripsheets/settle/${sheet._id}`}>Settle</Link>
+                                                    Update
                                                 </Button>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem>
-                                                <Button disabled variant="outline" className='w-full text-center'>
-                                                    <Link href={`/tripsheets/addition/${sheet._id}`}>Reload (+)</Link>
-                                                </Button>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem>
-                                                <Button disabled variant="outline" className='w-full text-center'>
-                                                    <Link href={`/tripsheets/add-driver/${sheet._id}`}>Add Driver</Link>
-                                                </Button>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem>
-                                                <Button disabled={sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? false : true} variant="outline" className='w-full text-center' onClick={() => postDispenses(sheet._id!)}>Post</Button>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem>
-                                                <Button disabled className='w-full' variant="destructive" onClick={() => openDeleteDialogue(sheet._id!)}>Delete</Button>
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent className='bg-card'>
+                                                <DropdownMenuItem>
+                                                    <Button variant="outline" className='w-full text-center'>
+                                                        <Link href={`/tripsheets/settle/${sheet._id}`}>Settle</Link>
+                                                    </Button>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem>
+                                                    <Button disabled variant="outline" className='w-full text-center'>
+                                                        <Link href={`/tripsheets/addition/${sheet._id}`}>Reload (+)</Link>
+                                                    </Button>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem>
+                                                    <Button disabled variant="outline" className='w-full text-center'>
+                                                        <Link href={`/tripsheets/add-driver/${sheet._id}`}>Add Driver</Link>
+                                                    </Button>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem>
+                                                    <Button disabled={sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? false : true} variant="outline" className='w-full text-center' onClick={() => postDispenses(sheet._id!)}>Post</Button>
+                                                </DropdownMenuItem>
+                                                <OnlyAllowed allowedRoles={["Admin"]}>
+                                                    <DropdownMenuItem>
+                                                        <Button disabled className='w-full' variant="destructive" onClick={() => openDeleteDialogue(sheet._id!)}>Delete</Button>
+                                                    </DropdownMenuItem>
+                                                </OnlyAllowed>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </OnlyAllowed>
                                 <TableCell>{sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? <Check /> : (sheet.dispenses && sheet.dispenses.length > 0 ? <X /> : null)}</TableCell>
                             </TableRow>
                         ))

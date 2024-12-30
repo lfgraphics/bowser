@@ -3,7 +3,6 @@ import FuelRecordCard from '@/components/FuelRecord';
 import { isAuthenticated } from '@/lib/auth';
 import { DispensesRecord } from '@/types';
 import axios from 'axios';
-import mongoose from 'mongoose';
 import React, { useEffect, useState } from 'react'
 
 export const page = ({ params }: { params: { id: string } }) => {
@@ -35,7 +34,9 @@ export const page = ({ params }: { params: { id: string } }) => {
         quantityType: "Full",
         gpsLocation: "XYZ",
         fuelingDateTime: `${new Date().toLocaleString}`,
-        verified: false,
+        verified: {
+            status: false
+        },
         posted: false,
         bowser: {
             regNo: "UPXXATXXXX",
@@ -57,6 +58,7 @@ export const page = ({ params }: { params: { id: string } }) => {
             try {
                 const response = await axios.get(`https://bowser-backend-2cdr.onrender.com/listDispenses/${params.id}`);
                 setRecord(response.data);
+                console.log(response.data)
             } catch (error) {
                 console.error('Error fetching records:', error);
             }

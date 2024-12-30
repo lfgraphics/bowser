@@ -52,8 +52,20 @@ const fuelingTransactionSchema = new mongoose.Schema({
             phoneNo: { type: String, required: false }
         },
     },
-    verified: { type: Boolean, default: false },
-    posted: { type: Boolean, default: false },
+    verified: {
+        status: { type: Boolean },
+        by: {
+            id: String,
+            name: String
+        }
+    },
+    posted: {
+        status: { type: Boolean },
+        by: {
+            id: String,
+            name: String
+        }
+    },
     allocationAdmin: {
         name: { type: String, required: false },
         id: { type: String, required: false },
@@ -66,20 +78,20 @@ fuelingTransactionSchema.post('save', async function (doc) {
         const tripSheet = await TripSheet.findOne({ tripSheetId: doc.tripSheetId });
 
         if (tripSheet) {
-            const dispenseIndex = tripSheet.dispenses.findIndex(
-                (d) => d.transaction.toString() === doc._id.toString()
+            const dispenseIndex = tripSheet.dispenses?.findIndex(
+                (d) => d.transaction?.toString() === doc._id?.toString()
             );
 
             if (dispenseIndex > -1) {
                 tripSheet.dispenses[dispenseIndex].fuelQuantity = doc.fuelQuantity;
-                tripSheet.dispenses[dispenseIndex].isVerified = doc.verified;
-                tripSheet.dispenses[dispenseIndex].isPosted = doc.posted;
+                tripSheet.dispenses[dispenseIndex].isVerified = doc.verified.status;
+                tripSheet.dispenses[dispenseIndex].isPosted = doc.posted.status;
             } else {
                 tripSheet.dispenses.push({
                     transaction: doc._id,
                     fuelQuantity: doc.fuelQuantity,
-                    isVerified: doc.verified,
-                    isPosted: doc.posted,
+                    isVerified: doc.verified.status,
+                    isPosted: doc.posted.status,
                 });
             }
 

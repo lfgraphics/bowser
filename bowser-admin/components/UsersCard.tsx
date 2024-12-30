@@ -13,7 +13,7 @@ const UsersCard: React.FC<UsersCardProps> = ({ header, description, content, foo
         <Card>
             <CardHeader>
                 <CardTitle>{header}</CardTitle>
-                <CardDescription>{description}</CardDescription>
+                <CardDescription>{description.split('\n').map((line, index) => <p key={index}>{line}</p>)}</CardDescription>
             </CardHeader>
             <CardContent>{content}</CardContent>
             <CardFooter>{footer}</CardFooter>

@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const FuelingTransaction = require('../models/fuelingTransaction');
+const FuelingTransaction = require('../models/Transaction');
 // const FuelingTransaction = require('../models/Transaction');
 const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
 const { removeDispenseFromTripSheet } = require('../utils/fuelTransactions');
 const TripSheet = require('../models/tripsheet');
+const { default: mongoose } = require('mongoose');
 
 router.get('/', async (req, res) => {
     const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'fuelingDateTime', order = 'desc', verified, category, vehicleNo, allocator } = req.query;
@@ -213,16 +214,28 @@ router.patch('/update/:id', async (req, res) => {
     }
 });
 router.patch('/verify/:id', async (req, res) => {
+    console.log(req.body)
     const { id } = req.params;
+    let { by } = req.body
     try {
-        const updatedRecord = await FuelingTransaction.findByIdAndUpdate(id, { verified: true });
-        await TripSheet.findOneAndUpdate(
-            { 'dispenses.transaction': id },
-            { $set: { 'dispenses.$.isVerified': true } },
-            { new: true }
-        );
+        const transaction = await FuelingTransaction.findByIdAndUpdate(new mongoose.Types.ObjectId(id), {
+            verified: {
+                status: true,
+                by: {
+                    id: by.id,
+                    name: by.name
+                }
+            }
+        });
+        if (transaction) {
+            await TripSheet.findOneAndUpdate(
+                { 'dispenses.transaction': id },
+                { $set: { 'dispenses.$.isVerified': true } },
+                { new: true }
+            );
+        }
 
-        if (!updatedRecord) {
+        if (!transaction) {
             return res.status(404).json({ heading: "Failed", message: 'Record not found' });
         }
 
@@ -234,15 +247,25 @@ router.patch('/verify/:id', async (req, res) => {
 });
 router.post('/verify', async (req, res) => {
     const { ids } = req.body;
+    let { by } = req.body
 
     if (!Array.isArray(ids) || ids.length === 0) {
         return res.status(400).json({ heading: "Failed!", message: "Invalid or empty ids array" });
     }
-
     try {
         const result = await FuelingTransaction.updateMany(
             { _id: { $in: ids } },
-            { $set: { verified: true } }
+            {
+                $set: {
+                    verified: {
+                        status: true,
+                        by: {
+                            id: by.id,
+                            name: by.name
+                        }
+                    }
+                }
+            }
         );
 
         if (result.modifiedCount === 0) {

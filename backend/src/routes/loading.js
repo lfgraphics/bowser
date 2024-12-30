@@ -31,7 +31,7 @@ router.post('/orders', async (req, res) => {
             let desc = loadingDesc ? `\nDescription: ${loadingDesc}` : ""
             await newBowserLoadingOrder.save();
             await sendBulkNotifications({
-                groups: ["loadingIncharge"],
+                groups: ["Loading Incharge"],
                 message: `Bowser: ${regNo}\nLoad the bowser from: ${loadingLocation}${desc}\nOrdered by: ${bccAuthorizedOfficer.name} Id: ${bccAuthorizedOfficer.id}`,
                 options: {
                     title: "New Bowser Loading Order Arrived",
