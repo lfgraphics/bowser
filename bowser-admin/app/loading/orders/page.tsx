@@ -15,6 +15,7 @@ import { DateRange } from "react-day-picker";
 import { BASE_URL } from "@/lib/api";
 import Loading from "@/app/loading";
 import { LoadingOrder } from "@/types";
+import OnlyAllowed from "@/components/OnlyAllowed";
 
 export default function LoadingOrdersPage() {
     const [orders, setOrders] = useState<LoadingOrder[]>([]);
@@ -142,16 +143,17 @@ export default function LoadingOrdersPage() {
             {/* Orders Grid */}
             <div className="gap-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {/* Create New Order Card */}
-                <Card>
-                    <CardContent className="flex justify-center items-center h-full">
-                        <Link href="/loading/orders/create">
-                            <Button variant="outline" size="icon" className="p-10 rounded-full">
-                                <Plus className="scale-150" />
-                            </Button>
-                        </Link>
-                    </CardContent>
-                </Card>
-
+                <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
+                    <Card>
+                        <CardContent className="flex justify-center items-center h-full">
+                            <Link href="/loading/orders/create">
+                                <Button variant="outline" size="icon" className="p-10 rounded-full">
+                                    <Plus className="scale-150" />
+                                </Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
+                </OnlyAllowed>
                 {/* Render Filtered Orders */}
                 {orders.length > 0 && orders.map((order) => (
                     <Link href={`/loading/sheet/${order._id}`} key={order._id}>

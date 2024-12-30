@@ -12,15 +12,10 @@ import OnlyAllowed from '../OnlyAllowed'
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false)
-  const [id, setId] = useState<string | null>(null)
+  const [user, setUser] = useState<User>()
 
   useEffect(() => {
-    let localUser = localStorage.getItem("adminUser");
-    if (localUser) {
-      let localUserData: User = JSON.parse(localUser)
-      // let lastDigit = localUserData?.phoneNumber.slice(-1);
-      setId(localUserData.userId)
-    }
+    setUser(JSON.parse(localStorage.getItem('adminUser')!))
   }, [])
 
   const handleLogout = () => {
@@ -40,9 +35,9 @@ export function Sidebar() {
         </SheetTrigger>
         <SheetContent side="left" className="top-0 left-0 z-50 fixed bg-background shadow w-60 h-full">
           <SheetHeader>
-            <SheetTitle>{JSON.parse(localStorage?.getItem('adminUser')!).roles[0]}</SheetTitle>
+            <SheetTitle>Hii {user?.name}</SheetTitle>
           </SheetHeader>
-          <SheetDescription>{JSON.parse(localStorage?.getItem('adminUser')!).roles.join(', ')}</SheetDescription>
+          <SheetDescription>Your role{user?.roles?.length! > 1 ? "s are: " : " is: "}{user?.roles.join(', ')}</SheetDescription>
           <div className="flex flex-col p-3 h-full">
             <nav className="h-[90%]">
               <ul className="space-y-1 text-sm">
@@ -59,7 +54,7 @@ export function Sidebar() {
                 {/* Dynamica access Routes in upcoming updates starts here ................ */}
                 <OnlyAllowed allowedRoles={["Admin", "Diesel Control Center Staff"]}>
                   <li onClick={toggleSidebar}>
-                    <Link href={`/dispense-records?allocator=${id}`}>
+                    <Link href={`/dispense-records?allocator=${user?.userId}`}>
                       <Button variant="ghost" className="justify-start w-full">
                         <ClipboardList className="mr-2 w-4 h-4" />
                         My Allocations
