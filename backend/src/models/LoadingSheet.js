@@ -38,17 +38,16 @@ const loadingSheetSchema = new mongoose.Schema({
                 sealPhoto: { type: String }
             }
         ],
-        _id: false // Correctly prevents automatic _id creation for subdocuments
+        _id: false
     },
-    pumpSlips: {
+    loadingSlips: {
         type: [
             {
-                chamberId: { type: String, required: true },
                 qty: { type: Number, required: true },
                 slipPhoto: { type: String, required: false },
             }
         ],
-        _id: false // Correctly prevents automatic _id creation for subdocuments
+        _id: false
     },
     totalLoadQuantityBySlip: { type: Number }, // auto calculated in .pre() hook: pumpslips.reduce(slip)=>slip.Number(qty)
     totalLoadQuantityByDip: { type: Number }, // auto calculated in .pre() hook: according to the bowsers's done calibration of the bowser chambers. refrence is "chamberwiseDipListAfter"

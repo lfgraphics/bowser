@@ -14,14 +14,14 @@ import {
 } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { Toaster } from "@/components/ui/toaster"
-import { ArrowDown01, ArrowUp10, Check, Edit, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
-import { TripSheet, Filters, Sort } from '@/types/index';
+import { TripSheet } from '@/types/index';
 import { isAuthenticated } from '@/lib/auth';
 import { BASE_URL } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
-import { AlertDialog, AlertDialogTrigger, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel, AlertDialogContent } from '@radix-ui/react-alert-dialog';
+import { AlertDialog, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel, AlertDialogContent } from '@/components/ui/alert-dialog';
 import { AlertDialogHeader } from './ui/alert-dialog';
 import OnlyAllowed from './OnlyAllowed';
 
@@ -39,14 +39,7 @@ const TripSheetPage = () => {
     }, []);
 
     const [sheets, setSheets] = useState<TripSheet[]>([]);
-    const [filters, setFilters] = useState<Filters>({
-        driverName: '',
-        bowserRegNo: '',
-        tripSheetId: '',
-        unsettled: false,
-    });
     const [searchParam, setSearchParam] = useState<string>('');
-    const [sort, setSort] = useState<Sort>({ field: '', order: 'desc' });
     const [loading, setLoading] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
     const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false);
@@ -102,21 +95,6 @@ const TripSheetPage = () => {
             </div>
             <Toaster />
             <div className="flex space-x-4 mb-4">
-                {/* <Input
-                    placeholder="Driver Name"
-                    value={filters.driverName}
-                    onChange={(e) => setFilters({ ...filters, driverName: e.target.value })}
-                />
-                <Input
-                    placeholder="Bowser Reg No"
-                    value={filters.bowserRegNo}
-                    onChange={(e) => setFilters({ ...filters, bowserRegNo: e.target.value })}
-                />
-                <Input
-                    placeholder="Trip Sheet ID"
-                    value={filters.tripSheetId}
-                    onChange={(e) => setFilters({ ...filters, tripSheetId: e.target.value })}
-                /> */}
                 <Input type='string' placeholder='Search...' value={searchParam} onChange={(e) => setSearchParam(e.target.value)} />
                 <Select onValueChange={(value) => setSettlment(value === 'true')}>
                     <SelectTrigger className="w-[180px]">
@@ -130,7 +108,19 @@ const TripSheetPage = () => {
                     </SelectContent>
                 </Select>
             </div>
-            <Table className="w-full">
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this trip sheet? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogAction onClick={() => handleDelete()}>Delete</AlertDialogAction>
+                    <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>Cancel</AlertDialogCancel>
+                </AlertDialogContent>
+            </AlertDialog>
+            <Table className="w-max min-w-full">
                 <TableHeader>
                     <TableRow>
                         <TableHead>SN</TableHead>
@@ -138,7 +128,7 @@ const TripSheetPage = () => {
                         <TableHead>Location</TableHead>
                         <TableHead>Created on</TableHead>
                         <TableHead>Settled on</TableHead>
-                        <TableHead>Bowser Reg No</TableHead>
+                        <TableHead>Bowser No.</TableHead>
                         <TableHead>Driver Name</TableHead>
                         <TableHead>Driver Mobile</TableHead>
                         <TableHead>Loaded</TableHead>
@@ -146,7 +136,7 @@ const TripSheetPage = () => {
                         <TableHead>Sold</TableHead>
                         <TableHead>Balance</TableHead>
                         <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
-                            <TableHead>Actions</TableHead>
+                            <TableHead className='text-center'>Actions</TableHead>
                         </OnlyAllowed>
                         <TableHead>Verified</TableHead>
                     </TableRow>
@@ -164,7 +154,7 @@ const TripSheetPage = () => {
                         sheets.map((sheet, index) => (
                             <TableRow key={sheet._id}>
                                 <TableCell>{index + 1}</TableCell>
-                                <TableCell>
+                                <TableCell className='text-center'>
                                     <Link href={`/dispense-records?tripNumber=${sheet.tripSheetId}`} className='text-blue-500 underline'>
                                         {sheet.tripSheetId}
                                     </Link>
@@ -176,67 +166,51 @@ const TripSheetPage = () => {
                                 <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.name : "Old Data is not captured"}</TableCell>
                                 <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.phoneNo : "Old Data is not captured"}</TableCell>
                                 <TableCell>{sheet.totalLoadQuantity?.toFixed(2)}</TableCell>
-                                <TableCell>{sheet.dispenses?.length || "0"}</TableCell>
+                                <TableCell className='text-center' >{sheet.dispenses?.length || "0"}</TableCell>
                                 <TableCell>{sheet.saleQty?.toFixed(2)}</TableCell>
                                 <TableCell>{sheet.balanceQty?.toFixed(2)}</TableCell>
                                 <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
                                     <TableCell className="flex space-x-2">
                                         <DropdownMenu>
-                                            <DropdownMenuTrigger>
-                                                <Button variant="outline" className='w-full text-center'>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="outline" className='p-4 w-full h-10 text-center'>
                                                     Update
                                                 </Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent className='bg-card'>
-                                                <DropdownMenuItem>
-                                                    <Button variant="outline" className='w-full text-center'>
-                                                        <Link href={`/tripsheets/settle/${sheet._id}`}>Settle</Link>
-                                                    </Button>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem>
-                                                    <Button disabled variant="outline" className='w-full text-center'>
-                                                        <Link href={`/tripsheets/addition/${sheet._id}`}>Reload (+)</Link>
-                                                    </Button>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem>
-                                                    <Button disabled variant="outline" className='w-full text-center'>
-                                                        <Link href={`/tripsheets/add-driver/${sheet._id}`}>Add Driver</Link>
-                                                    </Button>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem>
-                                                    <Button disabled={sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? false : true} variant="outline" className='w-full text-center' onClick={() => postDispenses(sheet._id!)}>Post</Button>
-                                                </DropdownMenuItem>
-                                                <OnlyAllowed allowedRoles={["Admin"]}>
-                                                    <DropdownMenuItem>
-                                                        <Button disabled className='w-full' variant="destructive" onClick={() => openDeleteDialogue(sheet._id!)}>Delete</Button>
+                                            <DropdownMenuContent className='bg-card text-center'>
+                                                <Link href={`/tripsheets/settle/${sheet._id}`}>
+                                                    <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='p-4 w-full h-10 text-center'>
+                                                        Settle
                                                     </DropdownMenuItem>
-                                                </OnlyAllowed>
+                                                </Link>
+                                                <Link href={`/tripsheets/addition/${sheet._id}`}>
+                                                    <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='p-4 w-full h-10 text-center'>
+                                                        Reload (+)
+                                                    </DropdownMenuItem>
+                                                </Link>
+                                                <Link href={`/tripsheets/add-driver/${sheet._id}`}>
+                                                    <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='p-4 w-full h-10 text-center'>
+                                                        Add Driver
+                                                    </DropdownMenuItem>
+                                                </Link>
+                                                <DropdownMenuItem disabled={sheet.settelment?.dateTime == undefined && sheet.dispenses?.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? false : true} className='p-4 w-full h-10 text-center' onClick={() => postDispenses(sheet._id!)}>
+                                                    Post
+                                                </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
+                                        <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
+                                            <Button variant="destructive" className='h-10' onClick={() => openDeleteDialogue(sheet._id!)}>
+                                                Delete
+                                            </Button>
+                                        </OnlyAllowed>
                                     </TableCell>
                                 </OnlyAllowed>
-                                <TableCell>{sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? <Check /> : (sheet.dispenses && sheet.dispenses.length > 0 ? <X /> : null)}</TableCell>
+                                <TableCell>{sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? <Check className='block mx-auto' /> : (sheet.dispenses && sheet.dispenses.length > 0 ? <X className='block mx-auto' /> : null)}</TableCell>
                             </TableRow>
                         ))
                     )}
                 </TableBody>
             </Table>
-            {
-                showDeleteDialog && deletingSheetId && (
-                    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Are you sure you want to delete this trip sheet? This action cannot be undone.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogAction onClick={() => handleDelete()}>Delete</AlertDialogAction>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                )
-            }
             {
                 showSuccessAlert && (
                     <AlertDialog open={showSuccessAlert} onOpenChange={setShowSuccessAlert}>

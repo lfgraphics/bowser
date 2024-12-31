@@ -156,10 +156,9 @@ export default function LoadingOrdersPage() {
                 </OnlyAllowed>
                 {/* Render Filtered Orders */}
                 {orders.length > 0 && orders.map((order) => (
-                    <Link href={`/loading/sheet/${order._id}`} key={order._id}>
+                    <Link href={!order.fulfilled ? `/loading/sheet/${order._id}` : ""} key={order._id}>
                         <Card
-                            className={`cursor-pointer hover:bg-muted transition-colors ${order.fulfilled ? "bg-gray-100" : "bg-green-100"
-                                }`}
+                            className={`cursor-pointer hover:bg-muted transition-colors ${order.fulfilled ? "bg-gray-100" : "bg-green-100"}`}
                         >
                             <CardHeader>
                                 <CardTitle className="font-semibold text-lg">

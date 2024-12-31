@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-import { capturePhoto } from "@/lib/cameraUtils";
+// import { capturePhoto } from "@/lib/cameraUtils";
 import { BASE_URL } from "@/lib/api";
 import { Bowser, LoadingOrder, OrderBowserResponse } from "@/types";
 import Loading from "@/app/loading";
@@ -20,6 +20,7 @@ import {
     clearFormData
 } from "@/lib/storage";
 import { openEmbeddedCamera } from "@/components/EmbeddedCamera";
+import { Separator } from "@/components/ui/separator";
 
 // A single object type for the entire page’s form state
 interface LoadingSheetFormData {
@@ -41,18 +42,17 @@ interface LoadingSheetFormData {
         seals: { sealId: string; sealPhoto?: string }[];
     }[];
 
-    pumpSlips: {
-        chamberId: string;
-        slips: { qty: string | number; slipPhoto: string }[];
+    loadingSlips: {
+        qty: string | number; slipPhoto: string
     }[];
 }
 
-const STORAGE_KEY = "loadingSheetPageData"; // Unique key in localforage
 
 export default function LoadingSheetPage() {
     const router = useRouter();
     const params = useParams(); // The [id] from the URL
     const orderId = params.id;
+    const STORAGE_KEY = `loadingSheetPageData${orderId}`; // Unique key in localforage
 
     // -----------------------------------------
     // Loading + Error
@@ -93,10 +93,9 @@ export default function LoadingSheetPage() {
     >([]);
 
     // Pump Slips
-    const [pumpSlips, setPumpSlips] = useState<
+    const [loadingSlips, setLoadingSlips] = useState<
         {
-            chamberId: string;
-            slips: { qty: string | number; slipPhoto: string }[];
+            qty: string | number; slipPhoto: string
         }[]
     >([]);
 
@@ -122,7 +121,7 @@ export default function LoadingSheetPage() {
                     setChamberwiseDipListBefore(saved.chamberwiseDipListBefore);
                     setChamberwiseDipListAfter(saved.chamberwiseDipListAfter);
                     setChamberwiseSealList(saved.chamberwiseSealList);
-                    setPumpSlips(saved.pumpSlips);
+                    setLoadingSlips(saved.loadingSlips);
                 }
 
                 // 2. Fetch the server data if we haven’t stored it or want a fresh version
@@ -143,6 +142,8 @@ export default function LoadingSheetPage() {
                     if (!didCancel) {
                         setOrder(order);
                         setBowser(bowser);
+
+                        // check for created tripsheet by fetching baseurl/loadig/tripsheet/${orderId} to update, if already created then set the data else the below data
 
                         // Initialize the states if not already set
                         if (bowser?.chambers?.length > 0 && (!saved || !saved.bowser)) {
@@ -168,13 +169,7 @@ export default function LoadingSheetPage() {
                                     seals: [{ sealId: "", sealPhoto: "" }],
                                 }))
                             );
-
-                            setPumpSlips(
-                                bowser.chambers.map((ch) => ({
-                                    chamberId: ch.chamberId,
-                                    slips: [{ qty: "", slipPhoto: "" }],
-                                }))
-                            );
+                            setLoadingSlips([{ qty: 0, slipPhoto: "" }]);
                         }
                     }
                 }
@@ -206,7 +201,7 @@ export default function LoadingSheetPage() {
             chamberwiseDipListBefore,
             chamberwiseDipListAfter,
             chamberwiseSealList,
-            pumpSlips,
+            loadingSlips,
         };
         saveFormData(STORAGE_KEY, formData).catch((err) => {
             console.error("Failed to save form data:", err);
@@ -221,7 +216,7 @@ export default function LoadingSheetPage() {
         chamberwiseDipListBefore,
         chamberwiseDipListAfter,
         chamberwiseSealList,
-        pumpSlips
+        loadingSlips
     ]);
 
     // -----------------------------------------
@@ -243,12 +238,12 @@ export default function LoadingSheetPage() {
     // -----------------------------------------
     // 4) Handle Camera for Slips
     // -----------------------------------------
-    async function handleSlipPhoto(chamberIdx: number, slipIdx: number) {
+    async function handleSlipPhoto(slipIdx: number) {
         try {
             const base64 = await openEmbeddedCamera();
-            setPumpSlips((prev) => {
+            setLoadingSlips((prev) => {
                 const copy = [...prev];
-                copy[chamberIdx].slips[slipIdx].slipPhoto = base64;
+                copy[slipIdx].slipPhoto = base64;
                 return copy;
             });
         } catch (err) {
@@ -307,13 +302,10 @@ export default function LoadingSheetPage() {
                     }))
                 ),
 
-                pumpSlips: pumpSlips.flatMap((ch) =>
-                    ch.slips.map((slip) => ({
-                        chamberId: ch.chamberId,
-                        qty: Number(slip.qty),
-                        slipPhoto: slip.slipPhoto,
-                    }))
-                ),
+                loadingSlips: loadingSlips.map((slip) => ({
+                    qty: Number(slip.qty),
+                    slipPhoto: slip.slipPhoto,
+                })),
 
                 loadingIncharge,
                 bccAuthorizedOfficer: {
@@ -357,7 +349,6 @@ export default function LoadingSheetPage() {
     function resetForm() {
         setOrder(null);
         setBowser(null);
-
         setOdoMeter("");
         setFuleingMachine("");
         setPumpReadingBefore("");
@@ -365,12 +356,12 @@ export default function LoadingSheetPage() {
         setChamberwiseDipListBefore([]);
         setChamberwiseDipListAfter([]);
         setChamberwiseSealList([]);
-        setPumpSlips([]);
-
+        setLoadingSlips([]);
         // Also remove from localforage
         clearFormData(STORAGE_KEY).catch((err) => {
             console.error("Failed to clear form data:", err);
         });
+        router.refresh()
     }
 
     // -----------------------------------------
@@ -402,7 +393,7 @@ export default function LoadingSheetPage() {
                 <CardContent>
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         {/* Global Fields */}
-                        <div className="p-2 border rounded">
+                        <div className="p-2 rounded">
                             <div className="flex flex-col gap-2 mb-4">
                                 <Label>Odometer</Label>
                                 <Input
@@ -444,7 +435,8 @@ export default function LoadingSheetPage() {
                         </div>
 
                         {/* Chamberwise Dip BEFORE */}
-                        <div className="p-2 border rounded">
+                        <Separator />
+                        <div className="p-2 rounded">
                             <h4 className="mb-2 font-semibold">Chamberwise Dip (Before loading)</h4>
                             {chamberwiseDipListBefore.map((dip, idx) => (
                                 <div key={dip.chamberId} className="flex flex-col space-y-1 mb-2">
@@ -470,7 +462,8 @@ export default function LoadingSheetPage() {
                         </div>
 
                         {/* Chamberwise Dip AFTER */}
-                        <div className="p-2 border rounded">
+                        <Separator />
+                        <div className="p-2 rounded">
                             <h4 className="mb-2 font-semibold">Chamberwise Dip (After loading done)</h4>
                             {chamberwiseDipListAfter.map((dip, idx) => (
                                 <div key={dip.chamberId} className="flex flex-col space-y-1 mb-2">
@@ -496,7 +489,8 @@ export default function LoadingSheetPage() {
                         </div>
 
                         {/* Chamberwise Seal List */}
-                        <div className="p-2 border rounded">
+                        <Separator />
+                        <div className="p-2 rounded">
                             <h4 className="mb-2 font-semibold">Chamberwise Seal List</h4>
                             {chamberwiseSealList.map((ch, chamberIdx) => (
                                 <div key={ch.chamberId} className="mb-4">
@@ -581,93 +575,73 @@ export default function LoadingSheetPage() {
                         </div>
 
                         {/* Pump Slips */}
-                        <div className="p-2 border rounded">
-                            <h4 className="mb-2 font-semibold">Loading Slips</h4>
-                            {pumpSlips.map((ch, chamberIdx) => (
-                                <div key={ch.chamberId} className="mb-4">
-                                    <p className="font-semibold">{ch.chamberId}</p>
-                                    {ch.slips.map((slip, slipIdx) => (
-                                        <div key={slipIdx} className="flex flex-col mb-2">
-                                            <div className="flex flex-col space-y-1 mb-2">
-                                                <Input
-                                                    type="number"
-                                                    placeholder="Qty"
-                                                    value={slip.qty}
-                                                    onChange={(e) => {
-                                                        const newVal = e.target.value;
-                                                        setPumpSlips((prev) => {
-                                                            const copy = [...prev];
-                                                            copy[chamberIdx] = {
-                                                                ...copy[chamberIdx],
-                                                                slips: copy[chamberIdx].slips.map((s, i) =>
-                                                                    i === slipIdx ? { ...s, qty: newVal } : s
-                                                                ),
-                                                            };
-                                                            return copy;
-                                                        });
-                                                    }}
+                        <Separator />
+                        <div className="p-2 rounded">
+                            <h4 className="mb-2 font-semibold">Loading Slip/s</h4>
+                            {loadingSlips?.map((slip, slipIdx) => (
+                                <div key={slipIdx} className="mb-4">
+                                    <div className="flex flex-col mb-2">
+                                        <div className="flex flex-col space-y-1 mb-2">
+                                            <Label>Slip #{slipIdx + 1}</Label>
+                                            <Input
+                                                type="number"
+                                                placeholder="Qty"
+                                                value={slip.qty}
+                                                onChange={(e) => {
+                                                    const newVal = e.target.value;
+                                                    setLoadingSlips((prev) => {
+                                                        const copy = [...prev];
+                                                        copy[slipIdx] = { ...copy[slipIdx], qty: newVal };
+                                                        return copy;
+                                                    });
+                                                }}
+                                            />
+
+                                            {slip.slipPhoto && (
+                                                <img
+                                                    src={slip.slipPhoto}
+                                                    alt="Slip Photo"
+                                                    className="border rounded-md w-full h-auto"
                                                 />
+                                            )}
 
-                                                {slip.slipPhoto && (
-                                                    <img
-                                                        src={slip.slipPhoto}
-                                                        alt="Slip Photo"
-                                                        className="border rounded-md w-full h-auto"
-                                                    />
-                                                )}
-
-                                                <div className="flex flex-row justify-around w-full">
-                                                    <Button variant="secondary"
-                                                        className="flex-[0.4]"
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            setPumpSlips((prev) => {
-                                                                const copy = [...prev];
-                                                                copy[chamberIdx] = {
-                                                                    ...copy[chamberIdx],
-                                                                    slips: [
-                                                                        ...copy[chamberIdx].slips.filter((_, index) => index !== slipIdx),
-                                                                    ],
-                                                                };
-                                                                return copy;
-                                                            });
-                                                        }}>- Remove</Button>
-                                                    <Button
-                                                        className="flex-[0.4]"
-                                                        variant="default"
-                                                        onClick={async (e) => {
-                                                            e.preventDefault();
-                                                            await handleSlipPhoto(chamberIdx, slipIdx);
-                                                        }}
-                                                    >
-                                                        {slip.slipPhoto ? "Retake Photo" : "Take Photo"}
-                                                    </Button>
-                                                </div>
+                                            <div className="flex flex-row justify-around w-full">
+                                                <Button variant="secondary"
+                                                    className="flex-[0.4]"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        setLoadingSlips((prev) => {
+                                                            return prev.filter((_, index) => index !== slipIdx);
+                                                        });
+                                                    }}>- Remove</Button>
+                                                <Button
+                                                    className="flex-[0.4]"
+                                                    variant="default"
+                                                    onClick={async (e) => {
+                                                        e.preventDefault();
+                                                        await handleSlipPhoto(slipIdx);
+                                                    }}
+                                                >
+                                                    {slip.slipPhoto ? "Retake Photo" : "Take Photo"}
+                                                </Button>
                                             </div>
                                         </div>
-                                    ))}
-                                    <Button
-                                        className="w-full"
-                                        variant="outline"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            setPumpSlips((prev) => {
-                                                const copy = [...prev];
-                                                copy[chamberIdx] = {
-                                                    ...copy[chamberIdx],
-                                                    slips: [
-                                                        ...copy[chamberIdx].slips,
-                                                        { qty: "", slipPhoto: "" },
-                                                    ],
-                                                };
-                                                return copy;
-                                            });
-                                        }}
-                                    >
-                                        + Add Slip
-                                    </Button>
+                                    </div>
                                 </div>
                             ))}
+                            <Button
+                                className="w-full"
+                                variant="outline"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setLoadingSlips((prev) => [
+                                        ...prev,
+                                        { qty: "", slipPhoto: "" },
+                                    ]);
+                                }}
+                            >
+                                + Add Slip
+                            </Button>
                         </div>
 
                         {/* Error Display */}

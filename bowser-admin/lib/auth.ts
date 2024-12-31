@@ -4,8 +4,7 @@ import {
   registerPushSubscription,
   unregisterPushSubscription
 } from '@/utils/pushNotifications'
-
-export const API_URL = 'https://bowser-backend-2cdr.onrender.com' //https://bowser-backend-2cdr.onrender.com //http://192.168.137.1:5000
+import { BASE_URL } from './api'
 
 export async function signup (userData: {
   userId: string
@@ -15,7 +14,7 @@ export async function signup (userData: {
 }): Promise<SignupResponse> {
   try {
     const response = await axios.post<SignupResponse>(
-      `${API_URL}/auth/admin/signup`,
+      `${BASE_URL}/auth/admin/signup`,
       userData
     )
     if (response.data.token) {
@@ -35,7 +34,7 @@ export async function login (
 ): Promise<LoginResponse> {
   try {
     const response = await axios.post<LoginResponse>(
-      `${API_URL}/auth/admin/login`,
+      `${BASE_URL}/auth/admin/login`,
       {
         userId,
         password,

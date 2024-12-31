@@ -170,8 +170,7 @@ export default function TripSheetCreatePage() {
             console.log("Created TripSheet:", created);
 
             // Redirect or show success message
-            router.push("/tripsheets");
-            // or /tripsheets/list if that’s your listing page
+            router.replace("/tripsheets");
         } catch (err: any) {
             setError(err.message || "Error creating TripSheet.");
         } finally {

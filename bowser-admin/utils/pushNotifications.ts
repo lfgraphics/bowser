@@ -1,4 +1,4 @@
-import { API_URL } from "@/lib/auth";
+import { BASE_URL } from "@/lib/api";
 
 export async function registerPushSubscription(mobileNumber: string, userId:string, roles:string[]): Promise<void> {
     if (!mobileNumber) {
@@ -44,7 +44,7 @@ export async function registerPushSubscription(mobileNumber: string, userId:stri
             });
 
             // Send subscription to the backend
-            const response = await fetch(`${API_URL}/notifications/register`, {
+            const response = await fetch(`${BASE_URL}/notifications/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mobileNumber, userId, groups:roles, subscription, platform: "web" }),
@@ -73,7 +73,7 @@ export async function unregisterPushSubscription(mobileNumber: string): Promise<
     }
 
     try {
-        const response = await fetch(`${API_URL}/notifications/unregister`, {
+        const response = await fetch(`${BASE_URL}/notifications/unregister`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mobileNumber, platform: "web" }),

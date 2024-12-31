@@ -6,17 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { isAuthenticated, getCurrentUser, API_URL } from "@/lib/auth"
+import { isAuthenticated, getCurrentUser } from "@/lib/auth"
 import { AttachedVehicle, Driver, FuelingTypes, User } from "@/types"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { SearchModal } from "@/components/SearchModal"
 import { searchItems } from '@/utils/searchUtils'
@@ -181,7 +173,7 @@ export default function FuelingAllocation() {
         setIsSearching(true);
         try {
             const vehicles = await searchItems<AttachedVehicle>({
-                url: `${API_URL}/attatched/search`, //https://bowser-backend-2cdr.onrender.com
+                url: `${BASE_URL}/attatched/search`, //https://bowser-backend-2cdr.onrender.com
                 searchTerm: vehicleNumber,
                 errorMessage: 'No vehicle found with the given number'
             });
