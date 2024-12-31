@@ -19,13 +19,23 @@ webpush.setVapidDetails(
  * @param {object} [options] - Optional parameters for the notification (e.g., title, icon).
  * @returns {Promise<object>} - A promise that resolves with the result of the notification sending.
  */
-async function sendWebPushNotification({ userId: userId, message: message, options: options = {} }) {
-    console.log(userId, message)
+async function sendWebPushNotification({ mobileNumber, userId, message, options = {} }) {
+    // Ensure at least one of mobileNumber or userId is provided
+    if (!mobileNumber && !userId) {
+        throw new Error('Either mobileNumber or userId must be provided.');
+    }
+
+    console.log(userId, mobileNumber, message);
     try {
-        const subscriptionData = await PushSubscription.findOne({ userId, platform: 'web' });
+        const subscriptionData = await PushSubscription.findOne({
+            $or: [
+                { userId, platform: 'web' },
+                { mobileNumber, platform: 'web' }
+            ]
+        });
 
         if (!subscriptionData || !subscriptionData.subscription) {
-            throw new Error('No web subscription found for this mobile number.');
+            throw new Error('No web subscription found for the provided userId or mobile number.');
         }
 
         const subscription = subscriptionData.subscription;
@@ -37,8 +47,13 @@ async function sendWebPushNotification({ userId: userId, message: message, optio
             icon: options.icon || '/icon-512x512.png',
         });
 
-        await webpush.sendNotification(subscription, payload);
-        return { success: true, message: 'Web notification sent successfully.' };
+        try {
+            await webpush.sendNotification(subscription, payload);
+            return { success: true, message: 'Web notification sent successfully.' };
+        } catch (error) {
+            console.error('Failed to send web notification:', error);
+            return { success: false, message: 'Failed to send web notification.' };
+        }
     } catch (error) {
         console.error('Error sending web push notification:', error.message);
         return { success: false, error };

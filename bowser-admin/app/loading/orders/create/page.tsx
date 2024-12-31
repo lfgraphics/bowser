@@ -10,17 +10,10 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 
 import { BASE_URL } from "@/lib/api";
 import Loading from "@/app/loading";
-import { ResponseBowser } from "@/types";
+import { ResponseBowser, User } from "@/types";
 import { searchItems } from "@/utils/searchUtils";
 import { SearchModal } from "@/components/SearchModal";
-
-interface AdminUser {
-    _id?: string;
-    userId?: string;
-    name?: string;
-    phoneNumber?: string;
-    // ... other fields if needed
-}
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function CreateLoadingOrderPage() {
     const router = useRouter();
@@ -29,9 +22,11 @@ export default function CreateLoadingOrderPage() {
     const [regNo, setRegNo] = useState("");
     const [loadingDesc, setLoadingDesc] = useState("");
     const [loadingLocation, setLoadingLocation] = useState("");
+    const [petrolPumpName, setPetrolPumpName] = useState<string>("");
+    const [petrolPumpPhoneNo, setPetrolPumpPhoneNo] = useState<string>("");
 
     // Admin user data from localStorage
-    const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+    const [adminUser, setAdminUser] = useState<User | null>(null);
 
     // Loading & error states
     const [loading, setLoading] = useState(false);
@@ -79,6 +74,10 @@ export default function CreateLoadingOrderPage() {
                 regNo,
                 loadingDesc,
                 loadingLocation,
+                petrolPump: {
+                    name: petrolPumpName,
+                    phone: petrolPumpPhoneNo
+                },
                 bccAuthorizedOfficer: {
                     id: adminUser?.userId ?? "", // or adminUser?._id
                     name: adminUser?.name ?? "",
@@ -147,6 +146,38 @@ export default function CreateLoadingOrderPage() {
         }
     }
 
+    const searchPetrolPump = async () => {
+        setLoading(true);
+        try {
+            const petrolPumps = await searchItems<User>({
+                url: `${BASE_URL}/searchDriver/petrolPump`, //https://bowser-backend-2cdr.onrender.com
+                searchTerm: petrolPumpName,
+                errorMessage: 'No petrol pump accound found with the given name'
+            });
+            console.log(petrolPumps)
+            if (petrolPumps.length > 0) {
+                setSearchModalConfig({
+                    isOpen: true,
+                    title: "Select a Petrol Pump Personnel Account",
+                    items: petrolPumps,
+                    onSelect: handleAttachedVehicleSelection,
+                    renderItem: (pump) => `${pump.name}`,
+                    keyExtractor: (pump) => pump.name,
+                });
+            }
+        } catch (error) {
+            console.error('Error searching for driver:', error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const handleAttachedVehicleSelection = (petrolPump: { name: string, phoneNo: string }) => {
+        setPetrolPumpName(petrolPump.name);
+        setPetrolPumpPhoneNo(petrolPump.phoneNo);
+        setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
+    }
+
     return (
         <div className="mx-auto py-8 max-w-lg container">
             {loading && <Loading />}
@@ -190,16 +221,45 @@ export default function CreateLoadingOrderPage() {
                         </div>
                         <div className="flex flex-col space-y-1">
                             <Label htmlFor="loadingLocation">Loading Location</Label>
-                            <Input
+                            <RadioGroup
+                                defaultValue="bcc"
                                 id="loadingLocation"
-                                placeholder="Bowser Control Center or Petrol pump"
                                 value={loadingLocation}
-                                onChange={(e) => setLoadingLocation(e.target.value)}
-                            />
+                                onValueChange={(e) => setLoadingLocation(e)}
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="bcc" id="r1" />
+                                    <Label htmlFor="r1">Bcc</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="petrolPump" id="r2" />
+                                    <Label htmlFor="r2">Petrol Pump</Label>
+                                </div>
+                            </RadioGroup>
                         </div>
-
+                        {loadingLocation === "petrolPump" && <div className="flex flex-col space-y-1">
+                            <Label htmlFor="petrolPump">Select Petrol Pump</Label>
+                            <Input
+                                id="petrolPump"
+                                placeholder={"Enter name or phone no. to search ↵"}
+                                value={petrolPumpName}
+                                onChange={(e) => setPetrolPumpName(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        searchPetrolPump();
+                                    }
+                                }}
+                            />
+                            <Input
+                                id="petrolPumpPhone"
+                                placeholder="Enter Phone No."
+                                value={petrolPumpPhoneNo}
+                                onChange={(e) => setPetrolPumpPhoneNo(e.target.value)}
+                            />
+                        </div>}
                         <Button type="submit" disabled={loading}>
-                            {loading ? "Saving..." : "Create Order"}
+                            Create Order
                         </Button>
                     </form>
                 </CardContent>

@@ -125,7 +125,7 @@ export default function FuelingAllocation() {
     const searchBowserDriver = async (userId: string) => {
         setIsSearching(true);
         try {
-            const response = await searchItems({ url: 'https://bowser-backend-2cdr.onrender.com/searchDriver/bowser-drivers', searchTerm: userId, errorMessage: `No details found with the user id: ${userId}` })// fetch(`https://bowser-backend-2cdr.onrender.com/searchDriver/bowser-drivers/${userId}`); //https://bowser-backend-2cdr.onrender.com
+            const response = await searchItems({ url: `${BASE_URL}/searchDriver/bowser-drivers`, searchTerm: userId, errorMessage: `No details found with the user id: ${userId}` })// fetch(`https://bowser-backend-2cdr.onrender.com/searchDriver/bowser-drivers/${userId}`); //https://bowser-backend-2cdr.onrender.com
             const drivers = response;
             if (drivers.length > 0) {
                 setSearchModalConfig({

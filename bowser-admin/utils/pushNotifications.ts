@@ -1,4 +1,5 @@
 import { BASE_URL } from "@/lib/api";
+import { logout } from "@/lib/auth";
 
 export async function registerPushSubscription(mobileNumber: string, userId:string, roles:string[]): Promise<void> {
     if (!mobileNumber) {
@@ -13,7 +14,8 @@ export async function registerPushSubscription(mobileNumber: string, userId:stri
 
             if (permission !== 'granted') {
                 console.error('Notification permission denied or dismissed.');
-                alert('Please enable notifications in your browser settings to proceed\nand login again to register to recive notifications');
+                alert('Please enable and allow notifications in your browser settings to proceed\nand login again to register to recive notifications\nThis is necessary to stay in the system');
+                await logout()
                 return;
             }
 

@@ -227,7 +227,7 @@ export interface User {
   name: string
   bowserId: string
   verified: boolean
-  roles: Role[]
+  roles: string[]
   generationTime: Date
 }
 

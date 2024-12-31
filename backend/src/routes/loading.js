@@ -9,7 +9,7 @@ const Bowsers = require('../models/Bowsers');
 // Create a new LoadingOrder
 router.post('/orders', async (req, res) => {
     try {
-        const { regNo, loadingDesc, loadingLocation, bccAuthorizedOfficer } = req.body;
+        const { regNo, loadingDesc, loadingLocation, petrolPump, bccAuthorizedOfficer } = req.body;
         console.log(req.body)
 
         if (!regNo || !loadingLocation || !bccAuthorizedOfficer || !bccAuthorizedOfficer.id || !bccAuthorizedOfficer.name) {
@@ -20,6 +20,7 @@ router.post('/orders', async (req, res) => {
             regNo,
             loadingDesc,
             loadingLocation,
+            ...(petrolPump ? { petrolPump } : {}),
             bccAuthorizedOfficer: {
                 id: bccAuthorizedOfficer.id,
                 name: bccAuthorizedOfficer.name,
@@ -28,17 +29,23 @@ router.post('/orders', async (req, res) => {
         });
 
         try {
-            let desc = loadingDesc ? `\nDescription: ${loadingDesc}` : ""
+            let desc = loadingDesc ? `\nDescription: ${loadingDesc}\n` : "";
+            let message = `Bowser: ${regNo}\n${desc}Ordered by: ${bccAuthorizedOfficer.name} Id: ${bccAuthorizedOfficer.id}`;
+            let options = {
+                title: "New Bowser Loading Order Arrived",
+                url: `/loading/sheet/${newBowserLoadingOrder._id}`,
+            }
+            if (loadingLocation === "bcc") {
+                await sendBulkNotifications({
+                    groups: ["Loading Incharge"],
+                    message: message,
+                    options: options,
+                    platform: "web",
+                });
+            } else if (loadingLocation === "petrolPump") {
+                await sendWebPushNotification({ mobileNumber: petrolPump.phone, message: message, options: options = { title: "New Bowser Loading Order Arrived", url: `/loading/sheet/petrol-pump/${newBowserLoadingOrder._id}`, } })
+            }
             await newBowserLoadingOrder.save();
-            await sendBulkNotifications({
-                groups: ["Loading Incharge"],
-                message: `Bowser: ${regNo}\nLoad the bowser from: ${loadingLocation}${desc}\nOrdered by: ${bccAuthorizedOfficer.name} Id: ${bccAuthorizedOfficer.id}`,
-                options: {
-                    title: "New Bowser Loading Order Arrived",
-                    url: `/loading/sheet/${newBowserLoadingOrder._id}`,
-                },
-                platform: "web",
-            });
             res.status(201).json(newBowserLoadingOrder);
         } catch (error) {
             console.error("Error saving LoadingOrder or sending notification:", error);
