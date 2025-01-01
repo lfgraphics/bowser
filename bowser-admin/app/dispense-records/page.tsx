@@ -465,7 +465,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
-            <Table>
+            <Table className="w-max min-w-full">
                 {/* <TableCaption>A list of your recent Dispenses.</TableCaption> */}
                 <TableHeader>
                     <TableRow>

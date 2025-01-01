@@ -1,6 +1,7 @@
 /**
  * Calculates the quantity based on calibration for a given chamber and level height.
- * 
+ * Enhanced to match the logic from the Excel calibration calculations.
+ *
  * @param {Array} bowserChambers - The chambers of the bowser.
  * @param {String} chamberId - The ID of the chamber.
  * @param {Number} levelHeight - The height level to calculate the quantity for.
@@ -19,21 +20,39 @@ const calculateQty = (bowserChambers, chamberId, levelHeight) => {
     for (const level of chamber.levels) {
         if (levelHeight <= level.levelHeight) {
             if (!prevLevel) {
-                // If within the first level
-                qty = level.levelCalibrationQty * levelHeight;
+                // If within the first level, calculate proportionally
+                qty = (level.levelTotalQty / level.levelHeight) * levelHeight;
             } else {
-                // If between two levels
-                const heightDiff = levelHeight - prevLevel.levelHeight;
-                qty = prevLevel.levelTotalQty + heightDiff * level.levelCalibrationQty;
+                // Interpolate between two levels
+                const heightDiff = level.levelHeight - prevLevel.levelHeight;
+                const qtyDiff = level.levelTotalQty - prevLevel.levelTotalQty;
+
+                const calibrationQty = qtyDiff / heightDiff;
+                const extraHeight = levelHeight - prevLevel.levelHeight;
+
+                qty = prevLevel.levelTotalQty + (calibrationQty * extraHeight);
             }
-            break;
+            return qty;
         }
         prevLevel = level;
+    }
+
+    // If levelHeight exceeds the maximum level height, calculate extra height
+    if (prevLevel && levelHeight > prevLevel.levelHeight) {
+        const extraHeight = levelHeight - prevLevel.levelHeight;
+        qty = prevLevel.levelTotalQty + (extraHeight * prevLevel.levelCalibrationQty);
     }
 
     return qty;
 };
 
+/**
+ * Preprocesses the chamber levels to calculate total quantities and calibration values.
+ * Matches the logic from the calibration data sheet.
+ *
+ * @param {Array} chambers - Array of chambers with levels.
+ * @returns {Array} - Updated chambers with calculated levelTotalQty and levelCalibrationQty.
+ */
 const calculateChamberLevels = (chambers) => {
     chambers.forEach((chamber) => {
         chamber.levels.sort((a, b) => a.levelNo - b.levelNo);

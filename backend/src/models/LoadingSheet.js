@@ -89,7 +89,7 @@ loadingSheetSchema.pre('save', async function (next) {
         }
 
         // Calculate totalLoadQuantityBySlip
-        this.totalLoadQuantityBySlip = this.pumpSlips.reduce((total, slip) => {
+        this.totalLoadQuantityBySlip = this.loadingSlips.reduce((total, slip) => {
             return total + parseFloat(slip.qty);
         }, 0);
 

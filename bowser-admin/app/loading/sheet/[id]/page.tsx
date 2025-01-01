@@ -323,9 +323,9 @@ export default function LoadingSheetPage() {
         }
 
         // Check if all fields are filled
-        if (!checkFieldsFilled()) {
-            return; // Prevent submission if fields are empty
-        }
+        // if (!checkFieldsFilled()) {
+        //     return; // Prevent submission if fields are empty
+        // }
 
         setLoading(true);
         setError(null);

@@ -186,7 +186,7 @@ router.post('/sheet', async (req, res) => {
             chamberwiseDipListBefore,
             chamberwiseDipListAfter,
             chamberwiseSealList,
-            pumpSlips,
+            loadingSlips,
             loadingIncharge,
             bccAuthorizedOfficer,
         } = req.body;
@@ -222,7 +222,7 @@ router.post('/sheet', async (req, res) => {
             chamberwiseDipListBefore,
             chamberwiseDipListAfter,
             chamberwiseSealList,
-            pumpSlips,
+            loadingSlips,
             loadingIncharge,
             bccAuthorizedOfficer: {
                 ...bccAuthorizedOfficer,

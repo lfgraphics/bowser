@@ -211,10 +211,10 @@ export default function CreateLoadingOrderPage() {
 
                         {/* loadingDesc field */}
                         <div className="flex flex-col space-y-1">
-                            <Label htmlFor="loadingDesc">Description</Label>
+                            <Label htmlFor="desc">Description</Label>
                             <Input
-                                id="loadingDesc"
-                                placeholder="Description"
+                                id="desc"
+                                placeholder="Your message to the petrol pump or the loading incharges"
                                 value={loadingDesc}
                                 onChange={(e) => setLoadingDesc(e.target.value)}
                             />

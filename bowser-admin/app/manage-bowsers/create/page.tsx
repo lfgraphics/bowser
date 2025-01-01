@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Chamber, Level } from "@/types";
-import { API_URL } from "@/lib/auth";
 import Loading from "@/app/loading";
+import { BASE_URL } from "@/lib/api";
 
 export default function BowserFormPage() {
     const [bowserRegNo, setBowserRegNo] = useState("");
@@ -35,7 +35,7 @@ export default function BowserFormPage() {
     useEffect(() => {
         if (id) {
             setIsLoading(true);
-            fetch(`${API_URL}/bowsers/${id}`)
+            fetch(`${BASE_URL}/bowsers/${id}`)
                 .then((res) => res.json())
                 .then((data) => {
                     setBowserRegNo(data.regNo);
@@ -132,7 +132,7 @@ export default function BowserFormPage() {
 
         try {
             const method = id ? "PUT" : "POST";
-            const url = id ? `${API_URL}/bowsers/${id}` : `${API_URL}/bowsers/create`;
+            const url = id ? `${BASE_URL}/bowsers/${id}` : `${BASE_URL}/bowsers/create`;
 
             const response = await fetch(url, {
                 method,
@@ -157,7 +157,7 @@ export default function BowserFormPage() {
         if (confirm("Are you sure to Want to delete this bowser?\nThis action can't be Un done")) {
             try {
                 setIsLoading(true)
-                const response = await fetch(`${API_URL}/bowsers/${id}`, {
+                const response = await fetch(`${BASE_URL}/bowsers/${id}`, {
                     method: "DELETE",
                     headers: { "Content-Type": "application/json" },
                 })
