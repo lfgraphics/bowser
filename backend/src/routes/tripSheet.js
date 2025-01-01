@@ -3,9 +3,8 @@ const router = express.Router();
 const TripSheet = require('../models/TripSheets');
 const mongoose = require('mongoose');
 const User = require('../models/user');
-const Bowser = require('../models/bowser');
+const Bowser = require('../models/Bowsers');
 const LoadingSheet = require('../models/LoadingSheet');
-const Bowsers = require('../models/Bowsers');
 const { calculateQty } = require('../utils/calibration');
 const { sendNativePushNotification } = require('../utils/pushNotifications');
 
@@ -269,7 +268,7 @@ router.post('/settle/:id', async (req, res) => {
             throw new Error(`can't find the trip sheet`);
         }
         let bowserRegNo = tripsheet.bowser.regNo;
-        let bowser = await Bowsers.findOne({ regNo: bowserRegNo });
+        let bowser = await Bowser.findOne({ regNo: bowserRegNo });
         if (!bowser) {
             throw new Error(`can't find the bowser`);
         }
@@ -291,7 +290,11 @@ router.post('/settle/:id', async (req, res) => {
                 pumpReading,
                 totalQty,
                 odometer,
-                settled: true
+                settled: true,
+                by: {
+                    id: userDetails.id,
+                    name: userDetails.name
+                }
             }
         };
         console.log(totalQty);

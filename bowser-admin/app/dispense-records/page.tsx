@@ -132,7 +132,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
             const filterDescription = `${filter.bowserNumber ? `Bowser-${filter.bowserNumber} ,` : ''}${filter.driverName ? `Driver-${filter.driverName} ,` : ''}${filter.tripSheetId ? `Trip Sheet-${filter.tripSheetId} ,` : ''}`; //${selectedDateRange != undefined && dateDescription}`;
             const filename = `Dispenses_data ${filterDescription} ${records.length}record${records.length > 1 ? "s" : ""}, downloaded at ${timestamp}.xlsx`;
 
-            const response = await axios.get("https://bowser-backend-2cdr.onrender.com/listDispenses/export/excel", {
+            const response = await axios.get(`${BASE_URL}/listDispenses/export/excel`, {
                 params: {
                     bowserNumber: filter.bowserNumber,
                     driverName: filter.driverName,
@@ -247,7 +247,10 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                 <Loading />
             )}
             <Toaster />
-            <div className="lg:block top-0 z-10 sticky hidden bg-background pt-[60px] pb-2 bigScreen">
+            <div className="flex justify-between items-start pt-8">
+                <h1 className="mb-4 font-bold text-2xl">Dispense Records</h1>
+            </div>
+            <div className="lg:block top-0 z-10 sticky hidden bg-background pb-2 bigScreen">
                 <div className="flex sm:flex-row flex-col justify-between gap-3 sm:space-x-2 space-y-2 sm:space-y-0 mb-4">
                     {/* Sort By Dropdown */}
                     <Select value={sortBy} onValueChange={setSortBy}>
@@ -363,7 +366,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                 <AccordionItem value="item-1">
                     <AccordionTrigger>Filters and sorting</AccordionTrigger>
                     <AccordionContent>
-                        <div className="flex sm:flex-row flex-col flex-wrap sm:space-x-2 space-y-2 sm:space-y-0 mb-4 w-full">
+                        <div className="flex sm:flex-row flex-col flex-wrap gap-3 sm:space-x-2 space-y-2 sm:space-y-0 mb-4 w-full">
                             {/* Sort By Dropdown */}
                             <Select value={sortBy} onValueChange={setSortBy}>
                                 <SelectTrigger className="flex justify-between items-center p-2 border rounded w-full self-center">

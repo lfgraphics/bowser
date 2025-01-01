@@ -97,15 +97,15 @@ tripSheetSchema.pre('save', async function (next) {
         const dispensedQuantity = this.dispenses?.reduce((sum, dispense) => sum + (dispense.fuelQuantity || 0), 0) || 0;
         this.saleQty = dispensedQuantity;  // "Sale" is how much was dispensed
         this.balanceQty = this.totalLoadQuantity - this.saleQty;
-        // Handle settlement logic
-        if (this.settelment?.settled) {
-            const bowserChambers = await Bowser.findOne({ regNo: this.bowser.regNo });
-            for (const dip of this.settelment.details.chamberwiseDipList) {
-                if (dip.qty == null || dip.qty === undefined) {
-                    dip.qty = calculateQty(bowserChambers, dip.chamberId, dip.levelHeight);
-                }
-            }
-        }
+        // // Handle settlement logic
+        // if (this.settelment?.settled) {
+        //     const bowserChambers = await Bowser.findOne({ regNo: this.bowser.regNo });
+        //     for (const dip of this.settelment.details.chamberwiseDipList) {
+        //         if (dip.qty == null || dip.qty === undefined) {
+        //             dip.qty = calculateQty(bowserChambers, dip.chamberId, dip.levelHeight);
+        //         }
+        //     }
+        // }
 
         next();
     } catch (err) {

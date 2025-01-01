@@ -73,35 +73,6 @@ const fuelingTransactionSchema = new mongoose.Schema({
     }
 });
 
-fuelingTransactionSchema.post('save', async function (doc) {
-    try {
-        const tripSheet = await TripSheet.findOne({ tripSheetId: doc.tripSheetId });
-
-        if (tripSheet) {
-            const dispenseIndex = tripSheet.dispenses?.findIndex(
-                (d) => d.transaction?.toString() === doc._id?.toString()
-            );
-
-            if (dispenseIndex > -1) {
-                tripSheet.dispenses[dispenseIndex].fuelQuantity = doc.fuelQuantity;
-                tripSheet.dispenses[dispenseIndex].isVerified = doc.verified.status;
-                tripSheet.dispenses[dispenseIndex].isPosted = doc.posted.status;
-            } else {
-                tripSheet.dispenses.push({
-                    transaction: doc._id,
-                    fuelQuantity: doc.fuelQuantity,
-                    isVerified: doc.verified.status,
-                    isPosted: doc.posted.status,
-                });
-            }
-
-            await tripSheet.save();
-        }
-    } catch (error) {
-        console.error("Error in fuelingTransactionSchema post save hook:", error);
-    }
-});
-
 fuelingTransactionSchema.post('deleteOne', async function (doc) {
     try {
         const tripSheet = await TripSheet.findOne({ 'dispenses.transaction': doc._id });

@@ -82,9 +82,6 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
         if (updatedRecord.gpsLocation !== record.gpsLocation) {
             updatedFields.gpsLocation = updatedRecord.gpsLocation;
         }
-        if (updatedRecord.verified !== record.verified || (updatedRecord.verified.status === false && !record.verified.status)) {
-            updatedFields.verified = updatedRecord.verified;
-        }
 
         // Proceed only if there are changes
         if (Object.keys(updatedFields).length === 0) {
@@ -240,10 +237,6 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                     `${updatedRecord?.fuelQuantity} Liter - ${updatedRecord?.quantityType}`
                                 )}</p>
                                 <p className="text-sm"><strong>Date & Time:</strong> {formatDate(record?.fuelingDateTime!)}</p>
-                                <h2 className="font-semibold text-md">Bowser Details</h2>
-                                <p className="text-gray-600 text-sm"><strong>Registration Number:</strong> {record?.bowser.regNo || "Error"}</p>
-                                <p className="text-gray-600 text-sm"><strong>Driver Name:</strong> {record?.bowser.driver.name}</p>
-                                <p className="text-gray-600 text-sm"><strong>Driver Phone:</strong> {record?.bowser.driver.phoneNo}</p>
                                 <p className="flex items-center text-sm">
                                     <MapPin className="mr-1 w-4 h-4" />
                                     {editing ? (
@@ -258,6 +251,10 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                         updatedRecord?.gpsLocation
                                     )}
                                 </p>
+                                <h2 className="font-semibold text-gray-600 text-md">Bowser Details</h2>
+                                <p className="text-gray-600 text-sm"><strong>Registration Number:</strong> {record?.bowser.regNo || "Error"}</p>
+                                <p className="text-gray-600 text-sm"><strong>Driver Name:</strong> {record?.bowser.driver.name}</p>
+                                <p className="text-gray-600 text-sm"><strong>Driver Phone:</strong> {record?.bowser.driver.phoneNo}</p>
                             </div>
 
                             <div className="flex space-x-4">
@@ -309,7 +306,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                     )
                                 }
                             </div>
-                            {!record?.verified?.status ? <Button onClick={() => { verifyOne(String(record._id)) }} variant="outline" className='mt-3 w-full'>Verify</Button> : null}
+                            {!record?.verified?.status && !editing ? <Button onClick={() => { verifyOne(String(record._id)) }} variant="outline" className='mt-3 w-full'>Verify</Button> : null}
                         </>
                     }
                 </CardContent>

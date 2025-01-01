@@ -1,5 +1,6 @@
 "use client"
 import FuelRecordCard from '@/components/FuelRecord';
+import { BASE_URL } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
 import { DispensesRecord } from '@/types';
 import axios from 'axios';
@@ -56,7 +57,7 @@ export const page = ({ params }: { params: { id: string } }) => {
     useEffect(() => {
         const fetchRecords = async () => {
             try {
-                const response = await axios.get(`https://bowser-backend-2cdr.onrender.com/listDispenses/${params.id}`);
+                const response = await axios.get(`${BASE_URL}/listDispenses/${params.id}`);
                 setRecord(response.data);
                 console.log(response.data)
             } catch (error) {

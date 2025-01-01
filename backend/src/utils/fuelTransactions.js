@@ -1,4 +1,4 @@
-const TripSheet = require('../models/tripsheet')
+const TripSheet = require('../models/TripSheets')
 const mongoose = require('mongoose')
 
 const fetchLocationData = async (latitude, longitude) => {
