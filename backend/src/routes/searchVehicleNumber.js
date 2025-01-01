@@ -13,7 +13,6 @@ router.get('/:vehicleNumber', async (req, res) => {
         if (vehicles.length === 0) {
             return res.status(404).json({ message: 'No vehicle found with the given search term' });
         }
-
         // Step 2: Enrich each vehicle with driver's last used mobile number
         const enrichedVehicles = await Promise.all(
             vehicles.map(async (vehicle) => {
@@ -23,7 +22,7 @@ router.get('/:vehicleNumber', async (req, res) => {
 
                 // Extract ITPL number from the driver string
                 const itplMatch = driverString.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
-                const itplNumber = itplMatch ? itplMatch[0].replace(/[()]/g, '').toUpperCase() : null;
+                const itplNumber = itplMatch ? itplMatch[0].replace(/[()]/g, '').toUpperCase() : driverName;
 
                 // Fetch driver details from the drivers collection using the extracted ITPL number
                 const driver = await Driver.findOne({
