@@ -56,16 +56,17 @@ router.post('/unregister', async (req, res) => {
     }
 });
 
-router.get('/', async (req, res) => {
-    const { mobileNumber, userId } = req.body;
+// Get notification data
+router.post('/', async (req, res) => {
+    const { phoneNo, userId, platform } = req.body;
 
-    if (!userId && !mobileNumber) {
+    if (!userId && !phoneNo) {
         return res.status(400).json({ error: 'Mobile number and platform are required.' });
     }
 
     try {
-        if (mobileNumber) {
-            let sucscription = await PushSubscription.find({ mobileNumber })
+        if (phoneNo) {
+            let sucscription = await PushSubscription.find({ mobileNumber: phoneNo, ...(platform ? { platform } : {}), })
             res.status(200).json(sucscription);
         } else {
             let sucscription = await PushSubscription.find({ userId })

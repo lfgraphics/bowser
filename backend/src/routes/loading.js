@@ -43,7 +43,7 @@ router.post('/orders', async (req, res) => {
                     platform: "web",
                 });
             } else if (loadingLocation === "petrolPump") {
-                await sendWebPushNotification({ mobileNumber: petrolPump.phone, message: message, options: options = { title: "New Bowser Loading Order Arrived", url: `/loading/sheet/petrol-pump/${newBowserLoadingOrder._id}`, } })
+                await sendWebPushNotification({ mobileNumber: petrolPump.phone, message: message, options: options = { title: "New Order Arrived", url: `/loading/petrol-pump/${newBowserLoadingOrder._id}`, } })
             }
             await newBowserLoadingOrder.save();
             res.status(201).json(newBowserLoadingOrder);
@@ -91,7 +91,7 @@ router.get('/orders/:id', async (req, res) => {
 // Fetch LoadingOrders
 router.post('/orders/get', async (req, res) => {
     try {
-        const { startDate, endDate, searchParam } = req.body;
+        const { startDate, endDate, searchParam, location = "bcc" } = req.body;
 
         const defaultStartDate = new Date();
         defaultStartDate.setDate(defaultStartDate.getDate() - 30);
@@ -102,6 +102,7 @@ router.post('/orders/get', async (req, res) => {
                 $gte: startDate && startDate !== null ? new Date(startDate) : defaultStartDate,
                 $lte: endDate && endDate !== null ? new Date(endDate) : defaultEndDate,
             },
+            loadingLocation: location
         };
 
         if (searchParam) {

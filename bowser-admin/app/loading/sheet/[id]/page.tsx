@@ -21,6 +21,7 @@ import {
 } from "@/lib/storage";
 import { openEmbeddedCamera } from "@/components/EmbeddedCamera";
 import { Separator } from "@/components/ui/separator";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogFooter } from "@/components/ui/alert-dialog";
 
 // A single object type for the entire page’s form state
 interface LoadingSheetFormData {
@@ -59,6 +60,8 @@ export default function LoadingSheetPage() {
     // -----------------------------------------
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [alertMessage, setAlertMessage] = useState<string>()
+    const [alertDialogOpen, setAlertDialogOpen] = useState<boolean>(false)
 
     // -----------------------------------------
     // Server-Fetched Data
@@ -252,6 +255,64 @@ export default function LoadingSheetPage() {
     }
 
     // -----------------------------------------
+    // 8) Check for Empty Fields
+    // -----------------------------------------
+    function checkFieldsFilled(): boolean {
+        if (!odoMeter) {
+            setAlertMessage("Odometer field is required.");
+            setAlertDialogOpen(true);
+            return false;
+        }
+        if (!fuleingMachine) {
+            setAlertMessage("Fueling Machine field is required.");
+            setAlertDialogOpen(true);
+            return false;
+        }
+        if (!pumpReadingBefore) {
+            setAlertMessage("Pump Reading (Before) field is required.");
+            setAlertDialogOpen(true);
+            return false;
+        }
+        if (!pumpReadingAfter) {
+            setAlertMessage("Pump Reading (After) field is required.");
+            setAlertDialogOpen(true);
+            return false;
+        }
+        for (const dip of chamberwiseDipListBefore) {
+            if (!dip.levelHeight) {
+                setAlertMessage(`Chamberwise Dip (Before) for ${dip.chamberId} is required.`);
+                setAlertDialogOpen(true);
+                return false;
+            }
+        }
+        for (const dip of chamberwiseDipListAfter) {
+            if (!dip.levelHeight) {
+                setAlertMessage(`Chamberwise Dip (After) for ${dip.chamberId} is required.`);
+                setAlertDialogOpen(true);
+                return false;
+            }
+        }
+        for (const ch of chamberwiseSealList) {
+            for (const seal of ch.seals) {
+                if (!seal.sealId || !seal.sealPhoto) {
+                    setAlertMessage(`Seal ID and Seal Photo for Chamber ${ch.chamberId} are required.`);
+                    setAlertDialogOpen(true);
+                    return false;
+                }
+            }
+        }
+        for (const slip of loadingSlips) {
+            if (!slip.qty || !slip.slipPhoto) {
+                setAlertMessage("Loading Slip quantity and Slip Photo are required.");
+                setAlertDialogOpen(true);
+                return false;
+            }
+        }
+
+        return true; // All fields are filled
+    }
+
+    // -----------------------------------------
     // 5) Handle Submit => POST
     // -----------------------------------------
     async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -259,6 +320,11 @@ export default function LoadingSheetPage() {
         if (!order) {
             setError("No valid order data. Cannot submit.");
             return;
+        }
+
+        // Check if all fields are filled
+        if (!checkFieldsFilled()) {
+            return; // Prevent submission if fields are empty
         }
 
         setLoading(true);
@@ -415,7 +481,7 @@ export default function LoadingSheetPage() {
                             </div>
 
                             <div className="flex flex-col gap-2 mb-4">
-                                <Label>Bowser Pump Reading (Before loading)</Label>
+                                <Label>Bowser Pump Reading (Before loading starts)</Label>
                                 <Input
                                     type="number"
                                     value={pumpReadingBefore}
@@ -661,6 +727,25 @@ export default function LoadingSheetPage() {
                     </form>
                 </CardContent>
             </Card>
+
+            {/* Alert Dialog for Error Messages */}
+            <AlertDialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Error</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {alertMessage}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => {
+                            setAlertDialogOpen(false);
+                        }}>
+                            OK
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

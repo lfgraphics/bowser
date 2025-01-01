@@ -1,12 +1,17 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { Home, ClipboardList, ListCheck, LogOut, Menu, X, SheetIcon, Users, CaravanIcon, User2, ListOrdered, TableOfContents } from 'lucide-react'
+import { Home, ClipboardList, ListCheck, LogOut, Menu, X, SheetIcon, Users, CaravanIcon, User2, ListOrdered, TableOfContents, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 import ThemeChanger from '../ThemeChanger'
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
-// import { DropdownfuelingTransactionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { User } from '@/types/auth'
 import OnlyAllowed from '../OnlyAllowed'
 
@@ -46,7 +51,7 @@ export function Sidebar() {
                     <Link href="/dashboard">
                       <Button variant="ghost" className="justify-start w-full">
                         <Home className="mr-2 w-4 h-4" />
-                        Home
+                        Allocate
                       </Button>
                     </Link>
                   </li>
@@ -56,7 +61,7 @@ export function Sidebar() {
                   <li onClick={toggleSidebar}>
                     <Link href={`/dispense-records?allocator=${user?.userId}`}>
                       <Button variant="ghost" className="justify-start w-full">
-                        <ClipboardList className="mr-2 w-4 h-4" />
+                        <ListCollapse className="mr-2 w-4 h-4" />
                         My Allocations
                       </Button>
                     </Link>
@@ -66,30 +71,67 @@ export function Sidebar() {
                   <li onClick={toggleSidebar}>
                     <Link href="/dispense-records">
                       <Button variant="ghost" className="justify-start w-full">
-                        <SheetIcon className="mr-2 w-4 h-4" />
+                        <ListChecks className="mr-2 w-4 h-4" />
                         Dispense Records
                       </Button>
                     </Link>
                   </li>
                 </OnlyAllowed>
-                <OnlyAllowed allowedRoles={["Admin", "Loading Incharge", "Petrol Pump Personnel", "BCC Authorized Officer"]}>
+                <OnlyAllowed allowedRoles={["Admin", "Loading Incharge", "BCC Authorized Officer"]}>
                   <li onClick={toggleSidebar}>
-                    <Link href="/loading/orders">
-                      <Button variant="ghost" className="justify-start w-full">
-                        <ListOrdered className="mr-2 w-4 h-4" />
-                        Loading Orders
-                      </Button>
-                    </Link>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link href="/loading/orders">
+                            <Button variant="ghost" className="justify-start w-full">
+                              <AlignJustify className="mr-2 w-4 h-4" />
+                              Loading Orders
+                            </Button>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent className='bg-background max-w-44 text-foreground text-md'>
+                          <p>Orders for loading a Bowser, to make it ready for a trip<br />(For Loading Incharges and for BCC to create and manage the orders)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed allowedRoles={["Admin", "Petrol Pump Personnel", "BCC Authorized Officer"]}>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link href="/loading/petrol-pump">
+                          <Button variant="ghost" className="justify-start w-full">
+                            <Fuel className="mr-2 w-4 h-4" />
+                            Orders
+                          </Button>
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent className='bg-background max-w-44 text-foreground text-md'>
+                        <p>Orders for loading a Bowser, to make it ready for a trip<br />(For Petrol Pumps)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <li onClick={toggleSidebar}>
                   </li>
                 </OnlyAllowed>
                 <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
                   <li onClick={toggleSidebar}>
-                    <Link href="/loading/sheet">
-                      <Button variant="ghost" className="justify-start w-full">
-                        <TableOfContents className="mr-2 w-4 h-4" />
-                        Loading Sheets
-                      </Button>
-                    </Link>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link href="/loading/sheet">
+                            <Button variant="ghost" className="justify-start w-full">
+                              <FileSpreadsheet className="mr-2 w-4 h-4" />
+                              Loading Sheets
+                            </Button>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent className='bg-background max-w-44 text-foreground text-md'>
+                          <p>After the order is fulfilled, the details will show here to assign bowser driver and destination<br />(For Bowser Control Center Only)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </li>
                 </OnlyAllowed>
                 <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer", "Diesel Control Center Staff", "Data Entry"]}>
@@ -116,7 +158,7 @@ export function Sidebar() {
                   <li onClick={toggleSidebar}>
                     <Link href="/manage-users">
                       <Button variant="ghost" className="justify-start w-full">
-                        <Users className="mr-2 w-4 h-4" />
+                        <UserRoundCog className="mr-2 w-4 h-4" />
                         Manage Users
                       </Button>
                     </Link>

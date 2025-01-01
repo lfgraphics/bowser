@@ -32,7 +32,7 @@ export default function Login() {
           "Data Entry": "/dispense-records",
           "Loading Incharge": "/loading/orders",
           "BCC Authorized Officer": "/loading/sheet",
-          "Petrol Pump Personnel": "/loading/orders",
+          "Petrol Pump Personnel": "/loading/petrol-pump",
           // Add other roles and their first allowed routes here
         };
 
