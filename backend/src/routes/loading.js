@@ -3,13 +3,15 @@ const router = express.Router();
 const LoadingOrder = require('../models/LoadingOrder');
 const LoadingSheet = require('../models/LoadingSheet')
 const { sendBulkNotifications, sendWebPushNotification } = require('../utils/pushNotifications');
-const { default: mongoose } = require('mongoose');
-const Bowsers = require('../models/Bowsers');
+const { mongoose } = require('mongoose');
+const Bowser = require('../models/Bowsers');
+const { updateTripSheet } = require('../utils/tripSheet')
+const { calculateQty } = require('../utils/calibration')
 
 // Create a new LoadingOrder
 router.post('/orders', async (req, res) => {
     try {
-        const { regNo, loadingDesc, loadingLocation, petrolPump, bccAuthorizedOfficer } = req.body;
+        const { regNo, loadingDesc, loadingLocation, petrolPump, bccAuthorizedOfficer, tripSheetId } = req.body;
         console.log(req.body)
 
         if (!regNo || !loadingLocation || !bccAuthorizedOfficer || !bccAuthorizedOfficer.id || !bccAuthorizedOfficer.name) {
@@ -18,6 +20,7 @@ router.post('/orders', async (req, res) => {
 
         const newBowserLoadingOrder = new LoadingOrder({
             regNo,
+            tripSheetId,
             loadingDesc,
             loadingLocation,
             ...(petrolPump ? { petrolPump } : {}),
@@ -71,7 +74,7 @@ router.get('/orders/:id', async (req, res) => {
         }
 
         // 2. Fetch the bowser based on regNo
-        const bowser = await Bowsers.findOne({ regNo: loadingOrder.regNo }).lean();
+        const bowser = await Bowser.findOne({ regNo: loadingOrder.regNo }).lean();
 
         // 3. Construct the desired response format
         //    - an array containing a single object
@@ -177,8 +180,9 @@ router.delete('/orders/:id', async (req, res) => {
 
 router.post('/sheet', async (req, res) => {
     try {
-        const {
+        let {
             regNo,
+            sheetId,
             odoMeter,
             fuleingMachine,
             pumpReadingBefore,
@@ -197,7 +201,6 @@ router.post('/sheet', async (req, res) => {
         if (!regNo) missingFields.push('regNo');
         if (!odoMeter) missingFields.push('odoMeter');
         if (!fuleingMachine) missingFields.push('fuleingMachine');
-        // if (!pumpReadingAfter) missingFields.push('pumpReadingAfter');
         if (!loadingIncharge?.id) missingFields.push('loadingIncharge.id');
         if (!loadingIncharge?.name) missingFields.push('loadingIncharge.name');
         if (!bccAuthorizedOfficer?.orderId) missingFields.push('bccAuthorizedOfficer.orderId');
@@ -213,59 +216,120 @@ router.post('/sheet', async (req, res) => {
             });
         }
 
-        const newLoadingSheet = new LoadingSheet({
-            regNo,
-            odoMeter,
-            fuleingMachine,
-            pumpReadingBefore,
-            pumpReadingAfter,
-            chamberwiseDipListBefore,
-            chamberwiseDipListAfter,
-            chamberwiseSealList,
-            loadingSlips,
-            loadingIncharge,
-            bccAuthorizedOfficer: {
-                ...bccAuthorizedOfficer,
-                orderId: new mongoose.Types.ObjectId(bccAuthorizedOfficer.orderId),
-            },
-            fulfilled: false,
-        });
+        let newLoadingSheet; // Declare newLoadingSheet in the outer scope
 
         try {
-            // Save the LoadingSheet
+            // Fetch the Bowser document for the provided regNo
+            const bowser = await Bowser.findOne({ regNo });
+            if (!bowser) {
+                return res.status(404).json({ error: 'Bowser not found for the provided regNo' });
+            }
 
+            const bowserChambers = bowser.chambers;
+
+            // Calculate qty for chamberwiseDipListBefore
+            for (const dip of chamberwiseDipListBefore) {
+                if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
+                    dip.qty = calculateQty(bowserChambers, dip.chamberId, dip.levelHeight);
+                }
+            }
+
+            // Calculate qty for chamberwiseDipListAfter
+            for (const dip of chamberwiseDipListAfter) {
+                if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
+                    dip.qty = calculateQty(bowserChambers, dip.chamberId, dip.levelHeight);
+                }
+            }
+
+            // Calculate totalLoadQuantityBySlip
+            let totalLoadQuantityBySlip = loadingSlips.reduce((total, slip) => {
+                return total + parseFloat(slip.qty);
+            }, 0);
+
+            // Calculate totalLoadQuantityByDip based on chamberwiseDipListAfter
+            let totalLoadQuantityByDip = chamberwiseDipListAfter.reduce((total, dip) => {
+                return total + parseFloat(dip.qty);
+            }, 0);
+
+            if (sheetId) {
+                const totalBefore = chamberwiseDipListBefore.reduce((total, dip) => {
+                    return total + parseFloat(dip.qty);
+                }, 0);
+                totalLoadQuantityByDip -= totalBefore; // Subtract total from before
+            }
+
+            newLoadingSheet = new LoadingSheet({ // Assign to the outer scoped variable
+                regNo,
+                odoMeter,
+                ...(sheetId ? { tripSheetId: new mongoose.Types.ObjectId(sheetId) } : {}),
+                fuleingMachine,
+                pumpReadingBefore,
+                pumpReadingAfter,
+                chamberwiseDipListBefore,
+                chamberwiseDipListAfter,
+                chamberwiseSealList,
+                totalLoadQuantityByDip,
+                totalLoadQuantityBySlip,
+                loadingSlips,
+                loadingIncharge,
+                bccAuthorizedOfficer: {
+                    ...bccAuthorizedOfficer,
+                    orderId: new mongoose.Types.ObjectId(bccAuthorizedOfficer.orderId),
+                },
+                fulfilled: false,
+            });
+
+            let loadingOrder = await LoadingOrder.findByIdAndUpdate(
+                new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)),
+                { $set: { fulfilled: true } },
+                { new: true }
+            );
+
+            if (sheetId) {
+                const additionEntry = {
+                    sheetId: new mongoose.Types.ObjectId(sheetId),
+                    quantityByDip: totalLoadQuantityByDip,
+                    quantityBySlip: totalLoadQuantityBySlip,
+                };
+
+                await updateTripSheet({ sheetId, newAddition: additionEntry });
+            }
+
+            if (!loadingOrder) {
+                console.error('Loading order not found');
+                return;
+            }
+
+            console.log('Updated Loading Order:', loadingOrder);
             try {
                 // Send notification only if save is successful
                 const options = {
                     title: "Your Bowser Loading Order is successful",
-                    url: `/tripsheets/create/${newLoadingSheet._id}`,
+                    url: !sheetId ? `/tripsheets/create/${newLoadingSheet._id}` : `/tripsheets/${sheetId}`,
                 };
                 const message = `Bowser: ${regNo}\nFulfilled by: ${loadingIncharge.name} Id: ${loadingIncharge.id}`;
                 let notificationSent = await sendWebPushNotification({ userId: bccAuthorizedOfficer.id, message, options });
 
                 if (notificationSent.success) {
                     await newLoadingSheet.save();
-                    // Respond with the saved LoadingSheet
                     res.status(201).json(newLoadingSheet);
-                } else { res.status(500).json({ error: 'Request faild couse Faild to send notificaiton to BCC' }) }
+                } else {
+                    res.status(500).json({ error: 'Request failed because failed to send notification to BCC' });
+                }
             } catch (notificationError) {
                 console.error("Error sending notification:", notificationError);
-
-                // Rollback the save operation if notification fails
                 await LoadingSheet.findByIdAndDelete(newLoadingSheet._id);
-
                 res.status(500).json({
                     error: 'Failed to send notification. LoadingSheet creation rolled back.',
                     details: notificationError.message,
                 });
             }
-        } catch (saveError) {
-            console.error("Error saving LoadingSheet:", saveError);
-            res.status(500).json({
-                error: 'Failed to save LoadingSheet',
-                details: saveError.message,
-            });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Error processing request', details: error.message });
         }
+
+        // Save the LoadingSheet
     } catch (err) {
         console.error('Error creating LoadingSheet:', err);
         res.status(400).json({

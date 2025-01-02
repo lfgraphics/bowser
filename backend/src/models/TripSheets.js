@@ -44,9 +44,8 @@ const tripSheetSchema = new mongoose.Schema({
         type: [
             {
                 sheetId: { type: mongoose.Schema.Types.ObjectId, ref: 'LoadingSheet' },
-                quantity: { type: Number },
-                slips: [{ qty: Number, photo: String }],
-                quantityBySlip: { type: Number },
+                quantityByDip: { type: Number, required: true },
+                quantityBySlip: { type: Number, required: true },
             }
         ],
         _id: false,
@@ -81,7 +80,6 @@ tripSheetSchema.index({ 'loading.sheetId': 1 });
 // Pre-save hook for auto-increment and calculations
 tripSheetSchema.pre('save', async function (next) {
     try {
-        // Auto-increment tripSheetId
         if (this.isNew) {
             const counter = await Counter.findOneAndUpdate(
                 { _id: 'tripSheetId' },
@@ -91,55 +89,17 @@ tripSheetSchema.pre('save', async function (next) {
             this.tripSheetId = counter.seq;
         }
 
-        // Perform calculations
-        const additionsQuantity = this.addition?.reduce((sum, add) => sum + (add.quantity || 0), 0) || 0;
-        this.totalLoadQuantity = this.loading?.quantityByDip + additionsQuantity;
+        const additionsQuantity = this.addition?.reduce((sum, add) => sum + (add.quantityByDip || 0), 0) || 0;
+        this.totalLoadQuantity = (this.loading?.quantityByDip || 0) + additionsQuantity;
+
         const dispensedQuantity = this.dispenses?.reduce((sum, dispense) => sum + (dispense.fuelQuantity || 0), 0) || 0;
-        this.saleQty = dispensedQuantity;  // "Sale" is how much was dispensed
+        this.saleQty = dispensedQuantity;
         this.balanceQty = this.totalLoadQuantity - this.saleQty;
-        // // Handle settlement logic
-        // if (this.settelment?.settled) {
-        //     const bowserChambers = await Bowser.findOne({ regNo: this.bowser.regNo });
-        //     for (const dip of this.settelment.details.chamberwiseDipList) {
-        //         if (dip.qty == null || dip.qty === undefined) {
-        //             dip.qty = calculateQty(bowserChambers, dip.chamberId, dip.levelHeight);
-        //         }
-        //     }
-        // }
 
         next();
     } catch (err) {
         console.error('Error in pre-save hook for TripSheet:', err);
         next(err);
-    }
-});
-
-// Pre-update hook for recalculations
-tripSheetSchema.pre('updateOne', async function (next) {
-    try {
-        const update = this.getUpdate();
-        // Only recalc if the doc might have changed in ways that affect these quantities
-        if (update.$set || update.$push || update.$pull) {
-            // Fetch the existing TripSheet document
-            const tripSheet = await this.model.findOne(this.getQuery());
-            if (!tripSheet) {
-                return next(new Error('TripSheet not found'));
-            }
-
-            // 1. If there's any addition changes, recalc totalLoadQuantity, saleQty, balanceQty
-            const additionsQuantity = this.addition?.reduce((sum, add) => sum + (add.quantity || 0), 0) || 0;
-            this.totalLoadQuantity = this.loading?.quantityByDip + additionsQuantity;
-            const dispensedQuantity = this.dispenses?.reduce((sum, dispense) => sum + (dispense.fuelQuantity || 0), 0) || 0;
-            this.saleQty = dispensedQuantity;  // "Sale" is how much was dispensed
-            this.balanceQty = this.totalLoadQuantity - this.saleQty;
-
-            await tripSheet.save();
-        }
-
-        next();
-    } catch (error) {
-        console.error("Error in tripSheetSchema pre updateOne hook:", error);
-        next(error);
     }
 });
 

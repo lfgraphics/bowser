@@ -183,7 +183,7 @@ const TripSheetPage = () => {
                                                         Settle
                                                     </DropdownMenuItem>
                                                 </Link>
-                                                <Link href={`/tripsheets/addition/${sheet._id}`}>
+                                                <Link href={`/loading/orders/create/${sheet._id}`}>
                                                     <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='p-4 w-full h-10 text-center'>
                                                         Reload (+)
                                                     </DropdownMenuItem>

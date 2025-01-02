@@ -1,29 +1,25 @@
-"use client";
-
-import React, { useState, useEffect, FormEvent } from "react";
-import { useRouter } from "next/navigation";
-
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-
-import { BASE_URL } from "@/lib/api";
-import Loading from "@/app/loading";
-import { ResponseBowser, User } from "@/types";
-import { searchItems } from "@/utils/searchUtils";
+"use client"
 import { SearchModal } from "@/components/SearchModal";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import Loading from "@/app/loading";
+import { BASE_URL } from "@/lib/api";
+import { FormEvent, useEffect, useState } from "react";
+import { TripSheet, User } from "@/types";
+import { searchItems } from "@/utils/searchUtils";
 
-export default function CreateLoadingOrderPage() {
-    const router = useRouter();
-
-    // Local form fields
+const page = ({ params }: { params: { id: string } }) => {
+    const sheetId = params.id; // Extract `id` from params
+    
     const [regNo, setRegNo] = useState("");
     const [loadingDesc, setLoadingDesc] = useState("");
     const [loadingLocation, setLoadingLocation] = useState("");
     const [petrolPumpName, setPetrolPumpName] = useState<string>("");
     const [petrolPumpPhoneNo, setPetrolPumpPhoneNo] = useState<string>("");
+    const [trip, setTrip] = useState<TripSheet>()
 
     // Admin user data from localStorage
     const [adminUser, setAdminUser] = useState<User | null>(null);
@@ -58,6 +54,25 @@ export default function CreateLoadingOrderPage() {
         } catch (err) {
             console.error("Error parsing adminUser from localStorage", err);
         }
+
+        const getTripBowser = async () => {
+            try {
+                const response = await fetch(`${BASE_URL}/tripSheet/find-by-id/${sheetId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const tripSheet = await response.json();
+                if (tripSheet) {
+                    setTrip(tripSheet);
+                    setRegNo(tripSheet.bowser.regNo);
+                }
+            } catch (error) {
+                console.error("Error fetching trip sheet:", error);
+            }
+        }
+
+        getTripBowser();
+
     }, []);
 
     // Handle form submission
@@ -67,11 +82,9 @@ export default function CreateLoadingOrderPage() {
         setError(null);
 
         try {
-            // Prepare the payload
-            // bccAuthorizedOfficer can use userId or _id (depending on your DB schema).
-            // For example, if you want `id` = userId:
             const body = {
                 regNo,
+                tripSheetId: sheetId,
                 loadingDesc,
                 loadingLocation,
                 petrolPump: {
@@ -104,45 +117,12 @@ export default function CreateLoadingOrderPage() {
             }
 
             // Success
-            router.push("/loading/orders");
+            window.location.replace("/loading/orders");
         } catch (err: any) {
             console.error("Error creating order:", err);
             setError(err.message || "An unknown error occurred");
         } finally {
             setLoading(false);
-        }
-    }
-
-    const searchBowser = async (bowser: string) => {
-        setLoading(true);
-        try {
-            const response: ResponseBowser[] = await searchItems<ResponseBowser>({
-                url: `${BASE_URL}/searchBowserDetails`,
-                searchTerm: bowser,
-                errorMessage: `No proper details found with the given regNo ${bowser}`
-            });
-            console.log(response)
-            if (response.length > 0) {
-                setSearchModalConfig({
-                    isOpen: true,
-                    title: "Select a Bowser",
-                    items: response,
-                    onSelect: handleBowserSelection,
-                    renderItem: (bowser) => `Bowser: ${bowser.regNo}`,
-                    keyExtractor: (bowser) => bowser.regNo,
-                });
-            }
-        } catch (error) {
-            console.error('Error searching for driver:', error);
-        } finally {
-            setLoading(false);
-        }
-    }
-    const handleBowserSelection = (bowser: ResponseBowser) => {
-        setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
-
-        if (bowser) {
-            setRegNo(bowser.regNo);
         }
     }
 
@@ -183,7 +163,7 @@ export default function CreateLoadingOrderPage() {
             {loading && <Loading />}
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-xl">Create New Loading Order</CardTitle>
+                    <CardTitle className="text-xl">Create Additional Loading Order for {trip?.tripSheetId}</CardTitle>
                 </CardHeader>
 
                 <CardContent>
@@ -198,13 +178,7 @@ export default function CreateLoadingOrderPage() {
                                 id="regNo"
                                 placeholder="Bowser registration number"
                                 value={regNo}
-                                onChange={(e) => setRegNo(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        searchBowser(regNo);
-                                    }
-                                }}
+                                readOnly
                                 required
                             />
                         </div>
@@ -276,3 +250,5 @@ export default function CreateLoadingOrderPage() {
         </div>
     );
 }
+
+export default page

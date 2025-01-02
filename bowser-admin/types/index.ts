@@ -59,6 +59,7 @@ export interface LoadingOrder {
   _id: string
   createdAt: string
   regNo: string
+  tripSheetId?: string
   loadingDesc?: string
   bccAuthorizedOfficer: {
     id: string

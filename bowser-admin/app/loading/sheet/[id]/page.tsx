@@ -28,7 +28,7 @@ interface LoadingSheetFormData {
     // Server-fetched data (optional to store, but we can store to restore if user refreshes)
     order: LoadingOrder | null;
     bowser: Bowser | null;
-
+    sheetId: string;
     // Form fields
     odoMeter: string | number;
     fuleingMachine: string;
@@ -68,6 +68,7 @@ export default function LoadingSheetPage() {
     // -----------------------------------------
     const [order, setOrder] = useState<LoadingOrder | null>(null);
     const [bowser, setBowser] = useState<Bowser | null>(null);
+    const [sheetId, setSheetId] = useState<string>("");
 
     // -----------------------------------------
     // Form Fields
@@ -115,6 +116,7 @@ export default function LoadingSheetPage() {
                 if (!didCancel && saved) {
                     // Rehydrate all fields
                     setOrder(saved.order);
+                    setSheetId(saved.sheetId);
                     setBowser(saved.bowser);
 
                     setOdoMeter(saved.odoMeter);
@@ -140,6 +142,7 @@ export default function LoadingSheetPage() {
                     }
                     const data: OrderBowserResponse = await res.json();
                     const { order, bowser } = data;
+                    console.log("order: ",order)
 
                     // If user has no local data, or we want to override
                     if (!didCancel) {
@@ -196,6 +199,7 @@ export default function LoadingSheetPage() {
         // We'll build one object with all the data
         const formData: LoadingSheetFormData = {
             order,
+            sheetId,
             bowser,
             odoMeter,
             fuleingMachine,
@@ -211,6 +215,7 @@ export default function LoadingSheetPage() {
         });
     }, [
         order,
+        sheetId,
         bowser,
         odoMeter,
         fuleingMachine,
@@ -294,7 +299,7 @@ export default function LoadingSheetPage() {
         }
         for (const ch of chamberwiseSealList) {
             for (const seal of ch.seals) {
-                if (!seal.sealId || !seal.sealPhoto) {
+                if (!seal.sealId) {
                     setAlertMessage(`Seal ID and Seal Photo for Chamber ${ch.chamberId} are required.`);
                     setAlertDialogOpen(true);
                     return false;
@@ -302,7 +307,7 @@ export default function LoadingSheetPage() {
             }
         }
         for (const slip of loadingSlips) {
-            if (!slip.qty || !slip.slipPhoto) {
+            if (!slip.qty) {
                 setAlertMessage("Loading Slip quantity and Slip Photo are required.");
                 setAlertDialogOpen(true);
                 return false;
@@ -323,9 +328,9 @@ export default function LoadingSheetPage() {
         }
 
         // Check if all fields are filled
-        // if (!checkFieldsFilled()) {
-        //     return; // Prevent submission if fields are empty
-        // }
+        if (!checkFieldsFilled()) {
+            return; // Prevent submission if fields are empty
+        }
 
         setLoading(true);
         setError(null);
@@ -347,6 +352,7 @@ export default function LoadingSheetPage() {
                 regNo: order.regNo,
                 odoMeter: Number(odoMeter),
                 fuleingMachine,
+                sheetId: order.tripSheetId,
                 pumpReadingBefore: pumpReadingBefore ? Number(pumpReadingBefore) : undefined,
                 pumpReadingAfter: Number(pumpReadingAfter),
 

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { BASE_URL } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { TripSheet, User } from "@/types";
@@ -118,7 +119,9 @@ const page = () => {
                         ))}
                     </span></CardDescription>
                 <form onSubmit={handleSubmit}>
-                    <CardContent className="flex justify-around bg-card my-6 mt-0 px-4 rounded-md">
+                    <CardContent className="flex flex-col justify-around bg-card my-6 mt-0 px-4 rounded-md">
+                        <Separator />
+                        <p className="pt-4 font-semibold text-lg">Select a new One</p> <br />
                         {bowserDriver.map((driver, index) => (
                             <div key={index} className="w-full">
                                 <Label>{`Driver Name`}</Label>

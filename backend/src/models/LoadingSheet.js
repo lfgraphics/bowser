@@ -7,6 +7,7 @@ const LoadingOrder = require('./LoadingOrder')
 const loadingSheetSchema = new mongoose.Schema({
     regNo: { type: String, required: true }, // taken from the loading order
     odoMeter: { type: Number, required: true },
+    tripSheetId: { type: mongoose.Schema.Types.ObjectId, ref: "TripSheet" },
     fuleingMachine: { type: String, required: true },
     pumpReadingBefore: { type: Number, required: false },
     pumpReadingAfter: { type: Number, required: true },
@@ -64,57 +65,57 @@ const loadingSheetSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now, timezone: "Asia/Kolkata" },
 });
 
-loadingSheetSchema.pre('save', async function (next) {
-    try {
-        // Fetch the Bowser document for the provided regNo
-        const bowser = await Bowser.findOne({ regNo: this.regNo });
-        if (!bowser) {
-            return next(new Error('Bowser not found for the provided regNo'));
-        }
+// loadingSheetSchema.pre('save', async function (next) {
+    // try {
+    //     // Fetch the Bowser document for the provided regNo
+    //     const bowser = await Bowser.findOne({ regNo: this.regNo });
+    //     if (!bowser) {
+    //         return next(new Error('Bowser not found for the provided regNo'));
+    //     }
 
-        const bowserChambers = bowser.chambers;
+    //     const bowserChambers = bowser.chambers;
 
-        // Calculate qty for chamberwiseDipListBefore
-        for (const dip of this.chamberwiseDipListBefore) {
-            if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
-                dip.qty = calculateQty(bowserChambers, dip.chamberId, dip.levelHeight);
-            }
-        }
+    //     // Calculate qty for chamberwiseDipListBefore
+    //     for (const dip of this.chamberwiseDipListBefore) {
+    //         if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
+    //             dip.qty = calculateQty(bowserChambers, dip.chamberId, dip.levelHeight);
+    //         }
+    //     }
 
-        // Calculate qty for chamberwiseDipListAfter
-        for (const dip of this.chamberwiseDipListAfter) {
-            if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
-                dip.qty = calculateQty(bowserChambers, dip.chamberId, dip.levelHeight);
-            }
-        }
+    //     // Calculate qty for chamberwiseDipListAfter
+    //     for (const dip of this.chamberwiseDipListAfter) {
+    //         if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
+    //             dip.qty = calculateQty(bowserChambers, dip.chamberId, dip.levelHeight);
+    //         }
+    //     }
 
-        // Calculate totalLoadQuantityBySlip
-        this.totalLoadQuantityBySlip = this.loadingSlips.reduce((total, slip) => {
-            return total + parseFloat(slip.qty);
-        }, 0);
+    //     // Calculate totalLoadQuantityBySlip
+    //     this.totalLoadQuantityBySlip = this.loadingSlips.reduce((total, slip) => {
+    //         return total + parseFloat(slip.qty);
+    //     }, 0);
 
-        // Calculate totalLoadQuantityByDip based on chamberwiseDipListAfter
-        this.totalLoadQuantityByDip = this.chamberwiseDipListAfter.reduce((total, dip) => {
-            return total + parseFloat(dip.qty);
-        }, 0);
+    //     // Calculate totalLoadQuantityByDip based on chamberwiseDipListAfter
+    //     this.totalLoadQuantityByDip = this.chamberwiseDipListAfter.reduce((total, dip) => {
+    //         return total + parseFloat(dip.qty);
+    //     }, 0);
 
-        let loadingOrder = await LoadingOrder.findByIdAndUpdate(
-            new mongoose.Types.ObjectId(String(this.bccAuthorizedOfficer.orderId)), // Find the order by its _id
-            { $set: { fulfilled: true } },              // Set the fulfilled field to true
-            { new: true }                               // Return the updated document
-        );
+    //     let loadingOrder = await LoadingOrder.findByIdAndUpdate(
+    //         new mongoose.Types.ObjectId(String(this.bccAuthorizedOfficer.orderId)), // Find the order by its _id
+    //         { $set: { fulfilled: true } },              // Set the fulfilled field to true
+    //         { new: true }                               // Return the updated document
+    //     );
 
-        if (!loadingOrder) {
-            console.error('Loading order not found');
-            return;
-        }
+    //     if (!loadingOrder) {
+    //         console.error('Loading order not found');
+    //         return;
+    //     }
 
-        console.log('Updated Loading Order:', loadingOrder);
+    //     console.log('Updated Loading Order:', loadingOrder);
 
-        next();
-    } catch (error) {
-        next(error);
-    }
-});
+    //     next();
+    // } catch (error) {
+    //     next(error);
+    // }
+// });
 
 module.exports = bowsersDatabaseConnection.model('LoadingSheet', loadingSheetSchema, 'BowserLoadingSheets');

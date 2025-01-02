@@ -1,5 +1,6 @@
 const TripSheet = require('../models/TripSheets')
 const mongoose = require('mongoose')
+const { updateTripSheet } = require('./tripSheet')
 
 const fetchLocationData = async (latitude, longitude) => {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`;
@@ -24,48 +25,28 @@ const fetchLocationData = async (latitude, longitude) => {
 
 const addRecordToTrip = async (fuelingTransaction) => {
     try {
-        // Find the trip associated with the `fuelingTransaction.tripSheetId`
-        let trip = await TripSheet.findOne({ tripSheetId: fuelingTransaction.tripSheetId }).populate("dispenses");
+        const newDispense = {
+            transaction: fuelingTransaction._id,
+            fuelQuantity: fuelingTransaction.fuelQuantity,
+            isVerified: fuelingTransaction.verified,
+            isPosted: fuelingTransaction.posted,
+        };
 
-        if (!trip) {
-            console.log("Trip not found");
-            return;
-        }
-        // Ensure `recordId` is a valid ObjectId
-        if (!mongoose.Types.ObjectId.isValid(fuelingTransaction._id)) {
-            console.log("Invalid recordId");
-            return;
-        }
+        // Call the utility function to update the trip sheet
+        const result = await updateTripSheet({
+            tripSheetId: fuelingTransaction.tripSheetId,
+            newDispense,
+        });
 
-        // Check if the recordId is already in the `dispenses` array
-        const existingDispenseIndex = trip.dispenses.findIndex(dispense => dispense.transaction.toString() === fuelingTransaction._id.toString());
-
-        if (existingDispenseIndex === -1) {
-            // Add the `recordId` to the `dispenses` array
-            trip.dispenses.push({
-                transaction: fuelingTransaction._id,
-                fuelQuantity: fuelingTransaction.fuelQuantity,
-                isVerified: fuelingTransaction.verified,
-                isPosted: fuelingTransaction.posted,
-            });
-            console.log("RecordId added to trips dispenses successfully!");
+        if (result.success) {
+            console.log(`Record added/updated successfully in trip sheet: ${fuelingTransaction.tripSheetId}`);
         } else {
-            // Update the existing dispense
-            trip.dispenses[existingDispenseIndex] = {
-                transaction: fuelingTransaction._id,
-                fuelQuantity: fuelingTransaction.fuelQuantity,
-                isVerified: fuelingTransaction.verified,
-                isPosted: fuelingTransaction.posted,
-            };
-            console.log("RecordId updated in trips dispenses successfully!");
+            console.error(`Failed to update trip sheet: ${result.message}`);
         }
-
-        // Save the trip document
-        await trip.save();
     } catch (error) {
-        console.error("Error updating trip dispenses:", error);
+        console.error("Error in addRecordToTrip:", error);
     }
-}
+};
 
 const removeDispenseFromTripSheet = async (dispenseIdToRemove) => {
     try {
