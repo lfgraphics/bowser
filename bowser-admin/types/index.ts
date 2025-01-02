@@ -164,21 +164,10 @@ export interface TripSheet {
   tripSheetGenerationDateTime?: Date
   bowser: {
     regNo: string
-    odometerStartReading?: number
     driver: {
       handOverDate: Date
       name: string
       phoneNo: string
-    }[]
-    pumpEndReading: number
-    chamberwiseDipList: {
-      chamberId: string
-      levelHeight: string
-      qty: string
-    }[]
-    chamberwiseSealList: {
-      chamberId: string
-      sealId: string
     }[]
   }
   fuelingAreaDestination?: string
@@ -190,16 +179,64 @@ export interface TripSheet {
   }
   addition?: {
     sheetId: string
-    quantity: number
-    slips: {
-      qty: number
-      photo: string
-    }[]
+    quantityByDip: number
     quantityBySlip: number
   }[]
   dispenses: {
     transaction: string
+    fuelQuantity: number
     isVerified: boolean
+    isPosted: boolean
+  }[]
+  totalLoadQuantity?: number
+  saleQty?: number
+  balanceQty?: number
+  settelment?: {
+    dateTime: Date
+    details: {
+      pumpReading: string
+      chamberwiseDipList: {
+        chamberId: string
+        levelHeight: number
+        qty: number
+      }[]
+      totalQty: number
+    }
+    settled: boolean
+  }
+  posted?: boolean
+}
+
+export interface WholeTripSheet {
+  _id?: string
+  tripSheetId: number
+  createdAt: Date
+  tripSheetGenerationDateTime?: Date
+  bowser: {
+    regNo: string
+    driver: {
+      handOverDate: Date
+      name: string
+      phoneNo: string
+    }[]
+  }
+  fuelingAreaDestination?: string
+  proposedDepartureTime?: string
+  loading: {
+    sheetId: LoadingSheet
+    quantityByDip: number
+    quantityBySlip: number
+  }
+  addition?: {
+    sheetId: LoadingSheet
+    quantityByDip: number
+    quantityBySlip: number
+  }[]
+  dispenses: {
+    transaction: string
+    fuelQuantity: number
+    isVerified: boolean
+    isPosted: boolean
   }[]
   totalLoadQuantity?: number
   saleQty?: number

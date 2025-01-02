@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 
 interface ModalProps {
@@ -8,6 +8,8 @@ interface ModalProps {
 }
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
+  const [isAnimating, setIsAnimating] = useState(false);
+
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -24,6 +26,14 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
     };
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (isOpen) {
+      setIsAnimating(true);
+    } else {
+      setIsAnimating(false);
+    }
+  }, [isOpen]);
+
   // Handle clicking outside the modal
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
@@ -35,14 +45,14 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
 
   return (
     <div
-      className="fixed top-0 inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      className={`top-0 z-50 fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
       onClick={handleOverlayClick}
     >
-      <div className="bg-background rounded-lg p-4 max-w-3xl w-full max-h-[80vh] overflow-auto relative">
+      <div className="relative bg-card p-4 rounded-lg w-full max-w-3xl h-[80vh] overflow-auto">
         <Button
           variant="outline"
           onClick={onClose}
-          className="absolute top-2 right-2 text-gray-700 hover:text-gray-900 text-2xl font-bold"
+          className="top-2 right-2 absolute font-bold text-2xl text-gray-700 hover:text-gray-900"
         >
           &times;
         </Button>

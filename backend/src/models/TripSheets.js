@@ -2,8 +2,6 @@ const mongoose = require('mongoose');
 const { bowsersDatabaseConnection } = require('../../config/database');
 const bowserDriverSchema = require('./subSchemas/BowserDriver');
 const dispensesSchema = require('./subSchemas/Dispenses');
-const { calculateQty } = require('../utils/calibration');
-const Bowser = require('./Bowsers');
 
 const counterSchema = new mongoose.Schema({
     _id: { type: String, required: true },
@@ -17,21 +15,7 @@ const tripSheetSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now, timezone: "Asia/Kolkata" },
     bowser: {
         regNo: { type: String, required: true },
-        odometerStartReading: { type: Number, required: false },
         driver: [bowserDriverSchema],
-        pumpEndReading: { type: Number, required: true },
-        chamberwiseDipList: {
-            type: [
-                { chamberId: String, levelHeight: Number, qty: Number }
-            ],
-            _id: false,
-        },
-        chamberwiseSealList: {
-            type: [
-                { chamberId: String, sealId: String }
-            ],
-            _id: false,
-        },
     },
     fuelingAreaDestination: { type: String, required: false },
     proposedDepartureTime: { type: Date, required: false },
@@ -67,6 +51,10 @@ const tripSheetSchema = new mongoose.Schema({
                     _id: false,
                 },
                 totalQty: { type: Number },
+                by: {
+                    id: { type: String },
+                    name: { type: String }
+                }
             },
             settled: { type: Boolean, default: false },
         }, _id: false

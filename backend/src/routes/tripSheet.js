@@ -74,7 +74,6 @@ router.post('/create', async (req, res) => {
         // Update bowser driver information
         const phoneNo = bowser.driver?.[0]?.phoneNo;
         await updateBowserDriver(phoneNo, bowser.regNo);
-
         // Update Bowser with the current trip
         await updateBowserCurrentTrip(bowser.regNo, newSheet._id);
 
@@ -186,6 +185,20 @@ router.get('/find-by-id/:id', async (req, res) => {
         res.status(500).json({ message: 'Server error', error: err.message, stack: err.stack });
     }
 });
+router.get('/:id', async (req, res) => {
+    const id = req.params.id;
+
+    try {
+        // First, find all bowsers with the given registration number.
+        const sheet = await TripSheet.findById(new mongoose.Types.ObjectId(id)).populate('loading.sheetId addition.sheetId');
+        res.status(200).json(sheet);
+
+    } catch (err) {
+        console.error('Error searching bowsers, trip details, or bowser drivers:', err);
+        console.error('Error stack:', err.stack);
+        res.status(500).json({ message: 'Server error', error: err.message, stack: err.stack });
+    }
+});
 router.patch('/update/:id', async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
@@ -277,7 +290,6 @@ router.post('/settle/:id', async (req, res) => {
                 dip.qty = calculateQty(bowser.chambers, dip.chamberId, dip.levelHeight).toFixed(2);
             }
         }
-
 
         // Update the tripsheet with the new chamberwiseDipList
         let totalQty = chamberwiseDipList.reduce((acc, chamber) => {

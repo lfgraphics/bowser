@@ -138,9 +138,9 @@ export default function TripSheetCreatePage() {
             const body: TripSheetPayload = {
                 bowser: {
                     regNo,
+                    driver: bowserDriver,
                     odometerStartReading,
                     pumpEndReading,
-                    driver: bowserDriver,
                     chamberwiseDipList: loadingSheet.chamberwiseDipListAfter,
                     chamberwiseSealList: loadingSheet.chamberwiseSealList
                 },
@@ -150,8 +150,7 @@ export default function TripSheetCreatePage() {
                     sheetId: loadingSheet._id,
                     quantityByDip,
                     quantityBySlip,
-                },
-                // You might add more fields if needed, e.g. "driver", "chamberwiseDipList", etc.
+                }
             };
 
             // Submit
@@ -170,7 +169,7 @@ export default function TripSheetCreatePage() {
             console.log("Created TripSheet:", created);
 
             // Redirect or show success message
-            router.replace("/tripsheets");
+            router.replace(`/tripsheets/print/intial/${created.data.tripSheet._id}`);
         } catch (err: any) {
             setError(err.message || "Error creating TripSheet.");
         } finally {
@@ -232,7 +231,6 @@ export default function TripSheetCreatePage() {
                         <div className="p-2 border rounded">
                             <h4 className="mb-2 font-semibold">Loading Sheet Info</h4>
                             {/* Pre-filled from loadingSheet */}
-                            <p className="text-sm">LoadingSheet ID: {loadingSheet._id}</p>
                             <div className="flex flex-col gap-2 mb-3">
                                 <Label>Quantity By Dip</Label>
                                 <Input

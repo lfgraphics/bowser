@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { Toaster } from "@/components/ui/toaster"
-import { Check, X } from 'lucide-react';
+import { Check, Eye, X } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { TripSheet } from '@/types/index';
@@ -170,36 +170,50 @@ const TripSheetPage = () => {
                                 <TableCell>{sheet.saleQty?.toFixed(2)}</TableCell>
                                 <TableCell>{sheet.balanceQty?.toFixed(2)}</TableCell>
                                 <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
-                                    <TableCell className="flex space-x-2">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" className='p-4 w-full h-10 text-center'>
-                                                    Update
+                                    <TableCell className="flex justify-center gap-2 w-full">
+                                        {sheet.settelment?.dateTime == undefined &&
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="outline" size="lg" className='p-4 h-10 text-center'>
+                                                        Update
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent className='bg-card text-center'>
+                                                    <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/settle/${sheet._id}` : ``}>
+                                                        <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
+                                                            Settle
+                                                        </DropdownMenuItem>
+                                                    </Link>
+                                                    <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/loading/orders/create/${sheet._id}` : ``}>
+                                                        <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
+                                                            Reload (+)
+                                                        </DropdownMenuItem>
+                                                    </Link>
+                                                    <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/add-driver/${sheet._id}` : ``}>
+                                                        <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
+                                                            Add Driver
+                                                        </DropdownMenuItem>
+                                                    </Link>
+                                                    <Link className='items-center w-full text-center' href={`/tripsheets/${sheet._id}`}>
+                                                        <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
+                                                            <Eye />
+                                                        </DropdownMenuItem>
+                                                    </Link>
+                                                    <DropdownMenuItem disabled={sheet.settelment?.dateTime == undefined && sheet.dispenses?.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? false : true} className='p-4 w-full h-10 text-center' onClick={() => postDispenses(sheet._id!)}>
+                                                        Post
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        }
+                                        {sheet.settelment?.dateTime !== undefined &&
+                                            <Link href={`/tripsheets/${sheet._id}`}>
+                                                <Button variant="outline" size="lg">
+                                                    <Eye />
                                                 </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent className='bg-card text-center'>
-                                                <Link href={`/tripsheets/settle/${sheet._id}`}>
-                                                    <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='p-4 w-full h-10 text-center'>
-                                                        Settle
-                                                    </DropdownMenuItem>
-                                                </Link>
-                                                <Link href={`/loading/orders/create/${sheet._id}`}>
-                                                    <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='p-4 w-full h-10 text-center'>
-                                                        Reload (+)
-                                                    </DropdownMenuItem>
-                                                </Link>
-                                                <Link href={`/tripsheets/add-driver/${sheet._id}`}>
-                                                    <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='p-4 w-full h-10 text-center'>
-                                                        Add Driver
-                                                    </DropdownMenuItem>
-                                                </Link>
-                                                <DropdownMenuItem disabled={sheet.settelment?.dateTime == undefined && sheet.dispenses?.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? false : true} className='p-4 w-full h-10 text-center' onClick={() => postDispenses(sheet._id!)}>
-                                                    Post
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                            </Link>
+                                        }
                                         <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
-                                            <Button variant="destructive" className='h-10' onClick={() => openDeleteDialogue(sheet._id!)}>
+                                            <Button variant="destructive" size="lg" onClick={() => openDeleteDialogue(sheet._id!)}>
                                                 Delete
                                             </Button>
                                         </OnlyAllowed>

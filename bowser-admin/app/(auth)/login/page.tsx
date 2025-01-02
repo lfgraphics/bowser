@@ -8,15 +8,27 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { LogIn } from "lucide-react"
 import Link from "next/link"
 import Loading from "@/app/loading"
+import { User } from "@/types"
 
 export default function Login() {
   const [userId, setUserId] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
-
+  const allowedRoutes: { [key: string]: string } = {
+    "Admin": "/manage-users",
+    "Diesel Control Center Staff": "/dashboard",
+    "Data Entry": "/dispense-records",
+    "Loading Incharge": "/loading/orders",
+    "BCC Authorized Officer": "/loading/sheet",
+    "Petrol Pump Personnel": "/loading/petrol-pump",
+    // Add other roles and their first allowed routes here
+  };
   useEffect(() => {
     if (isAuthenticated()) {
-      window.location.href = "/dashboard";
+      let user: User = JSON.parse(localStorage.getItem('adminUser')!)
+      const redirectUrl = user.roles.map(role => allowedRoutes[role]).find(url => url) || "/unaauthorized";
+
+      window.location.href = redirectUrl;
     }
   }, []);
 
@@ -26,17 +38,8 @@ export default function Login() {
     try {
       const response = await login(userId, password)
       if (response.user) {
-        const allowedRoutes: { [key: string]: string } = {
-          "Admin": "/manage-users",
-          "Diesel Control Center Staff": "/dashboard",
-          "Data Entry": "/dispense-records",
-          "Loading Incharge": "/loading/orders",
-          "BCC Authorized Officer": "/loading/sheet",
-          "Petrol Pump Personnel": "/loading/petrol-pump",
-          // Add other roles and their first allowed routes here
-        };
 
-        const redirectUrl = response.user.roles.map(role => allowedRoutes[role]).find(url => url) || "/dashboard";
+        const redirectUrl = response.user.roles.map(role => allowedRoutes[role]).find(url => url) || "/unaauthorized";
 
         window.location.href = redirectUrl;
       } else {
