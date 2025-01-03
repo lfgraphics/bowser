@@ -5,7 +5,8 @@ const FuelingTransaction = require('../models/Transaction');
 const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
-const { removeDispenseFromTripSheet, addRecordToTrip } = require('../utils/fuelTransactions');
+const { addRecordToTrip } = require('../utils/fuelTransactions');
+const { updateTripSheet } = require('../utils/tripSheet')
 const { mongoose } = require('mongoose');
 
 router.get('/', async (req, res) => {
@@ -283,8 +284,9 @@ router.post('/verify', async (req, res) => {
 });
 
 
-router.delete('/delete/:id', async (req, res) => {
-    const id = req.params.id;
+router.delete('/delete', async (req, res) => {
+    const { tripSheetId, id } = req.body
+    console.log(req.body)
     try {
         const deletedRecord = await FuelingTransaction.findByIdAndDelete(id);
 
@@ -292,7 +294,7 @@ router.delete('/delete/:id', async (req, res) => {
             return res.status(404).json({ message: 'Record not found' });
         }
 
-        await removeDispenseFromTripSheet(id)
+        await updateTripSheet({ tripSheetId, removeDispenseId: id })
 
         res.status(200).json({ message: 'Fueling record deleted successfully', success: true });
     } catch (err) {

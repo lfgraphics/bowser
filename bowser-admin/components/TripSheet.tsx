@@ -212,7 +212,7 @@ const TripSheetPage = () => {
                                                 </Button>
                                             </Link>
                                         }
-                                        <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
+                                        <OnlyAllowed allowedRoles={["Admin"]}>
                                             <Button variant="destructive" size="lg" onClick={() => openDeleteDialogue(sheet._id!)}>
                                                 Delete
                                             </Button>

@@ -254,48 +254,17 @@ router.post('/sheet', async (req, res) => {
             const totalBefore = chamberwiseDipListBefore.reduce((total, dip) => {
                 return total + parseFloat(dip.qty);
             }, 0);
-            totalLoadQuantityByDip -= totalBefore; // Subtract total from before
 
-            newLoadingSheet = new LoadingSheet({ // Assign to the outer scoped variable
-                regNo,
-                odoMeter,
-                ...(sheetId ? { tripSheetId: new mongoose.Types.ObjectId(sheetId) } : {}),
-                fuleingMachine,
-                pumpReadingBefore,
-                pumpReadingAfter,
-                chamberwiseDipListBefore,
-                chamberwiseDipListAfter,
-                chamberwiseSealList,
-                totalLoadQuantityByDip,
-                totalLoadQuantityBySlip,
-                loadingSlips,
-                loadingIncharge,
-                bccAuthorizedOfficer: {
-                    ...bccAuthorizedOfficer,
-                    orderId: new mongoose.Types.ObjectId(bccAuthorizedOfficer.orderId),
-                },
-                fulfilled: false,
-            });
-
-            let loadingOrder = await LoadingOrder.findByIdAndUpdate(
-                new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)),
-                { $set: { fulfilled: true } },
-                { new: true }
-            );
+            let additionQty = totalLoadQuantityByDip - totalBefore; // Subtract total from before
 
             if (sheetId) {
                 const additionEntry = {
                     sheetId: new mongoose.Types.ObjectId(sheetId),
-                    quantityByDip: totalLoadQuantityByDip,
+                    quantityByDip: additionQty,
                     quantityBySlip: totalLoadQuantityBySlip,
                 };
 
                 await updateTripSheet({ sheetId, newAddition: additionEntry });
-            }
-
-            if (!loadingOrder) {
-                console.error('Loading order not found');
-                return;
             }
 
             console.log('Updated Loading Order:', loadingOrder);
@@ -309,8 +278,41 @@ router.post('/sheet', async (req, res) => {
                 let notificationSent = await sendWebPushNotification({ userId: bccAuthorizedOfficer.id, message, options });
 
                 if (notificationSent.success) {
-                    await newLoadingSheet.save();
-                    res.status(201).json(newLoadingSheet);
+                    if (!sheetId) {
+                        newLoadingSheet = new LoadingSheet({ // Assign to the outer scoped variable
+                            regNo,
+                            odoMeter,
+                            ...(sheetId ? { tripSheetId: new mongoose.Types.ObjectId(sheetId) } : {}),
+                            fuleingMachine,
+                            pumpReadingBefore,
+                            pumpReadingAfter,
+                            chamberwiseDipListBefore,
+                            chamberwiseDipListAfter,
+                            chamberwiseSealList,
+                            totalLoadQuantityByDip,
+                            totalLoadQuantityBySlip,
+                            loadingSlips,
+                            loadingIncharge,
+                            bccAuthorizedOfficer: {
+                                ...bccAuthorizedOfficer,
+                                orderId: new mongoose.Types.ObjectId(bccAuthorizedOfficer.orderId),
+                            },
+                            fulfilled: false,
+                        });
+                        await newLoadingSheet.save();
+
+                        let loadingOrder = await LoadingOrder.findByIdAndUpdate(
+                            new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)),
+                            { $set: { fulfilled: true } },
+                            { new: true }
+                        );
+
+                        if (!loadingOrder) {
+                            console.error('Loading order not found');
+                            return;
+                        }
+                        res.status(201).json(newLoadingSheet);
+                    }
                 } else {
                     res.status(500).json({ error: 'Request failed because failed to send notification to BCC' });
                 }

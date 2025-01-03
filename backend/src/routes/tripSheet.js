@@ -199,6 +199,20 @@ router.get('/:id', async (req, res) => {
         res.status(500).json({ message: 'Server error', error: err.message, stack: err.stack });
     }
 });
+router.get('/tripSheetId/:id', async (req, res) => {
+    const id = req.params.id;
+
+    try {
+        // First, find all bowsers with the given registration number.
+        const sheet = await TripSheet.findOne({ tripSheetId: id }).populate('loading.sheetId addition.sheetId');
+        res.status(200).json(sheet);
+
+    } catch (err) {
+        console.error('Error searching bowsers, trip details, or bowser drivers:', err);
+        console.error('Error stack:', err.stack);
+        res.status(500).json({ message: 'Server error', error: err.message, stack: err.stack });
+    }
+});
 router.patch('/update/:id', async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;

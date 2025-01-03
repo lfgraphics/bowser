@@ -1,10 +1,13 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { StyleSheet, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { StyleSheet, ActivityIndicator, ScrollView, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
+import { TripSheet } from '@/src/types/models';
+import { Link } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
 // import { useTheme } from '@react-navigation/native';
 
 interface DispensesRecord {
@@ -73,7 +76,7 @@ const FuelingRecords: React.FC = () => {
 
     return (
         <ThemedView style={[styles.scrollThemedView,]}>
-            <ThemedText style={[styles.title,]}>इस ट्रिप के रिकॉर्ड</ThemedText>
+            <ThemedText style={[styles.title,]}>इस ट्रिप पर दिए गए तेल</ThemedText>
             {records.length > 0 &&
                 <ThemedText style={[styles.secondaryTitle,]}>
                     कुल {records.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)} लीटर तेल दिया
@@ -97,15 +100,37 @@ const FuelingRecords: React.FC = () => {
                             </ThemedView>
                         ))
                     ) : (
-                        <ThemedText style={[styles.noRecordsText,]}>कोई भी रिकॉर्ड मौजूद नहीं| एक गाड़ी का रिकॉर्ड ऑनलाइन ना भेजने पर 50 रुपया पेनाल्टी लगाई जाएगी</ThemedText>
+                        <ThemedText style={[styles.noRecordsText]}>कोई भी रिकॉर्ड मौजूद नहीं|</ThemedText>
                     )}
+
                 </ScrollView >
             )}
+            <ThemedText style={[styles.noRecordsText]}>एक गाड़ी का रिकॉर्ड ऑनलाइन ना भेजने पर 50 रुपया पेनाल्टी लग सकती है|</ThemedText>
+            <Link style={styles.button} href={'/tripsheet'}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                    <ThemedText style={{ color: 'white' }}>
+                        ट्रिप शीट डीटेल्स
+                    </ThemedText>
+                    <MaterialIcons name="table-chart" size={24} color="white" style={{ marginHorizontal: 10 }} />
+                </View>
+            </Link>
         </ThemedView>
     );
 };
 
 const styles = StyleSheet.create({
+    button: {
+        width: '70%',
+        padding: 15,
+        marginVertical: 10,
+        backgroundColor: '#0a7ea4',
+        borderRadius: 5,
+        alignItems: 'center',
+        textAlign: 'center',
+        alignSelf:"center",
+        paddingHorizontal: 20,
+        color: 'white'
+    },
     container: {
         flex: 1,
         maxHeight: 400,
@@ -126,7 +151,8 @@ const styles = StyleSheet.create({
     noRecordsText: {
         textAlign: 'center',
         fontSize: 16,
-        color: 'red'
+        color: 'red',
+        paddingVertical: 8
     },
     modalContainer: {
         borderTopEndRadius: 4,
@@ -165,7 +191,7 @@ const styles = StyleSheet.create({
     scrollThemedView: {
         borderRadius: 8,
         padding: 10,
-        maxHeight: 300,
+        maxHeight: 470,
         width: '100%',
     },
 });

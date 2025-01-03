@@ -113,7 +113,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
     const handleDelete = async () => {
         setLoading(true)
         try {
-            await axios.delete(`${BASE_URL}/listDispenses/delete/${record._id}`); //https://bowser-backend-2cdr.onrender.com
+            await axios.delete(`${BASE_URL}/listDispenses/delete`, { data: { tripSheetId: record.tripSheetId, id: record._id } }); //https://bowser-backend-2cdr.onrender.com
             setShowAlert(true);
             setAlertTitle("Success");
             setAlertMessage("Deleted Successfully");

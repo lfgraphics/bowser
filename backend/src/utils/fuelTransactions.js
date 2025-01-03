@@ -54,7 +54,7 @@ const removeDispenseFromTripSheet = async (dispenseIdToRemove) => {
     try {
         // Find the TripSheet that contains the dispense _id
         const tripSheet = await TripSheet.findOne({
-            'dispenses.transaction': mongoose.Types.ObjectId(dispenseIdToRemove)
+            'dispenses.transaction': new mongoose.Types.ObjectId(dispenseIdToRemove)
         });
 
         if (!tripSheet) {
@@ -67,7 +67,7 @@ const removeDispenseFromTripSheet = async (dispenseIdToRemove) => {
         // Remove the dispense _id from the dispenses array
         await TripSheet.updateOne(
             { _id: tripSheet._id },
-            { $pull: { dispenses: { transaction: mongoose.Types.ObjectId(dispenseIdToRemove) } } }
+            { $pull: { dispenses: { transaction: new mongoose.Types.ObjectId(dispenseIdToRemove) } } }
         );
 
         console.log("Dispense ID removed successfully!");

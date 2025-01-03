@@ -27,6 +27,97 @@ export interface TripDetails {
   open: boolean
 }
 
+export interface LoadingSheet {
+  _id: string
+  regNo: string
+  odoMeter: number
+  totalLoadQuantityByDip: number
+  totalLoadQuantityBySlip: number
+  bccAuthorizedOfficer: {
+    id: string
+    name: string
+    orderId: string
+  }
+  chamberwiseDipListAfter: {
+    chamberId: string
+    levelHeight: number
+    qty: number
+  }[]
+  chamberwiseDipListBefore: {
+    chamberId: string
+    levelHeight: number
+    qty: number
+  }[]
+  chamberwiseSealList: {
+    chamberId: string
+    sealId: string
+    sealPhoto: string
+  }[]
+  createdAt: string
+  fuleingMachine: string
+  fulfilled: boolean
+  loadingIncharge: {
+    id: string
+    name: string
+  }
+  pumpReadingAfter: number
+  pumpReadingBefore: number
+  pumpSlips: {
+    chamberId: string
+    qty: number
+    slipPhoto: string
+  }[]
+}
+export interface TripSheet {
+  _id?: string
+  tripSheetId: number
+  createdAt: Date
+  tripSheetGenerationDateTime?: Date
+  bowser: {
+    regNo: string
+    driver: {
+      handOverDate: Date
+      name: string
+      phoneNo: string
+    }[]
+  }
+  fuelingAreaDestination?: string
+  proposedDepartureTime?: string
+  loading: {
+    sheetId: LoadingSheet
+    quantityByDip: number
+    quantityBySlip: number
+  }
+  addition?: {
+    sheetId: LoadingSheet
+    quantityByDip: number
+    quantityBySlip: number
+  }[]
+  dispenses: {
+    transaction: string
+    fuelQuantity: number
+    isVerified: boolean
+    isPosted: boolean
+  }[]
+  totalLoadQuantity?: number
+  saleQty?: number
+  balanceQty?: number
+  balanceQtyBySlip?: number
+  settelment?: {
+    dateTime: Date
+    details: {
+      pumpReading: string
+      chamberwiseDipList: {
+        chamberId: string
+        levelHeight: number
+        qty: number
+      }[]
+      totalQty: number
+    }
+    settled: boolean
+  }
+  posted?: boolean
+}
 export type BowserDriver = {
   id: string
   name: string
@@ -136,12 +227,4 @@ export interface UserData {
       }
     }
   }>
-}
-
-export interface TripSheet {
-  tripSheetId: string
-  settelment: {
-    settled: boolean
-  }
-  // Add any other fields from your TripSheet schema that you might need
 }
