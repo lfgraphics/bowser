@@ -251,12 +251,10 @@ router.post('/sheet', async (req, res) => {
                 return total + parseFloat(dip.qty);
             }, 0);
 
-            if (sheetId) {
-                const totalBefore = chamberwiseDipListBefore.reduce((total, dip) => {
-                    return total + parseFloat(dip.qty);
-                }, 0);
-                totalLoadQuantityByDip -= totalBefore; // Subtract total from before
-            }
+            const totalBefore = chamberwiseDipListBefore.reduce((total, dip) => {
+                return total + parseFloat(dip.qty);
+            }, 0);
+            totalLoadQuantityByDip -= totalBefore; // Subtract total from before
 
             newLoadingSheet = new LoadingSheet({ // Assign to the outer scoped variable
                 regNo,

@@ -51,14 +51,20 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense 
             (sum, add) => sum + (add.quantityByDip || 0),
             0
         );
+        const additionsQtyBySlip = tripSheet.addition?.reduce(
+            (sum, add) => sum + (add.quantityBySlip || 0),
+            0
+        );
         const dispensedQuantity = tripSheet.dispenses?.reduce(
             (sum, dispense) => sum + (dispense.fuelQuantity || 0),
             0
         );
 
         tripSheet.totalLoadQuantity = (tripSheet.loading?.quantityByDip || 0) + additionsQuantity;
+        tripSheet.totalLoadQuantityBySlip = (tripSheet.loading?.quantityBySlip || 0) + additionsQtyBySlip
         tripSheet.saleQty = dispensedQuantity;
         tripSheet.balanceQty = tripSheet.totalLoadQuantity - tripSheet.saleQty;
+        tripSheet.balanceQtyBySlip = tripSheet.totalLoadQuantityBySlip - tripSheet.saleQty;
 
         // Save the updated trip sheet
         await tripSheet.save();

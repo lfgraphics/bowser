@@ -5,6 +5,8 @@ const { updateTripSheet } = require('./tripSheet')
 const fetchLocationData = async (latitude, longitude) => {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`;
 
+    // we'll soon entigrate the google geocoding api to get the best possible location
+
     try {
         const response = await fetch(url);
         const data = await response.json();
@@ -52,12 +54,12 @@ const removeDispenseFromTripSheet = async (dispenseIdToRemove) => {
     try {
         // Find the TripSheet that contains the dispense _id
         const tripSheet = await TripSheet.findOne({
-            dispenses: mongoose.Types.ObjectId(dispenseIdToRemove)
+            'dispenses.transaction': mongoose.Types.ObjectId(dispenseIdToRemove)
         });
 
         if (!tripSheet) {
-            console.log("No TripSheet found containing the specified dispense _id.");
-            return;
+            console.log(`No TripSheet found containing the specified dispense _id: ${dispenseIdToRemove}`);
+            return false; // Indicate failure
         }
 
         console.log("Found TripSheet:", tripSheet);
@@ -65,12 +67,14 @@ const removeDispenseFromTripSheet = async (dispenseIdToRemove) => {
         // Remove the dispense _id from the dispenses array
         await TripSheet.updateOne(
             { _id: tripSheet._id },
-            { $pull: { dispenses: mongoose.Types.ObjectId(dispenseIdToRemove) } }
+            { $pull: { dispenses: { transaction: mongoose.Types.ObjectId(dispenseIdToRemove) } } }
         );
 
         console.log("Dispense ID removed successfully!");
+        return true; // Indicate success
     } catch (error) {
         console.error("Error while removing dispense ID:", error);
+        return false; // Indicate failure
     }
 }
 
