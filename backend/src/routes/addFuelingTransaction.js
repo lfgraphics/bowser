@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const FuelingTransaction = require('../models/Transaction');
-const { fetchLocationData, addRecordToTrip, } = require('../utils/fuelTransactions');
+const { fetchLocationData } = require('../utils/fuelTransactions');
+const { updateTripSheet } = require('../utils/tripSheet')
 const { sendWebPushNotification } = require('../utils/pushNotifications');
 
 router.post('/', async (req, res) => {
     try {
         let fuelingTransaction = new FuelingTransaction(req.body);
-        console.log(fuelingTransaction)
 
         if (!fuelingTransaction.gpsLocation || fuelingTransaction.gpsLocation.length == 0) {
             return res.status(502).json({ message: 'GPS location not found\nPlease try again' })
@@ -34,7 +34,16 @@ router.post('/', async (req, res) => {
 
         await Promise.race([savePromise, timeoutPromise]);
 
-        await addRecordToTrip(fuelingTransaction);
+        console.log(fuelingTransaction)
+
+        let tripSheetObject = {
+            transaction: fuelingTransaction._id,
+            fuelQuantity: fuelingTransaction.fuelQuantity,
+            isVerified: false,
+            isPosted: false,
+        }
+
+        await updateTripSheet({ tripSheetId: fuelingTransaction.tripSheetId, newDispense: tripSheetObject })
 
         res.status(200).json({ message: 'Data Submitted successfully' });
 

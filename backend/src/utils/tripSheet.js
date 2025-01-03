@@ -1,4 +1,13 @@
 const TripSheet = require('../models/TripSheets')
+/**
+ * @function updateTripSheet
+ * @description This function updates the trip sheet with new addition and dispense details. And performs the necessary calculations right thier and updates the Tripsheet\nIt receaves the details as an object
+ * @param {ObjectId} sheetId - The _id of the sheet to be updated.
+ * @param {number} tripSheetId - The tripSheetId (human understandable format of the sheet sequence).
+ * @param {Object} newAddition - The new addition details.
+ * @param {Object} newDispense - The new dispense details.
+ * @returns {Object} - The updated trip sheet.
+ */
 
 const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense }) => {
     try {
@@ -8,6 +17,8 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense 
             : { tripSheetId }; // If `tripSheetId` (numerical sequence ID) is provided
 
         // Fetch the trip sheet
+        console.log('Query:', query, '\nReceived parameters\n')
+        console.log(`sheetId: ${sheetId}, tripSheetId: ${tripSheetId}, newAddition: ${JSON.stringify(newAddition)}, newDispense: ${JSON.stringify(newDispense)}`)
         const tripSheet = await TripSheet.findOne(query);
 
         if (!tripSheet) {
@@ -36,11 +47,11 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense 
         }
 
         // Perform recalculations
-        const additionsQuantity = tripSheet.addition.reduce(
+        const additionsQuantity = tripSheet.addition?.reduce(
             (sum, add) => sum + (add.quantityByDip || 0),
             0
         );
-        const dispensedQuantity = tripSheet.dispenses.reduce(
+        const dispensedQuantity = tripSheet.dispenses?.reduce(
             (sum, dispense) => sum + (dispense.fuelQuantity || 0),
             0
         );
