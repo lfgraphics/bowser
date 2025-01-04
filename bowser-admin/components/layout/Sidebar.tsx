@@ -59,7 +59,7 @@ export function Sidebar() {
                 {/* Dynamica access Routes in upcoming updates starts here ................ */}
                 <OnlyAllowed allowedRoles={["Admin", "Diesel Control Center Staff"]}>
                   <li onClick={toggleSidebar}>
-                    <Link href={`/dispense-records?allocator=${user?.userId}`}>
+                    <Link href={`/my-allocation?allocator=${user?.userId}`}>
                       <Button variant="ghost" className="justify-start w-full">
                         <ListCollapse className="mr-2 w-4 h-4" />
                         My Allocations

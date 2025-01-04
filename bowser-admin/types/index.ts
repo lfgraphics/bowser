@@ -269,6 +269,18 @@ export interface User {
   generationTime: Date
 }
 
+export interface MainUser {
+  _id: mongoose.Schema.Types.ObjectId
+  userId: string
+  phoneNumber: string
+  phoneNo?: string
+  name: string
+  bowserId: string
+  verified: boolean
+  roles: Role[]
+  generationTime: Date
+}
+
 export interface Role {
   _id: mongoose.Schema.Types.ObjectId
   name: string
@@ -358,6 +370,31 @@ export interface Filters {
 export interface Sort {
   field: string
   order: 'asc' | 'desc'
+}
+
+export interface FuelingOrder {
+  _id: string
+  vehicleNumber: string
+  category: string
+  party: string
+  driverId: string
+  driverName: string
+  driverMobile: string
+  quantityType: 'Full' | 'Part'
+  fuelQuantity: number
+  bowser: {
+    regNo: string
+    driver: {
+      name: string
+      phoneNo: string
+    }
+  }
+  allocationAdmin: {
+    name: string
+    id: string
+  }
+  fulfilled: boolean
+  createdAt: Date
 }
 
 export type FuelingTypes = 'Own' | 'Attatch' | 'Bulk Sale'

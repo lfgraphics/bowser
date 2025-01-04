@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Checkbox } from './ui/checkbox';
-import { User, Role } from '@/types';
+import { User, Role, MainUser } from '@/types';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 
 interface RoleSelectionDialogProps {
-    user: User;
+    user: MainUser;
     roles: Role[];
     onUpdateRoles: (phoneNumber: string, roles: string[]) => void;
 }
@@ -48,7 +48,7 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({ user, roles, 
                         </div>
                     ))}
                 </div>
-                <div className="mt-4 flex space-x-2">
+                <div className="flex space-x-2 mt-4">
                     <Button className="btn" onClick={handleUpdate}>
                         Update
                     </Button>

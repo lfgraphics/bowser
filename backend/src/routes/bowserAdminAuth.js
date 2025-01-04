@@ -95,7 +95,7 @@ router.post('/login', async (req, res) => {
         res.cookie('token', token, {
             httpOnly: true,           // prevents JS from reading the cookie
             // secure: process.env.NODE_ENV === 'production', // only send over HTTPS in prod
-            // sameSite: 'strict',       // helps mitigate CSRF
+            sameSite: 'None',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
             path: '/' // typically default
         });
@@ -119,5 +119,27 @@ router.post('/login', async (req, res) => {
     }
 });
 
+router.post('/verify-token', async (req, res) => {
+    const token = req.cookies.token; // Get the token from cookies
+    console.log('visiting verification route');
+
+    if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+    }
+    console.log('Token received:', token);
+
+    try {
+        const secret = process.env.JWT_SECRET; // Ensure this matches your signing secret
+        const decoded = jwt.verify(token, secret);
+        console.log('Decoded token:', decoded); // Log the decoded token
+
+        // Return the roles directly from the decoded token
+        const roleNames = decoded.roles || []; // Assuming roles are stored in the token
+        res.status(200).json({ roles: roleNames });
+    } catch (error) {
+        console.error('Token verification error:', error);
+        res.status(500).json({ message: 'Failed to verify token', error: error.message });
+    }
+});
 
 module.exports = router;

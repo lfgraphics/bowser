@@ -1,11 +1,19 @@
-import { Bowser, Role, TripSheet, UnauthorizedLogin, User } from '@/types'
+import {
+  Bowser,
+  MainUser,
+  Role,
+  TripSheet,
+  UnauthorizedLogin,
+  User
+} from '@/types'
 import axios from 'axios'
 
 export const BASE_URL = 'https://bowser-backend-2cdr.onrender.com' //https://bowser-backend-2cdr.onrender.com  http://localhost:5000
 // Users and Roles Management
-export const getUsers = async (): Promise<User[]> => {
+export const getUsers = async (): Promise<MainUser[]> => {
   const response = await fetch(`${BASE_URL}/users`)
   if (!response.ok) throw new Error('Failed to fetch users')
+  // console.log(response.json())
   return response.json()
 }
 
@@ -27,7 +35,7 @@ export const getUnAuthorizedLogins = async (): Promise<UnauthorizedLogin[]> => {
 export const updateUserVerification = async (
   phoneNo: string,
   verified: boolean
-): Promise<User> => {
+): Promise<MainUser> => {
   const response = await fetch(`${BASE_URL}/users/${phoneNo}/verify`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -66,7 +74,7 @@ export const updateUserDevice = async (
 export const updateUserRoles = async (
   phoneNumber: string,
   roles: string[]
-): Promise<User> => {
+): Promise<MainUser> => {
   const response = await fetch(`${BASE_URL}/users/update/roles`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

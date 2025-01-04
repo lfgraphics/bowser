@@ -69,7 +69,7 @@ const fuelingTransactionSchema = new mongoose.Schema({
     allocationAdmin: {
         name: { type: String, required: false },
         id: { type: String, required: false },
-        allocationTime: { type: String, require: false }
+        allocationTime: { type: Date, require: false }
     }
 });
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const FuelingTransaction = require('../models/Transaction');
+const FuelingOrder = require('../models/fuelingOrders');
 const { fetchLocationData } = require('../utils/fuelTransactions');
 const { updateTripSheet } = require('../utils/tripSheet')
 const { sendWebPushNotification } = require('../utils/pushNotifications');
@@ -46,6 +47,15 @@ router.post('/', async (req, res) => {
         await updateTripSheet({ tripSheetId: fuelingTransaction.tripSheetId, newDispense: tripSheetObject })
 
         res.status(200).json({ message: 'Data Submitted successfully' });
+
+        const fuelingOrder = await FuelingOrder.findOne({
+            createdAt: new Date(fuelingTransaction.allocationAdmin.allocationTime)
+        });
+
+        if (fuelingOrder) {
+            fuelingOrder.fulfilled = true;
+            await fuelingOrder.save();
+        }
 
         let primaryHead = fuelingTransaction.category == "Bulk Sale" ? `Party: ${fuelingTransaction.party}` : `Vehicle Number: ${fuelingTransaction.vehicleNumber}`;
         let midHead = fuelingTransaction.category == "Attatch" ? `Vendor: ${fuelingTransaction.party}\n` : ``;

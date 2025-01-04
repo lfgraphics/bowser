@@ -116,3 +116,26 @@ export function getCurrentUser (): User | null {
   }
   return null
 }
+
+export async function verifyToken () {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/auth/admin/verify-token`,
+      {}, // Empty body since it's a verification request
+      { withCredentials: true } // Include cookies in requests
+    )
+
+    console.log('Response from verify-token:', response.data) // Log the response
+
+    if (response.status !== 200) {
+      throw new Error('Failed to verify token')
+    }
+
+    const data = response.data
+    console.log('Roles returned from server:', data.roles) // Log roles
+    return data.roles // Return the roles
+  } catch (error) {
+    console.error('Error verifying token:', error)
+    return []
+  }
+}

@@ -8,26 +8,6 @@ import { InstallPrompt } from '../page';
 // import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 export default function Dashboard() {
-    const router = useRouter();
-    const [authChecked, setAuthChecked] = useState(false);
-    // const [alertDialogOpen, setAlertDialogOpen] = useState(true);
-    // const [alertMessage, setAlertMessage] = useState("");
-
-    useEffect(() => {
-        const checkAuth = async () => {
-            const authenticated = await isAuthenticated();
-            if (!authenticated) {
-                router.push('/login');
-            }
-            setAuthChecked(true);
-        };
-
-        checkAuth();
-    }, [router]);
-
-    if (!authChecked) {
-        return <Loading />;
-    }
 
     return (
         <div>

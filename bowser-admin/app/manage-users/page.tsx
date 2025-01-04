@@ -5,7 +5,7 @@ import { getUsers, updateUserVerification, deleteUser, updateUserRoles, getRoles
 import { Button } from "@/components/ui/button";
 import { Check, CheckCircle, Search, X, XCircle } from "lucide-react";
 import RoleSelectionDialog from "@/components/RoleSelectionDialog";
-import { Role, UnauthorizedLogin, User } from "@/types";
+import { MainUser, Role, UnauthorizedLogin } from "@/types";
 import Loading from "../loading";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -19,7 +19,7 @@ import {
     AlertDialogAction,
     AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-import { isAuthenticated } from "@/lib/auth";
+// import { isAuthenticated } from "@/lib/auth";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -28,8 +28,8 @@ import { Label } from "@/components/ui/label";
 type Nav = 'Users' | 'Roles' | 'Un Authorized';
 
 const UsersList = () => {
-    const [users, setUsers] = useState<User[]>([]);
-    const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+    const [users, setUsers] = useState<MainUser[]>([]);
+    const [filteredUsers, setFilteredUsers] = useState<MainUser[]>([]);
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [isVerified, setIsVerified] = useState<boolean | null>(null);
     const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
@@ -40,31 +40,6 @@ const UsersList = () => {
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
     const [nav, setNav] = useState<Nav>('Users')
-    const [superAdmin, setSuperAdmin] = useState<boolean>(true);
-
-    const checkAuth = () => {
-        const authenticated = isAuthenticated();
-        if (!authenticated) {
-            window.location.href = '/login';
-        }
-        if (authenticated) {
-            let user = JSON.parse(localStorage.getItem("adminUser")!);
-
-            if (user && user.roles) {
-                const rolesString = user.roles.toString(); // Convert roles to string if it isn't already
-                if (rolesString.includes("Admin")) {
-                    setSuperAdmin(true)
-                } else {
-                    setSuperAdmin(false)
-                }
-            } else {
-                console.error("Roles not found in user data.");
-            }
-        }
-    };
-    useEffect(() => {
-        checkAuth();
-    }, []);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -84,6 +59,7 @@ const UsersList = () => {
 
                 // Wait for all promises to complete (even those that fail)
                 await Promise.all([userDataPromise, roleDataPromise, unAuthorizedLoginRequestsPromise]);
+                console.log(userDataPromise)
             } catch (err: any) {
                 // This catch block is unlikely to be triggered since individual errors are caught.
                 toast({ title: 'Error', description: err.message, variant: "destructive" });
@@ -209,191 +185,189 @@ const UsersList = () => {
     return (
         <>
             {loading && <Loading />}
-            {!superAdmin ? <p className="block border-foreground mx-auto mt-72 p-3 border rounded-md w-max scale-150">You do not have permission to view this page<br />Your should ask Super Admin for these actions</p> :
-                <>
-                    <Toaster />
-                    <div className="flex gap-4 bg-muted-foreground bg-opacity-35 mx-auto mb-4 p-4 rounded-lg w-max nav">
-                        {(['Users', 'Roles', 'Un Authorized'] as Nav[]).map((option) => (
-                            <Button
-                                key={option}
-                                variant={nav == option ? 'default' : 'secondary'}
-                                onClick={() => setNav(option)}
-                            >{option}
-                            </Button>))}
+            <>
+                <Toaster />
+                <div className="flex gap-4 bg-muted-foreground bg-opacity-35 mx-auto mb-4 p-4 rounded-lg w-max nav">
+                    {(['Users', 'Roles', 'Un Authorized'] as Nav[]).map((option) => (
+                        <Button
+                            key={option}
+                            variant={nav == option ? 'default' : 'secondary'}
+                            onClick={() => setNav(option)}
+                        >{option}
+                        </Button>))}
+                </div>
+                {nav === 'Users' && <div className="flex flex-wrap justify-around gap-3 my-6 w-full filter-container">
+                    {/* Verification Filter */}
+                    <div className="flex items-center gap-4 mt-4">
+                        <Switch
+                            id="verified"
+                            checked={isVerified === true}
+                            onCheckedChange={(checked) => setIsVerified(checked ? true : null)}
+                            className="hidden mr-2"
+                        />
+                        <Label htmlFor="verified" className="flex items-center gap-2">
+                            <CheckCircle size={20} className={isVerified === true ? 'text-green-500' : 'text-gray-400'} />
+                            <span>Verified</span>
+                        </Label>
+
+                        <Switch
+                            id="unveried"
+                            checked={isVerified === false}
+                            onCheckedChange={(checked) => setIsVerified(checked ? false : null)}
+                            className="hidden mr-2 ml-8"
+                        />
+                        <Label htmlFor="unveried" className="flex items-center gap-2">
+                            <XCircle size={20} className={isVerified === false ? 'text-red-500' : 'text-gray-400'} />
+                            <span>Unverified</span>
+                        </Label>
                     </div>
-                    {nav === 'Users' && <div className="flex flex-wrap justify-around gap-3 my-6 w-full filter-container">
-                        {/* Verification Filter */}
-                        <div className="flex items-center gap-4 mt-4">
-                            <Switch
-                                id="verified"
-                                checked={isVerified === true}
-                                onCheckedChange={(checked) => setIsVerified(checked ? true : null)}
-                                className="hidden mr-2"
-                            />
-                            <Label htmlFor="verified" className="flex items-center gap-2">
-                                <CheckCircle size={20} className={isVerified === true ? 'text-green-500' : 'text-gray-400'} />
-                                <span>Verified</span>
-                            </Label>
 
-                            <Switch
-                                id="unveried"
-                                checked={isVerified === false}
-                                onCheckedChange={(checked) => setIsVerified(checked ? false : null)}
-                                className="hidden mr-2 ml-8"
-                            />
-                            <Label htmlFor="unveried" className="flex items-center gap-2">
-                                <XCircle size={20} className={isVerified === false ? 'text-red-500' : 'text-gray-400'} />
-                                <span>Unverified</span>
-                            </Label>
-                        </div>
+                    {/* Search Input */}
+                    <div className="relative w-auto">
+                        <Search size={20} className="top-1/2 left-3 absolute text-gray-400 transform -translate-y-1/2" />
+                        <Input
+                            type="text"
+                            placeholder="Search name, or phone number"
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="pl-10 w-full"
+                        />
+                    </div>
 
-                        {/* Search Input */}
-                        <div className="relative w-auto">
-                            <Search size={20} className="top-1/2 left-3 absolute text-gray-400 transform -translate-y-1/2" />
-                            <Input
-                                type="text"
-                                placeholder="Search name, or phone number"
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                                className="pl-10 w-full"
-                            />
+                    {/* Roles Filter */}
+                    <div className="flex items-center gap-3 roles-filter">
+                        <label>Select Roles:</label>
+                        <div className="flex flex-wrap gap-2">
+                            {roles.map(role => (
+                                <>
+                                    <Checkbox
+                                        id={role.name}
+                                        key={role._id.toString()}
+                                        checked={selectedRoles.includes(role.name)}
+                                        onCheckedChange={(checked) => {
+                                            const roleName = role.name;
+                                            setSelectedRoles(prev =>
+                                                checked ? [...prev, roleName] : prev.filter(r => r !== roleName)
+                                            );
+                                        }}
+                                    >
+                                    </Checkbox>
+                                    <Label htmlFor={role.name}>{role.name}</Label>
+                                </>
+                            ))}
                         </div>
-
-                        {/* Roles Filter */}
-                        <div className="flex items-center gap-3 roles-filter">
-                            <label>Select Roles:</label>
-                            <div className="flex flex-wrap gap-2">
-                                {roles.map(role => (
-                                    <>
-                                        <Checkbox
-                                            id={role.name}
-                                            key={role._id.toString()}
-                                            checked={selectedRoles.includes(role.name)}
-                                            onCheckedChange={(checked) => {
-                                                const roleName = role.name;
-                                                setSelectedRoles(prev =>
-                                                    checked ? [...prev, roleName] : prev.filter(r => r !== roleName)
-                                                );
-                                            }}
-                                        >
-                                        </Checkbox>
-                                        <Label htmlFor={role.name}>{role.name}</Label>
-                                    </>
-                                ))}
-                            </div>
-                        </div>
-                    </div>}
-                    <div className="gap-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {nav === 'Users' && filteredUsers.map((user, index) => (
-                            <UsersCard
-                                key={index}
-                                header={`${user.name}${user.userId ? ", Id:" : ""} ${user.userId ? user.userId : ""}`}
-                                description={`Phone: ${user.phoneNumber}`}
-                                content={
-                                    <div>
-                                        <p className="flex gap-4">Verified: {user.verified ? <Check /> : <X />}</p>
-                                        <p>Roles: {user.roles?.map((role) => role.name).join(', ')}</p>
-                                        {user.generationTime && <p>Created on: {`${new Date(user.generationTime)?.toLocaleString('en-GB', {
+                    </div>
+                </div>}
+                <div className="gap-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {nav === 'Users' && filteredUsers.map((user, index) => (
+                        <UsersCard
+                            key={index}
+                            header={`${user.name}${user.userId ? ", Id:" : ""} ${user.userId ? user.userId : ""}`}
+                            description={`Phone: ${user.phoneNumber}`}
+                            content={
+                                <div>
+                                    <p className="flex gap-4">Verified: {user.verified ? <Check /> : <X />}</p>
+                                    <p>Roles: {user.roles?.map((role) => role.name).join(', ')}</p>
+                                    {user.generationTime && <p>Created on: {`${new Date(user.generationTime)?.toLocaleString('en-GB', {
+                                        day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+                                    }).replace(/\//g, '-')}`}</p>}
+                                </div>
+                            }
+                            footer={
+                                <div className="flex justify-between gap-2">
+                                    <Button variant='outline' onClick={() => handleUpdateVerification(user.phoneNumber, !user.verified)}>
+                                        {user.verified ? 'Unverify' : 'Verify'}
+                                    </Button>
+                                    <AlertDialog open={selectedUserId === user.userId} onOpenChange={(isOpen) => !isOpen && setSelectedUserId(null)}>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="destructive" onClick={() => setSelectedUserId(user.userId)}>Delete</Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Are you sure you want to delete this user: {`${user.name}, Id: ${user.userId}`}? This action cannot be undone.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogAction onClick={() => handleDeleteUser()}>Delete</AlertDialogAction>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                    <RoleSelectionDialog
+                                        user={user}
+                                        roles={roles}
+                                        onUpdateRoles={handleUpdateRoles}
+                                    />
+                                </div>
+                            }
+                        />
+                    ))}
+                    {nav === 'Roles' && roles.map((role, index) => (
+                        <UsersCard
+                            key={index}
+                            header={`${role.name}`}
+                            description={role.notes}
+                            content={
+                                <>
+                                    <p>
+                                        Apps: {role.permissions.apps.map((app) => app.name).join(', ')}
+                                        <br />
+                                        Rights: {role.permissions.apps.map((app) => app.access).join(', ')}
+                                    </p>
+                                </>
+                            }
+                            footer={<p>will see</p>}
+                        />
+                    ))}
+                    {nav === "Un Authorized" && unAuthorizedLoginRequests.map((data, index) => (
+                        <UsersCard
+                            key={index}
+                            header={`${data.name}, ID: ${data.userId}`}
+                            description={`Attempted on Device UUID: ${data.attemptedDeviceUUID}`}
+                            content={
+                                <div>
+                                    <p>Phone Number: {data.phoneNumber}</p>
+                                    {data.timestamp && (
+                                        <p>Attempted on: {`${new Date(data.timestamp).toLocaleString('en-GB', {
                                             day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-                                        }).replace(/\//g, '-')}`}</p>}
-                                    </div>
-                                }
-                                footer={
-                                    <div className="flex justify-between gap-2">
-                                        <Button variant='outline' onClick={() => handleUpdateVerification(user.phoneNumber, !user.verified)}>
-                                            {user.verified ? 'Unverify' : 'Verify'}
-                                        </Button>
-                                        <AlertDialog open={selectedUserId === user.userId} onOpenChange={(isOpen) => !isOpen && setSelectedUserId(null)}>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="destructive" onClick={() => setSelectedUserId(user.userId)}>Delete</Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        Are you sure you want to delete this user: {`${user.name}, Id: ${user.userId}`}? This action cannot be undone.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogAction onClick={() => handleDeleteUser()}>Delete</AlertDialogAction>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                        <RoleSelectionDialog
-                                            user={user}
-                                            roles={roles}
-                                            onUpdateRoles={handleUpdateRoles}
-                                        />
-                                    </div>
-                                }
-                            />
-                        ))}
-                        {nav === 'Roles' && roles.map((role, index) => (
-                            <UsersCard
-                                key={index}
-                                header={`${role.name}`}
-                                description={role.notes}
-                                content={
-                                    <>
-                                        <p>
-                                            Apps: {role.permissions.apps.map((app) => app.name).join(', ')}
-                                            <br />
-                                            Rights: {role.permissions.apps.map((app) => app.access).join(', ')}
-                                        </p>
-                                    </>
-                                }
-                                footer={<p>will see</p>}
-                            />
-                        ))}
-                        {nav === "Un Authorized" && unAuthorizedLoginRequests.map((data, index) => (
-                            <UsersCard
-                                key={index}
-                                header={`${data.name}, ID: ${data.userId}`}
-                                description={`Attempted on Device UUID: ${data.attemptedDeviceUUID}`}
-                                content={
-                                    <div>
-                                        <p>Phone Number: {data.phoneNumber}</p>
-                                        {data.timestamp && (
-                                            <p>Attempted on: {`${new Date(data.timestamp).toLocaleString('en-GB', {
-                                                day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-                                            }).replace(/\//g, '-')}`}</p>
-                                        )}
-                                        <p>Registered Device UUID: {data.registeredDeviceUUID}</p>
-                                    </div>
-                                }
-                                footer={
-                                    <div className="flex justify-between gap-2">
-                                        <Button
-                                            variant='outline'
-                                            onClick={() => handleAssignDeviceUUID(data.phoneNumber, data.attemptedDeviceUUID)}
-                                        >
-                                            Assign Device UUID
-                                        </Button>
-                                        <AlertDialog
-                                            open={selectedRequestId === data._id}
-                                            onOpenChange={(isOpen) => !isOpen && setSelectedRequestId(null)}
-                                        >
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="destructive" onClick={() => setSelectedRequestId(data._id)}>Delete</Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        Are you sure you want to delete this unauthorized login request for user: {`${data.name}, Id: ${data.userId}`}? This action cannot be undone.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogAction onClick={() => handleDeleteUnauthorizedRequest()}>Delete</AlertDialogAction>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </div>
-                                }
-                            />
-                        ))}
+                                        }).replace(/\//g, '-')}`}</p>
+                                    )}
+                                    <p>Registered Device UUID: {data.registeredDeviceUUID}</p>
+                                </div>
+                            }
+                            footer={
+                                <div className="flex justify-between gap-2">
+                                    <Button
+                                        variant='outline'
+                                        onClick={() => handleAssignDeviceUUID(data.phoneNumber, data.attemptedDeviceUUID)}
+                                    >
+                                        Assign Device UUID
+                                    </Button>
+                                    <AlertDialog
+                                        open={selectedRequestId === data._id}
+                                        onOpenChange={(isOpen) => !isOpen && setSelectedRequestId(null)}
+                                    >
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="destructive" onClick={() => setSelectedRequestId(data._id)}>Delete</Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Are you sure you want to delete this unauthorized login request for user: {`${data.name}, Id: ${data.userId}`}? This action cannot be undone.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogAction onClick={() => handleDeleteUnauthorizedRequest()}>Delete</AlertDialogAction>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                            }
+                        />
+                    ))}
 
-                    </div>
-                </>
-            }
+                </div>
+            </>
         </>
 
     );
