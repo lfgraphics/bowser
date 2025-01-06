@@ -216,7 +216,7 @@ router.post('/sheet', async (req, res) => {
             });
         }
 
-        let newLoadingSheet; // Declare newLoadingSheet in the outer scope
+        let newLoadingSheet;
 
         try {
             // Fetch the Bowser document for the provided regNo
@@ -275,19 +275,19 @@ router.post('/sheet', async (req, res) => {
                 };
                 const message = `Bowser: ${regNo}\nFulfilled by: ${loadingIncharge.name} Id: ${loadingIncharge.id}`;
                 let notificationSent = await sendWebPushNotification({ userId: bccAuthorizedOfficer.id, message, options });
-                
+
                 if (notificationSent.success) {
                     if (!sheetId) {
-                        newLoadingSheet = new LoadingSheet({ // Assign to the outer scoped variable
+                        newLoadingSheet = new LoadingSheet({
                             regNo,
                             odoMeter,
-                            ...(sheetId ? { tripSheetId: new mongoose.Types.ObjectId(sheetId) } : {}),
                             fuleingMachine,
                             pumpReadingBefore,
                             pumpReadingAfter,
                             chamberwiseDipListBefore,
                             chamberwiseDipListAfter,
                             chamberwiseSealList,
+                            loadQty: additionQty,
                             totalLoadQuantityByDip,
                             totalLoadQuantityBySlip,
                             loadingSlips,
@@ -299,20 +299,20 @@ router.post('/sheet', async (req, res) => {
                             fulfilled: false,
                         });
                         await newLoadingSheet.save();
-                        
-                        let loadingOrder = await LoadingOrder.findByIdAndUpdate(
-                            new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)),
-                            { $set: { fulfilled: true } },
-                            { new: true }
-                        );
-                        
-                        if (!loadingOrder) {
-                            console.error('Loading order not found');
-                            return;
-                        }
-                        console.log('Updated Loading Order:', loadingOrder);
-                        res.status(201).json(newLoadingSheet);
+
                     }
+                    let loadingOrder = await LoadingOrder.findByIdAndUpdate(
+                        new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)),
+                        { $set: { fulfilled: true } },
+                        { new: true }
+                    );
+
+                    if (!loadingOrder) {
+                        console.error('Loading order not found');
+                        return;
+                    }
+                    console.log('Updated Loading Order:', loadingOrder);
+                    res.status(201).json(newLoadingSheet);
                 } else {
                     res.status(500).json({ error: 'Request failed because failed to send notification to BCC' });
                 }

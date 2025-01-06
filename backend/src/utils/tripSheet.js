@@ -1,3 +1,4 @@
+const { mongoose } = require('mongoose');
 const TripSheet = require('../models/TripSheets')
 /**
  * @function updateTripSheet
@@ -13,8 +14,8 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
     try {
         // Build the query based on the identifier provided
         const query = sheetId
-            ? { _id: sheetId } // If `sheetId` (ObjectId) is provided
-            : { tripSheetId }; // If `tripSheetId` (numerical sequence ID) is provided
+            ? { _id: new mongoose.Types.ObjectId(sheetId) }
+            : { tripSheetId };
 
         // Fetch the trip sheet
         console.log('Query:', query, '\nReceived parameters\n');
@@ -69,6 +70,8 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
         );
 
         tripSheet.totalLoadQuantity = (tripSheet.loading?.quantityByDip || 0) + additionsQuantity;
+        tripSheet.loadQty = (tripSheet.loading?.quantityByDip || 0);
+        tripSheet.totalAdditionQty = additionsQuantity;
         tripSheet.totalLoadQuantityBySlip = (tripSheet.loading?.quantityBySlip || 0) + additionsQtyBySlip;
         tripSheet.saleQty = dispensedQuantity;
         tripSheet.balanceQty = tripSheet.totalLoadQuantity - tripSheet.saleQty;
