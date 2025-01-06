@@ -288,7 +288,7 @@ router.get('/find-sheet-id-by-userId/:id', async (req, res) => {
 
 router.post('/settle/:id', async (req, res) => {
     let id = req.params.id;
-    let { chamberwiseDipList, pumpReading, dateTime, odometer, userDetails } = req.body;
+    let { chamberwiseDipList, pumpReading, dateTime, odometer, userDetails, extras } = req.body;
     try {
         let tripsheet = await TripSheet.findById(new mongoose.Types.ObjectId(id));
         if (!tripsheet) {
@@ -317,6 +317,7 @@ router.post('/settle/:id', async (req, res) => {
                 totalQty,
                 odometer,
                 settled: true,
+                extras,
                 by: {
                     id: userDetails.id,
                     name: userDetails.name
@@ -329,7 +330,7 @@ router.post('/settle/:id', async (req, res) => {
         console.log(tripsheet.settelment)
         console.log(tripsheet.settelment.details.chamberwiseDipList)
 
-        res.status(200).json({ message: 'Settlement processed successfully', tripsheet });
+        res.status(200).json({ message: 'Settlement processed successfully' });
     } catch (error) {
         console.error(error);
         res.status(400).json({ message: error.message });

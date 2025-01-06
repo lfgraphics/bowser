@@ -189,8 +189,10 @@ export interface TripSheet {
     isPosted: boolean
   }[]
   totalLoadQuantity?: number
+  totalLoadQuantityBySlip?: number
   saleQty?: number
   balanceQty?: number
+  balanceQtyBySlip?: number
   settelment?: {
     dateTime: Date
     details: {
@@ -239,22 +241,39 @@ export interface WholeTripSheet {
     isPosted: boolean
   }[]
   totalLoadQuantity?: number
+  loadQty?: number
+  totalAdditionQty?: number
+  totalLoadQuantityBySlip?: number
   saleQty?: number
   balanceQty?: number
   settelment?: {
     dateTime: Date
     details: {
-      pumpReading: string
+      odometer: number
+      pumpReading: number
       chamberwiseDipList: {
         chamberId: string
         levelHeight: number
         qty: number
       }[]
       totalQty: number
+      extras: Extras
     }
     settled: boolean
   }
   posted?: boolean
+}
+
+export interface Extras {
+  filledByDriver: number
+  saleryDays: number
+  foodingDays: number
+  rewardTrips: number
+  hsdRateFor: number
+  tollTax: number
+  borderOtherExp: number
+  unload: number
+  hsdPerKm: number
 }
 
 export interface User {

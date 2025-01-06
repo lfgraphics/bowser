@@ -48,7 +48,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
       className={`top-0 z-50 fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
       onClick={handleOverlayClick}
     >
-      <div className="relative bg-card p-4 rounded-lg w-full max-w-3xl h-[80vh] overflow-auto">
+      <div className="relative bg-card p-4 rounded-lg w-[90%] h-[80vh] overflow-auto">
         <Button
           variant="outline"
           onClick={onClose}

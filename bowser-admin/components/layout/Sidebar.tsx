@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { Home, ClipboardList, ListCheck, LogOut, Menu, X, SheetIcon, Users, CaravanIcon, User2, ListOrdered, TableOfContents, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog } from 'lucide-react'
+import { Home, ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 import ThemeChanger from '../ThemeChanger'
@@ -21,6 +21,18 @@ export function Sidebar() {
 
   useEffect(() => {
     setUser(JSON.parse(localStorage.getItem('adminUser')!))
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === '[') {
+        toggleSidebar()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
   }, [])
 
   const handleLogout = () => {
@@ -97,22 +109,22 @@ export function Sidebar() {
                   </li>
                 </OnlyAllowed>
                 <OnlyAllowed allowedRoles={["Admin", "Petrol Pump Personnel", "BCC Authorized Officer"]}>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link href="/loading/petrol-pump">
-                          <Button variant="ghost" className="justify-start w-full">
-                            <Fuel className="mr-2 w-4 h-4" />
-                            Orders
-                          </Button>
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent className='bg-background max-w-44 text-foreground text-md'>
-                        <p>Orders for loading a Bowser, to make it ready for a trip<br />(For Petrol Pumps)</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
                   <li onClick={toggleSidebar}>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link href="/loading/petrol-pump">
+                            <Button variant="ghost" className="justify-start w-full">
+                              <Fuel className="mr-2 w-4 h-4" />
+                              Orders
+                            </Button>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent className='bg-background max-w-44 text-foreground text-md'>
+                          <p>Orders for loading a Bowser, to make it ready for a trip<br />(For Petrol Pumps)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </li>
                 </OnlyAllowed>
                 <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
@@ -186,7 +198,7 @@ export function Sidebar() {
             </div>
           </div>
         </SheetContent>
-      </Sheet>
+      </Sheet >
     </>
   )
 }

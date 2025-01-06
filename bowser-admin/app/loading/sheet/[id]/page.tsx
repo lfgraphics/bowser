@@ -103,6 +103,7 @@ export default function LoadingSheetPage() {
         }[]
     >([]);
 
+
     // -----------------------------------------
     // 1) On mount: load from IndexedDB if exists, then fetch server
     // -----------------------------------------
@@ -142,7 +143,7 @@ export default function LoadingSheetPage() {
                     }
                     const data: OrderBowserResponse = await res.json();
                     const { order, bowser } = data;
-                    console.log("order: ",order)
+                    console.log("order: ", order)
 
                     // If user has no local data, or we want to override
                     if (!didCancel) {

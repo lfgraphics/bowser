@@ -2,7 +2,7 @@
 import { BASE_URL } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
 import { formatDate } from '@/lib/utils';
-import { WholeTripSheet } from '@/types';
+import { Extras, WholeTripSheet } from '@/types';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import Modal from '@/components/Modal';
 import Loading from '@/app/loading';
+import TripCalculationModal from '@/components/exclusive/TripCalculationModal';
+import { Button } from '@/components/ui/button';
 
 interface WholeTripSheetCardProps {
     record: WholeTripSheet;
@@ -18,6 +20,8 @@ interface WholeTripSheetCardProps {
 const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [isCalculationModalOpen, setIsCalculationModalOpen] = useState(false);
+
     const openImageModal = (image: string) => {
         setSelectedImage(image);
         setIsModalOpen(true);
@@ -26,6 +30,15 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
         setIsModalOpen(false);
         setSelectedImage(null);
     };
+
+    const openCalculationModal = () => {
+        setIsCalculationModalOpen(true);
+    };
+
+    const closeCalculationModal = () => {
+        setIsCalculationModalOpen(false);
+    };
+
     return (
         <>
             <Card className="shadow-lg mt-8 p-4">
@@ -58,7 +71,7 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                         <Separator className='mx-auto mt-3 w-[95%]' />
                         <div className='my-3'>
                             <h2 className="font-semibold text-md">Chamberwise Dip List Before</h2>
-                            {record.loading.sheetId.chamberwiseDipListBefore.map((chamber, index) => (
+                            {record.loading.sheetId?.chamberwiseDipListBefore.map((chamber, index) => (
                                 <div key={index}>
                                     <p>Chamber ID: {chamber.chamberId}</p>
                                     <p>Level Height: {chamber.levelHeight}</p>
@@ -97,14 +110,14 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                     <Separator className='my-3' />
                     {record.addition && record.addition?.length > 0 && <>
                         <h2 className="my-2 font-semibold text-xl">Addition/ Reloading Information</h2>
-                        {record.addition.map((addition, index) => (
+                        {record.addition?.map((addition, index) => (
                             <div className='my-3' key={index}>
                                 <p>Quantity by Dip: {addition.quantityByDip}</p>
                                 <p>Quantity by Slip: {addition.quantityBySlip}</p>
                                 <Separator className='mx-auto mt-3 w-[95%]' />
                                 <div className='my-3'>
                                     <h2 className="font-semibold text-md">Chamberwise Dip List Before</h2>
-                                    {addition.sheetId.chamberwiseDipListBefore.map((chamber, index) => (
+                                    {addition.sheetId?.chamberwiseDipListBefore.map((chamber, index) => (
                                         <div key={index}>
                                             <p>Chamber ID: {chamber.chamberId}</p>
                                             <p>Level Height: {chamber.levelHeight}</p>
@@ -114,7 +127,7 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                                 </div>
                                 <div className='my-3'>
                                     <h2 className="font-semibold text-md">Chamberwise Dip List After</h2>
-                                    {addition.sheetId.chamberwiseDipListAfter.map((chamber, index) => (
+                                    {addition.sheetId?.chamberwiseDipListAfter.map((chamber, index) => (
                                         <div key={index}>
                                             <p>Chamber ID: {chamber.chamberId}</p>
                                             <p>Level Height: {chamber.levelHeight}</p>
@@ -125,7 +138,7 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                                 <Separator className='mx-auto w-[95%]' />
                                 <div className='my-3'>
                                     <h2 className="font-semibold text-md">Chamberwise Seal List</h2>
-                                    {addition.sheetId.chamberwiseSealList.map((seal, index) => (
+                                    {addition.sheetId?.chamberwiseSealList.map((seal, index) => (
                                         <div key={index}>
                                             <p>{seal.chamberId}</p>
                                             <p>Seal ID: {seal.sealId}</p>
@@ -162,6 +175,7 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                     </Badge>
                 </CardFooter>
             </Card>
+            <Button onClick={openCalculationModal}>Show Calculations</Button>
             <Modal isOpen={isModalOpen} onClose={closeModal}>
                 {selectedImage && (
                     <img
@@ -171,6 +185,9 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                     />
                 )}
             </Modal >
+            <Modal isOpen={isCalculationModalOpen} onClose={closeCalculationModal}>
+                <TripCalculationModal record={record} />
+            </Modal>
         </>
     );
 };
@@ -291,9 +308,21 @@ export const page = ({ params }: { params: { id: string } }) => {
         settelment: {
             dateTime: new Date(),
             details: {
-                pumpReading: "string",
+                odometer: 0,
+                pumpReading: 0,
                 chamberwiseDipList: [],
-                totalQty: 0
+                totalQty: 0,
+                extras: {
+                    filledByDriver: 0,
+                    saleryDays: 0,
+                    foodingDays: 0,
+                    rewardTrips: 0,
+                    hsdRateFor: 0,
+                    tollTax: 0,
+                    borderOtherExp: 0,
+                    unload: 0,
+                    hsdPerKm: 0,
+                }
             },
             settled: false
         },

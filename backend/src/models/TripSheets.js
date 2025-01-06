@@ -58,6 +58,17 @@ const tripSheetSchema = new mongoose.Schema({
                 by: {
                     id: { type: String },
                     name: { type: String }
+                },
+                extras: {
+                    filledByDriver: { type: Number },
+                    saleryDays: { type: Number },
+                    foodingDays: { type: Number },
+                    rewardTrips: { type: Number },
+                    hsdRateFor: { type: Number },
+                    tollTax: { type: Number },
+                    borderOtherExp: { type: Number },
+                    unload: { type: Number },
+                    hsdPerKm: { type: Number },
                 }
             },
             settled: { type: Boolean, default: false },
