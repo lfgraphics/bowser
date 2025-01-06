@@ -69,10 +69,10 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
             0
         );
 
-        tripSheet.totalLoadQuantity = (tripSheet.loading?.quantityByDip || 0) + additionsQuantity;
         tripSheet.loadQty = (tripSheet.loading?.quantityByDip || 0);
         tripSheet.totalAdditionQty = additionsQuantity;
-        tripSheet.totalLoadQuantityBySlip = (tripSheet.loading?.quantityBySlip || 0) + additionsQtyBySlip;
+        tripSheet.totalLoadQuantityBySlip = (tripSheet.loading?.quantityBySlip || 0);
+        tripSheet.totalLoadQuantity = (tripSheet.loading?.quantityByDip || 0) + additionsQuantity;
         tripSheet.saleQty = dispensedQuantity;
         tripSheet.balanceQty = tripSheet.totalLoadQuantity - tripSheet.saleQty;
         tripSheet.balanceQtyBySlip = tripSheet.totalLoadQuantityBySlip - tripSheet.saleQty;

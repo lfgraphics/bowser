@@ -243,16 +243,16 @@ router.post('/sheet', async (req, res) => {
 
             // Calculate totalLoadQuantityBySlip
             let totalLoadQuantityBySlip = loadingSlips.reduce((total, slip) => {
-                return total + parseFloat(slip.qty);
+                return total + slip.qty;
             }, 0);
 
             // Calculate totalLoadQuantityByDip based on chamberwiseDipListAfter
             let totalLoadQuantityByDip = chamberwiseDipListAfter.reduce((total, dip) => {
-                return total + parseFloat(dip.qty);
+                return total + dip.qty;
             }, 0);
 
             const totalBefore = chamberwiseDipListBefore.reduce((total, dip) => {
-                return total + parseFloat(dip.qty);
+                return total + dip.qty;
             }, 0);
 
             let additionQty = totalLoadQuantityByDip - totalBefore; // Subtract total from before
@@ -269,35 +269,35 @@ router.post('/sheet', async (req, res) => {
 
             try {
                 // Send notification only if save is successful
+                newLoadingSheet = new LoadingSheet({
+                    regNo,
+                    odoMeter,
+                    fuleingMachine,
+                    pumpReadingBefore,
+                    pumpReadingAfter,
+                    chamberwiseDipListBefore,
+                    chamberwiseDipListAfter,
+                    chamberwiseSealList,
+                    loadQty: additionQty,
+                    totalLoadQuantityByDip,
+                    totalLoadQuantityBySlip,
+                    loadingSlips,
+                    loadingIncharge,
+                    bccAuthorizedOfficer: {
+                        ...bccAuthorizedOfficer,
+                        orderId: new mongoose.Types.ObjectId(bccAuthorizedOfficer.orderId),
+                    },
+                    fulfilled: false,
+                });
                 const options = {
                     title: "Your Bowser Loading Order is successful",
-                    url: !sheetId ? `/tripsheets/create/${newLoadingSheet._id}` : `/tripsheets/${sheetId}`,
+                    url: !sheetId ? `/tripsheets/create/${newLoadingSheet?._id}` : `/tripsheets/${sheetId}`,
                 };
                 const message = `Bowser: ${regNo}\nFulfilled by: ${loadingIncharge.name} Id: ${loadingIncharge.id}`;
                 let notificationSent = await sendWebPushNotification({ userId: bccAuthorizedOfficer.id, message, options });
 
                 if (notificationSent.success) {
                     if (!sheetId) {
-                        newLoadingSheet = new LoadingSheet({
-                            regNo,
-                            odoMeter,
-                            fuleingMachine,
-                            pumpReadingBefore,
-                            pumpReadingAfter,
-                            chamberwiseDipListBefore,
-                            chamberwiseDipListAfter,
-                            chamberwiseSealList,
-                            loadQty: additionQty,
-                            totalLoadQuantityByDip,
-                            totalLoadQuantityBySlip,
-                            loadingSlips,
-                            loadingIncharge,
-                            bccAuthorizedOfficer: {
-                                ...bccAuthorizedOfficer,
-                                orderId: new mongoose.Types.ObjectId(bccAuthorizedOfficer.orderId),
-                            },
-                            fulfilled: false,
-                        });
                         await newLoadingSheet.save();
 
                     }
