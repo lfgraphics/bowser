@@ -267,7 +267,6 @@ router.post('/sheet', async (req, res) => {
                 await updateTripSheet({ sheetId, newAddition: additionEntry });
             }
 
-            console.log('Updated Loading Order:', loadingOrder);
             try {
                 // Send notification only if save is successful
                 const options = {
@@ -276,7 +275,7 @@ router.post('/sheet', async (req, res) => {
                 };
                 const message = `Bowser: ${regNo}\nFulfilled by: ${loadingIncharge.name} Id: ${loadingIncharge.id}`;
                 let notificationSent = await sendWebPushNotification({ userId: bccAuthorizedOfficer.id, message, options });
-
+                
                 if (notificationSent.success) {
                     if (!sheetId) {
                         newLoadingSheet = new LoadingSheet({ // Assign to the outer scoped variable
@@ -300,17 +299,18 @@ router.post('/sheet', async (req, res) => {
                             fulfilled: false,
                         });
                         await newLoadingSheet.save();
-
+                        
                         let loadingOrder = await LoadingOrder.findByIdAndUpdate(
                             new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)),
                             { $set: { fulfilled: true } },
                             { new: true }
                         );
-
+                        
                         if (!loadingOrder) {
                             console.error('Loading order not found');
                             return;
                         }
+                        console.log('Updated Loading Order:', loadingOrder);
                         res.status(201).json(newLoadingSheet);
                     }
                 } else {

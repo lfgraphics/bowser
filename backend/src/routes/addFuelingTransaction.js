@@ -5,6 +5,7 @@ const FuelingOrder = require('../models/fuelingOrders');
 const { fetchLocationData } = require('../utils/fuelTransactions');
 const { updateTripSheet } = require('../utils/tripSheet')
 const { sendWebPushNotification } = require('../utils/pushNotifications');
+const { mongoose } = require('mongoose');
 
 router.post('/', async (req, res) => {
     try {
@@ -48,9 +49,7 @@ router.post('/', async (req, res) => {
 
         res.status(200).json({ message: 'Data Submitted successfully' });
 
-        const fuelingOrder = await FuelingOrder.findOne({
-            createdAt: new Date(fuelingTransaction.allocationAdmin.allocationTime)
-        });
+        const fuelingOrder = await FuelingOrder.findById(new mongoose.Types.ObjectId(fuelingTransaction.orderId))
 
         if (fuelingOrder) {
             fuelingOrder.fulfilled = true;
