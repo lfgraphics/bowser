@@ -47,6 +47,7 @@ export function Sidebar() {
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger
+          id='menuIcon'
           className="top-4 left-4 z-30 fixed">
           {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </SheetTrigger>

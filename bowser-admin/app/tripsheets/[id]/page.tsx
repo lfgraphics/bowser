@@ -346,8 +346,34 @@ export const page = ({ params }: { params: { id: string } }) => {
 
         fetchRecords();
     }, [params.id]);
+
+    const handlePrint = () => {
+        const printURL = `${window.location.origin}/tripsheets/settle/print/${params.id}`; // Your print route
+        const newWindow = window.open(printURL, '_blank');
+        newWindow?.focus();
+
+        // Wait for 5 seconds before calling print
+        setTimeout(() => {
+            newWindow?.print(); // Open the print dialog
+        }, 5000); // 5000 milliseconds = 5 seconds
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.ctrlKey && event.key === 'p') {
+                event.preventDefault(); // Prevent the default print dialog
+                handlePrint(); // Call the print function
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
     return (
         <>
+            <Button onClick={handlePrint} className="mb-4">Print Table</Button>
             {loading && <Loading />}
             <WholeTripSheetCard record={record} />
         </>

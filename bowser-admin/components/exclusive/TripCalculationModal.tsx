@@ -1,11 +1,9 @@
 "use client"
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import './styles.css'
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, } from '@/components/ui/table';
-import { Button, } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Toaster } from "@/components/ui/toaster"
-import { Extras, WholeTripSheet } from '@/types';
+import { Table, TableRow, TableBody, TableCell, } from '@/components/ui/table';
+import { WholeTripSheet } from '@/types';
+import Image from 'next/image';
 // import './TripCalculationModal.css';
 
 interface TripCalculationModalProps {
@@ -50,7 +48,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     // while opeing (trip hseet creation) (from loading sheet)
     const [openingPumpReading, setOpeningPumpReading] = useState<number>(record?.loading.sheetId.pumpReadingAfter)
     const [openingOdoMeter, setOpeningOdometer] = useState<number>(record?.loading.sheetId.odoMeter)
-    const [addition, setAddition] = useState<number>(record?.totalLoadQuantityBySlip || 0)
+    const [addition, setAddition] = useState<number>(record?.totalAdditionQtyBySlip || 0)
     // while closing (settlment)
     const [closingPumpReading, setclosingPumpReading] = useState<number>(record?.settelment?.details.pumpReading || 0)
     const [closingOdoMeter, setclosingOdometer] = useState<number>(record?.settelment?.details.odometer || 0)
@@ -75,7 +73,6 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
 
     const [saleryDays, setSaleryDays] = useState<number>(record.settelment?.details.extras?.saleryDays || 0)
     const [foodingDays, setFoodingDays] = useState<number>(record.settelment?.details.extras?.foodingDays || 0)
-    const [rewardTrips, setRewardTrips] = useState<number>(record.settelment?.details.extras?.rewardTrips || 0)
 
     const [hsdRateFor, setHsdRateFor] = useState<number>(record.settelment?.details.extras?.hsdRateFor || 0)
     const [tollTax, setTollTax] = useState<number>(record.settelment?.details.extras?.tollTax || 0)
@@ -94,52 +91,10 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     const [totalDistributionCost, setTotalDistributionCost] = useState<number>(tollTax + driverFooding + driverSalary + fuelingCost + borderOtherExp)
     const [distributionCostPerLtr, setDistributionCostPerLtr] = useState<number>(Number((totalDistributionCost / saleAsPerLoad).toFixed(2)))
 
-    const handlePrint = () => {
-        const printContent = document.getElementById('printable-table');
-        const newWindow = window.open('', '_blank');
-        newWindow?.document.write(`
-            <html>
-                <head>
-                    <title>Print Table</title>
-                    <style>
-                        @import url('https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
-                        body { margin: 0; padding: 20px; }
-                        table { width: 100%; border-collapse: collapse; }
-                        th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
-                    </style>
-                </head>
-                <body>
-                    <div class="min-w-max">
-                        ${printContent?.innerHTML}
-                    </div>
-                </body>
-            </html>
-        `);
-        newWindow?.document.close();
-        newWindow?.print();
-        newWindow?.close();
-    };
-
-    // Effect to handle Ctrl + P
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.ctrlKey && event.key === 'p') {
-                event.preventDefault(); // Prevent the default print dialog
-                handlePrint(); // Call the print function
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, []);
-
     return (
-        <div className='p-6'>
-            {/* <Button onClick={handlePrint} className="mb-4">Print Table</Button> */}
+        <div className=''>
             <div id="printable-table">
-                <Table className="min-w-max">
+                <Table >
                     <TableBody>
                         <TableRow className='font-semibold'>
                             <TableCell>Vehicle No.</TableCell>
@@ -268,27 +223,25 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
                             <TableCell colSpan={2}>Driver Fooding</TableCell>
                             <TableCell>{driverFooding}</TableCell>
                             <TableCell colSpan={4}></TableCell>
-                            <TableCell colSpan={2} className='font-semibold text-left'>Deductable Excess Fueling Value</TableCell>
-                            <TableCell>{deductableExcessFuelingValue}</TableCell>
+                            <TableCell colSpan={2} rowSpan={3} className='font-semibold text-left'>Deductable Excess Fueling Value</TableCell>
+                            <TableCell rowSpan={3}>{deductableExcessFuelingValue}</TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell colSpan={2}>Driver Salery</TableCell>
                             <TableCell>{driverSalary}</TableCell>
                             <TableCell colSpan={4}></TableCell>
-                            <TableCell colSpan={2} className='font-semibold text-left'>Deductable Short Sale Value</TableCell>
-                            <TableCell>{deductableShortSale}</TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell colSpan={2}>Fueling Cost</TableCell>
                             <TableCell>{fuelingCost}</TableCell>
                             <TableCell colSpan={4}></TableCell>
-                            <TableCell colSpan={2} className='font-semibold text-left'>Total Deductable</TableCell>
-                            <TableCell>{totalDeduction}</TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell colSpan={2}>Border Other Exp</TableCell>
                             <TableCell>{borderOtherExp}</TableCell>
-                            <TableCell colSpan={7}></TableCell>
+                            <TableCell colSpan={4}></TableCell>
+                            <TableCell colSpan={2} rowSpan={3} className='font-semibold text-left'>Deductable Short Sale Value</TableCell>
+                            <TableCell rowSpan={3}>{deductableShortSale}</TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell colSpan={2}>Reward</TableCell>
@@ -303,14 +256,16 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
                         <TableRow className='font-semibold'>
                             <TableCell colSpan={2}>Distribution Cost per Ltr.</TableCell>
                             <TableCell>{distributionCostPerLtr}</TableCell>
-                            <TableCell colSpan={7}></TableCell>
+                            <TableCell colSpan={4}></TableCell>
+                            <TableCell colSpan={2}>Total Diduction Amount</TableCell>
+                            <TableCell>{totalDeduction}</TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell colSpan={10}></TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell colSpan={2}>Driver</TableCell>
-                            <TableCell colSpan={3}>Supervisor</TableCell>
+                            <TableCell colSpan={3}><span className='relative flex gap-3'>Supervisor <Image src="/assets/sahil-sign.png" alt="Sahil's signature" width={120} height={40} className='-bottom-3 left-20 absolute' /></span></TableCell>
                             <TableCell colSpan={2}>Verified by</TableCell>
                             <TableCell colSpan={3}>Deducted by</TableCell>
                         </TableRow>

@@ -324,13 +324,15 @@ router.post('/settle/:id', async (req, res) => {
                 }
             }
         };
-        console.log(totalQty);
         tripsheet.settelment = settlement;
-        await tripsheet.save(); // Save the updated tripsheet
-        console.log(tripsheet.settelment)
-        console.log(tripsheet.settelment.details.chamberwiseDipList)
-
-        res.status(200).json({ message: 'Settlement processed successfully' });
+        try {
+            await tripsheet.save(); // Save the updated tripsheet
+            console.log(`Settlement saved successfully: ${JSON.stringify(tripsheet.settlement)}`);
+            res.status(200).json({ message: 'Settlement processed successfully' });
+        } catch (error) {
+            console.error(`Error saving settlement: ${error}`);
+            res.status(500).json({ message: 'Failed to process settlement' });
+        }
     } catch (error) {
         console.error(error);
         res.status(400).json({ message: error.message });

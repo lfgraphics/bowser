@@ -86,11 +86,9 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
             };
         }
 
-        console.log(new Date(dateTime!).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }))
-
         // Submit the chamberwiseDipList to the server
         try {
-            await axios.post(`${BASE_URL}/tripsheet/settle/${params.id}`, {
+            const response = await axios.post(`${BASE_URL}/tripsheet/settle/${params.id}`, {
                 chamberwiseDipList,
                 pumpReading,
                 odometer,
@@ -108,7 +106,10 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
                     hsdPerKm
                 }
             });
-            alert('Settlement submitted successfully!');
+            if (response.status === 200) {
+                alert('Settlement submitted successfully!');
+                handlePrint();
+            }
         } catch (error) {
             console.error('Error submitting settlement:', error);
             setError('Error submitting settlement');
@@ -117,29 +118,20 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
         }
     };
 
+
     const handlePrint = () => {
-        const printURL = `${window.location.origin}/settle/print/${params.id}`; // Your print route
+        const printURL = `${window.location.origin}/tripsheets/settle/print/${params.id}`; // Your print route
         const newWindow = window.open(printURL, '_blank');
         newWindow?.focus();
+
+        // Wait for 5 seconds before calling print
+        setTimeout(() => {
+            newWindow?.print(); // Open the print dialog
+        }, 5000); // 5000 milliseconds = 5 seconds
     };
 
-
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.ctrlKey && event.key === 'p') {
-                event.preventDefault(); // Prevent the default print dialog
-                handlePrint(); // Call the print function
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, []);
     return (
         <div className='flex flex-col gap-3 pt-8'>
-            <Button onClick={handlePrint} className="mb-4">Print Table</Button>
             {loading && <Loading />}
             <h1>Settlement/closeing of TripSheet ID: {tripSheet?.tripSheetId}</h1>
             <form onSubmit={handleSubmit} className='flex flex-col gap-3'>

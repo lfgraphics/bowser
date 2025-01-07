@@ -189,6 +189,9 @@ export interface TripSheet {
     isPosted: boolean
   }[]
   totalLoadQuantity?: number
+  loadQty?: number
+  totalAdditionQty?: number
+  totalAdditionQtyBySlip?: number
   totalLoadQuantityBySlip?: number
   saleQty?: number
   balanceQty?: number
@@ -243,9 +246,11 @@ export interface WholeTripSheet {
   totalLoadQuantity?: number
   loadQty?: number
   totalAdditionQty?: number
+  totalAdditionQtyBySlip?: number
   totalLoadQuantityBySlip?: number
   saleQty?: number
   balanceQty?: number
+  balanceQtyBySlip?: number
   settelment?: {
     dateTime: Date
     details: {

@@ -39,6 +39,7 @@ const tripSheetSchema = new mongoose.Schema({
     totalLoadQuantityBySlip: { type: Number },
     dispenses: [dispensesSchema],
     totalAdditionQty: { type: Number },
+    totalAdditionQtyBySlip: { type: Number },
     saleQty: { type: Number },
     balanceQty: { type: Number },
     balanceQtyBySlip: { type: Number },
