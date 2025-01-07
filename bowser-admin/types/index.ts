@@ -133,15 +133,6 @@ export interface TripSheetPayload {
       phoneNo: string
     }[]
     pumpEndReading: number
-    chamberwiseDipList: {
-      chamberId: string
-      levelHeight: number
-      qty: number
-    }[]
-    chamberwiseSealList: {
-      chamberId: string
-      sealId: string
-    }[]
   }
   fuelingAreaDestination?: string
   proposedDepartureTime?: string

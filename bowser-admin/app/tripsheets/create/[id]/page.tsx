@@ -75,6 +75,7 @@ export default function TripSheetCreatePage() {
                 setOdometerStartReading(data.odoMeter);
                 setQuantityByDip(data.totalLoadQuantityByDip || 0);
                 setQuantityBySlip(data.totalLoadQuantityBySlip || 0);
+                setPumpEndReading(data.pumpReadingAfter || 0)
             } catch (err: any) {
                 setError(err.message || "Error fetching loading sheet.");
             } finally {
@@ -141,8 +142,6 @@ export default function TripSheetCreatePage() {
                     driver: bowserDriver,
                     odometerStartReading,
                     pumpEndReading,
-                    chamberwiseDipList: loadingSheet.chamberwiseDipListAfter,
-                    chamberwiseSealList: loadingSheet.chamberwiseSealList
                 },
                 fuelingAreaDestination,
                 proposedDepartureTime,
@@ -177,20 +176,11 @@ export default function TripSheetCreatePage() {
         }
     }
 
-    if (isLoading && !loadingSheet) {
-        return <Loading />; // or just <p>Loading...</p>
-    }
-
-    if (error) {
-        return <p className="p-4 text-red-600">Error: {error}</p>;
-    }
-
-    if (!loadingSheet) {
-        return <p className="p-4">No LoadingSheet data found.</p>;
-    }
-
     return (
         <div className="mx-auto py-8 container">
+            {(isLoading || !loadingSheet) && <Loading />}
+            {!loadingSheet && <p className="p-4">No LoadingSheet data found.</p>}
+            {error && <p className="p-4 text-red-600">Error: {error}</p>}
             <Card>
                 <CardHeader>
                     <CardTitle>Create TripSheet</CardTitle>

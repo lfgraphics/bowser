@@ -3,20 +3,33 @@ const mongoose = require('mongoose')
 const { updateTripSheet } = require('./tripSheet')
 
 const fetchLocationData = async (latitude, longitude) => {
-    const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`;
-
-    // we'll soon entigrate the google geocoding api to get the best possible location
+    const apiKey = process.env.Google_Geocode_Api;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`;
 
     try {
         const response = await fetch(url);
         const data = await response.json();
-        if (data && data.address) {
-            const { county: state, city, town, village } = data.address;
-            const location = city || town || village;
-            let obj = `${location}, ${data.address.state_district}, ${state}, ${"Cordinates: " + latitude + ", " + longitude}`
-            return obj
+
+        // Check if the response is OK and has results
+        if (data.status === "OK" && data.results.length > 0) {
+            const firstResult = data.results[0];
+            const { address_components, geometry } = firstResult;
+
+            // Extracting the short address components
+            const locality = address_components.find(component => component.types.includes("locality"))?.short_name || '';
+            const administrativeArea = address_components.find(component => component.types.includes("administrative_area_level_3"))?.short_name || '';
+            const state = address_components.find(component => component.types.includes("administrative_area_level_1"))?.short_name || '';
+
+            // Constructing the short address
+            const shortAddress = `${locality}, ${administrativeArea}, ${state}`;
+
+            // Extracting coordinates
+            const { lat, lng } = geometry.location;
+
+            // Returning the data as a formatted string
+            return `${shortAddress}, Coordinates: ${lat}, ${lng}`;
         } else {
-            console.log(`Unable to capture the location by nominatim's api- Cord are: lat = ${latitude}, long = ${longitude}`);
+            console.log(`Unable to capture the location - Status: ${data.status}`);
             return null;
         }
     } catch (error) {

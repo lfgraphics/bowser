@@ -4,7 +4,6 @@ import {
   Role,
   TripSheet,
   UnauthorizedLogin,
-  User
 } from '@/types'
 import axios from 'axios'
 
