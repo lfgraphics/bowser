@@ -13,21 +13,12 @@ const fetchLocationData = async (latitude, longitude) => {
 
         // Check if the response is OK and has results
         if (data.status === "OK" && data.results.length > 0) {
-            const firstResult = data.results[0];
-            const { address_components, geometry } = firstResult;
-
-            // Extracting the short address components
-            const locality = address_components.find(component => component.types.includes("locality"))?.short_name || '';
-            const administrativeArea = address_components.find(component => component.types.includes("administrative_area_level_4"))?.long_name || '';
-
-            // Constructing the short address
-            const shortAddress = `${locality}, ${administrativeArea}`;
-
-            // Extracting coordinates
-            const { lat, lng } = geometry.location;
+            const route = data.results.find(components => components.types.includes("route")).address_components.find(components => components.types.includes("route")).long_name;
+            const locality = data.results.find(component => component.types.includes("administrative_area_level_4")).address_components.find(levels => levels.types.includes("administrative_area_level_4")).long_name;
+            const state = data.results.find(components => components.types.includes("administrative_area_level_1")).address_components.find(levels => levels.types.includes("administrative_area_level_1")).long_name;
 
             // Returning the data as a formatted string
-            return `${shortAddress}, Coordinates: ${lat},${lng}`;
+            return `${route}, ${locality}, ${state} Coordinates: ${latitude},${longitude}`;
         } else {
             console.log(`Unable to capture the location - Status: ${data.status}`);
             return null;
