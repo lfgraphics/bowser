@@ -18,17 +18,16 @@ const fetchLocationData = async (latitude, longitude) => {
 
             // Extracting the short address components
             const locality = address_components.find(component => component.types.includes("locality"))?.short_name || '';
-            const administrativeArea = address_components.find(component => component.types.includes("administrative_area_level_3"))?.short_name || '';
-            const state = address_components.find(component => component.types.includes("administrative_area_level_1"))?.short_name || '';
+            const administrativeArea = address_components.find(component => component.types.includes("administrative_area_level_4"))?.long_name || '';
 
             // Constructing the short address
-            const shortAddress = `${locality}, ${administrativeArea}, ${state}`;
+            const shortAddress = `${locality}, ${administrativeArea}`;
 
             // Extracting coordinates
             const { lat, lng } = geometry.location;
 
             // Returning the data as a formatted string
-            return `${shortAddress}, Coordinates: ${lat}, ${lng}`;
+            return `${shortAddress}, Coordinates: ${lat},${lng}`;
         } else {
             console.log(`Unable to capture the location - Status: ${data.status}`);
             return null;
