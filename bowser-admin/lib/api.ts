@@ -7,7 +7,7 @@ import {
 } from '@/types'
 import axios from 'axios'
 
-export const BASE_URL = 'https://bowser-backend-2cdr.onrender.com' //https://bowser-backend-2cdr.onrender.com  http://localhost:5000
+export const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL
 // Users and Roles Management
 export const getUsers = async (): Promise<MainUser[]> => {
   const response = await fetch(`${BASE_URL}/users`)

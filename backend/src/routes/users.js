@@ -136,4 +136,24 @@ router.delete('/un-authorized-request/:id', async (req, res) => {
     }
 })
 
+router.put('/update', async (req, res) => {
+    const { userId, name, phoneNumber } = req.body;
+
+    try {
+        const updatedUser = await User.findOneAndUpdate(
+            { userId },
+            { name, phoneNumber },
+            { new: true, select: 'name phoneNumber' }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.status(200).json({ message: 'User updated successfully', user: { name: updatedUser.name, phoneNumber: updatedUser.phoneNumber } });
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating user', error: error.message });
+    }
+});
+
 module.exports = router;

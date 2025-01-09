@@ -6,6 +6,7 @@ import "./globals.css";
 import { Sidebar } from '@/components/layout/Sidebar';
 import { isAuthenticated } from '@/lib/auth';
 import Head from 'next/head';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,7 +19,7 @@ export default function RootLayout({
 
   useEffect(() => {
     setIsAuth(isAuthenticated());
-  }, []);
+  }, [location.pathname]);
 
   return (
     <html lang="en" className={inter.className}>
@@ -39,8 +40,9 @@ export default function RootLayout({
         >
           {isAuth && <Sidebar />}
           <div className={`min-h-full`}>
-            <main className="p-4 md:px-8 md:pb-8">
+            <main className="md:px-8 p-4 md:pb-8">
               {children}
+              <SpeedInsights />
             </main>
           </div>
         </ThemeProvider>

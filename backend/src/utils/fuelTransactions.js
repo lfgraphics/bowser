@@ -18,7 +18,7 @@ const fetchLocationData = async (latitude, longitude) => {
             const state = data.results.find(components => components.types.includes("administrative_area_level_1")).address_components.find(levels => levels.types.includes("administrative_area_level_1")).long_name;
 
             // Returning the data as a formatted string
-            return `${route}, ${locality}, ${state} Coordinates: ${latitude},${longitude}`;
+            return `${route}, ${locality}, ${state}, Coordinates: ${latitude},${longitude}`;
         } else {
             console.log(`Unable to capture the location - Status: ${data.status}`);
             return null;

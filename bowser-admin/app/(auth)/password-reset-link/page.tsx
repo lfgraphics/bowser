@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import axios from "axios"
 import { Copy } from "lucide-react"
 import Loading from "@/app/loading"
+import { BASE_URL } from "@/lib/api"
 
 export default function GenerateResetUrl() {
     const [userId, setUserId] = useState("")
@@ -21,7 +22,7 @@ export default function GenerateResetUrl() {
         setResetUrl("")
 
         try {
-            const response = await axios.post('https://bowser-backend-2cdr.onrender.com/auth/generate-reset-url', { userId }) //https://bowser-backend-2cdr.onrender.com
+            const response = await axios.post(`${BASE_URL}/auth/generate-reset-url`, { userId });
             setResetUrl(response.data.resetUrl)
         } catch (err) {
             setError((err as any).response?.data?.message || 'An error occurred while generating the reset URL.')
@@ -31,7 +32,7 @@ export default function GenerateResetUrl() {
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="flex justify-center items-center bg-background min-h-screen">
             {loading && <Loading />}
             <Card className="w-[350px]">
                 <CardHeader>
@@ -40,7 +41,7 @@ export default function GenerateResetUrl() {
                 </CardHeader>
                 <form onSubmit={handleSubmit}>
                     <CardContent>
-                        <div className="grid w-full items-center gap-4">
+                        <div className="items-center gap-4 grid w-full">
                             <div className="flex flex-col space-y-1.5">
                                 <Label htmlFor="userId">User ID</Label>
                                 <Input id="userId" placeholder="Enter User ID" value={userId} onChange={(e) => setUserId(e.target.value)} required />
@@ -52,7 +53,7 @@ export default function GenerateResetUrl() {
                                     <div className="flex items-center">
                                         <a href={resetUrl} className="text-blue-500 hover:underline">{resetUrl.slice(0, 20)}...</a>
                                         <Button variant="ghost" onClick={() => { navigator.clipboard.writeText(resetUrl); alert('Password Reset url Copied to clip board') }} className="ml-2 p-3 rounded text-foreground">
-                                            <Copy className="h-4 w-4" />
+                                            <Copy className="w-4 h-4" />
                                         </Button>
                                     </div>
                                 </div>
