@@ -51,7 +51,6 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
                 const data: WholeTripSheet = response.data;
                 setTripSheet(data);
 
-                // Initialize chamberwise dip list based on fetched TripSheet data
                 if (data.bowser && data.loading.sheetId.chamberwiseDipListAfter) {
                     setChamberwiseDipList(data.loading.sheetId.chamberwiseDipListAfter.map(dip => ({
                         chamberId: dip.chamberId,
@@ -74,7 +73,6 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
         setLoading(true);
         setError(null);
 
-        // Get user details from local storage
         const storedUserJson = localStorage.getItem("adminUser");
         let userDetails = { id: "", name: "", phoneNumber: "" };
         if (storedUserJson) {
@@ -86,7 +84,6 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
             };
         }
 
-        // Submit the chamberwiseDipList to the server
         try {
             const response = await axios.post(`${BASE_URL}/tripsheet/settle/${params.id}`, {
                 chamberwiseDipList,
@@ -124,10 +121,9 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
         const newWindow = window.open(printURL, '_blank');
         newWindow?.focus();
 
-        // Wait for 5 seconds before calling print
         setTimeout(() => {
-            newWindow?.print(); // Open the print dialog
-        }, 5000); // 5000 milliseconds = 5 seconds
+            newWindow?.print();
+        }, 3000);
     };
 
     return (

@@ -2,30 +2,13 @@
 import Loading from '@/app/loading';
 import TripCalculationModal from '@/components/exclusive/TripCalculationModal';
 import { WholeTripSheet } from '@/types';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { fetchTripSheet } from '@/lib/serverSideFunctions'; // Import the server action
 
-const SettlementPage = ({ params }: { params: { id: string } }) => {
-    const [tripSheet, setTripSheet] = useState<WholeTripSheet | null>(null);
-    const [error, setError] = useState<string | null>(null);
+const SettlementPage = async ({ params }: { params: { id: string } }) => {
     const { id } = params;
-
-    useEffect(() => {
-        const loadTripSheet = async () => {
-            try {
-                const data = await fetchTripSheet(id); // Call the server action
-                setTripSheet(data);
-            } catch (err) {
-                console.error('Error fetching TripSheet:', err);
-                setError('Error fetching TripSheet data');
-            }
-        };
-
-        loadTripSheet();
-        if (window !== undefined) {
-            document.getElementById('menuIcon')!.style.display = 'none';
-        }
-    }, [id]);
+    const tripSheet: WholeTripSheet = await fetchTripSheet(id); // Fetch data directly
+    const error = tripSheet ? null : 'Error fetching TripSheet data'; // Handle error if needed
 
     return (
         <div className='-ml-4'>
