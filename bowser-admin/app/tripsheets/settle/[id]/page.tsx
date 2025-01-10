@@ -27,7 +27,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
     const [borderOtherExp, setBorderOtherExp] = useState<number>()
     const [hsdPerKm, setHsdPerKm] = useState<number>(15)
     const [filledByDriver, setFilledByDriver] = useState<number>()
-    const [hsdRateFor, setHsdRateFor] = useState<number>(89.99)
+    const [hsdRateForDeduction, setHsdRateForDeduction] = useState<number>(89.99)
     const [saleryDays, setSaleryDays] = useState<number>(4)
     const [foodingDays, setFoodingDays] = useState<number>(4)
     const [rewardTrips, setRewardTrips] = useState<number>(1)
@@ -96,7 +96,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
                     saleryDays,
                     foodingDays,
                     rewardTrips,
-                    hsdRateFor,
+                    hsdRateFor: hsdRateForDeduction,
                     tollTax,
                     borderOtherExp,
                     unload,
@@ -236,13 +236,13 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
                     onChange={(e) => { setRewardTrips(Number(e.target.value)) }}
                     required
                 />
-                <Label htmlFor={`hsdRateFor`}>HSD Rate For</Label>
+                <Label htmlFor={`hsdRateFor`}>HSD Rate For Deduction</Label>
                 <Input
                     id={`hsdRateFor`}
                     type="text"
-                    placeholder="HSD Rate For"
-                    value={hsdRateFor}
-                    onChange={(e) => { setHsdRateFor(Number(e.target.value)) }}
+                    placeholder="HSD Rate For Deduction"
+                    value={hsdRateForDeduction}
+                    onChange={(e) => { setHsdRateForDeduction(Number(e.target.value)) }}
                     required
                 />
                 <Label htmlFor={`tollTax`}>Toll Tax</Label>

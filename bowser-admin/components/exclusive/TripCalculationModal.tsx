@@ -216,7 +216,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
                             <TableCell colSpan={2}>Toll Tax</TableCell>
                             <TableCell>{tollTax}</TableCell>
                             <TableCell colSpan={4}></TableCell>
-                            <TableCell colSpan={2} className='font-semibold text-center'>HSD Rate for</TableCell>
+                            <TableCell colSpan={2} className='font-semibold text-center'>HSD Rate For Deduction</TableCell>
                             <TableCell>{hsdRateFor} /Lt.</TableCell>
                         </TableRow>
                         <TableRow>

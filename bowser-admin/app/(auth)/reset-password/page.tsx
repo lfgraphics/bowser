@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import Loading from "@/app/loading"
+import { BASE_URL } from "@/lib/api"
+import { logout } from "@/lib/auth"
 
 export default function ResetPassword() {
     const router = useRouter()
@@ -33,15 +35,17 @@ export default function ResetPassword() {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
 
-            const response = await axios.patch('https://bowser-backend-2cdr.onrender.com/auth/reset-password', { //https://bowser-backend-2cdr.onrender.com
+            const response = await axios.patch(`${BASE_URL}/auth/reset-password`, {
                 userId,
                 token,
                 password,
                 confirmPassword
             });
-
-            setSuccess(response.data.message);
-            setTimeout(() => router.push('/login'), 2000);
+            if (response.status === 200) {
+                logout()
+                setSuccess(response.data.message);
+                setTimeout(() => router.push('/login'), 2000);
+            }
         } catch (err) {
             setError((err as any).response?.data?.message || 'An error occurred');
         } finally {
@@ -50,7 +54,7 @@ export default function ResetPassword() {
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="flex justify-center items-center bg-background min-h-screen">
             {loading && <Loading />}
             <Card className="w-[350px]">
                 <CardHeader>
@@ -59,7 +63,7 @@ export default function ResetPassword() {
                 </CardHeader>
                 <form onSubmit={handleSubmit}>
                     <CardContent>
-                        <div className="grid w-full items-center gap-4">
+                        <div className="items-center gap-4 grid w-full">
                             <div className="flex flex-col space-y-1.5">
                                 <Label htmlFor="userId">User ID</Label>
                                 <Input id="userId" value={userId} required readOnly />

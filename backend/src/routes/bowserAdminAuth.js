@@ -90,17 +90,20 @@ router.post('/login', async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        // 5. Set the token in an HTTP-only, secure cookie
-        //    Adjust cookie options according to your environment
         res.cookie('token', token, {
-            httpOnly: true,           // prevents JS from reading the cookie
-            // secure: process.env.NODE_ENV === 'production', // only send over HTTPS in prod
+            httpOnly: true,
             sameSite: 'None',
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-            path: '/' // typically default
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            path: '/'
         });
 
-        // 6. Return JSON (without the raw token, if you want to rely solely on the cookie)
+        res.cookie('user_roles', JSON.stringify(roleNames), {
+            httpOnly: false,
+            sameSite: 'None',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            path: '/',
+        });
+
         return res.json({
             message: 'Login successful',
             token,

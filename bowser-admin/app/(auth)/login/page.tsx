@@ -11,27 +11,27 @@ import Loading from "@/app/loading"
 import { User } from "@/types"
 import { useRouter } from 'next/navigation';
 
+export const allowedRoutes: { [key: string]: [string] } = {
+  "Admin": ["/dashboard"],
+  "Diesel Control Center Staff": ["/dashboard"],
+  "Data Entry": ["/dispense-records"],
+  "Loading Incharge": ["/loading/orders"],
+  "BCC Authorized Officer": ["/loading/sheet"],
+  "Petrol Pump Personnel": ["/loading/petrol-pump"],
+};
+
 export default function Login() {
   const [userId, setUserId] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter();
 
-  const allowedRoutes: { [key: string]: string } = {
-    "Admin": "/dashboard",
-    "Diesel Control Center Staff": "/dashboard",
-    "Data Entry": "/dispense-records",
-    "Loading Incharge": "/loading/orders",
-    "BCC Authorized Officer": "/loading/sheet",
-    "Petrol Pump Personnel": "/loading/petrol-pump",
-  };
-
   useEffect(() => {
     if (isAuthenticated()) {
       let user: User = JSON.parse(localStorage.getItem('adminUser')!);
-      const redirectUrl = user.roles.map(role => allowedRoutes[role]).find(url => url) || "/unauthorized";
+      const redirectUrl = user.roles.map(role => allowedRoutes[role]).find(url => url) || ["/unauthorized"];
       console.log('Redirecting to:', redirectUrl);
-      router.push(redirectUrl); // Use router.push instead of window.location.href
+      router.push(redirectUrl[0]);
     } else {
       console.log('User is not authenticated');
     }
@@ -43,10 +43,10 @@ export default function Login() {
     try {
       const response = await login(userId, password);
       if (response.user) {
-        const redirectUrl = response.user.roles.map(role => allowedRoutes[role]).find(url => url) || "/unauthorized";
-        router.push(redirectUrl); // Use router.push instead of window.location.href
+        const redirectUrl = response.user.roles.map(role => allowedRoutes[role]).find(url => url) || ["/unauthorized"];
+        router.push(redirectUrl[0]);
       } else {
-        alert("Account not verified. Please contact an administrator to verify your account.");
+        alert("Account not verified. Please contact an Admin to verify your account.");
       }
     } catch (error) {
       console.error("Login failed:", error);

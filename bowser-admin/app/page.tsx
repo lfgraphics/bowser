@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { isAuthenticated } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
+import { allowedRoutes } from './(auth)/login/page';
+import { User } from '@/types';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -80,14 +82,21 @@ export function InstallPrompt() {
 
 export default function Home() {
   const router = useRouter();
+  const [user, setUser] = useState<User>()
+  useEffect(() => {
+    let user = JSON.parse(localStorage.getItem('adminUser')!)
+    setUser(user)
+  })
+
+  const redirectUrl = user?.roles.map(role => allowedRoutes[role]).find(url => url) || ["/unauthorized"];
 
   useEffect(() => {
     if (isAuthenticated()) {
-      router.push('/dashboard');
+      router.push(redirectUrl[0]);
     } else {
       router.push('/login');
     }
   }, [router]);
 
-  return ('home page');
+  return ('You are required to Login to view the contents of this Website');
 }

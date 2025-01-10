@@ -64,7 +64,6 @@ export async function login (
 
 export async function logout (): Promise<void> {
   try {
-    // Retrieve user data from local storage
     const userData = localStorage.getItem('adminUser')
     if (!userData) {
       console.error('No user data found in local storage.')
@@ -74,22 +73,17 @@ export async function logout (): Promise<void> {
     const jsonData = JSON.parse(userData)
     const mobileNo = jsonData.phoneNumber
 
-    // Attempt to unregister push subscription
     const unregisterResponse = await unregisterPushSubscription(mobileNo)
 
     if (unregisterResponse && unregisterResponse.success) {
-      // Unregistration successful; proceed to log out
       console.log('Push subscription unregistered successfully.')
 
-      // Clear user-related data from local storage
       localStorage.removeItem('adminToken')
       localStorage.removeItem('adminUser')
       localStorage.setItem('isLoggedIn', 'false')
 
-      // Redirect to login page
       window.location.href = '/login'
     } else {
-      // Unregistration failed; do not proceed with logout
       console.error(
         'Failed to unregister push subscription:',
         unregisterResponse?.error
