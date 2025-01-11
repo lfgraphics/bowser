@@ -179,6 +179,11 @@ const TripSheetPage = () => {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent className='bg-card text-center'>
+                                                    <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/add-record/?tripSheetId=${sheet.tripSheetId}&bowser=${sheet.bowser.regNo}` : ``}>
+                                                        <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
+                                                            Add Record
+                                                        </DropdownMenuItem>
+                                                    </Link>
                                                     <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/settle/${sheet._id}` : ``}>
                                                         <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
                                                             Settle

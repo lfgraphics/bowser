@@ -89,4 +89,24 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
     }
 };
 
-module.exports = { updateTripSheet };
+const updateTripSheetBulk = async (updates) => {
+    try {
+        const bulkOps = updates.map(({ tripSheetId, newDispense }) => ({
+            updateOne: {
+                filter: { tripSheetId },
+                update: { $push: { dispenses: newDispense } }
+            }
+        }));
+
+        // Perform bulk write operation
+        const result = await TripSheet.bulkWrite(bulkOps);
+
+        console.log(`TripSheets updated successfully: ${JSON.stringify(result)}`);
+        return { success: true, message: "TripSheets updated successfully", result };
+    } catch (error) {
+        console.error("Error updating TripSheets in bulk:", error);
+        return { success: false, message: "Error updating TripSheets in bulk" };
+    }
+};
+
+module.exports = { updateTripSheet, updateTripSheetBulk };

@@ -3,7 +3,7 @@ const router = express.Router();
 const FuelingTransaction = require('../models/Transaction');
 const FuelingOrder = require('../models/fuelingOrders');
 const { fetchLocationData } = require('../utils/fuelTransactions');
-const { updateTripSheet } = require('../utils/tripSheet')
+const { updateTripSheet, updateTripSheetBulk } = require('../utils/tripSheet')
 const { sendWebPushNotification } = require('../utils/pushNotifications');
 const { mongoose } = require('mongoose');
 
@@ -67,6 +67,60 @@ router.post('/', async (req, res) => {
             data: { url: `/dispense-records/${fuelingTransaction._id.toString()}` }
         };
         if (userId.length > 2) await sendWebPushNotification({ userId, message, options })
+
+    } catch (err) {
+        console.error('Error saving fueling record data:', err);
+
+        if (err.message === 'Save operation timed out') {
+            res.status(503).json({
+                message: 'The database operation timed out. Please try again later.',
+                error: 'Database timeout'
+            });
+        } else if (err.name === 'MongooseError' && err.message.includes('buffering timed out')) {
+            res.status(503).json({
+                message: 'The database is currently unavailable. Please try again later.',
+                error: 'Database connection timeout'
+            });
+        } else {
+            res.status(500).json({
+                message: 'An error occurred while saving the fuleing transaction data. Please try again',
+                error: err.message
+            });
+        }
+    }
+});
+
+router.post('/bulk', async (req, res) => {
+    try {
+        const fuelingTransactions = req.body;
+
+        const saveOptions = {
+            writeConcern: {
+                w: 'majority',
+                wtimeout: 30000
+            }
+        };
+
+        const savePromises = fuelingTransactions.map(transactionData => {
+            let fuelingTransaction = new FuelingTransaction(transactionData);
+            return fuelingTransaction.save(saveOptions);
+        });
+
+        await Promise.all(savePromises);
+
+        const tripSheetUpdates = fuelingTransactions.map(transaction => ({
+            tripSheetId: transaction.tripSheetId,
+            newDispense: {
+                transaction: transaction._id,
+                fuelQuantity: transaction.fuelQuantity,
+                isVerified: false,
+                isPosted: false,
+            }
+        }));
+
+        await updateTripSheetBulk(tripSheetUpdates);
+
+        res.status(200).json({ message: 'Bulk Data Submitted successfully' });
 
     } catch (err) {
         console.error('Error saving fueling record data:', err);
