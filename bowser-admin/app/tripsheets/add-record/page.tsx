@@ -11,9 +11,10 @@ import axios from 'axios';
 import { BASE_URL } from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
 import { User } from '@/types/auth';
+import Loading from '@/app/loading';
 
 const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number, bowser: string } }) => {
-
+    const [loading, setLoading] = useState<boolean>()
     const [currentUser, setCurrentUser] = useState<User | null>()
     useEffect(() => {
         let user = getCurrentUser()
@@ -45,7 +46,6 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
             id: ''
         }
     }]);
-    const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false);
     const { toast } = useToast();
 
     const addRecord = () => {
@@ -84,6 +84,7 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
     };
 
     const handleSubmit = async () => {
+        setLoading(true)
         const preparedRecords = records.map(record => ({
             ...record,
             vehicleNumberPlateImage: "",
@@ -99,16 +100,17 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
 
         try {
             const response = await axios.post(`${BASE_URL}/addFuelingTransaction/bulk`, preparedRecords);
-            toast({ title: 'Success', description: response.data.message });
-            console.log(preparedRecords)
-            setShowSuccessAlert(true);
+            toast({ title: 'Success', description: response.data.message, variant:"success" });
         } catch (error) {
             toast({ title: 'Error', description: 'Failed to submit records', variant: "destructive" });
+        } finally {
+            setLoading(false)
         }
     };
 
     return (
         <div className="flex justify-center items-center bg-background mt-6 py-4 min-h-full">
+            {loading && <Loading />}
             <div className="w-full">
                 <h1 className="font-bold text-xl">Bulk Fueling Entry in Trip: {searchParams.tripSheetId}</h1>
                 <Toaster />
@@ -116,6 +118,7 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
                     <TableHeader>
                         <TableRow>
                             <TableHead>SN.</TableHead>
+                            <TableHead>Date</TableHead>
                             <TableHead>Category</TableHead>
                             <TableHead>Party</TableHead>
                             <TableHead>Odometer</TableHead>
@@ -126,7 +129,6 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
                             <TableHead>Quantity type</TableHead>
                             <TableHead>Fuel Quantity</TableHead>
                             <TableHead>Location</TableHead>
-                            <TableHead>Date</TableHead>
                             <TableHead>Order By</TableHead>
                             <TableHead>Actions</TableHead>
                         </TableRow>
@@ -135,6 +137,17 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
                         {records.map((record, index) => (
                             <TableRow key={record.id}>
                                 <TableCell>{index + 1}</TableCell>
+                                <TableCell>
+                                    <Input
+                                        type="date"
+                                        value={record.fuelingDateTime}
+                                        onChange={(e) => {
+                                            const newRecords = [...records];
+                                            newRecords[index].fuelingDateTime = e.target.value;
+                                            setRecords(newRecords);
+                                        }}
+                                    />
+                                </TableCell>
                                 <TableCell>
                                     <Select value={record.category} onValueChange={(value) => {
                                         const newRecords = [...records];
@@ -259,17 +272,6 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
                                 </TableCell>
                                 <TableCell>
                                     <Input
-                                        type="date"
-                                        value={record.fuelingDateTime}
-                                        onChange={(e) => {
-                                            const newRecords = [...records];
-                                            newRecords[index].fuelingDateTime = e.target.value;
-                                            setRecords(newRecords);
-                                        }}
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
                                         type="text"
                                         value={record.allocationAdmin.id}
                                         onChange={(e) => {
@@ -286,20 +288,11 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
                         ))}
                     </TableBody>
                 </Table>
-                <Button type="button" onClick={addRecord}>Add Record</Button>
-                <Button type="button" onClick={handleSubmit}>Allocate Fueling</Button>
+                <div className='flex justify-around gap-3 mt-4 w-full'>
+                    <Button type="button" onClick={addRecord}>+ Add Row</Button>
+                    <Button type="button" onClick={handleSubmit}>Update Records</Button>
+                </div>
             </div>
-            <AlertDialog open={showSuccessAlert} onOpenChange={setShowSuccessAlert}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Success!</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Operation completed successfully.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogAction onClick={() => setShowSuccessAlert(false)}>Close</AlertDialogAction>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     );
 };

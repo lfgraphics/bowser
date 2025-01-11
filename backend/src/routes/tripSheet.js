@@ -6,7 +6,7 @@ const User = require('../models/user');
 const Bowser = require('../models/Bowsers');
 const LoadingSheet = require('../models/LoadingSheet');
 const { calculateQty } = require('../utils/calibration');
-const { sendNativePushNotification } = require('../utils/pushNotifications');
+const { sendNativePushNotification, sendBulkNotifications } = require('../utils/pushNotifications');
 
 const notifyDriver = async ({ phoneNumber, bowser, tripsheetId, location }) => {
     let options = {
@@ -329,6 +329,18 @@ router.post('/settle/:id', async (req, res) => {
             await tripsheet.save(); // Save the updated tripsheet
             console.log(`Settlement saved successfully: ${JSON.stringify(tripsheet.settlement)}`);
             res.status(200).json({ message: 'Settlement processed successfully' });
+            // notify data entry department
+            let message = `${tripsheet.tripSheetId} is settled\nNow you can make your move to data entry`;
+            let options = {
+                title: "Trip Sheet Settled",
+                url: `/dispense-records?tripNumber=${tripsheet.tripSheetId}&limit=${tripsheet.dispenses.length}`,
+            }
+            await sendBulkNotifications({
+                groups: ["Data Entry"],
+                message: message,
+                options: options,
+                platform: "web",
+            });
         } catch (error) {
             console.error(`Error saving settlement: ${error}`);
             res.status(500).json({ message: 'Failed to process settlement' });

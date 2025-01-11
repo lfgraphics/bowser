@@ -98,11 +98,43 @@ const updateTripSheetBulk = async (updates) => {
             }
         }));
 
-        // Perform bulk write operation
-        const result = await TripSheet.bulkWrite(bulkOps);
+        // Perform bulk write operation to add new dispenses
+        await TripSheet.bulkWrite(bulkOps);
 
-        console.log(`TripSheets updated successfully: ${JSON.stringify(result)}`);
-        return { success: true, message: "TripSheets updated successfully", result };
+        // Now perform calculations for each trip sheet
+        const tripSheetIds = [...new Set(updates.map(update => update.tripSheetId))]; // Unique tripSheetIds
+        const tripSheets = await TripSheet.find({ tripSheetId: { $in: tripSheetIds } });
+
+        tripSheets.forEach(tripSheet => {
+            // Perform recalculations
+            const additionsQuantity = tripSheet.addition?.reduce(
+                (sum, add) => sum + (add.quantityByDip || 0),
+                0
+            );
+            const additionsQtyBySlip = tripSheet.addition?.reduce(
+                (sum, add) => sum + (add.quantityBySlip || 0),
+                0
+            );
+            const dispensedQuantity = tripSheet.dispenses?.reduce(
+                (sum, dispense) => sum + (dispense.fuelQuantity || 0),
+                0
+            );
+
+            tripSheet.loadQty = (tripSheet.loading?.quantityByDip || 0);
+            tripSheet.totalAdditionQty = additionsQuantity;
+            tripSheet.totalAdditionQtyBySlip = additionsQtyBySlip;
+            tripSheet.totalLoadQuantityBySlip = (tripSheet.loading?.quantityBySlip || 0);
+            tripSheet.totalLoadQuantity = (tripSheet.loading?.quantityByDip || 0) + additionsQuantity;
+            tripSheet.saleQty = dispensedQuantity;
+            tripSheet.balanceQty = tripSheet.totalLoadQuantity - tripSheet.saleQty;
+            tripSheet.balanceQtyBySlip = tripSheet.totalLoadQuantityBySlip - tripSheet.saleQty;
+        });
+
+        // Save all updated trip sheets
+        await Promise.all(tripSheets.map(tripSheet => tripSheet.save()));
+
+        console.log(`TripSheets updated successfully`);
+        return { success: true, message: "TripSheets updated successfully" };
     } catch (error) {
         console.error("Error updating TripSheets in bulk:", error);
         return { success: false, message: "Error updating TripSheets in bulk" };

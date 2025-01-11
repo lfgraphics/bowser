@@ -35,9 +35,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { formatDate } from "@/lib/utils";
 
-const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: number, allocator: string } }) => {
+const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: number, allocator: string, limit?: number } }) => {
     const tripNumber = searchParams.tripNumber;
     const allocator = searchParams.allocator;
+    const recLimit = searchParams.limit;
 
     const [records, setRecords] = useState<DispensesRecord[]>([]);
     const [totalPages, setTotalPages] = useState(1);
@@ -51,7 +52,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
     const [localDriverName, setLocalDriverName] = useState("");
     const [localTripSheetId, setLocalTripSheetId] = useState<number | undefined>(tripNumber);
     const [localVehicleNo, setLocalVehicleNo] = useState("");
-    const [limit, setLimit] = useState(20);
+    const [limit, setLimit] = useState(recLimit || 20);
     const [loading, setLoading] = useState(true);
     const [verificationStatus, setVerificationStatus] = useState("all");
     const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
