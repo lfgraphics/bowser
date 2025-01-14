@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const FuelingTransaction = require('../models/Transaction');
+const {FuelingTransaction} = require('../models/Transaction');
 const FuelingOrder = require('../models/fuelingOrders');
 const { fetchLocationData } = require('../utils/fuelTransactions');
 const { updateTripSheet, updateTripSheetBulk } = require('../utils/tripSheet')
