@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Check, Plus, X } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -145,15 +145,15 @@ export default function LoadingOrdersPage() {
       <div className="gap-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {/* Create New Order Card */}
         <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
-          <Card>
-            <CardContent className="flex justify-center items-center h-full">
+          <div className="justify-center items-center border h-full min-h-36">
+            <div className="flex justify-center items-center h-full">
               <Link href="/loading/orders/create">
-                <Button variant="outline" size="icon" className="p-10 rounded-full">
+                <Button className="p-10 rounded-full" size="icon" variant="outline">
                   <Plus className="scale-150" />
                 </Button>
               </Link>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </OnlyAllowed>
         {/* Render Filtered Orders */}
         {orders.length > 0 && orders.map((order) => (
@@ -181,9 +181,9 @@ export default function LoadingOrdersPage() {
                     {order.loadingDesc}
                   </p>
                 )}
-                <p className="text-sm">
+                <p className="flex gap-3 text-sm">
                   <strong>Fulfilled: </strong>
-                  {order.fulfilled ? "Yes" : "No"}
+                  {order.fulfilled ? <Check color="green" /> : <X color="red" />}
                 </p>
               </CardContent>
             </Card>

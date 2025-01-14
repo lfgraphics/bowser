@@ -8,12 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-// import { capturePhoto } from "@/lib/cameraUtils";
 import { BASE_URL } from "@/lib/api";
 import { Bowser, LoadingOrder, OrderBowserResponse } from "@/types";
 import Loading from "@/app/loading";
 
-// -- Our localforage helpers
 import {
     saveFormData,
     loadFormData,
@@ -47,7 +45,6 @@ interface LoadingSheetFormData {
         qty: string | number; slipPhoto: string
     }[];
 }
-
 
 export default function LoadingSheetPage() {
     const router = useRouter();
@@ -593,7 +590,7 @@ export default function LoadingSheetPage() {
                                                 <img
                                                     src={seal.sealPhoto}
                                                     alt="Seal Photo"
-                                                    className="border rounded-md w-full h-auto"
+                                                    className="border rounded-md w-full sm:w-52 h-auto"
                                                 />
                                             )}
                                             <div className="flex flex-row justify-around w-full">
@@ -617,6 +614,22 @@ export default function LoadingSheetPage() {
                                                         e.preventDefault();
                                                         await handleSealPhoto(chamberIdx, sealIdx);
                                                     }}
+                                                    onDrop={async (e) => {
+                                                        e.preventDefault();
+                                                        const file = e.dataTransfer.files[0];
+                                                        if (file && file.type.startsWith("image/")) {
+                                                            const reader = new FileReader();
+                                                            reader.onloadend = () => {
+                                                                setChamberwiseSealList((prev) => {
+                                                                    const copy = [...prev];
+                                                                    copy[chamberIdx].seals[sealIdx].sealPhoto = reader.result as string;
+                                                                    return copy;
+                                                                });
+                                                            };
+                                                            reader.readAsDataURL(file);
+                                                        }
+                                                    }}
+                                                    onDragOver={(e) => e.preventDefault()}
                                                 >
                                                     {seal.sealPhoto ? "Retake Photo" : "Take Photo"}
                                                 </Button>
@@ -674,7 +687,7 @@ export default function LoadingSheetPage() {
                                                 <img
                                                     src={slip.slipPhoto}
                                                     alt="Slip Photo"
-                                                    className="border rounded-md w-full h-auto"
+                                                    className="border rounded-md w-full sm:w-52 h-auto"
                                                 />
                                             )}
 
@@ -694,6 +707,22 @@ export default function LoadingSheetPage() {
                                                         e.preventDefault();
                                                         await handleSlipPhoto(slipIdx);
                                                     }}
+                                                    onDrop={async (e) => {
+                                                        e.preventDefault();
+                                                        const file = e.dataTransfer.files[0];
+                                                        if (file && file.type.startsWith("image/")) {
+                                                            const reader = new FileReader();
+                                                            reader.onloadend = () => {
+                                                                setLoadingSlips((prev) => {
+                                                                    const copy = [...prev];
+                                                                    copy[slipIdx].slipPhoto = reader.result as string;
+                                                                    return copy;
+                                                                });
+                                                            };
+                                                            reader.readAsDataURL(file);
+                                                        }
+                                                    }}
+                                                    onDragOver={(e) => e.preventDefault()}
                                                 >
                                                     {slip.slipPhoto ? "Retake Photo" : "Take Photo"}
                                                 </Button>

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Check, Plus, X } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -157,11 +157,8 @@ export default function LoadingOrdersPage() {
                 </OnlyAllowed>
                 {/* Render Filtered Orders */}
                 {loadingSheets.length > 0 && loadingSheets.map((order) => (
-                    <Link href={`/tripsheets/create/${order._id}`} key={order._id}>
-                        <Card
-                            className={`cursor-pointer hover:bg-muted transition-colors ${order.fulfilled ? "bg-gray-100" : "bg-green-100"
-                                }`}
-                        >
+                    <Link href={!order.fulfilled ? `/tripsheets/create/${order._id}` : ''} key={order._id}>
+                        <Card className={`cursor-pointer hover:bg-muted transition-colors ${order.fulfilled ? "bg-gray-100" : "bg-green-100"}`} >
                             <CardHeader>
                                 <CardTitle className="font-semibold text-lg">
                                     {order.regNo}
@@ -187,9 +184,9 @@ export default function LoadingOrdersPage() {
                                     <strong>Ordered by: </strong>
                                     {order.bccAuthorizedOfficer.name}
                                 </p>
-                                <p className="text-sm">
+                                <p className="flex gap-3 text-sm">
                                     <strong>Fulfilled: </strong>
-                                    {order.fulfilled ? "Yes" : "No"}
+                                    {order.fulfilled ? <Check color="green" /> : <X color="red" />}
                                 </p>
                             </CardContent>
                         </Card>
