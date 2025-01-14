@@ -95,5 +95,11 @@ fuelingTransactionSchema.post('deleteOne', async function (doc) {
     }
 });
 
-module.exports = bowsersDatabaseConnection.model('FuelingTransaction', fuelingTransactionSchema, 'FuelingRecordsCollection');
-module.exports = { fuelingTransactionSchema };
+// Define the model
+const FuelingTransaction = bowsersDatabaseConnection.model('FuelingTransaction', fuelingTransactionSchema, 'FuelingRecordsCollection');
+
+// Export both the model and the schema
+module.exports = {
+    FuelingTransaction,
+    fuelingTransactionSchema
+};

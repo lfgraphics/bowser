@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const FuelingTransaction = require('../models/Transaction');
+const {FuelingTransaction} = require('../models/Transaction');
 // const FuelingTransaction = require('../models/Transaction');
 const XLSX = require('xlsx');
 const path = require('path');
