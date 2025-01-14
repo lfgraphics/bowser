@@ -266,7 +266,7 @@ const UsersList = () => {
                             description={`Phone: ${user.phoneNumber}`}
                             content={
                                 <div>
-                                    <p className="flex gap-4">Verified: {user.verified ? <Check /> : <X />}</p>
+                                    <p className="flex gap-4">Verified: {user.verified ? <Check color="green" /> : <X color="red" />}</p>
                                     <p>Roles: {user.roles?.map((role) => role.name).join(', ')}</p>
                                     {user.generationTime && <p>Created on: {`${new Date(user.generationTime)?.toLocaleString('en-GB', {
                                         day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true

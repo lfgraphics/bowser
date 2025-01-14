@@ -88,7 +88,7 @@ export default function Home() {
     setUser(user)
   })
 
-  const redirectUrl = user?.roles.map(role => allowedRoutes[role]).find(url => url) || ["/unauthorized"];
+  const redirectUrl = user?.roles.map(role => allowedRoutes[role]).find(url => url) || ["/profile"];
 
   useEffect(() => {
     if (isAuthenticated()) {

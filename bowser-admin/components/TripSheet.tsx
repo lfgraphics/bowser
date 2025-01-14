@@ -161,14 +161,14 @@ const TripSheetPage = () => {
                                 </TableCell>
                                 <TableCell>{sheet.fuelingAreaDestination}</TableCell>
                                 <TableCell>{`${formatDate(sheet.tripSheetGenerationDateTime ? sheet.tripSheetGenerationDateTime : sheet.createdAt)}`}</TableCell>
-                                <TableCell>{`${sheet.settelment?.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : "Un Settled"}`}</TableCell>
+                                <TableCell>{`${sheet.settelment?.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : ""}`}</TableCell>
                                 <TableCell>{sheet.bowser.regNo}</TableCell>
                                 <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.name : ""}</TableCell>
                                 <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.phoneNo : ""}</TableCell>
                                 <TableCell>{sheet.totalLoadQuantityBySlip}</TableCell>
                                 <TableCell className='text-center' >{sheet.dispenses?.length || "0"}</TableCell>
                                 <TableCell>{sheet.saleQty?.toFixed(2)}</TableCell>
-                                <TableCell>{sheet.balanceQty?.toFixed(2)}</TableCell>
+                                <TableCell>{(Number(sheet.totalLoadQuantityBySlip?.toFixed(2)) - Number(sheet.saleQty?.toFixed(2))).toFixed(2)}</TableCell>
                                 <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
                                     <TableCell className="flex justify-center gap-2 w-full">
                                         {sheet.settelment?.dateTime == undefined &&

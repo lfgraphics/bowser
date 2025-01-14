@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Checkbox } from './ui/checkbox';
-import { User, Role, MainUser } from '@/types';
+import { Role, MainUser } from '@/types';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 

@@ -66,10 +66,10 @@ const UsersList = () => {
                         content={
                             <div>
                                 <h3>Driver Details</h3>
-                                {item.tripDetails?.bowserDriver?.[0] ? (
+                                {item.tripDetails?.bowser.driver?.[0] ? (
                                     <ul>
-                                        <li>Name: {item.tripDetails.bowserDriver[0].name || "N/A"}</li>
-                                        <li>Phone: {item.tripDetails.bowserDriver[0].phoneNo || "N/A"}</li>
+                                        <li>Name: {item.tripDetails.bowser.driver[0].name || "N/A"}</li>
+                                        <li>Phone: {item.tripDetails.bowser.driver[0].phoneNo || "N/A"}</li>
                                     </ul>
                                 ) : (
                                     <p>No driver details available</p>

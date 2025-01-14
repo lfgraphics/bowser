@@ -12,9 +12,7 @@ type WithRoleProps = {
 
 export default function OnlyAllowed({ allowedRoles, children }: WithRoleProps) {
     // You’d typically read from localStorage or a context
-    const token = typeof window !== 'undefined'
-        ? localStorage.getItem('adminToken')
-        : null
+    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null
 
     if (!token) {
         // no token => no roles => cannot show the component

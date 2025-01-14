@@ -31,7 +31,7 @@ export default function Login() {
       let user: User = JSON.parse(localStorage.getItem('adminUser')!);
       const redirectUrl = user.roles.map(role => allowedRoutes[role]).find(url => url) || ["/unauthorized"];
       console.log('Redirecting to:', redirectUrl);
-      router.push(redirectUrl[0]);
+      router.replace(redirectUrl[0]);
     } else {
       console.log('User is not authenticated');
     }

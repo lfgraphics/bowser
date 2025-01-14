@@ -6,15 +6,17 @@ import "./globals.css";
 import { Sidebar } from '@/components/layout/Sidebar';
 import { isAuthenticated } from '@/lib/auth';
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { usePathname } from 'next/navigation';
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [isAuth, setIsAuth] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     setIsAuth(isAuthenticated());
-  }, [typeof window !== "undefined" && window.location.pathname]);
+  }, [pathname]);
 
   return (
     <html lang="en" className={inter.className}>

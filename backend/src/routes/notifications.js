@@ -9,7 +9,7 @@ router.post('/register', async (req, res) => {
     console.log(mobileNumber, platform, subscription)
 
     if (!mobileNumber || !subscription || !platform) {
-        return res.status(400).json({ error: 'Mobile number, subscription, and platform are required.' });
+        return res.status(400).json({ error: 'Mobile number or userId, subscription, and platform are required.' });
     }
 
     try {
@@ -19,7 +19,7 @@ router.post('/register', async (req, res) => {
             { upsert: true, new: true }
         );
 
-        if (!updatedSubscription) { throw new Error(`can't register for notificatio`) } else {
+        if (!updatedSubscription) { throw new Error(`can't register for notifications`) } else {
             if (platform == "web") sendWebPushNotification({
                 userId, message: "You will now recieve necessar notifications on this device", options: options = {
                     title: "Notification Subscription Successfull",
