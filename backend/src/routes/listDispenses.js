@@ -112,7 +112,14 @@ router.get('/export/excel', async (req, res) => {
         filter['driverName'] = { $regex: driverName, $options: 'i' };
     }
     if (tripSheetId) {
-        filter['tripSheetId'] = { $regex: tripSheetId, $options: 'i' };
+        // Ensure tripSheetId is a number to prevent CastError
+        const numericTripSheetId = Number(tripSheetId);
+        if (!isNaN(numericTripSheetId)) {
+            filter['tripSheetId'] = numericTripSheetId;
+        } else {
+            console.error('Invalid tripSheetId format. Expected a number.');
+            return res.status(400).json({ message: 'Invalid tripSheetId format. Expected a number.' });
+        }
     }
 
     const sortOrder = order === 'asc' ? 1 : -1;
