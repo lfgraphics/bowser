@@ -139,7 +139,7 @@ async function sendBulkNotifications({ groups: groups = [], recipients: recipien
     ];
 
     if (allRecipients.length === 0) {
-        throw new Error('No recipients found for the specified groups or recipients.');
+        return
     }
 
     // Initialize results and errors

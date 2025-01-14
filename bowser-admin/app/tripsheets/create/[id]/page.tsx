@@ -134,8 +134,6 @@ export default function TripSheetCreatePage() {
             setIsLoading(true);
             setError(null);
 
-            // Prepare the body for TripSheet creation
-            // (matching your schema's shape)
             const body: TripSheetPayload = {
                 bowser: {
                     regNo,
@@ -152,7 +150,6 @@ export default function TripSheetCreatePage() {
                 }
             };
 
-            // Submit
             const res = await fetch(`${BASE_URL}/tripSheet/create`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -167,8 +164,7 @@ export default function TripSheetCreatePage() {
             const created = await res.json();
             console.log("Created TripSheet:", created);
 
-            // Redirect or show success message
-            router.replace(`/tripsheets/${created?.data?.tripSheet?._id}`);
+            router.replace(`/tripsheets/`);
         } catch (err: any) {
             setError(err.message || "Error creating TripSheet.");
         } finally {
