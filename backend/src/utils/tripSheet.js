@@ -13,13 +13,8 @@ const TripSheet = require('../models/TripSheets')
 const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense, removeDispenseId }) => {
     try {
         // Build the query based on the identifier provided
-        const query = sheetId
-            ? { _id: new mongoose.Types.ObjectId(sheetId) }
-            : { tripSheetId };
+        const query = sheetId ? { _id: new mongoose.Types.ObjectId(sheetId) } : { tripSheetId };
 
-        // Fetch the trip sheet
-        console.log('Query:', query, '\nReceived parameters\n');
-        console.log(`sheetId: ${sheetId}, tripSheetId: ${tripSheetId}, newAddition: ${JSON.stringify(newAddition)}, newDispense: ${JSON.stringify(newDispense)}, removeDispenseId: ${removeDispenseId}`);
         const tripSheet = await TripSheet.findOne(query);
 
         if (!tripSheet) {
@@ -57,11 +52,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
 
         // Perform recalculations
         const additionsQuantity = tripSheet.addition?.reduce(
-            (sum, add) => sum + (add.quantityByDip || 0),
-            0
-        );
-        const additionsQtyBySlip = tripSheet.addition?.reduce(
-            (sum, add) => sum + (add.quantityBySlip || 0),
+            (sum, add) => sum + (add.quantity || 0),
             0
         );
         const dispensedQuantity = tripSheet.dispenses?.reduce(
@@ -69,18 +60,16 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
             0
         );
 
-        tripSheet.loadQty = (tripSheet.loading?.quantityByDip || 0);
+        tripSheet.loadQty =  (tripSheet.loading?.quantityByDip || 0);
         tripSheet.totalAdditionQty = additionsQuantity;
-        tripSheet.totalAdditionQtyBySlip = additionsQtyBySlip;
         tripSheet.totalLoadQuantityBySlip = (tripSheet.loading?.quantityBySlip || 0);
         tripSheet.totalLoadQuantity = (tripSheet.loading?.quantityByDip || 0) + additionsQuantity;
         tripSheet.saleQty = dispensedQuantity;
         tripSheet.balanceQty = tripSheet.totalLoadQuantity - tripSheet.saleQty;
         tripSheet.balanceQtyBySlip = tripSheet.totalLoadQuantityBySlip - tripSheet.saleQty;
 
-        // Save the updated trip sheet
         await tripSheet.save();
-
+        
         console.log(`TripSheet updated successfully for query: ${JSON.stringify(query)}`);
         return { success: true, message: "TripSheet updated successfully", tripSheet };
     } catch (error) {
@@ -108,11 +97,7 @@ const updateTripSheetBulk = async (updates) => {
         tripSheets.forEach(tripSheet => {
             // Perform recalculations
             const additionsQuantity = tripSheet.addition?.reduce(
-                (sum, add) => sum + (add.quantityByDip || 0),
-                0
-            );
-            const additionsQtyBySlip = tripSheet.addition?.reduce(
-                (sum, add) => sum + (add.quantityBySlip || 0),
+                (sum, add) => sum + (add.quantity || 0),
                 0
             );
             const dispensedQuantity = tripSheet.dispenses?.reduce(
@@ -122,7 +107,6 @@ const updateTripSheetBulk = async (updates) => {
 
             tripSheet.loadQty = (tripSheet.loading?.quantityByDip || 0);
             tripSheet.totalAdditionQty = additionsQuantity;
-            tripSheet.totalAdditionQtyBySlip = additionsQtyBySlip;
             tripSheet.totalLoadQuantityBySlip = (tripSheet.loading?.quantityBySlip || 0);
             tripSheet.totalLoadQuantity = (tripSheet.loading?.quantityByDip || 0) + additionsQuantity;
             tripSheet.saleQty = dispensedQuantity;

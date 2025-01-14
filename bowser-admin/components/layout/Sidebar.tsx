@@ -57,7 +57,7 @@ export function Sidebar() {
           </SheetHeader>
           <SheetDescription>Your role{user?.roles?.length! > 1 ? "s are: " : " is: "}{user?.roles.join(', ')}</SheetDescription>
           <div className="flex flex-col p-3 h-full">
-            <nav className="h-[90%]">
+            <nav className="h-[80%]">
               <ul className="space-y-1 text-sm">
                 <OnlyAllowed allowedRoles={["Admin", "Diesel Control Center Staff"]}>
                   <li onClick={toggleSidebar}>
@@ -191,7 +191,7 @@ export function Sidebar() {
                 </li>
               </ul>
             </nav>
-            <div className="mt-auto h-[10%]">
+            <div className="mt-auto h-[20%]">
               <Button variant="outline" className="w-full" onClick={handleLogout}>
                 <LogOut className="mr-2 w-4 h-4" />
                 Logout

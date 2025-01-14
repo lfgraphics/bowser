@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Toaster } from "@/components/ui/toaster";
-import { AlertDialog, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogContent, AlertDialogHeader } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import axios from 'axios';
 import { BASE_URL } from '@/lib/api';
@@ -290,7 +289,7 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
                 </Table>
                 <div className='flex justify-around gap-3 mt-4 w-full'>
                     <Button type="button" onClick={addRecord}>+ Add Row</Button>
-                    <Button type="button" onClick={handleSubmit}>Update Records</Button>
+                    <Button type="button" onClick={handleSubmit}>Submit Records</Button>
                 </div>
             </div>
         </div>

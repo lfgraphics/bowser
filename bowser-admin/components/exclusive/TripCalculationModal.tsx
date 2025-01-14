@@ -31,15 +31,15 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     const [ch2FullLoadAddCm, setCh2FullLoadAddCm] = useState<number>(record?.loading.sheetId.chamberwiseDipListAfter.find(chamber => chamber.chamberId === "Chamber-2")?.levelHeight || 0)
     const [ch2FullLoadAddqty, setCh2FullLoadAddqty] = useState<number>(Number((record?.loading.quantityBySlip / 2).toFixed(2)))
     const [ch2FullLoadTotalqty, setCh2FullLoadTotalqty] = useState<number>(ch2FullLoadAddqty + ch2Openingqty)
-    const [ch2FullLoadTotalqtyByDip, setCh2FullLoadTotalqtyByDip] = useState<number>(record?.loading.sheetId.chamberwiseDipListAfter.find(chamber => chamber.chamberId === "Chamber-2")?.qty || 0)
+    const [ch2FullLoadTotalqtyByDip, setCh2FullLoadTotalqtyByDip] = useState<number>(Number((record?.loading.sheetId.chamberwiseDipListAfter.find(chamber => chamber.chamberId === "Chamber-2")?.qty || 0).toFixed(2)))
     //total
     const [totalClosingCm, setTotalClosingCm] = useState<number>(ch1Cm + ch2Cm)
-    const [totalClosingQty, setTotalClosingQty] = useState<number>(ch1qty + ch2qty)
+    const [totalClosingQty, setTotalClosingQty] = useState<number>(Number((ch1qty + ch2qty).toFixed(2)))
     const [totalOpeningCm, setTotalOpeningCm] = useState<number>(Number((ch1OpeningCm + ch2OpeningCm).toFixed(2)))
     const [totalOpeningQty, setTotalOpeningQty] = useState<number>(Number((ch1Openingqty + ch2Openingqty).toFixed(2)))
     const [totalQtyToBeReturned, setTotalQtyToBeReturned] = useState<number>(Number((ch1QtyToBeReturn + ch2QtyToBeReturn).toFixed(2)))
     const [totalLoadHeight, setTotalLoadHeight] = useState<number>(ch1FullLoadAddCm + ch2FullLoadAddCm)
-    const [totalLoadQty, setTotalLoadQty] = useState<number>(record?.totalLoadQuantityBySlip || 0)
+    const [totalLoadQty, setTotalLoadQty] = useState<number>(Number(record?.totalLoadQuantityBySlip?.toFixed(2)) || 0)
     const [totalLoadedQty, setTotalLoadedQty] = useState<number>(record?.totalLoadQuantityBySlip || 0)
     const [totalLoadedQtyByDip, setTotalLoadedQtyByDip] = useState<number>(Number(record?.totalLoadQuantity?.toFixed(2)) || 0)
     // heading and slip total on load
@@ -54,16 +54,16 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     const [closingOdoMeter, setclosingOdometer] = useState<number>(record?.settelment?.details.odometer || 0)
     const [unload, setUnLoad] = useState<number>(record.settelment?.details.extras?.unload || 0)
     //calculations
-    const [machineSaleQty, setMachineSaleQty] = useState<number>(closingPumpReading - openingPumpReading)
+    const [machineSaleQty, setMachineSaleQty] = useState<number>(Number((closingPumpReading - openingPumpReading).toFixed(2)))
     const [distance, setDistance] = useState<number>(closingOdoMeter - openingOdoMeter)
-    const [netLoadQty, setNetLoadQty] = useState<number>((Number(record?.totalLoadQuantityBySlip?.toFixed(2)) || 0) - unload)
+    const [netLoadQty, setNetLoadQty] = useState<number>(Number((Number((record?.totalLoadQuantity || 0) - unload).toFixed(2))))
     // HSD consumption, short excess
     const [hsdPerKm, setHsdPerKm] = useState<number>(Number((record.settelment?.details.extras?.hsdPerKm || 0).toFixed(2)))
     const [hsdConsumption, setHsdConsumption] = useState<number>(distance > 0 && hsdPerKm > 0 ? Math.round(distance / hsdPerKm) : 0)
     const [shortExcess, setShortExcess] = useState<number>(totalClosingQty - totalOpeningQty)
     //pump consumtion & sale as per load
     const [pumpConsumption, setPumpConsumption] = useState<number>(machineSaleQty > 0 ? Math.round(1 * machineSaleQty / 1000) : 0)
-    const [saleAsPerLoad, setSaleAsPerLoad] = useState<number>(netLoadQty - shortExcess)
+    const [saleAsPerLoad, setSaleAsPerLoad] = useState<number>(Number((netLoadQty - shortExcess).toFixed(2)))
     // filled by driver, sale as per driver
     const [filledByDriver, setFilledByDriver] = useState<number>(record.settelment?.details.extras?.filledByDriver || 0)
     const [saleAsPerDriver, setSaleAsPerDriver] = useState<number>(Number((record?.saleQty || 0).toFixed(2)))
@@ -82,14 +82,12 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     const [borderOtherExp, setBorderOtherExp] = useState<number>(record.settelment?.details.extras?.borderOtherExp || 0)
     const [reward, setReward] = useState<number>((record.settelment?.details.extras?.rewardTrips || 0) * 300)
 
-    // deduction and distribution cost
-
-
     const [deductableExcessFuelingValue, setDeductableExcessFuelingValue] = useState<number>(((shortOrExcessByDriver < -(hsdConsumption * 0.05).toFixed(2)) ? shortOrExcessByDriver : 0) * hsdRateFor)
     const [deductableShortSale, setDeductableShortSale] = useState<number>(((shortOrExcessAsPerRecord < -5) ? shortOrExcessAsPerRecord : 0 * hsdRateFor))
-    const [totalDeduction, setTotalDeduction] = useState<number>(deductableExcessFuelingValue + deductableShortSale)
-    const [totalDistributionCost, setTotalDistributionCost] = useState<number>(tollTax + driverFooding + driverSalary + fuelingCost + borderOtherExp)
-    const [distributionCostPerLtr, setDistributionCostPerLtr] = useState<number>(Number((totalDistributionCost / saleAsPerLoad).toFixed(2)))
+    const [totalDeduction, setTotalDeduction] = useState<number>(Number((deductableExcessFuelingValue + deductableShortSale).toFixed(2)))
+    const [totalDistributionCost, setTotalDistributionCost] = useState<number>(tollTax + driverFooding + driverSalary + fuelingCost + borderOtherExp + reward)
+    const [distributionCostPerLtr, setDistributionCostPerLtr] = useState<number>(Math.ceil(totalDistributionCost / saleAsPerLoad))
+    console.log(distributionCostPerLtr)
 
     return (
         <div className=''>

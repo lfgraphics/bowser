@@ -6,6 +6,7 @@ const User = require('../models/user');
 const Bowser = require('../models/Bowsers');
 const LoadingSheet = require('../models/LoadingSheet');
 const { calculateQty } = require('../utils/calibration');
+const { updateTripSheet } = require('../utils/tripSheet')
 const { sendNativePushNotification, sendBulkNotifications } = require('../utils/pushNotifications');
 
 const notifyDriver = async ({ phoneNumber, bowser, tripsheetId, location }) => {
@@ -190,7 +191,7 @@ router.get('/:id', async (req, res) => {
 
     try {
         // First, find all bowsers with the given registration number.
-        const sheet = await TripSheet.findById(new mongoose.Types.ObjectId(id)).populate('loading.sheetId addition.sheetId');
+        const sheet = await TripSheet.findById(new mongoose.Types.ObjectId(id)).populate('loading.sheetId');
         res.status(200).json(sheet);
 
     } catch (err) {
@@ -350,5 +351,21 @@ router.post('/settle/:id', async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 });
+
+router.post('/addition/:id', async (req, res) => {
+    const sheetId = req.params.id
+    const { quantity, dateTime, by } = req.body
+    let newAddition = {
+        at: dateTime,
+        by,
+        quantity
+    }
+    try {
+        let addition = await updateTripSheet({ sheetId, newAddition })
+        addition.success && res.status(200).json({ success: true, message: `Addition to the trip with _id: ${sheetId}, addition of ${quantity} is successful` })
+    } catch (err) {
+        res.status(500).json({ success: false, message: `Couldn't perform the addition doue to some error\nPlease contact the dev team`, error: err })
+    }
+})
 
 module.exports = router;
