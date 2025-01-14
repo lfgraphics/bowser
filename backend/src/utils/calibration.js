@@ -37,10 +37,9 @@ const calculateQty = (bowserChambers, chamberId, levelHeight) => {
         prevLevel = level;
     }
 
-    // If levelHeight exceeds the maximum level height, calculate extra height
+    // If levelHeight exceeds the maximum level height, return 0 instead of calculating extra height
     if (prevLevel && levelHeight > prevLevel.levelHeight) {
-        const extraHeight = levelHeight - prevLevel.levelHeight;
-        qty = prevLevel.levelTotalQty + (extraHeight * prevLevel.levelCalibrationQty);
+        return 0; // Updated to return 0 if no level is defined for the requested height
     }
 
     return qty;

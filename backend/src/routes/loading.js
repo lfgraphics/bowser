@@ -50,9 +50,8 @@ router.post('/orders', async (req, res) => {
             }
             await newBowserLoadingOrder.save();
             res.status(201).json(newBowserLoadingOrder);
-        } catch (error) {
-            console.error("Error saving LoadingOrder or sending notification:", error);
-            res.status(500).json({ error: 'Failed to create and notify LoadingOrder', details: error.message });
+        } catch (notificationError) {
+            console.error("Error sending notification:", notificationError);
         }
     } catch (err) {
         console.error('Error creating LoadingOrder:', err);
@@ -267,63 +266,63 @@ router.post('/sheet', async (req, res) => {
                 await updateTripSheet({ sheetId, newAddition: additionEntry });
             }
 
-            try {
-                // Send notification only if save is successful
-                newLoadingSheet = new LoadingSheet({
-                    regNo,
-                    odoMeter,
-                    fuleingMachine,
-                    pumpReadingBefore,
-                    pumpReadingAfter,
-                    chamberwiseDipListBefore,
-                    chamberwiseDipListAfter,
-                    chamberwiseSealList,
-                    loadQty: additionQty,
-                    totalLoadQuantityByDip,
-                    totalLoadQuantityBySlip,
-                    loadingSlips,
-                    loadingIncharge,
-                    bccAuthorizedOfficer: {
-                        ...bccAuthorizedOfficer,
-                        orderId: new mongoose.Types.ObjectId(bccAuthorizedOfficer.orderId),
-                    },
-                    fulfilled: false,
-                });
-                const options = {
-                    title: "Your Bowser Loading Order is successful",
-                    url: !sheetId ? `/tripsheets/create/${newLoadingSheet?._id}` : `/tripsheets/${sheetId}`,
-                };
-                const message = `Bowser: ${regNo}\nFulfilled by: ${loadingIncharge.name} Id: ${loadingIncharge.id}`;
-                let notificationSent = await sendWebPushNotification({ userId: bccAuthorizedOfficer.id, message, options });
+            // try {
+            // Send notification only if save is successful
+            newLoadingSheet = new LoadingSheet({
+                regNo,
+                odoMeter,
+                fuleingMachine,
+                pumpReadingBefore,
+                pumpReadingAfter,
+                chamberwiseDipListBefore,
+                chamberwiseDipListAfter,
+                chamberwiseSealList,
+                loadQty: additionQty,
+                totalLoadQuantityByDip,
+                totalLoadQuantityBySlip,
+                loadingSlips,
+                loadingIncharge,
+                bccAuthorizedOfficer: {
+                    ...bccAuthorizedOfficer,
+                    orderId: new mongoose.Types.ObjectId(bccAuthorizedOfficer.orderId),
+                },
+                fulfilled: false,
+            });
+            const options = {
+                title: "Your Bowser Loading Order is successful",
+                url: !sheetId ? `/tripsheets/create/${newLoadingSheet?._id}` : `/tripsheets/${sheetId}`,
+            };
+            const message = `Bowser: ${regNo}\nFulfilled by: ${loadingIncharge.name} Id: ${loadingIncharge.id}`;
+            let notificationSent = await sendWebPushNotification({ userId: bccAuthorizedOfficer.id, message, options });
 
-                if (notificationSent.success) {
-                    if (!sheetId) {
-                        await newLoadingSheet.save();
+            // if (notificationSent.success) {
+            if (!sheetId) {
+                await newLoadingSheet.save();
 
-                    }
-                    let loadingOrder = await LoadingOrder.findByIdAndUpdate(
-                        new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)),
-                        { $set: { fulfilled: true } },
-                        { new: true }
-                    );
-
-                    if (!loadingOrder) {
-                        console.error('Loading order not found');
-                        return;
-                    }
-                    console.log('Updated Loading Order:', loadingOrder);
-                    res.status(201).json(newLoadingSheet);
-                } else {
-                    res.status(500).json({ error: 'Request failed because failed to send notification to BCC' });
-                }
-            } catch (notificationError) {
-                console.error("Error sending notification:", notificationError);
-                await LoadingSheet.findByIdAndDelete(newLoadingSheet._id);
-                res.status(500).json({
-                    error: 'Failed to send notification. LoadingSheet creation rolled back.',
-                    details: notificationError.message,
-                });
             }
+            let loadingOrder = await LoadingOrder.findByIdAndUpdate(
+                new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)),
+                { $set: { fulfilled: true } },
+                { new: true }
+            );
+
+            if (!loadingOrder) {
+                console.error('Loading order not found');
+                return;
+            }
+            console.log('Updated Loading Order:', loadingOrder);
+            res.status(201).json(newLoadingSheet);
+            // } else {
+            //     res.status(500).json({ error: 'Request failed because failed to send notification to BCC' });
+            // }
+            // } catch (notificationError) {
+            //     console.error("Error sending notification:", notificationError);
+            //     await LoadingSheet.findByIdAndDelete(newLoadingSheet._id);
+            //     res.status(500).json({
+            //         error: 'Failed to send notification. LoadingSheet creation rolled back.',
+            //         details: notificationError.message,
+            //     });
+            // }
         } catch (error) {
             console.error(error);
             return res.status(500).json({ error: 'Error processing request', details: error.message });
