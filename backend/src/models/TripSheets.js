@@ -11,7 +11,7 @@ const counterSchema = new mongoose.Schema({
 const Counter = bowsersDatabaseConnection.model('TripSheetCounter', counterSchema, 'CountersCollection');
 
 const tripSheetSchema = new mongoose.Schema({
-    tripSheetId: { type: Number, unique: true },
+    tripSheetId: { type: Number },
     createdAt: { type: Date, default: Date.now, timezone: "Asia/Kolkata" },
     bowser: {
         regNo: { type: String, required: true },
@@ -23,6 +23,7 @@ const tripSheetSchema = new mongoose.Schema({
         sheetId: { type: mongoose.Schema.Types.ObjectId, ref: 'LoadingSheet', required: true },
         quantityByDip: { type: Number, required: true },
         quantityBySlip: { type: Number, required: true },
+        fullLoaded: { type: Number }
     },
     addition: {
         type: [
@@ -83,4 +84,38 @@ const tripSheetSchema = new mongoose.Schema({
 tripSheetSchema.index({ tripSheetId: 1 });
 tripSheetSchema.index({ 'loading.sheetId': 1 });
 
-module.exports = bowsersDatabaseConnection.model('TripSheet', tripSheetSchema, 'TripSheetsCollection');
+tripSheetSchema.pre('save', async function (next) {
+    try {
+        // Auto-increment tripSheetId
+        if (this.isNew) {
+            const counter = await Counter.findOneAndUpdate(
+                { _id: 'tripSheetId' },
+                { $inc: { seq: 1 } },
+                { new: true, upsert: true }
+            );
+            this.tripSheetId = counter.seq;
+        }
+
+        // Perform calculations
+        const additionsQuantity = this.addition?.reduce((sum, add) => sum + (add.quantity || 0), 0) || 0;
+        const dispensedQuantity = this.dispenses?.reduce((sum, dispense) => sum + (dispense.fuelQuantity || 0), 0) || 0;
+
+        // Updated calculations
+        this.loadQty = this.loading?.quantityByDip || 0;
+        this.totalAdditionQty = additionsQuantity;
+        this.totalLoadQuantityBySlip = this.loading?.quantityBySlip || 0;
+        this.totalLoadQuantity = this.loadQty + additionsQuantity;
+        this.saleQty = dispensedQuantity;
+        this.balanceQty = this.totalLoadQuantity - this.saleQty;
+        this.balanceQtyBySlip = this.totalLoadQuantityBySlip - this.saleQty;
+
+        next();
+    } catch (err) {
+        console.error('Error in pre-save hook for TripSheet:', err);
+        next(err);
+    }
+});
+
+const TripSheet = bowsersDatabaseConnection.model('TripSheet', tripSheetSchema, 'TripSheetsCollection');
+
+module.exports = { TripSheet, Counter };

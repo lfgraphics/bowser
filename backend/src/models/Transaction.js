@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const { bowsersDatabaseConnection } = require('../../config/database');
-const TripSheet = require('./TripSheets');
+const {TripSheet} = require('./TripSheets');
 
 const fuelingTransactionSchema = new mongoose.Schema({
     orderId: { type: mongoose.Schema.Types.ObjectId, required: false },

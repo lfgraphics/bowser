@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Bowser = require('../models/Bowsers');
-const TripSheet = require('../models/TripSheets');
+const {TripSheet} = require('../models/TripSheets');
 
 router.get('/:regNo', async (req, res) => {
     const regNo = req.params.regNo;

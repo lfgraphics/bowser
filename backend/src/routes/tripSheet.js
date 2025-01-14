@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const TripSheet = require('../models/TripSheets');
+const { TripSheet, Counter } = require('../models/TripSheets');
 const mongoose = require('mongoose');
 const User = require('../models/user');
 const Bowser = require('../models/Bowsers');
@@ -8,6 +8,7 @@ const LoadingSheet = require('../models/LoadingSheet');
 const { calculateQty } = require('../utils/calibration');
 const { updateTripSheet } = require('../utils/tripSheet')
 const { sendNativePushNotification, sendBulkNotifications } = require('../utils/pushNotifications');
+// const Counter = require('../models/Counter');
 
 const notifyDriver = async ({ phoneNumber, bowser, tripsheetId, location }) => {
     let options = {
@@ -22,6 +23,7 @@ const checkExistingTrip = async (regNo) => {
     if (bowser && bowser.currentTrip) {
         const currentTrip = await TripSheet.findById(bowser.currentTrip);
         if (currentTrip && !currentTrip.settelment?.settled) {
+            console.log(currentTrip)
             throw new Error(
                 `This bowser is currently on an unsettled trip. Settle the existing trip (${currentTrip.tripSheetId}) before creating a new one.`
             );
@@ -254,6 +256,21 @@ router.delete('/delete/:id', async (req, res) => {
             return res.status(404).json({ message: 'TripSheet not found.' });
         }
 
+        // Reindex all remaining TripSheets
+        const tripSheets = await TripSheet.find().sort({ tripSheetId: 1 });
+        const highestId = tripSheets.length > 0 ? tripSheets[tripSheets.length - 1].tripSheetId : 0; // Get the highest existing ID
+        for (let i = 0; i < tripSheets.length; i++) {
+            tripSheets[i].tripSheetId = highestId + i + 1; // Reassign tripSheetId starting from the highest existing ID
+            await tripSheets[i].save(); // Save the updated TripSheet
+        }
+
+        // Update the counter model
+        await Counter.findOneAndUpdate(
+            { _id: 'tripSheetId' },
+            { seq: highestId + tripSheets.length }, // Set the counter to the current number of TripSheets
+            { new: true }
+        );
+
         res.status(200).json({ message: 'TripSheet deleted successfully', deletedTripSheet });
     } catch (err) {
         console.error('Error deleting TripSheet:', err);
@@ -308,7 +325,7 @@ router.post('/settle/:id', async (req, res) => {
 
         // Update the tripsheet with the new chamberwiseDipList
         let totalQty = chamberwiseDipList.reduce((acc, chamber) => {
-            return acc + parseFloat(chamber.qty);
+            return acc + chamber.qty;
         }, 0);
         let settlement = {
             dateTime,

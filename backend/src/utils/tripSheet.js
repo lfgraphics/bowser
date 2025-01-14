@@ -1,5 +1,5 @@
 const { mongoose } = require('mongoose');
-const TripSheet = require('../models/TripSheets')
+const { TripSheet } = require('../models/TripSheets')
 /**
  * @function updateTripSheet
  * @description This function updates the trip sheet with new addition and dispense details. And performs the necessary calculations right thier and updates the Tripsheet\nIt receaves the details as an object
@@ -60,7 +60,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
             0
         );
 
-        tripSheet.loadQty =  (tripSheet.loading?.quantityByDip || 0);
+        tripSheet.loadQty = (tripSheet.loading?.quantityByDip || 0);
         tripSheet.totalAdditionQty = additionsQuantity;
         tripSheet.totalLoadQuantityBySlip = (tripSheet.loading?.quantityBySlip || 0);
         tripSheet.totalLoadQuantity = (tripSheet.loading?.quantityByDip || 0) + additionsQuantity;
@@ -69,7 +69,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
         tripSheet.balanceQtyBySlip = tripSheet.totalLoadQuantityBySlip - tripSheet.saleQty;
 
         await tripSheet.save();
-        
+
         console.log(`TripSheet updated successfully for query: ${JSON.stringify(query)}`);
         return { success: true, message: "TripSheet updated successfully", tripSheet };
     } catch (error) {

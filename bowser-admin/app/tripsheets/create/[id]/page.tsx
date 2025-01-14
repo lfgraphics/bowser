@@ -168,7 +168,7 @@ export default function TripSheetCreatePage() {
             console.log("Created TripSheet:", created);
 
             // Redirect or show success message
-            router.replace(`/tripsheets/print/intial/${created.data.tripSheet._id}`);
+            router.replace(`/tripsheets/${created?.data?.tripSheet?._id}`);
         } catch (err: any) {
             setError(err.message || "Error creating TripSheet.");
         } finally {

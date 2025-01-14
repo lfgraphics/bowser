@@ -1,5 +1,5 @@
 require('dotenv').config();
-const TripSheet = require('../models/TripSheets')
+const {TripSheet} = require('../models/TripSheets')
 const mongoose = require('mongoose')
 const { updateTripSheet } = require('./tripSheet')
 
