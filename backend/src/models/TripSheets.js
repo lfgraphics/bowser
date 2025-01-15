@@ -17,6 +17,7 @@ const tripSheetSchema = new mongoose.Schema({
         regNo: { type: String, required: true },
         driver: [bowserDriverSchema],
     },
+    hsdRate: { type: Number },
     fuelingAreaDestination: { type: String, required: false },
     proposedDepartureTime: { type: Date, required: false },
     loading: {

@@ -54,7 +54,7 @@ const updateBowserCurrentTrip = async (regNo, tripSheetId) => {
 
 router.post('/create', async (req, res) => {
     try {
-        const { bowser, loading, fuelingAreaDestination, proposedDepartureTime } = req.body;
+        const { bowser, loading, fuelingAreaDestination, proposedDepartureTime, hsdRate } = req.body;
 
         // Check for existing unsettled trips
         await checkExistingTrip(bowser.regNo);
@@ -62,6 +62,7 @@ router.post('/create', async (req, res) => {
         // Create a new TripSheet instance
         const newSheet = new TripSheet({
             bowser,
+            hsdRate,
             loading: {
                 sheetId: new mongoose.Types.ObjectId(loading.sheetId),
                 quantityByDip: loading.quantityByDip,
