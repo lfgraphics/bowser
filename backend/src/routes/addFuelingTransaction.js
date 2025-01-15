@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {FuelingTransaction} = require('../models/Transaction');
+const { FuelingTransaction } = require('../models/Transaction');
 const FuelingOrder = require('../models/fuelingOrders');
 const { fetchLocationData } = require('../utils/fuelTransactions');
 const { updateTripSheet, updateTripSheetBulk } = require('../utils/tripSheet')
@@ -45,13 +45,16 @@ router.post('/', async (req, res) => {
             isPosted: false,
         }
 
-        await updateTripSheet({ tripSheetId: fuelingTransaction.tripSheetId, newDispense: tripSheetObject })
+        let tripUpdate = await updateTripSheet({ tripSheetId: fuelingTransaction.tripSheetId, newDispense: fuelingTransaction })
+        if (tripUpdate.success) {
+            res.status(200).json({ message: 'Data Submitted successfully' });
+        } else {
+            res.status(500).json({ message: 'Failed to submit data', error: tripUpdate.error });
+        }
 
-        res.status(200).json({ message: 'Data Submitted successfully' });
+        const fuelingOrder = !fuelingTransaction.orderId ? null : await FuelingOrder.findById(new mongoose.Types.ObjectId(fuelingTransaction.orderId))
 
-        const fuelingOrder = await FuelingOrder.findById(new mongoose.Types.ObjectId(fuelingTransaction.orderId))
-
-        if (fuelingOrder) {
+        if (fuelingOrder && fuelingOrder !== null) {
             fuelingOrder.fulfilled = true;
             await fuelingOrder.save();
         }

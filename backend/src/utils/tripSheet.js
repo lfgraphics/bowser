@@ -30,7 +30,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
         // Update the dispenses array if newDispense is provided
         if (newDispense) {
             const existingDispenseIndex = tripSheet.dispenses.findIndex(
-                (dispense) => dispense.transaction.toString() === newDispense.transaction.toString()
+                (dispense) => dispense?.transaction?.toString() === newDispense?.transaction?.toString()
             );
 
             if (existingDispenseIndex === -1) {
@@ -74,7 +74,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
         return { success: true, message: "TripSheet updated successfully", tripSheet };
     } catch (error) {
         console.error("Error updating TripSheet:", error);
-        return { success: false, message: "Error updating TripSheet" };
+        return { success: false, message: "Error updating TripSheet", error };
     }
 };
 

@@ -95,7 +95,7 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>
-                {/* Dynamica access Routes in upcoming updates starts here ................ */}
+                {/* Dynamica access Routes starts here ................ */}
                 <OnlyAllowed allowedRoles={["Admin", "Diesel Control Center Staff"]}>
                   <li onClick={toggleSidebar}>
                     <Link href={`/my-allocation?allocator=${user?.userId}`}>
@@ -183,7 +183,7 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>
-                <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
+                <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer", "Calibration Staff"]}>
                   <li onClick={toggleSidebar}>
                     <Link href="/manage-bowsers">
                       <Button variant="ghost" className="justify-start w-full">
@@ -203,7 +203,7 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>
-                {/* Dynamica access Routes in upcoming updates ends here ................ */}
+                {/* Dynamica access Routes ends here ................ */}
                 <li onClick={toggleSidebar}>
                   <Link href="/profile">
                     <Button variant="ghost" className="justify-start w-full">

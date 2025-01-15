@@ -18,6 +18,7 @@ export const allowedRoutes: { [key: string]: [string] } = {
   "Loading Incharge": ["/loading/orders"],
   "BCC Authorized Officer": ["/loading/sheet"],
   "Petrol Pump Personnel": ["/loading/petrol-pump"],
+  "Calibration Staff": ["/manage-bowsers"],
 };
 
 export default function Login() {
