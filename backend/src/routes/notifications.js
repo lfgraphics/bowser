@@ -1,39 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const PushSubscription = require('../models/pushSubscription');
-const { sendWebPushNotification, sendNativePushNotification, sendBulkNotifications } = require('../utils/pushNotifications');
+const { sendWebPushNotification, sendNativePushNotification, sendBulkNotifications, registerSubscription } = require('../utils/pushNotifications');
 
 // Register subscription (web or native)
 router.post('/register', async (req, res) => {
     const { mobileNumber, userId, subscription, platform, groups } = req.body;
-    console.log(mobileNumber, platform, subscription)
-
-    if (!mobileNumber || !subscription || !platform) {
-        return res.status(400).json({ error: 'Mobile number or userId, subscription, and platform are required.' });
-    }
+    console.log(mobileNumber, platform, subscription);
 
     try {
-        const updatedSubscription = await PushSubscription.findOneAndUpdate(
-            { mobileNumber, platform },
-            { mobileNumber, userId, subscription, groups, platform },
-            { upsert: true, new: true }
-        );
-
-        if (!updatedSubscription) { throw new Error(`can't register for notifications`) } else {
-            if (platform == "web") sendWebPushNotification({
-                userId, message: "You will now recieve necessar notifications on this device", options: options = {
-                    title: "Notification Subscription Successfull",
-                    url: `/`
-                }
-            }
-            )
-            if (platform == "native") sendNativePushNotification({ mobileNumber, message: "You will now recieve necessar notifications on this device", options: options = { title: "Notification Subscription Successfull", } })
-        }
-
+        const updatedSubscription = await registerSubscription({ mobileNumber, userId, subscription, platform, groups });
         res.status(200).json({ success: true, message: 'Subscription registered successfully.', data: updatedSubscription });
     } catch (error) {
         console.error('Error registering subscription:', error);
-        res.status(500).json({ error: 'Failed to register subscription.' });
+        res.status(500).json({ error: error.message });
     }
 });
 

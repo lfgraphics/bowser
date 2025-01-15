@@ -75,6 +75,7 @@ router.get('/', async (req, res) => {
             odometer: 1
         }).skip(skip).limit(Number(limit)).sort({ [sortBy]: sortOrder });
         const totalRecords = await FuelingTransaction.countDocuments();
+        console.log(records.length)
 
         if (records.length == 0) {
             res.status(400).json({ message: 'No records found' })
@@ -85,7 +86,6 @@ router.get('/', async (req, res) => {
                 currentPage: Number(page),
                 records,
             });
-            console.log(records.length)
         }
     } catch (error) {
         console.error('Error fetching fueling records:', error);

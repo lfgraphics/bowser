@@ -1,6 +1,7 @@
 // middleware.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
+import { allowedRoutes } from '@/app/(auth)/login/page';
 
 export async function middleware (req: NextRequest) {
   const cookies = req.cookies; // Get all cookies
@@ -29,17 +30,6 @@ export async function middleware (req: NextRequest) {
     const requestedPath = req.nextUrl.pathname
     console.log('Requested path:', requestedPath); // Log the requested path
 
-    // Define allowed routes for roles
-    const allowedRoutes: { [key: string]: string[] } = {
-      Admin: ['/manage-users', '/dashboard'],
-      'Diesel Control Center Staff': ['/dashboard'],
-      'Data Entry': ['/dispense-records'],
-      'Loading Incharge': ['/loading/orders'],
-      'BCC Authorized Officer': ['/loading/sheet'],
-      'Petrol Pump Personnel': ['/loading/petrol-pump'],
-      // Add more roles as needed
-    }
-
     // Check if the requested path is allowed for the user's roles
     const isAllowed = roles.some((role: string | number) => {
       const routes = allowedRoutes[role] || []
@@ -49,7 +39,7 @@ export async function middleware (req: NextRequest) {
     })
 
     if (!isAllowed) {
-      console.log(`Access denied for user roles: ${roles.join(', ')} on path: ${requestedPath}`)
+      console.log(`Access of this page is not allowed to: ${roles.join(', ')} on path: ${requestedPath}`)
       return NextResponse.redirect(new URL('/unauthorized', req.url)) // Redirect if not allowed
     }
 

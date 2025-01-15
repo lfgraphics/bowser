@@ -41,6 +41,7 @@ export default function TripSheetCreatePage() {
     // Form fields for the new TripSheet
     // Pre-fill from the loadingSheet once fetched
     const [regNo, setRegNo] = useState("");
+    const [hsdRate, setHsdRate] = useState<number>();
     const [bowserDriver, setBowserDriver] = useState<{ handOverDate: Date; name: string; phoneNo: string }[]>([
         { handOverDate: new Date(), name: '', phoneNo: '' },
     ]);
@@ -141,6 +142,7 @@ export default function TripSheetCreatePage() {
                     odometerStartReading,
                     pumpEndReading,
                 },
+                hsdRate,
                 fuelingAreaDestination,
                 proposedDepartureTime,
                 loading: {
@@ -283,6 +285,14 @@ export default function TripSheetCreatePage() {
                                     type="datetime-local"
                                     value={proposedDepartureTime}
                                     onChange={(e) => setProposedDepartureTime(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2 mb-3">
+                                <Label>Effective HSD Rate as of Today</Label>
+                                <Input
+                                    type="text"
+                                    value={hsdRate}
+                                    onChange={(e) => setHsdRate(Number(e.target.value))}
                                 />
                             </div>
                         </div>

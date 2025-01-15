@@ -28,20 +28,46 @@ export function Sidebar() {
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
+    const handleBackEvent = () => {
+      if (isOpen) {
+        setIsOpen(false)
+        history.pushState(null, '', window.location.href);
+      }
+    }
+
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+      window.addEventListener('keydown', handleKeyDown)
+      window.addEventListener('popstate', handleBackEvent)
+
+      if (isOpen) {
+        history.pushState(null, '', window.location.href);
+      }
+    }
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown)
+      if (isMobile) {
+        window.removeEventListener('keydown', handleKeyDown)
+        window.removeEventListener('popstate', handleBackEvent)
+      }
     }
-  }, [])
+  }, [isOpen])
 
   const handleLogout = () => {
     logout()
   }
 
   const toggleSidebar = () => {
-    setIsOpen(!isOpen)
+    setIsOpen(prev => {
+      if (!prev) {
+        history.pushState(null, '', window.location.href);
+      }
+      return !prev;
+    });
   }
+
+  // add event listener for window.back and set the isopen false if it is tue 
 
   return (
     <>

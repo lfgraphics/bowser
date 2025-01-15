@@ -134,6 +134,7 @@ export interface TripSheetPayload {
     }[]
     pumpEndReading: number
   }
+  hsdRate?: number
   fuelingAreaDestination?: string
   proposedDepartureTime?: string
   loading: {

@@ -1,10 +1,8 @@
 "use client"
 import React, { useState } from 'react'
-import './styles.css'
 import { Table, TableRow, TableBody, TableCell, } from '@/components/ui/table';
 import { WholeTripSheet } from '@/types';
 import Image from 'next/image';
-// import './TripCalculationModal.css';
 
 interface TripCalculationModalProps {
     record: WholeTripSheet; // Trip sheet details
@@ -86,186 +84,186 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     const [deductableShortSale, setDeductableShortSale] = useState<number>(((shortOrExcessAsPerRecord < -5) ? shortOrExcessAsPerRecord : 0 * hsdRateFor))
     const [totalDeduction, setTotalDeduction] = useState<number>(Number((deductableExcessFuelingValue + deductableShortSale).toFixed(2)))
     const [totalDistributionCost, setTotalDistributionCost] = useState<number>(tollTax + driverFooding + driverSalary + fuelingCost + borderOtherExp + reward)
-    const [distributionCostPerLtr, setDistributionCostPerLtr] = useState<number>(Math.ceil(totalDistributionCost / saleAsPerLoad))
+    const [distributionCostPerLtr, setDistributionCostPerLtr] = useState<number>(Math.ceil(totalDistributionCost / saleAsPerDriver))
     console.log(distributionCostPerLtr)
 
     return (
         <div className=''>
             <div id="printable-table">
-                <Table >
-                    <TableBody>
+                <Table>
+                    <TableBody className='border-gray-400 border'>
                         <TableRow className='font-semibold'>
-                            <TableCell>Vehicle No.</TableCell>
-                            <TableCell colSpan={2}>{bowser}</TableCell>
-                            <TableCell className='text-center' colSpan={2}>Opening</TableCell>
-                            <TableCell className='text-center' rowSpan={2}>Qty to be Return</TableCell>
-                            <TableCell className='text-center' colSpan={4}>Full Load</TableCell>
-                        </TableRow>
-                        <TableRow className='font-semibold'>
-                            <TableCell>Chamber</TableCell>
-                            <TableCell>CM</TableCell>
-                            <TableCell>QTY</TableCell>
-                            <TableCell>CM</TableCell>
-                            <TableCell>QTY</TableCell>
-                            <TableCell>CM</TableCell>
-                            <TableCell>Add QTY</TableCell>
-                            <TableCell>Total QTY</TableCell>
-                            <TableCell>Dip QTY</TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell>CH-1</TableCell>
-                            <TableCell>{ch1Cm}</TableCell>
-                            <TableCell>{ch1qty}</TableCell>
-                            <TableCell>{ch1OpeningCm}</TableCell>
-                            <TableCell>{ch1Openingqty} Lt.</TableCell>
-                            <TableCell>{ch1QtyToBeReturn} Lt.</TableCell>
-                            <TableCell>{ch1FullLoadAddCm}</TableCell>
-                            <TableCell>{ch1FullLoadAddqty} Lt.</TableCell>
-                            <TableCell>{ch1FullLoadTotalqty} Lt.</TableCell>
-                            <TableCell>{ch1FullLoadDipqty} Lt.</TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell>CH-2</TableCell>
-                            <TableCell>{ch2Cm}</TableCell>
-                            <TableCell>{ch2qty}</TableCell>
-                            <TableCell>{ch2OpeningCm}</TableCell>
-                            <TableCell>{ch2Openingqty} Lt.</TableCell>
-                            <TableCell>{ch2QtyToBeReturn} Lt.</TableCell>
-                            <TableCell>{ch2FullLoadAddCm}</TableCell>
-                            <TableCell>{ch2FullLoadAddqty} Lt.</TableCell>
-                            <TableCell>{ch2FullLoadTotalqty} Lt.</TableCell>
-                            <TableCell>{ch2FullLoadTotalqtyByDip} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">Vehicle No.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left" colSpan={2}>{bowser}</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-center" colSpan={2}>Opening</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-center" rowSpan={2}>Qty to be Return</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-center" colSpan={4}>Full Load</TableCell>
                         </TableRow>
                         <TableRow className='font-semibold'>
-                            <TableCell>Total</TableCell>
-                            <TableCell>{totalClosingCm}</TableCell>
-                            <TableCell>{totalClosingQty} Lt.</TableCell>
-                            <TableCell>{totalOpeningCm}</TableCell>
-                            <TableCell>{totalOpeningQty} Lt.</TableCell>
-                            <TableCell>{totalQtyToBeReturned} Lt.</TableCell>
-                            <TableCell>{totalLoadHeight}</TableCell>
-                            <TableCell>{totalLoadQty} Lt.</TableCell>
-                            <TableCell>{totalLoadedQty} Lt.</TableCell>
-                            <TableCell>{totalLoadedQtyByDip} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">Chamber</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">CM</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">QTY</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">CM</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">QTY</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">CM</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">Add QTY</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">Total QTY</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">Dip QTY</TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell className="border-gray-400 border text-base text-left">CH-1</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch1Cm}</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch1qty}</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch1OpeningCm}</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch1Openingqty} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch1QtyToBeReturn} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch1FullLoadAddCm}</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch1FullLoadAddqty} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch1FullLoadTotalqty} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch1FullLoadDipqty} Lt.</TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell className="border-gray-400 border text-base text-left">CH-2</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch2Cm}</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch2qty}</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch2OpeningCm}</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch2Openingqty} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch2QtyToBeReturn} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch2FullLoadAddCm}</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch2FullLoadAddqty} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch2FullLoadTotalqty} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch2FullLoadTotalqtyByDip} Lt.</TableCell>
                         </TableRow>
                         <TableRow className='font-semibold'>
-                            <TableCell className='font-semibold'>Machine Reading</TableCell>
-                            <TableCell>Lt.</TableCell>
-                            <TableCell colSpan={2}>HSD Consumption</TableCell>
-                            <TableCell>KM</TableCell>
-                            <TableCell colSpan={4}>Load Qty</TableCell>
-                            <TableCell>{fullLoadQtyBySlip}</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">Total</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{totalClosingCm}</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{totalClosingQty} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{totalOpeningCm}</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{totalOpeningQty} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{totalQtyToBeReturned} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{totalLoadHeight}</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{totalLoadQty} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{totalLoadedQty} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{totalLoadedQtyByDip} Lt.</TableCell>
+                        </TableRow>
+                        <TableRow className='font-semibold'>
+                            <TableCell className='border-gray-400 border font-semibold text-base text-left'>Machine Reading</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left" colSpan={2}>HSD Consumption</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">KM</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left" colSpan={4}>Load Qty</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{fullLoadQtyBySlip}</TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell className='font-semibold'>Opening</TableCell>
-                            <TableCell>{openingPumpReading}</TableCell>
-                            <TableCell className='font-semibold' colSpan={2}>Opening</TableCell>
-                            <TableCell>{openingOdoMeter}</TableCell>
-                            <TableCell className='font-semibold' colSpan={4}>Add Qty</TableCell>
-                            <TableCell>{addition}</TableCell>
+                            <TableCell className='border-gray-400 border font-semibold text-base text-left'>Opening</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{openingPumpReading}</TableCell>
+                            <TableCell className='border-gray-400 border font-semibold text-base text-left' colSpan={2}>Opening</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{openingOdoMeter}</TableCell>
+                            <TableCell className='border-gray-400 border font-semibold text-base text-left' colSpan={4}>Add Qty</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{addition}</TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell className='font-semibold'>Closing</TableCell>
-                            <TableCell>{closingPumpReading}</TableCell>
-                            <TableCell className='font-semibold' colSpan={2}>Closing</TableCell>
-                            <TableCell>{closingOdoMeter}</TableCell>
-                            <TableCell className='font-semibold' colSpan={4}>Return Qty</TableCell>
-                            <TableCell>{unload}</TableCell>
+                            <TableCell className='border-gray-400 border font-semibold text-base text-left'>Closing</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{closingPumpReading}</TableCell>
+                            <TableCell className='border-gray-400 border font-semibold text-base text-left' colSpan={2}>Closing</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{closingOdoMeter}</TableCell>
+                            <TableCell className='border-gray-400 border font-semibold text-base text-left' colSpan={4}>Return Qty</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{unload}</TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell className='font-semibold'>Machine Sale Qty</TableCell>
-                            <TableCell>{machineSaleQty}</TableCell>
-                            <TableCell className='font-semibold' colSpan={2}>Return KM</TableCell>
-                            <TableCell>{distance} Km</TableCell>
-                            <TableCell className='font-semibold' colSpan={4}>Net Load Qty</TableCell>
-                            <TableCell>{netLoadQty} Lt.</TableCell>
+                            <TableCell className='border-gray-400 border font-semibold text-base text-left'>Machine Sale Qty</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{machineSaleQty}</TableCell>
+                            <TableCell className='border-gray-400 border font-semibold text-base text-left' colSpan={2}>Return KM</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{distance} Km</TableCell>
+                            <TableCell className='border-gray-400 border font-semibold text-base text-left' colSpan={4}>Net Load Qty</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{netLoadQty} Lt.</TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell colSpan={2} rowSpan={4}></TableCell>
-                            <TableCell colSpan={2}>HSD @{hsdPerKm}KM/Lt.</TableCell>
-                            <TableCell>{hsdConsumption}</TableCell>
-                            <TableCell className='font-semibold' colSpan={4}>Qty. (Short)/Excess (Bal. Dip)</TableCell>
-                            <TableCell>{shortExcess}</TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border text-base text-left'>HSD @{hsdPerKm}KM/Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{hsdConsumption}</TableCell>
+                            <TableCell className='border-gray-400 border font-semibold text-base text-left' colSpan={4}>Qty. (Short)/Excess (Bal. Dip)</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{shortExcess}</TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell colSpan={2} className='font-semibold'>Pump Consum. Qty</TableCell>
-                            <TableCell>{pumpConsumption}</TableCell>
-                            <TableCell colSpan={4}>Sale as per Load</TableCell>
-                            <TableCell>{saleAsPerLoad}</TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border font-semibold text-base text-left'>Pump Consum. Qty</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{pumpConsumption}</TableCell>
+                            <TableCell colSpan={4} className='border-gray-400 border text-base text-left'>Sale as per Load</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{saleAsPerLoad}</TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell colSpan={2} className='font-semibold'>Filled by Driver</TableCell>
-                            <TableCell>{filledByDriver}</TableCell>
-                            <TableCell colSpan={4}>Sale as per Driver</TableCell>
-                            <TableCell>{saleAsPerDriver}</TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border font-semibold text-base text-left'>Filled by Driver</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{filledByDriver}</TableCell>
+                            <TableCell colSpan={4} className='border-gray-400 border text-base text-left'>Sale as per Driver</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{saleAsPerDriver}</TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell colSpan={2} className='font-semibold'>Short/(Excess)</TableCell>
-                            <TableCell>{shortOrExcessByDriver}</TableCell>
-                            <TableCell colSpan={4}>Excess/(Short) Sales</TableCell>
-                            <TableCell>{shortOrExcessAsPerRecord}</TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border font-semibold text-base text-left'>Short/(Excess)</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{shortOrExcessByDriver}</TableCell>
+                            <TableCell colSpan={4} className='border-gray-400 border text-base text-left'>Excess/(Short) Sales</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{shortOrExcessAsPerRecord}</TableCell>
                         </TableRow>
                         <TableRow className='font-semibold'>
-                            <TableCell colSpan={3}>Distribution Cost</TableCell>
-                            <TableCell colSpan={4}></TableCell>
-                            <TableCell colSpan={3} className='font-semibold text-center'>Deduction Details</TableCell>
+                            <TableCell colSpan={3} className='border-gray-400 border text-base text-left'>Distribution Cost</TableCell>
+                            <TableCell colSpan={4} className='border-gray-400 border text-base text-left'></TableCell>
+                            <TableCell colSpan={3} className='border-gray-400 border font-semibold text-base text-center'>Deduction Details</TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell colSpan={2}>Toll Tax</TableCell>
-                            <TableCell>{tollTax}</TableCell>
-                            <TableCell colSpan={4}></TableCell>
-                            <TableCell colSpan={2} className='font-semibold text-center'>HSD Rate For Deduction</TableCell>
-                            <TableCell>{hsdRateFor} /Lt.</TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border text-base text-left'>Toll Tax</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{tollTax}</TableCell>
+                            <TableCell colSpan={4} className='border-gray-400 border text-base text-left'></TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border font-semibold text-base text-center'>HSD Rate For Deduction</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{hsdRateFor} /Lt.</TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell colSpan={2}>Driver Fooding</TableCell>
-                            <TableCell>{driverFooding}</TableCell>
-                            <TableCell colSpan={4}></TableCell>
-                            <TableCell colSpan={2} rowSpan={3} className='font-semibold text-left'>Deductable Excess Fueling Value</TableCell>
-                            <TableCell rowSpan={3}>{deductableExcessFuelingValue}</TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border text-base text-left'>Driver Fooding</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{driverFooding}</TableCell>
+                            <TableCell colSpan={4} className='border-gray-400 border text-base text-left'></TableCell>
+                            <TableCell colSpan={2} rowSpan={3} className='border-gray-400 border font-semibold text-base text-left'>Deductable Excess Fueling Value</TableCell>
+                            <TableCell rowSpan={3} className="border-gray-400 border text-base text-left">{deductableExcessFuelingValue}</TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell colSpan={2}>Driver Salery</TableCell>
-                            <TableCell>{driverSalary}</TableCell>
-                            <TableCell colSpan={4}></TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border text-base text-left'>Driver Salary</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{driverSalary}</TableCell>
+                            <TableCell colSpan={4} className='border-gray-400 border text-base text-left'></TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell colSpan={2}>Fueling Cost</TableCell>
-                            <TableCell>{fuelingCost}</TableCell>
-                            <TableCell colSpan={4}></TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border text-base text-left'>Fueling Cost</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{fuelingCost}</TableCell>
+                            <TableCell colSpan={4} className='border-gray-400 border text-base text-left'></TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell colSpan={2}>Border Other Exp</TableCell>
-                            <TableCell>{borderOtherExp}</TableCell>
-                            <TableCell colSpan={4}></TableCell>
-                            <TableCell colSpan={2} rowSpan={3} className='font-semibold text-left'>Deductable Short Sale Value</TableCell>
-                            <TableCell rowSpan={3}>{deductableShortSale}</TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border text-base text-left'>Border Other Exp</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{borderOtherExp}</TableCell>
+                            <TableCell colSpan={4} className='border-gray-400 border text-base text-left'></TableCell>
+                            <TableCell colSpan={2} rowSpan={3} className='border-gray-400 border font-semibold text-base text-left'>Deductable Short Sale Value</TableCell>
+                            <TableCell rowSpan={3} className="border-gray-400 border text-base text-left">{deductableShortSale}</TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell colSpan={2}>Reward</TableCell>
-                            <TableCell>{reward}</TableCell>
-                            <TableCell colSpan={7}></TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border text-base text-left'>Reward</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{reward}</TableCell>
+                            <TableCell colSpan={7} className='border-gray-400 border text-base text-left'></TableCell>
                         </TableRow>
                         <TableRow className='font-semibold'>
-                            <TableCell colSpan={2}>Total Distribution Cost</TableCell>
-                            <TableCell>{totalDistributionCost}</TableCell>
-                            <TableCell colSpan={7}></TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border text-base text-left'>Total Distribution Cost</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{totalDistributionCost}</TableCell>
+                            <TableCell colSpan={7} className='border-gray-400 border text-base text-left'></TableCell>
                         </TableRow>
                         <TableRow className='font-semibold'>
-                            <TableCell colSpan={2}>Distribution Cost per Ltr.</TableCell>
-                            <TableCell>{distributionCostPerLtr}</TableCell>
-                            <TableCell colSpan={4}></TableCell>
-                            <TableCell colSpan={2}>Total Diduction Amount</TableCell>
-                            <TableCell>{totalDeduction}</TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border text-base text-left'>Distribution Cost per Ltr.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{distributionCostPerLtr}</TableCell>
+                            <TableCell colSpan={4} className='border-gray-400 border text-base text-left'></TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border text-base text-left'>Total Deduction Amount</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{totalDeduction}</TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell colSpan={10}></TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell colSpan={2}>Driver</TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border text-base text-left'>Driver</TableCell>
                             <TableCell colSpan={3}><span className='relative flex gap-3'>Supervisor <Image src="/assets/sahil-sign.png" alt="Sahil's signature" width={120} height={40} className='-bottom-3 left-20 absolute' /></span></TableCell>
-                            <TableCell colSpan={2}>Verified by</TableCell>
-                            <TableCell colSpan={3}>Deducted by</TableCell>
+                            <TableCell colSpan={2} className='border-gray-400 border text-base text-left'>Verified by</TableCell>
+                            <TableCell colSpan={3} className='border-gray-400 border text-base text-left'>Deducted by</TableCell>
                         </TableRow>
                     </TableBody>
                 </Table>

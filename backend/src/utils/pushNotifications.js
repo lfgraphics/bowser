@@ -11,6 +11,65 @@ webpush.setVapidDetails(
     process.env.VAPID_PRIVATE_KEY
 );
 
+async function registerSubscription({ mobileNumber, userId, subscription, platform, groups }) {
+    try {
+        console.log(`Registering subscription for mobileNumber: ${mobileNumber}, userId: ${userId}, platform: ${platform}`);
+
+        if (!mobileNumber || !subscription || !platform) {
+            throw new Error('Mobile number or userId, subscription, and platform are required.');
+        }
+
+        console.log(`Checking database for existing subscription or inserting a new one...`);
+        const updatedSubscription = await PushSubscription.findOneAndUpdate(
+            { mobileNumber, platform },
+            { mobileNumber, userId, subscription, groups, platform },
+            { upsert: true, new: true }
+        );
+
+        if (!updatedSubscription) {
+            console.error(`Failed to register subscription in the database.`);
+            throw new Error(`Can't register for notifications`);
+        }
+
+        console.log(`Subscription registered successfully in the database:`, updatedSubscription);
+
+        if (platform === "web") {
+            console.log(`Sending web push notification...`);
+            await sendWebPushNotification({
+                userId,
+                message: "You will now receive necessary notifications on this device",
+                options: {
+                    title: "Notification Subscription Successful",
+                    url: `/`
+                }
+            });
+            console.log(`Web push notification sent successfully.`);
+        }
+
+        if (platform === "native") {
+            console.log(`Sending native push notification...`);
+            await sendNativePushNotification({
+                mobileNumber,
+                message: "You will now receive necessary notifications on this device",
+                options: { title: "Notification Subscription Successful" }
+            });
+            console.log(`Native push notification sent successfully.`);
+        }
+
+        return updatedSubscription;
+    } catch (error) {
+        console.error(`Error during subscription registration: ${error.message}`, {
+            mobileNumber,
+            userId,
+            subscription,
+            platform,
+            groups,
+            stack: error.stack
+        });
+        throw error;
+    }
+}
+
 /**
  * Send a push notification to a user.
  * @param {string} mobileNumber - The mobile number of the user.
@@ -43,7 +102,7 @@ async function sendWebPushNotification({ mobileNumber, userId, message, options 
         const payload = JSON.stringify({
             title: options.title || 'Notification',
             body: message,
-            url: options.url || 'https://itpl-bowser-admin.vercel.app',
+            url: options.url || '/',
             icon: options.icon || '/icon-512x512.png',
         });
 
@@ -179,4 +238,4 @@ async function sendBulkNotifications({ groups: groups = [], recipients: recipien
     return { results, errors };
 }
 
-module.exports = { sendWebPushNotification, sendNativePushNotification, sendBulkNotifications };
+module.exports = { sendWebPushNotification, sendNativePushNotification, sendBulkNotifications, registerSubscription };
