@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const { bowsersDatabaseConnection } = require('../../config/database');
-const {TripSheet} = require('./TripSheets');
 
 const fuelingTransactionSchema = new mongoose.Schema({
     orderId: { type: mongoose.Schema.Types.ObjectId, required: false },
@@ -74,6 +73,7 @@ const fuelingTransactionSchema = new mongoose.Schema({
 });
 
 fuelingTransactionSchema.post('deleteOne', async function (doc) {
+    const { TripSheet } = require('./TripSheets');
     try {
         const tripSheet = await TripSheet.findOne({ 'dispenses.transaction': doc._id });
         if (tripSheet) {
