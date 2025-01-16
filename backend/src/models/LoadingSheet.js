@@ -50,8 +50,9 @@ const loadingSheetSchema = new mongoose.Schema({
         ],
         _id: false
     },
-    totalLoadQuantityBySlip: { type: Number }, // auto calculated in .pre() hook: pumpslips.reduce(slip)=>slip.Number(qty)
-    totalLoadQuantityByDip: { type: Number }, // auto calculated in .pre() hook: according to the bowsers's done calibration of the bowser chambers. refrence is "chamberwiseDipListAfter"
+    totalLoadQuantityBySlip: { type: Number },
+    totalLoadQuantityByDip: { type: Number },
+    tempLoadByDip: { type: Number },
     loadingIncharge: {
         id: { type: String, required: true },
         name: { type: String, required: true }

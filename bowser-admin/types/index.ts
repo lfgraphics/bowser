@@ -69,45 +69,46 @@ export interface LoadingOrder {
 }
 
 export interface LoadingSheet {
-  _id: string
-  regNo: string
-  odoMeter: number
-  totalLoadQuantityByDip: number
-  totalLoadQuantityBySlip: number
+  _id: string;
+  regNo: string;
+  odoMeter: number;
+  tempLoadByDip: number;
+  totalLoadQuantityByDip: number;
+  totalLoadQuantityBySlip: number;
   bccAuthorizedOfficer: {
-    id: string
-    name: string
-    orderId: string
-  }
+    id: string;
+    name: string;
+    orderId: string;
+  };
   chamberwiseDipListAfter: {
-    chamberId: string
-    levelHeight: number
-    qty: number
-  }[]
+    chamberId: string;
+    levelHeight: number;
+    qty: number;
+  }[];
   chamberwiseDipListBefore: {
-    chamberId: string
-    levelHeight: number
-    qty: number
-  }[]
+    chamberId: string;
+    levelHeight: number;
+    qty: number;
+  }[];
   chamberwiseSealList: {
-    chamberId: string
-    sealId: string
-    sealPhoto: string
-  }[]
-  createdAt: string
-  fuleingMachine: string
-  fulfilled: boolean
+    chamberId: string;
+    sealId: string;
+    sealPhoto: string;
+  }[];
+  createdAt: string;
+  fuleingMachine: string;
+  fulfilled: boolean;
   loadingIncharge: {
-    id: string
-    name: string
-  }
-  pumpReadingAfter: number
-  pumpReadingBefore: number
+    id: string;
+    name: string;
+  };
+  pumpReadingAfter: number;
+  pumpReadingBefore: number;
   pumpSlips: {
-    chamberId: string
-    qty: number
-    slipPhoto: string
-  }[]
+    chamberId: string;
+    qty: number;
+    slipPhoto: string;
+  }[];
 }
 
 export interface ChamberLevel {
@@ -125,23 +126,24 @@ export interface OrderBowserResponse {
 
 export interface TripSheetPayload {
   bowser: {
-    regNo: string
-    odometerStartReading?: number
+    regNo: string;
+    odometerStartReading?: number;
     driver: {
-      handOverDate: Date
-      name: string
-      phoneNo: string
-    }[]
-    pumpEndReading: number
-  }
-  hsdRate?: number
-  fuelingAreaDestination?: string
-  proposedDepartureTime?: string
+      handOverDate: Date;
+      name: string;
+      phoneNo: string;
+    }[];
+    pumpEndReading: number;
+  };
+  hsdRate?: number;
+  fuelingAreaDestination?: string;
+  proposedDepartureTime?: string;
   loading: {
-    sheetId: string
-    quantityByDip: number
-    quantityBySlip: number
-  }
+    sheetId: string;
+    quantityByDip: number;
+    quantityBySlip: number;
+    tempLoadByDip: number;
+  };
 }
 
 export interface Trip {
@@ -150,58 +152,59 @@ export interface Trip {
 }
 
 export interface TripSheet {
-  _id?: string
-  tripSheetId: number
-  createdAt: Date
-  tripSheetGenerationDateTime?: Date
+  _id?: string;
+  tripSheetId: number;
+  createdAt: Date;
+  tripSheetGenerationDateTime?: Date;
   bowser: {
-    regNo: string
+    regNo: string;
     driver: {
-      handOverDate: Date
-      name: string
-      phoneNo: string
-    }[]
-  }
-  fuelingAreaDestination?: string
-  proposedDepartureTime?: string
+      handOverDate: Date;
+      name: string;
+      phoneNo: string;
+    }[];
+  };
+  fuelingAreaDestination?: string;
+  proposedDepartureTime?: string;
   loading: {
-    sheetId: string
-    quantityByDip: number
-    quantityBySlip: number
-  }
+    sheetId: string;
+    quantityByDip: number;
+    quantityBySlip: number;
+  };
   addition?: {
-    sheetId: string
-    quantityByDip: number
-    quantityBySlip: number
-  }[]
+    sheetId: string;
+    quantityByDip: number;
+    quantityBySlip: number;
+  }[];
   dispenses: {
-    transaction: string
-    fuelQuantity: number
-    isVerified: boolean
-    isPosted: boolean
-  }[]
-  totalLoadQuantity?: number
-  loadQty?: number
-  totalAdditionQty?: number
-  totalAdditionQtyBySlip?: number
-  totalLoadQuantityBySlip?: number
-  saleQty?: number
-  balanceQty?: number
-  balanceQtyBySlip?: number
+    transaction: string;
+    fuelQuantity: number;
+    isVerified: boolean;
+    isPosted: boolean;
+  }[];
+  totalLoadQuantity?: number;
+  loadQty?: number;
+  totalAdditionQty?: number;
+  totalAdditionQtyBySlip?: number;
+  totalLoadQuantityBySlip?: number;
+  saleQty?: number;
+  balanceQty?: number;
+  balanceQtyBySlip?: number;
+  tempLoadByDip?:number;
   settelment?: {
-    dateTime: Date
+    dateTime: Date;
     details: {
-      pumpReading: string
+      pumpReading: string;
       chamberwiseDipList: {
-        chamberId: string
-        levelHeight: number
-        qty: number
-      }[]
-      totalQty: number
-    }
-    settled: boolean
-  }
-  posted?: boolean
+        chamberId: string;
+        levelHeight: number;
+        qty: number;
+      }[];
+      totalQty: number;
+    };
+    settled: boolean;
+  };
+  posted?: boolean;
 }
 
 export interface WholeTripSheet {
@@ -244,6 +247,7 @@ export interface WholeTripSheet {
   saleQty?: number;
   balanceQty?: number;
   balanceQtyBySlip?: number;
+  tempLoadByDip?: number;
   settelment?: {
     dateTime: Date;
     details: {

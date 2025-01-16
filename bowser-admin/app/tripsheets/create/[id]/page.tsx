@@ -52,6 +52,7 @@ export default function TripSheetCreatePage() {
     // The "loading" subdoc
     const [quantityByDip, setQuantityByDip] = useState(0);
     const [quantityBySlip, setQuantityBySlip] = useState(0);
+    const [tempLoadByDip, setTempLoadByDip] = useState(0);
 
     // -------------------------------------------
     // 1) Fetch the LoadingSheet by ID
@@ -76,6 +77,7 @@ export default function TripSheetCreatePage() {
                 setOdometerStartReading(data.odoMeter);
                 setQuantityByDip(data.totalLoadQuantityByDip || 0);
                 setQuantityBySlip(data.totalLoadQuantityBySlip || 0);
+                setTempLoadByDip(data.tempLoadByDip || 0);
                 setPumpEndReading(data.pumpReadingAfter || 0)
             } catch (err: any) {
                 setError(err.message || "Error fetching loading sheet.");
@@ -136,20 +138,21 @@ export default function TripSheetCreatePage() {
             setError(null);
 
             const body: TripSheetPayload = {
-                bowser: {
-                    regNo,
-                    driver: bowserDriver,
-                    odometerStartReading,
-                    pumpEndReading,
-                },
-                hsdRate,
-                fuelingAreaDestination,
-                proposedDepartureTime,
-                loading: {
-                    sheetId: loadingSheet._id,
-                    quantityByDip,
-                    quantityBySlip,
-                }
+              bowser: {
+                regNo,
+                driver: bowserDriver,
+                odometerStartReading,
+                pumpEndReading,
+              },
+              hsdRate,
+              fuelingAreaDestination,
+              proposedDepartureTime,
+              loading: {
+                sheetId: loadingSheet._id,
+                quantityByDip,
+                quantityBySlip,
+                tempLoadByDip,
+              },
             };
 
             const res = await fetch(`${BASE_URL}/tripSheet/create`, {
@@ -225,7 +228,6 @@ export default function TripSheetCreatePage() {
                                     readOnly
                                     type="number"
                                     value={quantityByDip.toFixed(2)}
-                                    onChange={(e) => setQuantityByDip(Number(e.target.value))}
                                 />
                             </div>
                             <div className="flex flex-col gap-2 mb-3">
@@ -234,7 +236,14 @@ export default function TripSheetCreatePage() {
                                     readOnly
                                     type="number"
                                     value={quantityBySlip}
-                                    onChange={(e) => setQuantityBySlip(Number(e.target.value))}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2 mb-3">
+                                <Label>Load before + Load by Slip</Label>
+                                <Input
+                                    readOnly
+                                    type="number"
+                                    value={tempLoadByDip.toFixed(2)}
                                 />
                             </div>
                         </div>

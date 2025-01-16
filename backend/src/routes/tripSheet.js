@@ -66,7 +66,8 @@ router.post('/create', async (req, res) => {
             loading: {
                 sheetId: new mongoose.Types.ObjectId(loading.sheetId),
                 quantityByDip: loading.quantityByDip,
-                quantityBySlip: loading.quantityBySlip
+                quantityBySlip: loading.quantityBySlip,
+                tempLoadByDip: loading.tempLoadByDip,
             },
             fuelingAreaDestination,
             proposedDepartureTime,

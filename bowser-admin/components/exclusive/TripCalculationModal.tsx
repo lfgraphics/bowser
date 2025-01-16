@@ -19,7 +19,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     const [ch1FullLoadAddCm, setCh1FullLoadAddCm] = useState<number>(record?.loading.sheetId.chamberwiseDipListAfter.find(chamber => chamber.chamberId === "Chamber-1")?.levelHeight || 0)
     const [ch1FullLoadAddqty, setCh1FullLoadAddqty] = useState<number>(Number((record?.loading.quantityBySlip / 2).toFixed(2)))
     const [ch1FullLoadTotalqty, setCh1FullLoadTotalqty] = useState<number>(ch1FullLoadAddqty + ch1Openingqty)
-    const [ch1FullLoadDipqty, setCh1FullLoadDipqty] = useState<string>(record?.loading.sheetId.chamberwiseDipListAfter[0].qty.toFixed(2))
+    const [ch1FullLoadDipqty, setCh1FullLoadDipqty] = useState<number>(Number(record?.loading.sheetId.chamberwiseDipListAfter[0].qty.toFixed(2)))
     //chamber 2
     const [ch2Cm, setCh2Cm] = useState<number>(record?.settelment?.details?.chamberwiseDipList.find(chamber => chamber.chamberId === "Chamber-2")?.levelHeight || 0)
     const [ch2qty, setCh2qty] = useState<number>(Number(record?.settelment?.details?.chamberwiseDipList.find(chamber => chamber.chamberId === "Chamber-2")?.qty.toFixed(2)) || 0)
@@ -39,7 +39,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     const [totalLoadHeight, setTotalLoadHeight] = useState<number>(ch1FullLoadAddCm + ch2FullLoadAddCm)
     const [totalLoadQty, setTotalLoadQty] = useState<number>(Number(record?.totalLoadQuantityBySlip?.toFixed(2)) || 0)
     const [totalLoadedQty, setTotalLoadedQty] = useState<number>(record?.totalLoadQuantityBySlip || 0)
-    const [totalLoadedQtyByDip, setTotalLoadedQtyByDip] = useState<number>(Number(record?.totalLoadQuantity?.toFixed(2)) || 0)
+    const [totalLoadedQtyByDip, setTotalLoadedQtyByDip] = useState<number>(Number(record?.tempLoadByDip?.toFixed(2)) || 0)
     // heading and slip total on load
     const [fullLoadQtyBySlip, setFullLoadQtyBySlip] = useState<number>(Number(record?.loading.quantityBySlip.toFixed(2)) || 0)
     // pump reading, Odo meter and addition
@@ -119,7 +119,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
                             <TableCell className="border-gray-400 border text-base text-left">{ch1FullLoadAddCm}</TableCell>
                             <TableCell className="border-gray-400 border text-base text-left">{ch1FullLoadAddqty} Lt.</TableCell>
                             <TableCell className="border-gray-400 border text-base text-left">{ch1FullLoadTotalqty} Lt.</TableCell>
-                            <TableCell className="border-gray-400 border text-base text-left">{ch1FullLoadDipqty} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch1FullLoadDipqty == 0 ? "CN" :ch1FullLoadDipqty} Lt.</TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell className="border-gray-400 border text-base text-left">CH-2</TableCell>
@@ -131,7 +131,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
                             <TableCell className="border-gray-400 border text-base text-left">{ch2FullLoadAddCm}</TableCell>
                             <TableCell className="border-gray-400 border text-base text-left">{ch2FullLoadAddqty} Lt.</TableCell>
                             <TableCell className="border-gray-400 border text-base text-left">{ch2FullLoadTotalqty} Lt.</TableCell>
-                            <TableCell className="border-gray-400 border text-base text-left">{ch2FullLoadTotalqtyByDip} Lt.</TableCell>
+                            <TableCell className="border-gray-400 border text-base text-left">{ch2FullLoadTotalqtyByDip == 0 ? "CN" : ch2FullLoadTotalqtyByDip + " Lt."}</TableCell>
                         </TableRow>
                         <TableRow className='font-semibold'>
                             <TableCell className="border-gray-400 border text-base text-left">Total</TableCell>

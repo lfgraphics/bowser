@@ -236,15 +236,15 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
                     onChange={(e) => { setRewardTrips(Number(e.target.value)) }}
                     required
                 />
-                {/* <Label htmlFor={`hsdRateFor`}>HSD Rate For Deduction</Label>
+                <Label htmlFor={`hsdRateFor`}>HSD Rate For Deduction</Label>
                 <Input
+                readOnly
                     id={`hsdRateFor`}
                     type="text"
                     placeholder="HSD Rate For Deduction"
-                    value={hsdRateForDeduction}
-                    onChange={(e) => { setHsdRateForDeduction(Number(e.target.value)) }}
+                    value={tripSheet?.hsdRate}
                     required
-                /> */}
+                />
                 <Label htmlFor={`tollTax`}>Toll Tax</Label>
                 <Input
                     id={`tollTax`}

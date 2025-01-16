@@ -436,13 +436,19 @@ export default function FuelingAllocation() {
                                         value={vehicleNumber}
                                         onChange={(e) => {
                                             setVehicleNumber(e.target.value.toUpperCase());
+                                        }}
+                                        onKeyDown={(e) => {
+                                            console.log(e.key);
+                                            if (e.key === "Backspace") {
+                                              return;
+                                            }
                                             if (fueling == "Own") {
-                                                if (e.target.value.length > 3) {
-                                                    searchVehicle(e.target.value);
+                                                if (vehicleNumber.length > 3) {
+                                                    searchVehicle(vehicleNumber);
                                                 }
                                             } else {
-                                                if (e.target.value.length > 3) {
-                                                    searchAttatchedVehicle(e.target.value)
+                                                if (vehicleNumber.length > 3) {
+                                                    searchAttatchedVehicle(vehicleNumber)
                                                 }
                                             }
                                         }}
@@ -474,6 +480,9 @@ export default function FuelingAllocation() {
                                         }
                                     }}
                                     onKeyDown={(e) => {
+                                        if (e.key === "Backspace") {
+                                          return;
+                                        }
                                         if (e.key === 'Enter' && driverId.length > 3) {
                                             e.preventDefault();
                                             searchDriver(driverId);
@@ -536,15 +545,13 @@ export default function FuelingAllocation() {
                                 placeholder="Bowser number/driver name/mobile"
                                 value={bowserRegNo}
                                 onChange={(e) => {
-                                    const value = e.target.value;
-                                    setBowserRegNo(value);
-                                    if (value.length > 3) {
-                                        searchBowser(value);
-                                    }
+                                    setBowserRegNo(e.target.value);
                                 }}
                                 onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
+                                    if (e.key === "Backspace") {
+                                      return;
+                                    }
+                                    if (bowserRegNo.length > 3) {
                                         searchBowser(bowserRegNo);
                                     }
                                 }}
@@ -558,16 +565,12 @@ export default function FuelingAllocation() {
                                 value={bowserDriverName}
                                 required
                                 onChange={(e) => {
-                                    const value = e.target.value;
-                                    setBowserDriverName(value);
-                                    if (value.length > 3) {
-                                        searchBowserDriver(value);
-                                        if (value.length > 3) {
-                                            searchBowserDriver(bowserDriverName);
-                                        }
-                                    }
+                                    setBowserDriverName(e.target.value);
                                 }}
                                 onKeyDown={(e) => {
+                                    if (e.key === "Backspace") {
+                                      return;
+                                    }
                                     if (e.key === 'Enter' && bowserDriverId.length > 3) {
                                         if (e.key === 'Enter') {
                                             e.preventDefault();
@@ -602,7 +605,7 @@ export default function FuelingAllocation() {
                 title={searchModalConfig.title}
                 items={searchModalConfig.items}
                 onSelect={searchModalConfig.onSelect}
-                renderItem={searchModalConfig.renderItem}
+                renderItem={searchModalConfig.renderItem} 
                 keyExtractor={searchModalConfig.keyExtractor}
             />
 

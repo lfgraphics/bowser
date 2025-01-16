@@ -250,9 +250,12 @@ router.post('/sheet', async (req, res) => {
                 return total + dip.qty;
             }, 0);
 
+
             const totalBefore = chamberwiseDipListBefore.reduce((total, dip) => {
                 return total + dip.qty;
             }, 0);
+
+            const tempLoadByDip = totalLoadQuantityBySlip + totalBefore;
 
             let additionQty = totalLoadQuantityByDip - totalBefore; // Subtract total from before
 
@@ -271,6 +274,7 @@ router.post('/sheet', async (req, res) => {
             newLoadingSheet = new LoadingSheet({
                 regNo,
                 odoMeter,
+                tempLoadByDip,
                 fuleingMachine,
                 pumpReadingBefore,
                 pumpReadingAfter,
@@ -293,7 +297,7 @@ router.post('/sheet', async (req, res) => {
                 url: !sheetId ? `/tripsheets/create/${newLoadingSheet?._id}` : `/tripsheets/${sheetId}`,
             };
             const message = `Bowser: ${regNo}\nFulfilled by: ${loadingIncharge.name} Id: ${loadingIncharge.id}`;
-            let notificationSent = await sendWebPushNotification({ userId: bccAuthorizedOfficer.id, message, options });
+            await sendWebPushNotification({ userId: bccAuthorizedOfficer.id, message, options });
 
             // if (notificationSent.success) {
             if (!sheetId) {
@@ -311,7 +315,7 @@ router.post('/sheet', async (req, res) => {
                 return;
             }
             console.log('Updated Loading Order:', loadingOrder);
-            res.status(201).json(newLoadingSheet);
+            res.status(200).json(newLoadingSheet);
             // } else {
             //     res.status(500).json({ error: 'Request failed because failed to send notification to BCC' });
             // }
