@@ -66,7 +66,7 @@ router.post('/', async (req, res) => {
         let userId = fuelingTransaction.allocationAdmin.id;
         let message = `Order to:\n${primaryHead}\n${midHead}${secondaryHead}${headEnd}`
         let options = {
-            title: "Your Order has bees successfully followed",
+            title: "Your Order has been fulfilled successfully",
             data: { url: `/dispense-records/${fuelingTransaction._id.toString()}` }
         };
         if (userId.length > 2) await sendWebPushNotification({ userId, message, options })

@@ -72,7 +72,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     const [saleryDays, setSaleryDays] = useState<number>(record.settelment?.details.extras?.saleryDays || 0)
     const [foodingDays, setFoodingDays] = useState<number>(record.settelment?.details.extras?.foodingDays || 0)
 
-    const [hsdRateFor, setHsdRateFor] = useState<number>(record.settelment?.details.extras?.hsdRateFor || 0)
+    const [hsdRateFor, setHsdRateFor] = useState<number>(record.hsdRate || 0);
     const [tollTax, setTollTax] = useState<number>(record.settelment?.details.extras?.tollTax || 0)
     const [driverFooding, setDriverFooding] = useState<number>(foodingDays * 200)
     const [driverSalary, setDriverSalary] = useState<number>(saleryDays * 500)
@@ -85,7 +85,6 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     const [totalDeduction, setTotalDeduction] = useState<number>(Number((deductableExcessFuelingValue + deductableShortSale).toFixed(2)))
     const [totalDistributionCost, setTotalDistributionCost] = useState<number>(tollTax + driverFooding + driverSalary + fuelingCost + borderOtherExp + reward)
     const [distributionCostPerLtr, setDistributionCostPerLtr] = useState<number>(Math.ceil(totalDistributionCost / saleAsPerDriver))
-    console.log(distributionCostPerLtr)
 
     return (
         <div className=''>

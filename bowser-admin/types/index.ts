@@ -205,60 +205,61 @@ export interface TripSheet {
 }
 
 export interface WholeTripSheet {
-  _id?: string
-  tripSheetId: number
-  createdAt: Date
-  tripSheetGenerationDateTime?: Date
+  hsdRate: number;
+  _id?: string;
+  tripSheetId: number;
+  createdAt: Date;
+  tripSheetGenerationDateTime?: Date;
   bowser: {
-    regNo: string
+    regNo: string;
     driver: {
-      handOverDate: Date
-      name: string
-      phoneNo: string
-    }[]
-  }
-  fuelingAreaDestination?: string
-  proposedDepartureTime?: string
+      handOverDate: Date;
+      name: string;
+      phoneNo: string;
+    }[];
+  };
+  fuelingAreaDestination?: string;
+  proposedDepartureTime?: string;
   loading: {
-    sheetId: LoadingSheet
-    quantityByDip: number
-    quantityBySlip: number
-  }
+    sheetId: LoadingSheet;
+    quantityByDip: number;
+    quantityBySlip: number;
+  };
   addition?: {
-    sheetId: LoadingSheet
-    quantityByDip: number
-    quantityBySlip: number
-  }[]
+    sheetId: LoadingSheet;
+    quantityByDip: number;
+    quantityBySlip: number;
+  }[];
   dispenses: {
-    transaction: string
-    fuelQuantity: number
-    isVerified: boolean
-    isPosted: boolean
-  }[]
-  totalLoadQuantity?: number
-  loadQty?: number
-  totalAdditionQty?: number
-  totalAdditionQtyBySlip?: number
-  totalLoadQuantityBySlip?: number
-  saleQty?: number
-  balanceQty?: number
-  balanceQtyBySlip?: number
+    transaction: string;
+    fuelQuantity: number;
+    isVerified: boolean;
+    isPosted: boolean;
+  }[];
+  totalLoadQuantity?: number;
+  loadQty?: number;
+  totalAdditionQty?: number;
+  totalAdditionQtyBySlip?: number;
+  totalLoadQuantityBySlip?: number;
+  saleQty?: number;
+  balanceQty?: number;
+  balanceQtyBySlip?: number;
   settelment?: {
-    dateTime: Date
+    dateTime: Date;
     details: {
-      odometer: number
-      pumpReading: number
+      odometer: number;
+      pumpReading: number;
       chamberwiseDipList: {
-        chamberId: string
-        levelHeight: number
-        qty: number
-      }[]
-      totalQty: number
-      extras: Extras
-    }
-    settled: boolean
-  }
-  posted?: boolean
+        chamberId: string;
+        levelHeight: number;
+        qty: number;
+      }[];
+      totalQty: number;
+      extras: Extras;
+    };
+    settled: boolean;
+  };
+  posted?: boolean;
 }
 
 export interface Extras {

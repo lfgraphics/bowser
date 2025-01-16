@@ -30,7 +30,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
         // Update the dispenses array if newDispense is provided
         if (newDispense) {
             const existingDispenseIndex = tripSheet.dispenses.findIndex(
-                (dispense) => dispense?.transaction?.toString() === newDispense?.transaction?.toString()
+                (dispense) => dispense?._id?.toString() === newDispense?._id?.toString()
             );
 
             if (existingDispenseIndex === -1) {
@@ -45,7 +45,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
         // Remove a dispense if removeDispenseId is provided
         if (removeDispenseId) {
             tripSheet.dispenses = tripSheet.dispenses.filter(
-                (dispense) => dispense.transaction.toString() !== removeDispenseId.toString()
+                (dispense) => dispense?._id?.toString() !== removeDispenseId.toString()
             );
             console.log(`Removed dispense with ID: ${removeDispenseId}`);
         }
