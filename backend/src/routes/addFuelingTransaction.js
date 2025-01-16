@@ -114,10 +114,7 @@ router.post('/bulk', async (req, res) => {
         const tripSheetUpdates = fuelingTransactions.map(transaction => ({
             tripSheetId: transaction.tripSheetId,
             newDispense: {
-                transaction: transaction._id,
-                fuelQuantity: transaction.fuelQuantity,
-                isVerified: false,
-                isPosted: false,
+                transaction
             }
         }));
 
