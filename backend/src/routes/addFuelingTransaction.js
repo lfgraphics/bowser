@@ -33,24 +33,9 @@ router.post('/', async (req, res) => {
         const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Save operation timed out')), 35000)
         );
+        let tripUpdate = await updateTripSheet({ tripSheetId: fuelingTransaction.tripSheetId, newDispense: fuelingTransaction })
 
         await Promise.race([savePromise, timeoutPromise]);
-
-        console.log(fuelingTransaction)
-
-        let tripSheetObject = {
-            transaction: fuelingTransaction._id,
-            fuelQuantity: fuelingTransaction.fuelQuantity,
-            isVerified: false,
-            isPosted: false,
-        }
-
-        let tripUpdate = await updateTripSheet({ tripSheetId: fuelingTransaction.tripSheetId, newDispense: fuelingTransaction })
-        if (tripUpdate.success) {
-            res.status(200).json({ message: 'Data Submitted successfully' });
-        } else {
-            res.status(500).json({ message: 'Failed to submit data', error: tripUpdate.error });
-        }
 
         const fuelingOrder = !fuelingTransaction.orderId ? null : await FuelingOrder.findById(new mongoose.Types.ObjectId(fuelingTransaction.orderId))
 
@@ -71,6 +56,11 @@ router.post('/', async (req, res) => {
         };
         if (userId.length > 2) await sendWebPushNotification({ userId, message, options })
 
+        if (tripUpdate.success) {
+            res.status(200).json({ message: 'Data Submitted successfully' });
+        } else {
+            res.status(500).json({ message: 'Failed to submit data', error: tripUpdate.error });
+        }
     } catch (err) {
         console.error('Error saving fueling record data:', err);
 
@@ -118,7 +108,7 @@ router.post('/bulk', async (req, res) => {
             }
         }));
 
-        await updateTripSheetBulk(tripSheetUpdates);
+        await updateTripSheetBulk({ transaction: tripSheetUpdates });
 
         res.status(200).json({ message: 'Bulk Data Submitted successfully' });
 

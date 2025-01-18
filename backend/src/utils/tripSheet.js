@@ -10,7 +10,7 @@ const { TripSheet } = require('../models/TripSheets')
  * @returns {Object} - The updated trip sheet.
  */
 
-const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense, removeDispenseId }) => {
+const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense, removeDispenseId, verify }) => {
     try {
         // Build the query based on the identifier provided
         const query = sheetId ? { _id: new mongoose.Types.ObjectId(sheetId) } : { tripSheetId };
@@ -20,6 +20,22 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
         if (!tripSheet) {
             console.error(`TripSheet not found for query: ${JSON.stringify(query)}`);
             return { success: false, message: "TripSheet not found" };
+        }
+
+        if (verify) {
+            // wanna verify the dispense record by the _id == verify.id
+            const record = tripSheet.dispenses.find(
+                (dispense) => dispense?._id?.toString() === verify.id?.toString()
+            );
+            if (!record) {
+                console.error(`Dispense not found for _id: ${verify.id}`);
+                return { success: false, message: "Dispense not found" };
+            }
+            // update the record's verified to verify
+            record.verified = verify;
+            await tripSheet.save();
+            console.log(`Dispense with ID: ${verify.id} verified to: ${verify}`);
+            return { success: true, message: "Dispense verified successfully", record };
         }
 
         // Update the addition array if newAddition is provided
@@ -78,9 +94,10 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
     }
 };
 
-const updateTripSheetBulk = async (updates) => {
+const updateTripSheetBulk = async ({ transaction, verification }) => {
     try {
-        const bulkOps = updates.map(({ tripSheetId, newDispense }) => ({
+        if (transaction) {
+            const bulkOps = transaction.map(({ tripSheetId, newDispense }) => ({
             updateOne: {
                 filter: { tripSheetId },
                 update: { $push: { dispenses: newDispense } }
@@ -91,7 +108,7 @@ const updateTripSheetBulk = async (updates) => {
         await TripSheet.bulkWrite(bulkOps);
 
         // Now perform calculations for each trip sheet
-        const tripSheetIds = [...new Set(updates.map(update => update.tripSheetId))]; // Unique tripSheetIds
+            const tripSheetIds = [...new Set(transaction.map(update => update.tripSheetId))]; // Unique tripSheetIds
         const tripSheets = await TripSheet.find({ tripSheetId: { $in: tripSheetIds } });
 
         tripSheets.forEach(tripSheet => {
@@ -119,6 +136,20 @@ const updateTripSheetBulk = async (updates) => {
 
         console.log(`TripSheets updated successfully`);
         return { success: true, message: "TripSheets updated successfully" };
+        }
+        if (verification) {
+            const bulkOps = verification.map(({ tripSheetId, verify }) => ({
+                updateOne: {
+                    filter: { tripSheetId },
+                    update: { $set: { "dispenses.$[elem].verified": verify } }
+                },
+                arrayFilters: [{ "elem._id": verify.id }]
+            }));
+            await TripSheet.bulkWrite(bulkOps);
+
+            console.log(`TripSheets updated successfully with verification`);
+            return { success: true, message: "TripSheets updated successfully with verification" };
+        }
     } catch (error) {
         console.error("Error updating TripSheets in bulk:", error);
         return { success: false, message: "Error updating TripSheets in bulk" };

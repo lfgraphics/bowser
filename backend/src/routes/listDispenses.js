@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const {FuelingTransaction} = require('../models/Transaction');
-// const FuelingTransaction = require('../models/Transaction');
+const { FuelingTransaction } = require('../models/Transaction');
+const { TripSheet } = require('../models/TripSheets');
 const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
-const { addRecordToTrip } = require('../utils/fuelTransactions');
-const { updateTripSheet } = require('../utils/tripSheet')
+const { updateTripSheet, updateTripSheetBulk } = require('../utils/tripSheet')
 const { mongoose } = require('mongoose');
 
 router.get('/', async (req, res) => {
@@ -15,19 +14,19 @@ router.get('/', async (req, res) => {
     let filter = {};
 
     if (verified === 'true') {
-        filter.verified = true;
+        filter.dispenses.verified = true;
     } else if (verified === 'false') {
-        filter.verified = { $in: [false, null] };
+        filter.dispenses.verified = { $in: [false, null] };
     }
 
     if (bowserNumber) {
-        filter['bowser.regNo'] = bowserNumber;
+        filter['dispenses.bowser.regNo'] = bowserNumber;
     }
 
     if (allocator) {
         filter.$or = [
-            { 'allocationAdmin.name': { $regex: allocator, $options: "i" } },
-            { 'allocationAdmin.id': { $regex: allocator, $options: "i" } }
+            { 'dispenses.allocationAdmin.name': { $regex: allocator, $options: "i" } },
+            { 'dispenses.allocationAdmin.id': { $regex: allocator, $options: "i" } }
         ];
     }
 
@@ -36,14 +35,14 @@ router.get('/', async (req, res) => {
     }
 
     if (driverName) {
-        filter['driverName'] = { $regex: driverName, $options: 'i' };
+        filter['dispenses.driverName'] = { $regex: driverName, $options: 'i' };
     }
     if (vehicleNo) {
-        filter['vehicleNumber'] = { $regex: vehicleNo, $options: 'i' };
+        filter['dispenses.vehicleNumber'] = { $regex: vehicleNo, $options: 'i' };
     }
 
     if (startDate && endDate) {
-        filter.fuelingDateTime = {
+        filter.dispenses.fuelingDateTime = {
             $gte: new Date(startDate),
             $lte: new Date(endDate),
         };
@@ -51,7 +50,7 @@ router.get('/', async (req, res) => {
 
 
     if (category !== undefined && category !== 'all') {
-        filter['category'] = category;
+        filter['dispenses.category'] = category;
     }
 
     const sortOrder = order === 'asc' ? 1 : -1;
@@ -59,28 +58,56 @@ router.get('/', async (req, res) => {
     console.log("filter: ", filter)
 
     try {
-        const records = await FuelingTransaction.find(filter, {
-            vehicleNumber: 1,
-            tripSheetId: 1,
-            quantityType: 1,
-            fuelQuantity: 1,
-            driverName: 1,
-            driverMobile: 1,
-            bowser: 1,
-            fuelingDateTime: 1,
-            gpsLocation: 1,
-            verified: 1,
-            category: 1,
-            party: 1,
-            odometer: 1
-        }).skip(skip).limit(Number(limit)).sort({ [sortBy]: sortOrder });
-        const totalRecords = await FuelingTransaction.countDocuments();
+        const records = await TripSheet.aggregate([
+            { $match: filter },
+            { $sort: { _id: -1 } },
+            { $unwind: '$dispenses' },
+            {
+                $project: {
+                    _id: 0,
+                    'dispenses._id': 1,
+                    'dispenses.vehicleNumber': 1,
+                    'dispenses.tripSheetId': 1,
+                    'dispenses.quantityType': 1,
+                    'dispenses.fuelQuantity': 1,
+                    'dispenses.driverName': 1,
+                    'dispenses.driverMobile': 1,
+                    'dispenses.bowser': 1,
+                    'dispenses.fuelingDateTime': 1,
+                    'dispenses.gpsLocation': 1,
+                    'dispenses.verified': 1,
+                    'dispenses.category': 1,
+                    'dispenses.party': 1,
+                    'dispenses.odometer': 1
+                }
+            },
+            { $skip: skip },
+            { $limit: Number(limit) },
+            { $sort: { [sortBy]: sortOrder } },
+        ]).sort({ '_id': -1 });
+
+        const totalRecords = await TripSheet.aggregate([
+            { $match: filter },
+            {
+                $project: {
+                    dispenseCount: {
+                        $cond: {
+                            if: { $isArray: "$dispenses" },
+                            then: { $size: { $ifNull: ["$dispenses", []] } },
+                            else: 0
+                        }
+                    }
+                }
+            },
+            { $group: { _id: null, total: { $sum: "$dispenseCount" } } }
+        ]).then(result => (result[0]?.total || 0));
+
         console.log(records.length)
 
         if (records.length == 0) {
             res.status(400).json({ message: 'No records found' })
         } else {
-            res.json({
+            res.status(200).json({
                 totalRecords,
                 totalPages: Math.ceil(totalRecords / limit),
                 currentPage: Number(page),
@@ -214,7 +241,9 @@ router.patch('/update/:id', async (req, res) => {
             return res.status(404).json({ heading: "Failed", message: 'Record not found' });
         }
 
-        res.status(200).json({ heading: "Success!", message: 'Record updated successfully', updatedRecord }); // Send the updated record and a success message back to the client
+        await updateTripSheet({ tripSheetId: updatedRecord.tripSheetId, newDispense: updateData })
+
+        res.status(200).json({ heading: "Success!", message: 'Record updated successfully', updatedRecord });
     } catch (error) {
         console.error('Error updating record:', error);
         res.status(500).json({ heading: "Failed!", message: 'Internal server error' });
@@ -223,20 +252,26 @@ router.patch('/update/:id', async (req, res) => {
 router.patch('/verify/:id', async (req, res) => {
     console.log(req.body)
     const { id } = req.params;
-    let { by } = req.body
+    let { by, tripSheetId } = req.body
     try {
-        const transaction = await FuelingTransaction.findByIdAndUpdate(new mongoose.Types.ObjectId(id), {
-            verified: {
-                status: true,
-                by: {
-                    id: by.id,
-                    name: by.name
-                }
+        const verified = {
+            id,
+            status: true,
+            by: {
+                id: by.id,
+                name: by.name
             }
-        });
-        if (transaction) {
-            await addRecordToTrip(transaction)
         }
+        const transaction = await FuelingTransaction.findByIdAndUpdate(new mongoose.Types.ObjectId(id), { verified }, {
+            new: true,
+            runValidators: true,
+        });
+
+        if (!transaction) {
+            return res.status(404).json({ heading: "Failed", message: 'Record not found' });
+        }
+
+        await updateTripSheet({ tripSheetId, verify: verified })
 
         if (!transaction) {
             return res.status(404).json({ heading: "Failed", message: 'Record not found' });
@@ -255,18 +290,17 @@ router.post('/verify', async (req, res) => {
         return res.status(400).json({ heading: "Failed!", message: "Invalid or empty ids array" });
     }
     try {
+        let verified = {
+            status: true,
+            by: {
+                id: by.id,
+                name: by.name
+            }
+        }
         const result = await FuelingTransaction.updateMany(
             { _id: { $in: ids } },
             {
-                $set: {
-                    verified: {
-                        status: true,
-                        by: {
-                            id: by.id,
-                            name: by.name
-                        }
-                    }
-                }
+                $set: { verified }
             }
         );
 
@@ -275,8 +309,22 @@ router.post('/verify', async (req, res) => {
         }
 
         const transactions = await FuelingTransaction.find({ _id: { $in: ids } });
-        for (let i = 0; i < transactions.length; i++) {
-            await addRecordToTrip(transactions[i]);
+        const verification = transactions.map((transaction) => ({
+            tripSheetId: transaction.tripSheetId,
+            verify: {
+                id: transaction._id,
+                verified: verified
+            }
+        }));
+
+        const tripSheetResult = await updateTripSheetBulk({ verification });
+
+        if (!tripSheetResult.success) {
+            return res.status(500).json({
+                heading: "Failed!",
+                message: "Error updating TripSheets",
+                details: tripSheetResult.message
+            });
         }
 
         res.json({
@@ -289,7 +337,6 @@ router.post('/verify', async (req, res) => {
         res.status(500).json({ heading: "Failed!", message: 'Internal server error' });
     }
 });
-
 
 router.delete('/delete', async (req, res) => {
     const { tripSheetId, id } = req.body
