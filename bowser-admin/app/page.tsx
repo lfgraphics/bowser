@@ -74,12 +74,21 @@ export function InstallPrompt() {
       <Button variant="secondary" onClick={handleInstallClick}>
         Add to Home Screen
       </Button>
-      {/* {isIOS && ( */}
+      {isIOS && (
         <p>
           To install this app on your iOS device, tap the share button
-          <span role="img" aria-label="share icon">{" "}⎋{" "}</span>and then "Add to Home Screen"<span role="img" aria-label="plus icon">{" "}➕{" "}</span>.
+          <span role="img" aria-label="share icon">
+            {" "}
+            ⎋{" "}
+          </span>
+          and then "Add to Home Screen"
+          <span role="img" aria-label="plus icon">
+            {" "}
+            ➕{" "}
+          </span>
+          .
         </p>
-       {/* )} */}
+      )}
     </div>
   );
 }
@@ -101,7 +110,8 @@ export default function Home() {
     if (!isLoading) {
       if (user) {
         const redirectUrl =
-          user.roles.map((role) => allowedRoutes[role]).find((url) => url) || "/profile";
+          user.roles.map((role) => allowedRoutes[role]).find((url) => url) ||
+          "/profile";
 
         if (isAuthenticated()) {
           router.push(redirectUrl[0]);
@@ -117,7 +127,7 @@ export default function Home() {
   return (
     <>
       {isLoading && <Loading />}
-      <div>You are required to Login to view the contents of this Website</div>
+      <div className="m-4">Checking your Login status please wait...</div>
     </>
   );
 }

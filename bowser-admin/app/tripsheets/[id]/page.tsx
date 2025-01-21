@@ -2,7 +2,7 @@
 import { BASE_URL } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
 import { formatDate } from '@/lib/utils';
-import { Extras, WholeTripSheet } from '@/types';
+import { WholeTripSheet } from "@/types";
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';

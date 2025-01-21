@@ -196,6 +196,7 @@ router.get('/:id', async (req, res) => {
     try {
         // First, find all bowsers with the given registration number.
         const sheet = await TripSheet.findById(new mongoose.Types.ObjectId(id)).populate('loading.sheetId');
+        console.log("sheet extras: ", sheet.settelment?.details.extras);
         res.status(200).json(sheet);
 
     } catch (err) {
@@ -206,7 +207,6 @@ router.get('/:id', async (req, res) => {
 });
 router.get('/tripSheetId/:id', async (req, res) => {
     const id = req.params.id;
-
     try {
         // First, find all bowsers with the given registration number.
         const sheet = await TripSheet.findOne({ tripSheetId: id }).populate('loading.sheetId addition.sheetId');
@@ -327,8 +327,17 @@ router.post('/settle/:id', async (req, res) => {
 
         // Update the tripsheet with the new chamberwiseDipList
         let totalQty = chamberwiseDipList.reduce((acc, chamber) => {
-            return acc + chamber.qty;
+            // Remove invalid characters (e.g., multiple decimals)
+            let sanitizedQty = chamber.qty.replace(/[^0-9.]/g, ''); // Remove non-numeric, non-decimal characters
+            let qty = parseFloat(sanitizedQty);
+            if (!isNaN(qty)) {
+                return acc + qty;
+            } else {
+                console.warn(`Invalid qty value after sanitization: ${chamber.qty}`);
+                return acc; // Skip invalid entries
+            }
         }, 0);
+        console.log(Number(totalQty));
         let settlement = {
             dateTime,
             details: {
@@ -347,7 +356,6 @@ router.post('/settle/:id', async (req, res) => {
         tripsheet.settelment = settlement;
         try {
             await tripsheet.save(); // Save the updated tripsheet
-            console.log(`Settlement saved successfully: ${JSON.stringify(tripsheet.settlement)}`);
             res.status(200).json({ message: 'Settlement processed successfully' });
             // notify data entry department
             let message = `${tripsheet.tripSheetId} is settled\nNow you can make your move to data entry`;
