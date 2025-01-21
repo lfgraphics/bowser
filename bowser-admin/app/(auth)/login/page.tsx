@@ -12,13 +12,14 @@ import { User } from "@/types"
 import { useRouter } from 'next/navigation';
 
 export const allowedRoutes: { [key: string]: [string] } = {
-  "Admin": ["/dashboard"],
+  Admin: ["/dashboard"],
   "Diesel Control Center Staff": ["/dashboard"],
   "Data Entry": ["/dispense-records"],
   "Loading Incharge": ["/loading/orders"],
   "BCC Authorized Officer": ["/loading/sheet"],
   "Petrol Pump Personnel": ["/loading/petrol-pump"],
   "Calibration Staff": ["/manage-bowsers"],
+  "Diesel Average": ["/dispense-records"],
 };
 
 export default function Login() {

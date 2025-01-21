@@ -72,20 +72,26 @@ export function Sidebar() {
   return (
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetTrigger
-          id='menuIcon'
-          className="top-4 left-4 z-30 fixed">
+        <SheetTrigger id="menuIcon" className="top-4 left-4 z-30 fixed">
           {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </SheetTrigger>
-        <SheetContent side="left" className="top-0 left-0 z-50 fixed bg-background shadow w-60 h-full">
+        <SheetContent
+          side="left"
+          className="top-0 left-0 z-50 fixed bg-background shadow w-60 h-full"
+        >
           <SheetHeader>
             <SheetTitle>Hii {user?.name}</SheetTitle>
           </SheetHeader>
-          <SheetDescription>Your role{user?.roles?.length! > 1 ? "s are: " : " is: "}{user?.roles.join(', ')}</SheetDescription>
+          <SheetDescription>
+            Your role{user?.roles?.length! > 1 ? "s are: " : " is: "}
+            {user?.roles.join(", ")}
+          </SheetDescription>
           <div className="flex flex-col p-3 h-full">
             <nav className="h-[80%]">
               <ul className="space-y-1 text-sm">
-                <OnlyAllowed allowedRoles={["Admin", "Diesel Control Center Staff"]}>
+                <OnlyAllowed
+                  allowedRoles={["Admin", "Diesel Control Center Staff"]}
+                >
                   <li onClick={toggleSidebar}>
                     <Link href="/dashboard">
                       <Button variant="ghost" className="justify-start w-full">
@@ -96,7 +102,9 @@ export function Sidebar() {
                   </li>
                 </OnlyAllowed>
                 {/* Dynamica access Routes starts here ................ */}
-                <OnlyAllowed allowedRoles={["Admin", "Diesel Control Center Staff"]}>
+                <OnlyAllowed
+                  allowedRoles={["Admin", "Diesel Control Center Staff"]}
+                >
                   <li onClick={toggleSidebar}>
                     <Link href={`/my-allocation?allocator=${user?.userId}`}>
                       <Button variant="ghost" className="justify-start w-full">
@@ -106,7 +114,15 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>
-                <OnlyAllowed allowedRoles={["Admin", "Diesel Control Center Staff", "Data Entry", "BCC Authorized Officer"]}>
+                <OnlyAllowed
+                  allowedRoles={[
+                    "Admin",
+                    "Diesel Control Center Staff",
+                    "Data Entry",
+                    "BCC Authorized Officer",
+                    "Diesel Average",
+                  ]}
+                >
                   <li onClick={toggleSidebar}>
                     <Link href="/dispense-records">
                       <Button variant="ghost" className="justify-start w-full">
@@ -116,39 +132,68 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>
-                <OnlyAllowed allowedRoles={["Admin", "Loading Incharge", "BCC Authorized Officer"]}>
+                <OnlyAllowed
+                  allowedRoles={[
+                    "Admin",
+                    "Loading Incharge",
+                    "BCC Authorized Officer",
+                  ]}
+                >
                   <li onClick={toggleSidebar}>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Link href="/loading/orders">
-                            <Button variant="ghost" className="justify-start w-full">
+                            <Button
+                              variant="ghost"
+                              className="justify-start w-full"
+                            >
                               <AlignJustify className="mr-2 w-4 h-4" />
                               Loading Orders
                             </Button>
                           </Link>
                         </TooltipTrigger>
-                        <TooltipContent className='bg-background max-w-44 text-foreground text-md'>
-                          <p>Orders for loading a Bowser, to make it ready for a trip<br />(For Loading Incharges and for BCC to create and manage the orders)</p>
+                        <TooltipContent className="bg-background max-w-44 text-foreground text-md">
+                          <p>
+                            Orders for loading a Bowser, to make it ready for a
+                            trip
+                            <br />
+                            (For Loading Incharges and for BCC to create and
+                            manage the orders)
+                          </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </li>
                 </OnlyAllowed>
-                <OnlyAllowed allowedRoles={["Admin", "Petrol Pump Personnel", "BCC Authorized Officer"]}>
+                <OnlyAllowed
+                  allowedRoles={[
+                    "Admin",
+                    "Petrol Pump Personnel",
+                    "BCC Authorized Officer",
+                  ]}
+                >
                   <li onClick={toggleSidebar}>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Link href="/loading/petrol-pump">
-                            <Button variant="ghost" className="justify-start w-full">
+                            <Button
+                              variant="ghost"
+                              className="justify-start w-full"
+                            >
                               <Fuel className="mr-2 w-4 h-4" />
                               Orders
                             </Button>
                           </Link>
                         </TooltipTrigger>
-                        <TooltipContent className='bg-background max-w-44 text-foreground text-md'>
-                          <p>Orders for loading a Bowser, to make it ready for a trip<br />(For Petrol Pumps)</p>
+                        <TooltipContent className="bg-background max-w-44 text-foreground text-md">
+                          <p>
+                            Orders for loading a Bowser, to make it ready for a
+                            trip
+                            <br />
+                            (For Petrol Pumps)
+                          </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -160,20 +205,35 @@ export function Sidebar() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Link href="/loading/sheet">
-                            <Button variant="ghost" className="justify-start w-full">
+                            <Button
+                              variant="ghost"
+                              className="justify-start w-full"
+                            >
                               <FileSpreadsheet className="mr-2 w-4 h-4" />
                               Loading Sheets
                             </Button>
                           </Link>
                         </TooltipTrigger>
-                        <TooltipContent className='bg-background max-w-44 text-foreground text-md'>
-                          <p>After the order is fulfilled, the details will show here to assign bowser driver and destination<br />(For Bowser Control Center Only)</p>
+                        <TooltipContent className="bg-background max-w-44 text-foreground text-md">
+                          <p>
+                            After the order is fulfilled, the details will show
+                            here to assign bowser driver and destination
+                            <br />
+                            (For Bowser Control Center Only)
+                          </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </li>
                 </OnlyAllowed>
-                <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer", "Diesel Control Center Staff", "Data Entry"]}>
+                <OnlyAllowed
+                  allowedRoles={[
+                    "Admin",
+                    "BCC Authorized Officer",
+                    "Diesel Control Center Staff",
+                    "Data Entry",
+                  ]}
+                >
                   <li onClick={toggleSidebar}>
                     <Link href="/tripsheets">
                       <Button variant="ghost" className="justify-start w-full">
@@ -183,7 +243,13 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>
-                <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer", "Calibration Staff"]}>
+                <OnlyAllowed
+                  allowedRoles={[
+                    "Admin",
+                    "BCC Authorized Officer",
+                    "Calibration Staff",
+                  ]}
+                >
                   <li onClick={toggleSidebar}>
                     <Link href="/manage-bowsers">
                       <Button variant="ghost" className="justify-start w-full">
@@ -218,14 +284,18 @@ export function Sidebar() {
               </ul>
             </nav>
             <div className="mt-auto h-[20%]">
-              <Button variant="outline" className="w-full" onClick={handleLogout}>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleLogout}
+              >
                 <LogOut className="mr-2 w-4 h-4" />
                 Logout
               </Button>
             </div>
           </div>
         </SheetContent>
-      </Sheet >
+      </Sheet>
     </>
-  )
+  );
 }
