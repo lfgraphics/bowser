@@ -58,7 +58,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     )?.levelHeight || 0
   );
   const [ch1FullLoadAddqty, setCh1FullLoadAddqty] = useState<number>(
-    Number((record?.loading.quantityBySlip / 2).toFixed(2))
+    record?.loading.quantityBySlip / 2
   );
   const [ch1FullLoadTotalqty, setCh1FullLoadTotalqty] = useState<number>(
     ch1FullLoadAddqty + ch1Openingqty
@@ -140,7 +140,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     Number(record?.totalLoadQuantityBySlip?.toFixed(2)) || 0
   );
   const [totalLoadedQty, setTotalLoadedQty] = useState<number>(
-    record?.totalLoadQuantityBySlip || 0
+    ch1FullLoadTotalqty + ch2FullLoadTotalqty
   );
   const [totalLoadedQtyByDip, setTotalLoadedQtyByDip] = useState<number>(
     Number(record?.tempLoadByDip?.toFixed(2)) || 0
@@ -178,7 +178,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     closingOdoMeter - openingOdoMeter
   );
   const [netLoadQty, setNetLoadQty] = useState<number>(
-    Number(Number((record?.totalLoadQuantity || 0) - unload).toFixed(2))
+    Number((fullLoadQtyBySlip + addition - unload).toFixed(2))
   );
   // HSD consumption, short excess
   const [hsdPerKm, setHsdPerKm] = useState<number>(
@@ -194,9 +194,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
   const [pumpConsumption, setPumpConsumption] = useState<number>(
     machineSaleQty > 0 ? Math.round((1 * machineSaleQty) / 1000) : 0
   );
-  const [saleAsPerLoad, setSaleAsPerLoad] = useState<number>(
-    Number((netLoadQty - shortExcess).toFixed(2))
-  );
+  const [saleAsPerLoad, setSaleAsPerLoad] = useState<number>(machineSaleQty);
   // filled by driver, sale as per driver
   const [filledByDriver, setFilledByDriver] = useState<number>(
     record.settelment?.details.extras?.filledByDriver || 0
@@ -235,7 +233,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
   const [reward, setReward] = useState<number>(
     (record.settelment?.details.extras?.rewardTrips || 0) * 300
   );
-
+  // =IF(F14<-ROUND(F11*5%,2),-F14,0)*K16
   const [deductableExcessFuelingValue, setDeductableExcessFuelingValue] =
     useState<number>(
       (shortOrExcessByDriver < -parseFloat((hsdConsumption * 0.05).toFixed(2))
@@ -252,8 +250,9 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     "hsd rate for consumption: ",
     hsdRateFor
   );
+  // =IF(K14<-5,-K14,0)*K16
   const [deductableShortSale, setDeductableShortSale] = useState<number>(
-    shortOrExcessAsPerRecord < -5 ? shortOrExcessAsPerRecord : 0 * hsdRateFor
+    (shortOrExcessAsPerRecord < -5 ? -shortOrExcessAsPerRecord : 0) * hsdRateFor
   );
   const [totalDeduction, setTotalDeduction] = useState<number>(
     Number((deductableExcessFuelingValue + deductableShortSale).toFixed(2))
@@ -603,7 +602,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
               Short/(Excess)
             </TableCell>
             <TableCell className="border-gray-400 border text-base text-left">
-              {shortOrExcessByDriver}
+              {shortOrExcessByDriver.toFixed(2)}
             </TableCell>
             <TableCell
               colSpan={4}

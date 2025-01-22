@@ -96,6 +96,7 @@ router.post('/', async (req, res) => {
 router.post('/bulk', async (req, res) => {
     try {
         const fuelingTransactions = req.body;
+        const tripSheetId = fuelingTransactions[0].tripSheetId;
 
         const saveOptions = {
             writeConcern: {
@@ -111,15 +112,9 @@ router.post('/bulk', async (req, res) => {
 
         await Promise.all(savePromises);
 
-        const tripSheetUpdates = fuelingTransactions.map(transaction => ({
-            tripSheetId: transaction.tripSheetId,
-            newDispense: {
-                transaction
-            }
-        }));
-
-        await updateTripSheetBulk(tripSheetUpdates);
-
+        // let tripUpdate = 
+        await updateTripSheetBulk({ tripSheetId, dispenses: fuelingTransactions })
+        // if (tripUpdate.success) { } else {}
         res.status(200).json({ message: 'Bulk Data Submitted successfully' });
 
     } catch (err) {

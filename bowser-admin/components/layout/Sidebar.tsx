@@ -37,21 +37,21 @@ export function Sidebar() {
 
     const isMobile = window.innerWidth <= 768;
 
+    window.addEventListener("keydown", handleKeyDown);
     if (isMobile) {
-      window.addEventListener('keydown', handleKeyDown)
-      window.addEventListener('popstate', handleBackEvent)
+      window.addEventListener("popstate", handleBackEvent);
 
       if (isOpen) {
-        history.pushState(null, '', window.location.href);
+        history.pushState(null, "", window.location.href);
       }
     }
 
     return () => {
+      window.removeEventListener("keydown", handleKeyDown);
       if (isMobile) {
-        window.removeEventListener('keydown', handleKeyDown)
-        window.removeEventListener('popstate', handleBackEvent)
+        window.removeEventListener("popstate", handleBackEvent);
       }
-    }
+    };
   }, [isOpen])
 
   const handleLogout = () => {
