@@ -10,7 +10,7 @@ const { TripSheet } = require('../models/TripSheets')
  * @returns {Object} - The updated trip sheet.
  */
 
-const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense, removeDispenseId }) => {
+const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense, removeDispenseId, verify }) => {
     try {
         // Build the query based on the identifier provided
         const query = sheetId ? { _id: new mongoose.Types.ObjectId(sheetId) } : { tripSheetId };
@@ -20,6 +20,20 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
         if (!tripSheet) {
             console.error(`TripSheet not found for query: ${JSON.stringify(query)}`);
             return { success: false, message: "TripSheet not found" };
+        }
+
+        if (verify) {
+            const existingDispenseIndex = tripSheet.dispenses.findIndex(
+                (dispense) => dispense?._id?.toString() === newDispense?._id?.toString()
+            );
+
+            if (existingDispenseIndex === -1) {
+                console.log(`No dispense found for the specified _id: ${newDispense._id}`);
+                return { success: false, message: "No dispense found" };
+            } else {
+                tripSheet.dispenses[existingDispenseIndex] = newDispense;
+                return { success: true, message: "TripSheet updated successfully", tripSheet };
+            }
         }
 
         // Update the addition array if newAddition is provided

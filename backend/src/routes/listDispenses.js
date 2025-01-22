@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {FuelingTransaction} = require('../models/Transaction');
+const { FuelingTransaction } = require('../models/Transaction');
 // const FuelingTransaction = require('../models/Transaction');
 const XLSX = require('xlsx');
 const path = require('path');
@@ -208,13 +208,14 @@ router.patch('/update/:id', async (req, res) => {
         const updatedRecord = await FuelingTransaction.findByIdAndUpdate(id, updateData, {
             new: true,
             runValidators: true,
-        });
+        }, { new: true });
 
         if (!updatedRecord) {
             return res.status(404).json({ heading: "Failed", message: 'Record not found' });
         }
+        await updateTripSheet({ tripSheetId: updatedRecord.tripSheetId, newDispense: updatedRecord })
 
-        res.status(200).json({ heading: "Success!", message: 'Record updated successfully', updatedRecord }); // Send the updated record and a success message back to the client
+        res.status(200).json({ heading: "Success!", message: 'Record updated successfully', updatedRecord });
     } catch (error) {
         console.error('Error updating record:', error);
         res.status(500).json({ heading: "Failed!", message: 'Internal server error' });
@@ -233,9 +234,10 @@ router.patch('/verify/:id', async (req, res) => {
                     name: by.name
                 }
             }
-        });
+        }, { new: true });
+
         if (transaction) {
-            await addRecordToTrip(transaction)
+            await updateTripSheet({ tripSheetId: transaction.tripSheetId, verify: transaction })
         }
 
         if (!transaction) {
@@ -276,7 +278,7 @@ router.post('/verify', async (req, res) => {
 
         const transactions = await FuelingTransaction.find({ _id: { $in: ids } });
         for (let i = 0; i < transactions.length; i++) {
-            await addRecordToTrip(transactions[i]);
+            await updateTripSheet({ tripSheetId: transactions[i].tripSheetId, newDispense: transactions[i] });
         }
 
         res.json({
