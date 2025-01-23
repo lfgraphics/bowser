@@ -340,12 +340,12 @@ router.post('/settle/:id', async (req, res) => {
         console.log(Number(totalQty));
         let settlement = {
             dateTime,
+            settled: true,
             details: {
                 chamberwiseDipList,
                 pumpReading,
                 totalQty,
                 odometer,
-                settled: true,
                 extras,
                 by: {
                     id: userDetails.id,
