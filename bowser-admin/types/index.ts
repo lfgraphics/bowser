@@ -342,43 +342,44 @@ export interface TripDriver {
 }
 
 export interface DispensesRecord {
-  _id: string
-  orderId: string
-  category: string
-  party: string
-  tripSheetId: string
-  vehicleNumberPlateImage: string
-  vehicleNumber: string
-  odometer: string
-  driverName: string
-  driverId: string
-  driverMobile: string
-  fuelMeterImage: string[]
-  slipImage: string
-  fuelQuantity: string
-  quantityType: string
-  gpsLocation: string
-  fuelingDateTime: string
+  _id: string;
+  orderId: string;
+  category: string;
+  party: string;
+  tripSheetId: string;
+  vehicleNumberPlateImage: string;
+  vehicleNumber: string;
+  odometer: string;
+  driverName: string;
+  driverId: string;
+  driverMobile: string;
+  fuelMeterImage: string[];
+  slipImage: string;
+  fuelQuantity: string;
+  quantityType: string;
+  gpsLocation: string;
+  location: string;
+  fuelingDateTime: string;
   verified: {
-    status: boolean
+    status: boolean;
     by?: {
-      id: string
-      name: string
-    }
-  }
-  posted: boolean
+      id: string;
+      name: string;
+    };
+  };
+  posted: boolean;
   bowser: {
-    regNo: string
+    regNo: string;
     driver: {
-      name: string
-      id: string
-      phoneNo: string
-    }
-  }
+      name: string;
+      id: string;
+      phoneNo: string;
+    };
+  };
   allocationAdmin: {
-    name: string
-    id: string
-  }
+    name: string;
+    id: string;
+  };
 }
 
 export interface Filters {

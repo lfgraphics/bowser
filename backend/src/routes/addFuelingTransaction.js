@@ -38,17 +38,11 @@ router.post('/', async (req, res) => {
 
         console.log(fuelingTransaction)
 
-        let tripSheetObject = {
-            transaction: fuelingTransaction._id,
-            fuelQuantity: fuelingTransaction.fuelQuantity,
-            isVerified: false,
-            isPosted: false,
-        }
-
         let tripUpdate = await updateTripSheet({ tripSheetId: fuelingTransaction.tripSheetId, newDispense: fuelingTransaction })
         if (tripUpdate.success) {
             res.status(200).json({ message: 'Data Submitted successfully' });
         } else {
+            console.log(tripUpdate.error);
             res.status(500).json({ message: 'Failed to submit data', error: tripUpdate.error });
         }
 

@@ -1,11 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { FuelingTransaction } = require('../models/Transaction');
-// const FuelingTransaction = require('../models/Transaction');
 const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
-const { addRecordToTrip } = require('../utils/fuelTransactions');
 const { updateTripSheet } = require('../utils/tripSheet')
 const { mongoose } = require('mongoose');
 
@@ -68,7 +66,7 @@ router.get('/', async (req, res) => {
             driverMobile: 1,
             bowser: 1,
             fuelingDateTime: 1,
-            gpsLocation: 1,
+            location: 1,
             verified: 1,
             category: 1,
             party: 1,
@@ -103,7 +101,6 @@ router.get('/export/excel', async (req, res) => {
     } else if (verified === 'false') {
         filter.verified = { $in: [false, null] };
     }
-    // Apply filters if provided
     if (bowserNumber) {
         filter['bowser.regNo'] = bowserNumber;
     }
@@ -112,7 +109,6 @@ router.get('/export/excel', async (req, res) => {
         filter['driverName'] = { $regex: driverName, $options: 'i' };
     }
     if (tripSheetId) {
-        // Ensure tripSheetId is a number to prevent CastError
         const numericTripSheetId = Number(tripSheetId);
         if (!isNaN(numericTripSheetId)) {
             filter['tripSheetId'] = numericTripSheetId;
@@ -123,15 +119,15 @@ router.get('/export/excel', async (req, res) => {
     }
 
     const sortOrder = order === 'asc' ? 1 : -1;
-    const recordLimit = limit ? parseInt(limit, 10) : undefined; // Convert limit to a number if provided
+    const recordLimit = limit ? parseInt(limit, 10) : undefined;
 
     try {
-        // Fetch filtered, sorted, and limited records
         const records = await FuelingTransaction.find(filter, {
             fuelingDateTime: 1,
             tripSheetId: 1,
             bowser: 1,
             gpsLocation: 1,
+            location: 1,
             driverName: 1,
             driverMobile: 1,
             vehicleNumber: 1,
@@ -140,26 +136,25 @@ router.get('/export/excel', async (req, res) => {
             verified: 1
         }).sort({ [sortBy]: sortOrder }).limit(recordLimit);
 
-        // Format records for Excel
         const formattedRecords = records.map(record => ({
             'Trip Sheet Number': record.tripSheetId,
             'Fueling Time': record.fuelingDateTime,
-            'Fueling Location': record.gpsLocation,
+            'Fueling Location': record.location,
             'Bowser Number': record.bowser.regNo,
             'Bowser Driver': record.bowser.driver.name,
             'Bowser Driver Ph No.': record.bowser.driver.phoneNo,
             'Vehicle Number': record.vehicleNumber,
             'Vehicle Driver Name': record.driverName,
             'Vehicle Driver Mobile': record.driverMobile,
-            'Fuel Quantity': `${record.quantityType}, ${record.fuelQuantity} Liter`,
+            'Fueling Type': record.quantityType,
+            'Quantity': record.fuelQuantity,
+            'Cordinates location': record.gpsLocation,
         }));
 
-        // Generate a dynamic file name based on filters and record length
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const filterDescription = `${bowserNumber ? `Bowser-${bowserNumber}_` : ''}${driverName ? `Driver-${driverName}_` : ''}`;
         const fileName = `dispenses_data_${filterDescription}Count-${formattedRecords.length}_${timestamp}.xlsx`;
 
-        // Create and write the Excel file
         const worksheet = XLSX.utils.json_to_sheet(formattedRecords);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Dispenses Data');
@@ -167,15 +162,12 @@ router.get('/export/excel', async (req, res) => {
         const filePath = path.join(__dirname, fileName);
         XLSX.writeFile(workbook, filePath);
 
-        // Send the file to the client for download
-
         res.download(filePath, fileName, err => {
             if (err) {
                 console.error('Error sending file:', err);
-                res.status(500).json({ message: 'Error downloading file' });
+                res.status(500).json({ message: 'Error downloading file', err });
             }
 
-            // Delete the file after sending to clean up
             fs.unlinkSync(filePath);
         });
     } catch (error) {

@@ -14,8 +14,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// create a route to get all the petrol pumps without any query with pagination and default limit of 20
-router.get('/', async (req, res) => {
+router.get('/get', async (req, res) => {
     const { page = 1, limit = 20 } = req.query;
     try {
         const totalDocs = await PetrolPump.countDocuments();
