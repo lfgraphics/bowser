@@ -9,7 +9,6 @@ const { TripSheet } = require('../models/TripSheets')
  * @param {Object} newDispense - The new dispense details.
  * @returns {Object} - The updated trip sheet.
  */
-
 const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense, removeDispenseId, verify }) => {
     try {
         // Build the query based on the identifier provided
@@ -44,6 +43,9 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
 
         // Update the dispenses array if newDispense is provided
         if (newDispense) {
+
+            newDispense.cost = Number((tripSheet.hsdRate * newDispense.fuelQuantity).toFixed(2));
+
             const existingDispenseIndex = tripSheet.dispenses.findIndex(
                 (dispense) => dispense?._id?.toString() === newDispense?._id?.toString()
             );

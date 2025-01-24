@@ -32,6 +32,7 @@ const fuelingTransactionSchema = new mongoose.Schema({
         }
     },
     fuelQuantity: { type: Number, required: false },
+    cost: { type: Number },
     gpsLocation: {
         type: String, required: false,
         validate: {

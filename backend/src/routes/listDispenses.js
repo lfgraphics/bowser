@@ -284,7 +284,6 @@ router.post('/verify', async (req, res) => {
     }
 });
 
-
 router.delete('/delete', async (req, res) => {
     const { tripSheetId, id } = req.body
     console.log(req.body)
