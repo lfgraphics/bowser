@@ -204,7 +204,7 @@ const TripSheetPage = () => {
                                                             <Eye />
                                                         </DropdownMenuItem>
                                                     </Link>
-                                                    <DropdownMenuItem disabled={sheet.settelment?.dateTime == undefined && sheet.dispenses?.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? false : true} className='p-4 w-full h-10 text-center' onClick={() => postDispenses(sheet._id!)}>
+                                                    <DropdownMenuItem disabled={sheet.settelment?.dateTime == undefined && sheet.dispenses?.length > 0 && sheet.dispenses.every(dispense => dispense.verified?.status) ? false : true} className='p-4 w-full h-10 text-center' onClick={() => postDispenses(sheet._id!)}>
                                                         Post
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -224,7 +224,7 @@ const TripSheetPage = () => {
                                         </OnlyAllowed>
                                     </TableCell>
                                 </OnlyAllowed>
-                                <TableCell>{sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.isVerified) ? <Check className='block mx-auto' /> : (sheet.dispenses && sheet.dispenses.length > 0 ? <X className='block mx-auto' /> : null)}</TableCell>
+                                <TableCell>{sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.verified?.status) ? <Check className='block mx-auto' /> : (sheet.dispenses && sheet.dispenses.length > 0 ? <X className='block mx-auto' /> : null)}</TableCell>
                             </TableRow>
                         ))
                     )}

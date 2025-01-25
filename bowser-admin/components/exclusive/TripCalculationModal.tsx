@@ -178,7 +178,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     closingOdoMeter - openingOdoMeter
   );
   const [netLoadQty, setNetLoadQty] = useState<number>(
-    Number((fullLoadQtyBySlip + addition - unload).toFixed(2))
+    Number(((totalLoadedQty + addition) - unload).toFixed(2))
   );
   // HSD consumption, short excess
   const [hsdPerKm, setHsdPerKm] = useState<number>(
@@ -452,7 +452,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
               Load Qty
             </TableCell>
             <TableCell className="border-gray-400 border text-base text-left">
-              {fullLoadQtyBySlip}
+              {totalLoadedQty}
             </TableCell>
           </TableRow>
           <TableRow>

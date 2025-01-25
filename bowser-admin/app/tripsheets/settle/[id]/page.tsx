@@ -28,7 +28,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
     const [hsdPerKm, setHsdPerKm] = useState<number>(15)
     const [filledByDriver, setFilledByDriver] = useState<number>()
     const [hsdRateForDeduction, setHsdRateForDeduction] =
-      useState<number>(89.99);
+      useState<number>(0);
     const [saleryDays, setSaleryDays] = useState<number>(4);
     const [foodingDays, setFoodingDays] = useState<number>(4);
     const [rewardTrips, setRewardTrips] = useState<number>(1);
@@ -195,7 +195,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
           />
           <Separator className="my-7" />
           <h3 className="font-semibold text-xl">Distripbution Cost Details</h3>
-          <Label htmlFor={`unload`}>Unload</Label>
+          <Label htmlFor={`unload`}>Unload (Return Qty)</Label>
           <Input
             id={`unload`}
             type="number"

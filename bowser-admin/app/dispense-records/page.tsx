@@ -388,7 +388,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
           type="single"
           collapsible
           className="block top-0 z-10 lg:hidden bg-background py-2 smallScreen"
-        >
+         >
           <AccordionItem value="item-1">
             <AccordionTrigger>Filters and sorting</AccordionTrigger>
             <AccordionContent>
@@ -515,7 +515,6 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
           </AccordionItem>
         </Accordion>
         <Table className="w-max min-w-full">
-          {/* <TableCaption>A list of your recent Dispenses.</TableCaption> */}
           <TableHeader>
             <TableRow>
               <TableHead>S N</TableHead>
@@ -585,24 +584,12 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                     </Link>
                   </TableCell>
                   <TableCell>
-                    {record.verified ? (
-                      <Check />
-                    ) : (
-                      <Button
-                        onClick={() => {
-                          verifyOne(String(record._id));
-                        }}
-                        variant={
-                          selectedRows.has(`${record._id}`)
-                            ? "secondary"
-                            : "outline"
-                        }
-                      >
+                    {record.verified ? (<Check />) : (
+                      <Button onClick={() => { verifyOne(String(record._id))}} variant={ selectedRows.has(`${record._id}`) ? "secondary" : "outline" } >
                         Verify
                       </Button>
                     )}
                   </TableCell>
-                  {/* <X /> */}
                   <TableCell>
                     {record.posted ? (
                       <Check />
@@ -624,7 +611,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                   </TableCell>
                 </TableRow>
               ))}
-            {/* Calculate total fuel quantity if filtered by tripSheetId */}
+
             <TableRow>
               <TableCell colSpan={12} className="text-right font-bold">
                 Total Fuel Quantity:
