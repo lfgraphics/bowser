@@ -436,6 +436,17 @@ export default function FuelingAllocation() {
                                         value={vehicleNumber}
                                         onChange={(e) => {
                                             setVehicleNumber(e.target.value.toUpperCase());
+                                            if (e.nativeEvent.data) {
+                                                if (fueling == "Own") {
+                                                    if (e.target.value.length > 3) {
+                                                        searchVehicle(e.target.value);
+                                                    }
+                                                } else {
+                                                    if (e.target.value.length > 3) {
+                                                        searchAttatchedVehicle(e.target.value)
+                                                    }
+                                                }
+                                            }
                                         }}
                                         onKeyDown={(e) => {
                                             console.log(e.key);
