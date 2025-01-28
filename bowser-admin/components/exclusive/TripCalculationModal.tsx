@@ -551,7 +551,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
               Qty. (Short)/Excess (Bal. Dip)
             </TableCell>
             <TableCell className="border-gray-400 border text-base text-left">
-              {shortExcess}
+              {shortExcess.toFixed(2)}
             </TableCell>
           </TableRow>
           <TableRow>
@@ -681,7 +681,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
               rowSpan={3}
               className="border-gray-400 border text-base text-left"
             >
-              {deductableExcessFuelingValue}
+              {deductableExcessFuelingValue.toFixed(2)}
             </TableCell>
           </TableRow>
           <TableRow>
@@ -739,7 +739,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
               rowSpan={3}
               className="border-gray-400 border text-base text-left"
             >
-              {deductableShortSale}
+              {deductableShortSale.toFixed(2)}
             </TableCell>
           </TableRow>
           <TableRow>
