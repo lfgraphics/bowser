@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { Home, ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog } from 'lucide-react'
+import { Home, ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideGitPullRequestDraft, LucideSquareArrowOutUpRight } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 import ThemeChanger from '../ThemeChanger'
@@ -95,8 +95,20 @@ export function Sidebar() {
                   <li onClick={toggleSidebar}>
                     <Link href="/dashboard">
                       <Button variant="ghost" className="justify-start w-full">
-                        <Home className="mr-2 w-4 h-4" />
+                        <LucideSquareArrowOutUpRight className="mr-2 w-4 h-4" />
                         Allocate
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed
+                  allowedRoles={["Admin", "Diesel Control Center Staff"]}
+                >
+                  <li onClick={toggleSidebar}>
+                    <Link href="/fuel-request">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <LucideGitPullRequestDraft className="mr-2 w-4 h-4" />
+                        Requests
                       </Button>
                     </Link>
                   </li>

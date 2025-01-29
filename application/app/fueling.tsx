@@ -1101,7 +1101,6 @@ export default function FuelingScreen() {
                   }}
                   returnKeyType="next"
                   onSubmitEditing={() => adminNameInputRef.current?.focus()}
-                  blurOnSubmit={true}
                 />
               </View>
               <Modal

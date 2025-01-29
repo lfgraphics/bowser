@@ -12,6 +12,17 @@ export const checkUserLoggedIn = async () => {
     const userData = await AsyncStorage.getItem('userData');
     const deviceUUID = await AsyncStorage.getItem('deviceUUID');
 
+    console.log('User token:', userToken);
+    console.log('User data:', userData);
+    console.log('Device UUID:', deviceUUID);
+
+    if (userData) {
+      const parsedUserData = JSON.parse(userData);
+      if (parsedUserData.Role.includes('Wehicle Driver')) {
+        return true;
+      }
+    }
+
     if (!userToken || !deviceUUID || !userData) {
       await logoutUser();
       router.replace('/auth');
@@ -62,6 +73,7 @@ export const checkUserLoggedIn = async () => {
     return false;
   }
 };
+
 
 const checkInternetConnection = async (): Promise<boolean> => {
   try {

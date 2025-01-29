@@ -7,13 +7,15 @@ import { useTheme } from '@react-navigation/native';
 import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { checkAndRegisterDevice } from '@/src/utils/authUtils';
+import { checkAndRegisterDevice, logoutUser } from '@/src/utils/authUtils';
 import { baseUrl } from '@/src/utils/helpers';
+import { AuthNav } from '@/src/types/models';
 
 export default function AuthScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const colorScheme = useColorScheme();
+  const [authNav, setAuthNav] = useState<AuthNav>('bowserDriver');
   const [isLogin, setIsLogin] = useState(true);
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -36,7 +38,7 @@ export default function AuthScreen() {
     try {
       let deviceUUID = await AsyncStorage.getItem('deviceUUID');
       if (!deviceUUID) {
-        deviceUUID = await Crypto.randomUUID();
+        deviceUUID = Crypto.randomUUID();
         await AsyncStorage.setItem('deviceUUID', deviceUUID);
       }
 
@@ -50,7 +52,7 @@ export default function AuthScreen() {
       });
 
       const endpoint = isLogin ? 'login' : 'signup';
-      const response = await fetch(`${baseUrl}/auth/${endpoint}`, { //https://bowser-backend-2cdr.onrender.com  //http://192.168.137.1:5000
+      const response = await fetch(`${baseUrl}/auth${authNav == "vehicleDriver" ? "/driver" : ""}/${endpoint}`, { //https://bowser-backend-2cdr.onrender.com  //http://192.168.137.1:5000
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -59,12 +61,13 @@ export default function AuthScreen() {
       });
 
       const data = await response.json();
+      console.log("response", data);
 
       if (!response.ok) {
         Alert.alert(
           "Error",
           data.message || 'An error occurred',
-          [{ text: "OK" }],
+          [{ text: "ठीक है" }],
           { cancelable: false }
         );
         throw new Error(data.message || 'An error occurred');
@@ -72,9 +75,9 @@ export default function AuthScreen() {
 
       if (!isLogin) {
         Alert.alert(
-          "Signup Successful",
-          "Your account has been created successfully. Please wait for admin verification.",
-          [{ text: "OK" }],
+          "सफलतापूर्वक साइन अप हो गया।",
+          data.message || 'आगे बढ़ने के लिए लॉगिन करें।',
+          [{ text: "ठीक है" }],
           { cancelable: false }
         );
         setIsLogin(true);
@@ -86,32 +89,71 @@ export default function AuthScreen() {
       if (data.token) {
         try {
           await AsyncStorage.setItem('userToken', data.token);
-          await AsyncStorage.setItem('isLoggedIn', 'true'); // Set login flag
+          await AsyncStorage.setItem('isLoggedIn', 'true');
           if (data.loginTime) {
             await AsyncStorage.setItem('loginTime', data.loginTime);
           }
           if (data.user) {
             await AsyncStorage.setItem('userData', JSON.stringify(data.user));
           }
-          checkAndRegisterDevice(phoneNumber);
+          if (authNav == "vehicleDriver") {
+            if (!data.user.VehicleNo || data.user.VehicleNo == "No Vehicle Assigned") {
+              Alert.alert(
+                "कोई वाहन निर्धारित नहीं है",
+                "कृपया डीज़ल कंट्रोल सेंटर से संपर्क करें और अपने निर्धारित वाहन को सही करें।\nलॉग आउट किया जा रहा है",
+                [{ text: "ठीक है" }],
+                { cancelable: false }
+              );
+              logoutUser();
+            } else {
+              Alert.alert(
+                "वाहन सही है?",
+                `क्या आपका निर्धारित वाहन ${data.user.VehicleNo} है?`,
+                [
+                  {
+                    text: "हाँ",
+                    onPress: async () => {
+                      await checkAndRegisterDevice(phoneNumber);
+                      router.replace('/');
+                    }
+                  },
+                  {
+                    text: "नहीं",
+                    onPress: () => {
+                      Alert.alert(
+                        "ग़लत वाहन निर्धारित",
+                        "कृपया डीज़ल कंट्रोल सेंटर से संपर्क करें और अपने निर्धारित वाहन को सही करें।\nलॉग आउट किया जा रहा है",
+                        [{ text: "ठीक है" }],
+                        { cancelable: false }
+                      );
+                      logoutUser();
+                    }
+                  }
+                ],
+                { cancelable: false }
+              );
+            }
+          }
+          await checkAndRegisterDevice(phoneNumber);
           router.replace('/');
         } catch (storageError) {
           console.error('Error saving to AsyncStorage:', storageError);
-          Alert.alert("Storage Error", "Failed to save user data. Please try again.", [{ text: "OK" }]);
+          Alert.alert("स्टोरेज एरर", "डाटा सेव होने में एरर आ रहा है कृपया दोबारा कोशिश करें", [{ text: "ठीक है" }]);
         }
       } else {
         Alert.alert(
-          "Error",
-          "Login failed. Please try again.",
-          [{ text: "OK" }],
+          "एरर",
+          "टोकन नहीं मिला। कृपया दोबारा कोशिश करें।",
+          [{ text: "ठीक है" }],
           { cancelable: false }
         );
       }
     } catch (error) {
+      console.error('Error authenticating:', error);
       Alert.alert(
-        "Authentication Error",
-        (error instanceof Error ? error.message : String(error)) || (isLogin ? "Login failed. Please try again." : "Signup failed. Please try again."),
-        [{ text: "OK" }],
+        "प्रमाण नहीं हो पाया",
+        (error instanceof Error ? error.message : String(error)) || (isLogin ? "लॉग इन नहीं हुआ कृप्या दोबारा कोशिश करें।" : "साइन अप नहीं हुआ कृप्या दोबारा कोशिश करें।"),
+        [{ text: "ठीक है" }],
         { cancelable: false }
       );
     } finally {
@@ -121,18 +163,18 @@ export default function AuthScreen() {
 
   const validateInputs = () => {
     if (!password) {
-      alert("Password is required.");
+      alert("पासवर्ड आवश्यक है।");
       passwordInputRef.current?.focus();
       return false;
     }
     if (!isLogin) {
       if (!phoneNumber) {
-        alert("Phone number is required.");
+        alert("फ़ोन नंबर आवश्यक है।");
         phoneNumberInputRef.current?.focus();
         return false;
       }
       if (!name) {
-        alert("Name is required.");
+        alert("नाम आवश्यक है।");
         nameInputRef.current?.focus();
         return false;
       }
@@ -142,9 +184,9 @@ export default function AuthScreen() {
     const isValidPhoneNumber = /^\+?\d{10,13}$/; // Example: "+1234567890" is valid, "123456789" is valid, "123456" is not
     if (!isLogin && !isValidPhoneNumber.test(phoneNumber)) {
       Alert.alert(
-        "Enter Correct Details",
-        "Invalid Phone Number format. Phone Number should be in the format +1234567890.",
-        [{ text: "Okay", onPress: () => phoneNumberInputRef.current?.focus() }],
+        "कृपया सही विवरण दें",
+        "अमान्य फोन नंबर। फोन नंबर 10-13 अंकों के बीच होना चाहिए।",
+        [{ text: "ठीक है", onPress: () => phoneNumberInputRef.current?.focus() }],
         { cancelable: false }
       );
       return false;
@@ -152,11 +194,11 @@ export default function AuthScreen() {
 
     // Check if Name contains only letters and spaces
     const isValidName = /^[a-zA-Z ]+$/; // Example: "John Doe" is valid, "John!Doe" is not
-    if (!isLogin && !isValidName.test(name)) {
+    if (!isLogin && !(authNav == "vehicleDriver") && !isValidName.test(name)) {
       Alert.alert(
-        "Enter Correct Details",
-        "Invalid Name format. Name should only contain letters and spaces.",
-        [{ text: "Okay", onPress: () => nameInputRef.current?.focus() }],
+        "कृपया सही विवरण दें",
+        "नाम में केवल अक्षर और रिक्त स्थान होना चाहिए।",
+        [{ text: "ठीक है", onPress: () => nameInputRef.current?.focus() }],
         { cancelable: false }
       );
       return false;
@@ -169,16 +211,45 @@ export default function AuthScreen() {
       <ScrollView ref={scrollViewRef} contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.formContainer}>
           <View style={{ height: 60 }} />
-          <Text style={[styles.title, { color: colors.text }]}>{isLogin ? 'Login' : 'Sign Up'}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{isLogin ? 'लॉग इन' : 'साइन अप'}</Text>
+
+          <View style={[styles.navContainer, { backgroundColor: colors.card }]}>
+            {(["bowserDriver", "vehicleDriver"] as AuthNav[]).map(
+              (option) => (
+                <TouchableOpacity
+                  key={option}
+                  style={[
+                    styles.navButton,
+                    authNav === option && styles.activeButton,
+                  ]}
+                  onPress={() => setAuthNav(option)}
+                >
+                  <Text
+                    style={[
+                      styles.submitButtonText,
+                      {
+                        color: `${authNav == option ? colors.card : colors.text
+                          }`,
+                      },
+                    ]}
+                  >
+                    {option == "bowserDriver"
+                      ? "बाउज़र ड्राइवर"
+                      : "अन्य वाहन ड्राइवर"}
+                  </Text>
+                </TouchableOpacity>
+              )
+            )}
+          </View>
 
           <View style={styles.section}>
             {!isLogin && (
               <View style={styles.inputContainer}>
-                <Text style={{ color: colors.text }}>Name:</Text>
+                <Text style={{ color: colors.text }}>{authNav == "bowserDriver" ? "नाम" : "ITPLId"}:</Text>
                 <TextInput
                   ref={nameInputRef}
                   style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                  placeholder="Enter your name"
+                  placeholder={"अपना" + `${authNav == "bowserDriver" ? " नाम" : " ITPLId"} दर्ज करें`}
                   placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                   value={name}
                   onChangeText={setName}
@@ -189,11 +260,11 @@ export default function AuthScreen() {
               </View>
             )}
             <View style={styles.inputContainer}>
-              <Text style={{ color: colors.text }}>Phone Number:</Text>
+              <Text style={{ color: colors.text }}>फ़ोन नम्बर:</Text>
               <TextInput
                 ref={phoneNumberInputRef}
                 style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                placeholder="Enter phone number"
+                placeholder="अपना फ़ोन नम्बर दर्ज करें"
                 placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
@@ -204,12 +275,12 @@ export default function AuthScreen() {
               />
             </View>
             <View style={styles.inputContainer}>
-              <Text style={{ color: colors.text }}>Password:</Text>
+              <Text style={{ color: colors.text }}>{isLogin ? "पासवर्ड" : "नया पासवर्ड बनाएँ"}:</Text>
               <View style={styles.passwordContainer}>
                 <TextInput
                   ref={passwordInputRef}
                   style={[styles.input, styles.passwordInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                  placeholder="Enter password"
+                  placeholder="पासवर्ड दर्ज करें"
                   placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                   value={password}
                   onChangeText={setPassword}
@@ -236,7 +307,7 @@ export default function AuthScreen() {
             style={styles.submitButton}
             onPress={handleAuth}
           >
-            <Text style={styles.submitButtonText}>{isLogin ? 'Login' : 'Sign Up'}</Text>
+            <Text style={styles.submitButtonText}>{isLogin ? 'लॉग इन' : 'साइन अप'}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -244,7 +315,7 @@ export default function AuthScreen() {
             onPress={() => setIsLogin(!isLogin)}
           >
             <Text style={styles.switchButtonText}>
-              {isLogin ? 'Need an account? Sign Up' : 'Already have an account? Login'}
+              {isLogin ? 'नया अकाउंट बनाएं' : 'पुराने अकाउंट में लॉग इन करें'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -261,6 +332,25 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   main: {
     backgroundColor: 'dark',
+  },
+  navContainer: {
+    paddingVertical: 10,
+    borderRadius: 5,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginVertical: 20,
+  },
+  navButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    width: '40%',
+    alignItems: "center",
+    textAlign: "center",
+  },
+  activeButton: {
+    backgroundColor: "#0a7ea4",
   },
   container: {
     flex: 1,

@@ -9,6 +9,7 @@ export interface Driver {
 }
 
 export type FuelingTypes = 'Own' | 'Attatch' | 'Bulk Sale'
+export type AuthNav = 'bowserDriver' | 'vehicleDriver'
 
 export interface Vehicle {
   VehicleNo: string
@@ -151,6 +152,7 @@ export type FuelingOrderData = {
     id: string;
     allocationTime: string;
   };
+  request?: FuelRequest;
 };
 
 export interface FuelNotificationProps {
@@ -172,6 +174,17 @@ export interface FuelNotificationProps {
     id: string;
     allocationTime: string;
   };
+  request: FuelRequest
+}
+
+export interface FuelRequest {
+  _id: string;
+  vehicleNumber: string;
+  driverName: string;
+  driverId: string;
+  driverMobile: string;
+  location: string;
+  fullfill: boolean;
 }
 
 export interface AppUpdates {
@@ -233,4 +246,11 @@ export interface UserData {
       }
     }
   }>
+}
+export interface DriverData {
+  Name: string
+  Id: string
+  'Phone Number': string
+  Role: string,
+  VehicleNo: string
 }

@@ -51,8 +51,6 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { userId, password, appName } = req.body;
-        console.log(req.body)
-        // 1. Find user and check validity
         const user = await User.findOne({ userId }).populate('roles');
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
@@ -63,7 +61,6 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // 2. Check if user has access to the requested app
         const hasAccess = user.roles.some(async role => {
             const roleDoc = await Role.findById(role);
             return roleDoc.permissions.apps.some(app =>
@@ -75,7 +72,6 @@ router.post('/login', async (req, res) => {
             return res.status(403).json({ message: 'User does not have access to this application' });
         }
 
-        // 3. Gather the user's roles for the token payload
         let roleNames = [];
         let roles = [];
         if (user.roles && user.roles.length > 0) {
@@ -83,7 +79,6 @@ router.post('/login', async (req, res) => {
             roleNames = roles.map(role => role.name);
         }
 
-        // 4. Create the JWT
         const token = jwt.sign(
             { userId: user.userId, roles: roleNames.map(r => r.toString()) },
             process.env.JWT_SECRET,

@@ -165,7 +165,7 @@ async function sendNativePushNotification({ mobileNumber, message, options = {} 
  * @param {object} options - Additional options for notifications (e.g., title, icon, etc.).
  * @returns {Promise<object>} - Results of notifications sent and errors.
  */
-async function sendBulkNotifications({ groups: groups = [], recipients: recipients = [], message: message, platform: platform, options: options = {} }) {
+async function sendBulkNotifications({ groups = [], recipients = [], message, platform, options = {} }) {
     if (!message || !platform) {
         throw new Error('Message and platform are required.');
     }
@@ -217,7 +217,7 @@ async function sendBulkNotifications({ groups: groups = [], recipients: recipien
         try {
             let result;
             if (platform === 'web') {
-                result = await sendWebPushNotification(userId, message, options);
+                result = await sendWebPushNotification({ userId, message, options });
             } else if (platform === 'native') {
                 result = await sendNativePushNotification({ mobileNumber, message, options });
             } else {

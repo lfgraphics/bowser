@@ -7,11 +7,11 @@ import Loading from '../loading';
 import { InstallPrompt } from '../page';
 // import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-export default function Dashboard() {
+export default function Dashboard({ searchParams }: { searchParams: { vehicleNumber: string, driverId: string, driverName: string, driverMobile: string, id: string } }) {
 
     return (
         <div>
-            <FuelingAllocation />
+            <FuelingAllocation searchParams={searchParams} />
             {/* <PushNotificationManager /> */}
             <InstallPrompt />
             {/* <AlertDialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>

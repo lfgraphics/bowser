@@ -1,55 +1,67 @@
 const express = require('express');
+// const mongoose = require('mongoose');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const User = require('../models/user');
-const Role = require('../models/role');
-const { TripSheet } = require('../models/TripSheets');
+const Driver = require('../models/driver');
 const UnAuthorizedLogin = require('../models/unauthorizedLogin');
 const argon2 = require('argon2');
-const crypto = require('crypto');
-
-
-function isTokenValid(decodedToken) {
-    const now = Date.now();
-    const tokenIssueTime = decodedToken.iat * 1000; // Convert to milliseconds
-    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-    return now - tokenIssueTime < sevenDaysInMs;
-}
-
-const generateResetToken = () => {
-    return crypto.randomBytes(10).toString('hex');
-};
+// const Role = require('../models/role');
+const moment = require('moment-timezone');
+const vehicle = require('../models/vehicle');
 
 router.post('/signup', async (req, res) => {
     try {
         const { password, phoneNumber, name, deviceUUID } = req.body;
 
-        // Check if user already exists
-        if (phoneNumber) {
-            const existingUser = await User.findOne({ phoneNumber });
-            if (existingUser) {
-                return res.status(400).json({ message: 'User already exists' });
-            }
+        const driver = await Driver.find({ Name: { $regex: name, $options: 'i' } });
+
+        if (driver.length > 1) {
+            console.error(`Multiple Ids found by ${name}`);
+            return res.status(400).json({ message: `Please specify the id properly. We found ${driver.length} Ids by ${name}` });
         }
 
-        // Hash the password
+        if (driver[0].verified) {
+            console.error(`User already exist`);
+            return res.status(400).json({ message: `User already existn\nContact admin if you want to update the password.` });
+        }
+
+        if (!driver) {
+            console.error(`No data found with the entered Id ${name}`);
+            return res.status(404).json({ message: `No data found with the entered Id ${name}` });
+        }
+
+        const idMatch = driver[0].Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
+        let cleanName = driver[0].Name.trim();
+        let recognizedId = '';
+        if (idMatch) {
+            recognizedId = idMatch[0].replace(/[()]/g, '').toUpperCase();
+            cleanName = cleanName.replace(/(?:\s*[-\s]\s*|\s*\(|\)\s*)(?:ITPL-?\d+|\(ITPL-?\d+\))/i, '').trim();
+        }
+
+        let id = recognizedId || cleanName;
+
         const hashedPassword = await argon2.hash(password);
 
-        // Create new user
-        const newUser = new User({
-            password: hashedPassword,
-            phoneNumber,
-            name,
-            deviceUUID,
-            verified: false
-        });
+        const updatedDriver = await Driver.findOneAndUpdate(
+            { Name: { $regex: name, $options: "i" } },
+            {
+                $set: {
+                    "MobileNo.0.MobileNo": phoneNumber,
+                    "MobileNo.0.LastUsed": true,
+                    ITPLId: id,
+                    password: hashedPassword,
+                    deviceUUID,
+                    verified: true,
+                    generationTime: moment().tz("Asia/Kolkata").toDate()
+                }
+            },
+            { new: true, upsert: true }
+        );
 
-        await newUser.save();
+        console.log('updatedDriver:', updatedDriver);
 
-        // Create and send JWT token
-        const token = jwt.sign({ phoneNo: newUser.phoneNumber }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-        res.status(201).json({ message: 'User created successfully', token, verified: false });
+        const token = jwt.sign({ user: updatedDriver }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        res.status(201).json({ message: `Signup successful your Id is ${id}\nuse phone: ${phoneNumber} and entered password to login`, token, verified: false });
     } catch (error) {
         console.error('Signup error:', error);
         res.status(500).json({ message: 'Internal server error', error: error.message });
@@ -58,9 +70,9 @@ router.post('/signup', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     try {
-        const { phoneNumber, password, deviceUUID, appName } = req.body;
+        const { phoneNumber, password, deviceUUID } = req.body;
 
-        const user = await User.findOne({ phoneNumber });
+        const user = await Driver.findOne({ 'MobileNo.MobileNo': phoneNumber });
 
         if (!user) {
             return res.status(400).json({ message: 'User not found' });
@@ -71,28 +83,28 @@ router.post('/login', async (req, res) => {
         if (!isPasswordValid) {
             return res.status(400).json({ message: 'Invalid password' });
         }
-        let roleNames = [];
-        let roles = [];
-        if (user.roles && user.roles.length > 0) {
-            roles = await Role.find({ _id: { $in: user.roles } });
-            roleNames = roles.map(role => role.name);
-        }
+        let roleNames = ['Wehicle Driver'];
+        // let roles = [];
+        // if (user.roles && user.roles.length > 0) {
+        //     roles = await Role.find({ _id: { $in: user.roles } });
+        //     roleNames = roles.map(role => role.name);
+        // }
 
-        const hasAccess = roles.some(role =>
-            role.permissions.apps.some(app =>
-                app.name === appName && app.access !== null
-            )
-        );
+        // const hasAccess = roles.some(role =>
+        //     role.permissions.apps.some(app =>
+        //         app.name === appName && app.access !== null
+        //     )
+        // );
 
-        if (!hasAccess) {
-            return res.status(403).json({ message: 'User does not have access to this application' });
-        }
+        // if (!hasAccess) {
+        //     return res.status(403).json({ message: 'User does not have access to this application' });
+        // }
 
         if (deviceUUID && (user.deviceUUID !== deviceUUID)) {
             const unauthorizedLogin = new UnAuthorizedLogin({
-                userId: user.userId,
-                name: user.name,
-                phoneNumber: user.phoneNumber,
+                userId: user.ITPLId,
+                name: user.Name,
+                phoneNumber: user.MobileNo[0].MobileNo,
                 registeredDeviceUUID: user.deviceUUID,
                 attemptedDeviceUUID: deviceUUID,
                 timestamp: new Date()
@@ -105,28 +117,30 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign({ phoneNumber: user.phoneNumber, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
         const loginTime = new Date().toISOString();
 
-        const userTripSheets = await TripSheet.find({
-            'bowser.driver.phoneNo': user.phoneNumber,
-            $or: [
-                { 'settelment.settled': { $exists: false } },
-                { 'settelment.settled': false }
-            ]
-        }).select('tripSheetId');
-
-        if (userTripSheets.length === 0) {
-            return res.status(404).json({ message: "No unsettled trip sheet found for you \nCan't login" });
+        const idMatch = user.Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
+        let cleanName = user.Name.trim();
+        let recognizedId = '';
+        if (idMatch) {
+            recognizedId = idMatch[0].replace(/[()]/g, '').toUpperCase() || user.ITPLId;
+            cleanName = cleanName.replace(/(?:\s*[-\s]\s*|\s*\(|\)\s*)(?:ITPL-?\d+|\(ITPL-?\d+\))/i, '').trim();
         }
 
-        const userTripSheetId = userTripSheets[0].tripSheetId;
+        let driversVehicle = await vehicle.find({ 'tripDetails.driver': { $regex: user.ITPLId } });
+        console.log('driversVehicle:', driversVehicle);
 
-        const userData = {
-            'Name': user.name,
-            'Phone Number': user.phoneNumber,
-            'Verified User': user.verified,
-            'Role': roleNames,
-            'Bowser': user.bowserId,
-            'Trip Sheet Id': userTripSheetId || "Not on a trip",
+        let userData = {
+            Name: cleanName,
+            Id: user.ITPLId,
+            'Phone Number': user.MobileNo[0].MobileNo,
+            Role: roleNames,
+            VehicleNo: ''
         };
+
+        if (driversVehicle.length == 1) {
+            userData.VehicleNo = driversVehicle[0].VehicleNo;
+        } else {
+            userData.VehicleNo = 'No Vehicle Assigned';
+        }
 
         res.json({
             message: 'Login successful',
@@ -157,7 +171,7 @@ router.post('/verify-token', async (req, res) => {
             if (!isTokenValid(decoded)) {
                 return res.status(401).json({ valid: false, message: 'Token expired' });
             }
-            const user = await User.findOne({ phoneNumber: decoded.phoneNumber });
+            const user = await Driver.findOne({ 'MobileNo.MobileNo': decoded.phoneNumber });
 
             if (!user) {
                 return res.status(404).json({ valid: false, message: 'User not found' });
@@ -165,9 +179,9 @@ router.post('/verify-token', async (req, res) => {
 
             if (user.deviceUUID !== deviceUUID) {
                 const unauthorizedLogin = new UnAuthorizedLogin({
-                    userId: user.userId,
-                    name: user.name,
-                    phoneNumber: user.phoneNumber,
+                    userId: user.ITPLId,
+                    name: user.Name,
+                    phoneNumber: user.MobileNo[0].MobileNo,
                     registeredDeviceUUID: user.deviceUUID,
                     attemptedDeviceUUID: deviceUUID,
                     timestamp: new Date()
@@ -187,20 +201,6 @@ router.post('/verify-token', async (req, res) => {
     } catch (error) {
         console.error('Token verification error:', error);
         res.status(500).json({ valid: false, message: 'Internal server error', error: error.message });
-    }
-});
-
-router.post('/get-push-token', async (req, res) => {
-    const { userId } = req.body;
-    try {
-        const user = await User.findOne({ userId });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        res.json({ token: user.pushToken });
-    } catch (error) {
-        console.error('Error fetching push token:', error);
-        res.status(500).json({ message: 'Internal server error' });
     }
 });
 

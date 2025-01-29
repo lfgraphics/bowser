@@ -18,14 +18,20 @@ import { BASE_URL } from "@/lib/api"
 import { updateDriverMobile, updateTripDriver } from "@/utils"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
-export default function FuelingAllocation() {
+const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: string, driverId: string, driverName: string, driverMobile: string, id: string } }) => {
+    const paramsVehicleNumber = searchParams.vehicleNumber;
+    const paramsDriverId = searchParams.driverId;
+    const paramsDriverName = searchParams.driverName;
+    const paramsDriverMobile = searchParams.driverMobile;
+    const requestId = searchParams.id;
+
     const [isSearching, setIsSearching] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [vehicleNumber, setVehicleNumber] = useState("")
+    const [vehicleNumber, setVehicleNumber] = useState(paramsVehicleNumber)
     const [partyName, setPartyName] = useState("Own")
-    const [driverId, setDriverId] = useState("")
-    const [driverName, setDriverName] = useState("")
-    const [driverMobile, setDriverMobile] = useState("")
+    const [driverId, setDriverId] = useState(paramsDriverId)
+    const [driverName, setDriverName] = useState(paramsDriverName)
+    const [driverMobile, setDriverMobile] = useState(paramsDriverMobile)
     const [fuelQuantity, setFuelQuantity] = useState('0')
     const [quantityType, setQuantityType] = useState<'Full' | 'Part'>('Full')
     const [bowserDriverName, setBowserDriverName] = useState("")
@@ -334,10 +340,11 @@ export default function FuelingAllocation() {
                 name: currentUser.name,
                 id: currentUser.userId,
             },
+            requestId
         };
 
         try {
-            const response = await fetch(`${BASE_URL}/allocateFueling`, { //https://bowser-backend-2cdr.onrender.com
+            const response = await fetch(`${BASE_URL}/allocateFueling`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -640,3 +647,5 @@ export default function FuelingAllocation() {
         </div>
     )
 }
+
+export default FuelingAllocation;

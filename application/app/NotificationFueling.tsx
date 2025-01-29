@@ -662,7 +662,6 @@ const NotificationFuelingScreen = () => {
               <View style={styles.inputContainer}>
                 <ThemedText>तेल देने की जगह:</ThemedText>
                 <TextInput
-                  readOnly
                   ref={locationInputRef}
                   style={[styles.input, { color: colors.text }]}
                   value={mLocation}

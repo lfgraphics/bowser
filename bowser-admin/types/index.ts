@@ -55,6 +55,16 @@ export interface PumpSlip {
   bowserTankChamberID: string
 }
 
+export interface FuelRequest {
+  _id: string
+  vehicleNumber: string
+  driverId: string
+  driverName: string
+  driverMobile: string
+  location: string
+  fulfilled: boolean
+}
+
 export interface LoadingOrder {
   _id: string
   createdAt: string
@@ -179,7 +189,13 @@ export interface TripSheet {
   dispenses: {
     transaction: string;
     fuelQuantity: number;
-    isVerified: boolean;
+    verified?: {
+      status: boolean;
+      by?: {
+        id: string;
+        name: string;
+      };
+    }
     isPosted: boolean;
   }[];
   totalLoadQuantity?: number;

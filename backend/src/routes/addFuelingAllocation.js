@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-// const axios = require("axios")
+const { mongoose } = require('mongoose');
 const { sendNativePushNotification } = require('../utils/pushNotifications')
 const fuelingOrders = require('../models/fuelingOrders');
 const Vehicle = require('../models/vehicle')
+const FuelRequest = require('../models/FuelRequest');
 
 router.post('/', async (req, res) => {
     let newFuelingOrder;
@@ -22,6 +23,7 @@ router.post('/', async (req, res) => {
             fuelQuantity,
             bowser,
             allocationAdmin,
+            requestId
         } = req.body;
 
         newFuelingOrder = new fuelingOrders({
@@ -44,6 +46,7 @@ router.post('/', async (req, res) => {
                 name: allocationAdmin.name,
                 id: allocationAdmin.id,
             },
+            request: requestId ? new mongoose.Types.ObjectId(String(requestId)) : null
         });
         try {
             // Construct the pushData object properly
@@ -100,21 +103,11 @@ router.post('/', async (req, res) => {
                 console.log('Notification sent successfully:', sentNotificationResponse.response);
                 notificationSent = true;
             } else {
-                console.warn('Notification was not successfully created:', sentNotificationResponse.response);
+                console.warn('Notification was not sent:', sentNotificationResponse.response);
             }
         } catch (error) {
-            // Enhanced error handling
-            if (error.response) {
-                console.error('Error Response Data:', error.response.data);
-                console.error('Error Status:', error.response.status);
-                console.error('Error Headers:', error.response.headers);
-            } else if (error.request) {
-                console.error('No Response Received:', error.request);
-            } else {
-                console.error('Error Message:', error.message);
-            }
+            console.error(error);
         }
-        // Create and save new FuelingOrder
         try {
             console.log("New Fueling Order:", newFuelingOrder);
             await newFuelingOrder.save();
@@ -129,16 +122,38 @@ router.post('/', async (req, res) => {
             : 'Fueling allocation successful. No notification sent due to missing or invalid push token.';
 
         res.status(201).json({ message: responseMessage, order: newFuelingOrder });
-        console.log({ message: responseMessage, order: newFuelingOrder });
+
+        if (requestId) {
+            const fuelRequest = await FuelRequest.findByIdAndUpdate(
+                new mongoose.Types.ObjectId(String(requestId)),
+                {
+                    $set: {
+                        fulfilled: true,
+                        allocation: newFuelingOrder._id
+                    }
+                },
+                { new: true, upsert: true }
+            );
+            await fuelRequest.save();
+            const notificationPayloadData = {
+                buttons: [
+                    {
+                        text: "Call Driver",
+                        action: "call",
+                        phoneNumber: newFuelingOrder.bowser.driver.phoneNumber,
+                    },
+                ]
+            };
+            await sendNativePushNotification({
+                mobileNumber: fuelRequest.driverMobile,
+                message: `आपका ईंधन अनुरोध ${newFuelingOrder.allocationAdmin.id} द्वारा पूरा कर दिया गया है।\n${newFuelingOrder.bowser.driver.name} आपके वाहन को ईंधन देने के लिए आ रहे हैं।\nड्राइवर से संपर्क करने के लिए ${newFuelingOrder.bowser.driver.phoneNo} पर कॉल करें।`,
+                options: { title: 'ईंधन अनुरोध पूरा हुआ', data: JSON.stringify({ notificationPayloadData }) }
+            });
+        }
 
     } catch (error) {
         console.error("Error in fueling allocation:", error);
-        console.error("Error stack:", error.stack);
-        res.status(500).json({
-            message: error.message,
-            error: error.message,
-            stack: error.stack
-        });
+        res.status(500).json({ message: error.message });
     }
 });
 

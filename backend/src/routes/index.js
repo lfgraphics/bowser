@@ -5,6 +5,7 @@ const allocateFuelingRoutes = require('./addFuelingAllocation');
 const authRoutes = require('./auth');
 const attatchedRoutes = require('./attatched');
 const fuelingOrdersRoutes = require('./fuelingOrders');
+const fuelrequestRoutes = require('./fuelRequest');
 const fuelingTransactionRouts = require('./addFuelingTransaction');
 const listAllocations = require('./listAllocations');
 const listDispensesRouts = require('./listDispenses');
@@ -20,6 +21,7 @@ const tripSheetRoutes = require('./tripSheet');
 const updateRoutes = require('./updates');
 const userRoutes = require('./users');
 const bowserRoutes = require('./bowsers');
+const vehicleDriverAuth = require('./vehicleDriversAuth')
 
 router.get('/', (req, res) => {
     res.send('landing page');
@@ -30,6 +32,7 @@ router.use('/allocateFueling', allocateFuelingRoutes);
 router.use('/auth', authRoutes);
 router.use('/attatched', attatchedRoutes);
 router.use('/fuelingOrders', fuelingOrdersRoutes);
+router.use('/fuel-request', fuelrequestRoutes);
 router.use('/listAllocations', listAllocations);
 router.use('/listDispenses', listDispensesRouts);
 router.use('/loading', loadingOrder);
@@ -44,5 +47,6 @@ router.use('/tripSheet', tripSheetRoutes);
 router.use('/users', userRoutes);
 router.use('/bowsers', bowserRoutes);
 router.use('/updates', updateRoutes);
+router.use('/auth/driver', vehicleDriverAuth);
 
 module.exports = router;

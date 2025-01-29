@@ -3,7 +3,7 @@ import { View, TouchableOpacity, Linking, Alert, StyleSheet } from 'react-native
 import { useTheme } from '@react-navigation/native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { FuelNotificationProps } from '../src/types/models';
-import { router } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { ThemedText } from './ThemedText';
 
 type RootStackParamList = {
@@ -21,7 +21,8 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
   quantity,
   quantityType,
   bowser,
-  allocationAdmin
+  allocationAdmin,
+  request,
 }) => {
   const { colors } = useTheme();
 
@@ -51,11 +52,13 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
               <Ionicons name="call" size={32} color={'white'} />
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={[styles.button, styles.disabledButton]}>
+          <Link style={[styles.button, (!request.location || request.location?.length < 2) && styles.disabledButton]} disabled={!request.location || request.location?.length < 2} href={`https://www.google.com/maps/dir/?api=1&destination=${request.location.replace(' ', '')}` as any}>
+
             <Ionicons name="location" size={32} color={'white'} />
-          </TouchableOpacity>
+
+          </Link>
           <TouchableOpacity style={styles.button} onPress={handleGiveFuel}>
-            <MaterialIcons name="local-gas-station" size={24} color={'white'} />
+            <MaterialIcons name="local-gas-station" size={32} color={'white'} />
           </TouchableOpacity>
         </View>
       </View>
