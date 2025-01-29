@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const FuelRequest = require('../models/FuelRequest');
 const { sendBulkNotifications } = require('../utils/pushNotifications');
+const { mongoose } = require('mongoose');
 
 router.post('/', async (req, res) => {
     const { vehicleNumber, driverId, driverName, driverMobile, location } = req.body;
@@ -44,6 +45,19 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.get('/vehicle-driver/:id', async (req, res) => {
+    try {
+        const fuelRequests = await FuelRequest.findById(new mongoose.Types.ObjectId(String(req.params.id))).populate('allocation');
+        if (fuelRequests.length === 0) {
+            return res.status(404).json({ message: 'No fuel requests found' });
+        }
+        res.status(200).json(fuelRequests);
+    } catch (err) {
+        console.error('Error fetching fuel requests:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+});
+
 router.delete('/:id', async (req, res) => {
     try {
         const fuelRequest = await FuelRequest.findByIdAndDelete(req.params.id);
@@ -53,6 +67,20 @@ router.delete('/:id', async (req, res) => {
         res.status(200).json({ message: 'Fuel request deleted successfully' });
     } catch (err) {
         console.error('Error deleting fuel request:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+});
+
+router.patch('/update-cordinates/:id', async (req, res) => {
+    const { location } = req.body;
+    try {
+        const fuelRequest = await FuelRequest.findByIdAndUpdate(new mongoose.Types.ObjectId(String(req.params.id)), { location }, { new: true });
+        if (!fuelRequest) {
+            return res.status(404).json({ message: 'Fuel request not found' });
+        }
+        res.status(200).json({ message: 'Fuel request updated successfully' });
+    } catch (err) {
+        console.error('Error updating fuel request:', err);
         res.status(500).json({ message: 'Server error', error: err.message });
     }
 });

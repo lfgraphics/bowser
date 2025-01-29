@@ -77,21 +77,7 @@ export default function VehicleDriverHome() {
             try {
                 let location = await Location.getCurrentPositionAsync({});
                 const { latitude, longitude } = location.coords;
-                const gpsLocation = `${latitude}, ${longitude}`;
-
-                Alert.alert(
-                    "Request Fuel",
-                    `Requesting fuel for ${userData.Name} (ID: ${userData.Id}, Phone: ${userData['Phone Number']}, Vehicle: ${userData.VehicleNo}, Location: ${gpsLocation})`,
-                    [{ text: "OK" }]
-                );
-                /*
-                vehicleNumber: { type: String, required: false },
-                driverId: { type: String, required: false },
-                driverName: { type: String, required: true },
-                driverMobile: { type: String },
-                location: { type: String, required: true },
-                */
-                // this is the schema send the data to the backend at baseurl/fuel-request/ post request
+                const gpsLocation = `${latitude},${longitude}`;
                 try {
                     const response = await fetch(`${baseUrl}/fuel-request`, {
                         method: 'POST',
@@ -109,6 +95,10 @@ export default function VehicleDriverHome() {
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
+                    const data = await response.json();
+                    await AsyncStorage.setItem('requestId', JSON.stringify(data.requestId));
+                    await AsyncStorage.setItem('sentLocation', gpsLocation);
+                    // await AsyncStorage.getItem('requestId');
                 } catch (err) {
                     console.error('Error syncing offline data:', err);
                 }
