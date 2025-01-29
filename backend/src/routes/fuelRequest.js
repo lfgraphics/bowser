@@ -21,7 +21,7 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
     const { fulfilled = false, dateRange, param } = req.query;
     let query = {};
-    if (fulfilled) query.fulfilled = fulfilled;
+    query.fulfilled = fulfilled;
     if (dateRange) query.createdAt = { $gte: dateRange[0], $lte: dateRange[1] };
     if (param) {
         query['$or'] = [
@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
             { driverMobile: { $regex: param, $options: 'i' } }
         ];
     }
-
+    console.log('query:', query);
     try {
         const fuelRequests = await FuelRequest.find(query).sort({ createdAt: -1 }).limit(20);
         if (fuelRequests.length === 0) {
