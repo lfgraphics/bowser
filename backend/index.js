@@ -35,15 +35,6 @@ app.use(
 );
 
 // Middleware to filter out custom headers
-app.use((req, res, next) => {
-  const allowedHeaders = ['Content-Type', 'Authorization', 'Accept', 'Origin'];
-  Object.keys(req.headers).forEach(header => {
-    if (!allowedHeaders.includes(header)) {
-      delete req.headers[header];
-    }
-  });
-  next();
-});
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));

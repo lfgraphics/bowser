@@ -1,5 +1,5 @@
 import axios from "axios"
-export const baseUrl = "http://192.168.137.1:5000" //http://192.168.137.1:5000 //https://bowser-backend-2cdr.onrender.com
+export const baseUrl = "https://bowser-backend-2cdr.onrender.com" //http://192.168.137.1:5000 //https://bowser-backend-2cdr.onrender.com
 
 export const getAppUpdate = async () => {
     try {

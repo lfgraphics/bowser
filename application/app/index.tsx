@@ -8,9 +8,11 @@ import { useNavigation } from 'expo-router';
 import { checkUserLoggedIn } from '../src/utils/authUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import { DriverData, UserData } from '@/src/types/models';
 
 export default function index() {
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userData, setUserData] = useState<DriverData | UserData | null>(null);
   const navigation = useNavigation<any>();
 
   const notificationListener = useRef<Notifications.EventSubscription>();
@@ -84,6 +86,7 @@ export default function index() {
         const userData = await AsyncStorage.getItem('userData');
         if (userData) {
           let parsedData = JSON.parse(userData);
+          setUserData(parsedData);
           setUserRole(parsedData.Role[0]);
           console.log(parsedData.Role[0])
         }
@@ -96,7 +99,7 @@ export default function index() {
 
   return (
     <>
-      {userRole === "Wehicle Driver" && <VehicleDriverHome />}
+      {userRole === "Wehicle Driver" && <VehicleDriverHome userData={userData} />}
       {userRole === "Bowser Driver" && <BowserDriverHome />}
     </>
   )

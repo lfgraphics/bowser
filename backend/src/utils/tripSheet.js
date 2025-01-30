@@ -95,7 +95,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
 };
 
 const updateTripSheetBulk = async ({ tripSheetId, dispenses }) => {
-    const tripSheet = await TripSheet.findOne(tripSheetId);
+    const tripSheet = await TripSheet.findOne({ tripSheetId });
     if (!tripSheet) {
         console.error(`TripSheet not found for query: ${JSON.stringify(query)}`);
         return { success: false, message: "TripSheet not found" };

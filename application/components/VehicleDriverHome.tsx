@@ -1,29 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView, ActivityIndicator } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { DriverData } from '../src/types/models';
+import { DriverData, UserData } from '../src/types/models';
 import { logoutUser } from "@/src/utils/authUtils";
 import { baseUrl } from "@/src/utils/helpers";
 
-export default function VehicleDriverHome() {
-    const [userData, setUserData] = useState<DriverData | null>(null);
+interface VehicleDriverHomeProps {
+    userData: DriverData | UserData | null;
+}
+
+const isDriverData = (data: DriverData | UserData): data is DriverData => {
+    return (data as DriverData).VehicleNo !== undefined;
+};
+
+const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
     const [isProfileModalVisible, setProfileModalVisible] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [modalHeading, setModalHeading] = useState('');
     const [permissionsGranted, setPermissionsGranted] = useState(false);
     const [isGPSEnabled, setIsGPSEnabled] = useState(false);
+    const [loading, setLoading] = useState(false);
     const { colors } = useTheme();
-
-    useEffect(() => {
-        const fetchUserData = async () => {
-            const userDataString = await AsyncStorage.getItem('userData');
-            if (userDataString) {
-                setUserData(JSON.parse(userDataString));
-            }
-        };
-        fetchUserData();
-    }, []);
 
     const requestPermissions = async () => {
         try {
@@ -75,30 +75,33 @@ export default function VehicleDriverHome() {
             }
 
             try {
+                setLoading(true);
                 let location = await Location.getCurrentPositionAsync({});
                 const { latitude, longitude } = location.coords;
                 const gpsLocation = `${latitude},${longitude}`;
                 try {
-                    const response = await fetch(`${baseUrl}/fuel-request`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
+                    if (userData && isDriverData(userData)) {
+                        const body = JSON.stringify({
                             vehicleNumber: userData.VehicleNo,
                             driverId: userData.Id,
                             driverName: userData.Name,
                             driverMobile: userData['Phone Number'],
                             location: gpsLocation,
-                        }),
-                    });
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        });
+                        const response = await fetch(`${baseUrl}/fuel-request`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body,
+                        });
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const data = await response.json();
+                        await AsyncStorage.setItem('requestId', JSON.stringify(data.requestId));
+                        await AsyncStorage.setItem('sentLocation', gpsLocation);
                     }
-                    const data = await response.json();
-                    await AsyncStorage.setItem('requestId', JSON.stringify(data.requestId));
-                    await AsyncStorage.setItem('sentLocation', gpsLocation);
-                    // await AsyncStorage.getItem('requestId');
                 } catch (err) {
                     console.error('Error syncing offline data:', err);
                 }
@@ -106,17 +109,11 @@ export default function VehicleDriverHome() {
             } catch (error) {
                 console.error('Error getting location:', error);
                 Alert.alert('Error', 'Failed to get current location. Please try again.');
+            } finally {
+                setLoading(false);
             }
         }
     };
-
-    if (!userData) {
-        return (
-            <View style={styles.container}>
-                <Text style={styles.loadingText}>Loading...</Text>
-            </View>
-        );
-    }
 
     if (!permissionsGranted || !isGPSEnabled) {
         return (
@@ -133,52 +130,65 @@ export default function VehicleDriverHome() {
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <TouchableOpacity
-                style={styles.profileButton}
-                onPress={() => setProfileModalVisible(true)}
-            >
-                <Ionicons name="person-circle-outline" size={32} color="#0a7ea4" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.requestButton} onPress={requestFuel}>
-                <Text style={styles.requestButtonText}>Request Fuel</Text>
-            </TouchableOpacity>
+        <>
+            <View style={[styles.container, { backgroundColor: colors.background }]}>
+                <TouchableOpacity
+                    style={styles.profileButton}
+                    onPress={() => setProfileModalVisible(true)}
+                >
+                    <Ionicons name="person-circle-outline" size={32} color="#0a7ea4" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.requestButton} onPress={requestFuel}>
+                    <Text style={styles.requestButtonText}>Request Fuel</Text>
+                </TouchableOpacity>
 
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={isProfileModalVisible}
-                onRequestClose={() => setProfileModalVisible(false)}
-            >
-                <View style={styles.modalContainer}>
-                    <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-                        <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: colors.text }]}>प्रोफ़ाइल</Text>
-                        </View>
-                        <ScrollView style={styles.modalBody}>
-                            <Text style={[styles.profileText, { color: colors.text }]}>नाम: {userData.Name}</Text>
-                            <Text style={[styles.profileText, { color: colors.text }]}>अई-डी: {userData.Id}</Text>
-                            <Text style={[styles.profileText, { color: colors.text }]}>फ़ोन नम्बर: {userData['Phone Number']}</Text>
-                            <Text style={[styles.profileText, { color: colors.text }]}>गाड़ी नम्बर: {userData.VehicleNo}</Text>
-                        </ScrollView>
-                        <View style={styles.modalFooter}>
-                            <TouchableOpacity style={styles.logoutButton} onPress={logoutUser}>
-                                <Ionicons name="log-out-outline" size={24} color="white" />
-                                <Text style={styles.logoutButtonText}>लॉग आउट करें</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.closeButton}
-                                onPress={() => setProfileModalVisible(false)}
-                            >
-                                <Text style={styles.closeButtonText}>बंद करें</Text>
-                            </TouchableOpacity>
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={isProfileModalVisible}
+                    onRequestClose={() => setProfileModalVisible(false)}
+                >
+                    <View style={styles.modalContainer}>
+                        <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+                            <View style={styles.modalHeader}>
+                                <Text style={[styles.modalTitle, { color: colors.text }]}>प्रोफ़ाइल</Text>
+                            </View>
+                            {userData && isDriverData(userData) ? (
+                                <ScrollView style={styles.modalBody}>
+                                    <Text style={[styles.profileText, { color: colors.text }]}>नाम: {userData?.Name}</Text>
+                                    <Text style={[styles.profileText, { color: colors.text }]}>अई-डी: {userData?.Id}</Text>
+                                    <Text style={[styles.profileText, { color: colors.text }]}>फ़ोन नम्बर: {userData && userData['Phone Number']}</Text>
+                                    <Text style={[styles.profileText, { color: colors.text }]}>गाड़ी नम्बर: {userData?.VehicleNo}</Text>
+                                </ScrollView>
+                            ) : (
+                                <Text style={[styles.profileText, { color: colors.text }]}>नाम: {userData?.name}</Text>
+                            )}
+                            <View style={styles.modalFooter}>
+                                {isProfileModalVisible &&
+                                    <TouchableOpacity style={styles.logoutButton} onPress={logoutUser}>
+                                        <Ionicons name="log-out-outline" size={24} color="white" />
+                                        <Text style={styles.logoutButtonText}>लॉग आउट करें</Text>
+                                    </TouchableOpacity>
+                                }
+                                <TouchableOpacity
+                                    style={styles.closeButton}
+                                    onPress={() => setProfileModalVisible(false)}
+                                >
+                                    <Text style={styles.closeButtonText}>बंद करें</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </View>
-                </View>
-            </Modal>
-        </View>
+                </Modal >
+            </View >
+            {loading && <View style={styles.loaderBg}>
+                <ActivityIndicator size="large" color="#0000ff" />
+            </View>}
+        </>
     );
 }
+
+export default VehicleDriverHome;
 
 const styles = StyleSheet.create({
     container: {
@@ -186,6 +196,17 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
+    },
+    loaderBg: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 1000,
     },
     profileButton: {
         position: 'absolute',

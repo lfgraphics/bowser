@@ -146,7 +146,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     Number(record?.tempLoadByDip?.toFixed(2)) || 0
   );
   // heading and slip total on load
-  const [fullLoadQtyBySlip, setFullLoadQtyBySlip] = useState<number>(
+  const [loadQty, setLoadQty] = useState<number>(
     Number(record?.loading.quantityBySlip.toFixed(2)) || 0
   );
   // pump reading, Odo meter and addition
@@ -178,7 +178,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     closingOdoMeter - openingOdoMeter
   );
   const [netLoadQty, setNetLoadQty] = useState<number>(
-    Number(((totalLoadedQty + addition) - unload).toFixed(2))
+    Number(((loadQty + addition) - unload).toFixed(2))
   );
   // HSD consumption, short excess
   const [hsdPerKm, setHsdPerKm] = useState<number>(
@@ -194,7 +194,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
   const [pumpConsumption, setPumpConsumption] = useState<number>(
     machineSaleQty > 0 ? Math.round((1 * machineSaleQty) / 1000) : 0
   );
-  const [saleAsPerLoad, setSaleAsPerLoad] = useState<number>(machineSaleQty);
+  const [saleAsPerLoad, setSaleAsPerLoad] = useState<number>(netLoadQty - shortExcess);
   // filled by driver, sale as per driver
   const [filledByDriver, setFilledByDriver] = useState<number>(
     record.settelment?.details.extras?.filledByDriver || 0
@@ -206,9 +206,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
   const [shortOrExcessByDriver, setShortOrExcessByDriver] = useState<number>(
     hsdConsumption + pumpConsumption - (filledByDriver || 0)
   );
-  const [shortOrExcessAsPerRecord, setShortOrExcessAsPerRecord] =
-    useState<number>(saleAsPerDriver - saleAsPerLoad);
-
+  const [shortOrExcessAsPerRecord, setShortOrExcessAsPerRecord] = useState<number>(saleAsPerDriver - saleAsPerLoad);
   const [saleryDays, setSaleryDays] = useState<number>(
     record.settelment?.details.extras?.saleryDays || 0
   );
@@ -259,11 +257,11 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
   );
   const [totalDistributionCost, setTotalDistributionCost] = useState<number>(
     tollTax +
-      driverFooding +
-      driverSalary +
-      fuelingCost +
-      borderOtherExp +
-      reward
+    driverFooding +
+    driverSalary +
+    fuelingCost +
+    borderOtherExp +
+    reward
   );
   const [distributionCostPerLtr, setDistributionCostPerLtr] = useState<string>(
     (totalDistributionCost / saleAsPerDriver).toFixed(2)
@@ -452,7 +450,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
               Load Qty
             </TableCell>
             <TableCell className="border-gray-400 border text-base text-left">
-              {totalLoadedQty}
+              {loadQty}
             </TableCell>
           </TableRow>
           <TableRow>

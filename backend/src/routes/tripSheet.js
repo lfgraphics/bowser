@@ -319,6 +319,7 @@ router.post('/settle/:id', async (req, res) => {
         if (!bowser) {
             throw new Error(`can't find the bowser`);
         }
+        console.log(chamberwiseDipList);
         for (const dip of chamberwiseDipList) {
             if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
                 dip.qty = calculateQty(bowser.chambers, dip.chamberId, dip.levelHeight).toFixed(2);

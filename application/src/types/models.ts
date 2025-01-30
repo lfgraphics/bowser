@@ -185,6 +185,26 @@ export interface FuelRequest {
   driverMobile: string;
   location: string;
   fullfill: boolean;
+  createdAt: string;
+  allocation: string | {
+    bowser: {
+      driver: {
+        name: string;
+        phoneNo: string;
+      },
+      regNo: string;
+    },
+    allocationAdmin: {
+      name: string;
+      id: string;
+    },
+    category: string;
+    party: string;
+    quantityType: string;
+    fuelQuantity: number;
+    fulfilled: boolean;
+    createdAt: string;
+  }
 }
 
 export interface AppUpdates {
@@ -229,23 +249,7 @@ export interface UserData {
   name: string
   phoneNumber: string
   verified: boolean
-  roles: Array<{
-    name: string
-    permissions: {
-      apps: Array<{
-        name: string
-        access: 'read' | 'write' | 'admin' | null
-      }>
-      functions: Array<{
-        name: string
-        allowed: boolean | null
-      }>
-      customPermissions: {
-        canAccessUI: boolean
-        [key: string]: any
-      }
-    }
-  }>
+  roles: string[]
 }
 export interface DriverData {
   Name: string
