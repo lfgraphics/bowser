@@ -66,7 +66,7 @@ router.post('/updateDriverMobile', async (req, res) => {
 
     try {
         const updatedDriver = await Driver.findOneAndUpdate(
-            { "Name": { "$regex": driverId, "$options": "i" } },
+            { Name: { $regex: driverId, $options: "i" } },
             {
                 $set: {
                     "MobileNo.0.MobileNo": driverMobile,

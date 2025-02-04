@@ -67,9 +67,9 @@ const tripSheetSchema = new mongoose.Schema({
                 },
                 extras: {
                     filledByDriver: { type: Number },
-                    saleryDays: { type: Number },
-                    foodingDays: { type: Number },
-                    rewardTrips: { type: Number },
+                    saleryTotal: { type: Number },
+                    foodingTotal: { type: Number },
+                    rewardTotal: { type: Number },
                     hsdRateFor: { type: Number },
                     tollTax: { type: Number },
                     borderOtherExp: { type: Number },

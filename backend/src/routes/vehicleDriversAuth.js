@@ -20,8 +20,9 @@ router.post('/signup', async (req, res) => {
             return res.status(400).json({ message: `Please specify the id properly. We found ${driver.length} Ids by ${name}` });
         }
 
-        if (driver[0].verified) {
+        if (driver[0].password) {
             console.error(`User already exist`);
+            console.log('driver:', driver[0].Name);
             return res.status(400).json({ message: `User already existn\nContact admin if you want to update the password.` });
         }
 
@@ -58,7 +59,6 @@ router.post('/signup', async (req, res) => {
             { new: true, upsert: true }
         );
 
-        console.log('updatedDriver:', updatedDriver);
 
         const token = jwt.sign({ user: updatedDriver }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.status(201).json({ message: `Signup successful your Id is ${id}\nuse phone: ${phoneNumber} and entered password to login`, token, verified: false });

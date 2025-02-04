@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BASE_URL } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
 import { WholeTripSheet } from '@/types';
@@ -17,20 +18,42 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
   const [chamberwiseDipList, setChamberwiseDipList] = useState<
     { chamberId: string; levelHeight: number }[]
   >([]);
-  const [pumpReading, setPumpReading] = useState<number>()
+  const [pumpReading, setPumpReading] = useState<string>()
   const [odometer, setOdometer] = useState<number>()
   const [dateTime, setDateTime] = useState<string>()
 
   // manual Entries for final calculation
-  const [unload, setUnload] = useState<number>()
-  const [tollTax, setTollTax] = useState<number>()
+  const [unload, setUnload] = useState<string>()
+  const [tollTax, setTollTax] = useState<number>(0)
   const [borderOtherExp, setBorderOtherExp] = useState<number>()
-  const [hsdPerKm, setHsdPerKm] = useState<number>(15)
+  const [hsdPerKm, setHsdPerKm] = useState<string>('15')
   const [filledByDriver, setFilledByDriver] = useState<string>()
   const [hsdRateForDeduction, setHsdRateForDeduction] = useState<string>('0');
   const [saleryDays, setSaleryDays] = useState<number>(4);
   const [foodingDays, setFoodingDays] = useState<number>(4);
   const [rewardTrips, setRewardTrips] = useState<number>(1);
+  const [foodingRate, setFoodingRate] = useState<number>(200);
+  const [saleryRate, setSaleryRate] = useState<number>(500);
+  const [rewardRate, setRewardRate] = useState<number>(300);
+  const [constantfoodingRate, setconstantFoodingRate] = useState<number>(200);
+  const [constantsaleryRate, setconstantSaleryRate] = useState<number>(500);
+  const [constantrewardRate, setconstantRewardRate] = useState<number>(300);
+  const [updateNeeded, setUpdateNeeded] = useState<boolean>(false);
+  const [foodingTotal, setFoodingTotal] = useState<number>(0);
+  const [saleryTotal, setSaleryTotal] = useState<number>(0);
+  const [rewardTotal, setRewardTotal] = useState<number>(0);
+
+  useEffect(() => {
+    setFoodingTotal(foodingDays * foodingRate);
+    setSaleryTotal(saleryDays * saleryRate);
+    setRewardTotal(rewardTrips * rewardRate);
+  }, [foodingDays, foodingRate, saleryDays, saleryRate, rewardTrips, rewardRate]);
+
+  useEffect(() => {
+    if (saleryRate !== constantsaleryRate || foodingRate !== constantfoodingRate || rewardRate !== constantrewardRate) {
+      setUpdateNeeded(true);
+    }
+  }, [foodingRate, saleryRate, rewardRate])
 
   const checkAuth = () => {
     const authenticated = isAuthenticated();
@@ -41,6 +64,23 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
 
   useEffect(() => {
     checkAuth();
+    const fetchRate = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`${BASE_URL}/salery-calc`);
+        const data = response.data;
+        console.log(data)
+        setconstantFoodingRate(data.saleryCalc.foodingRate);
+        setconstantRewardRate(data.saleryCalc.rewardRate);
+        setconstantSaleryRate(data.saleryCalc.saleryRate)
+      } catch (error) {
+        console.error("Error fetching rate:", error);
+        setError("Error fetching rate data");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchRate();
   }, []);
 
   useEffect(() => {
@@ -72,8 +112,35 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
     fetchTripSheet();
   }, [params.id]);
 
+  const updateCalcRate = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post(
+        `${BASE_URL}/salery-calc`,
+        {
+          foodingRate: foodingRate,
+          rewardRate: rewardRate,
+          saleryRate: saleryRate
+        }
+      );
+      const data = response.data;
+      console.log(data)
+    } catch (error) {
+      console.error("Error updating rate:", error);
+      setError("Error updating rate data");
+    } finally {
+      setLoading(false);
+      setUpdateNeeded(false);
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (updateNeeded) {
+      await updateCalcRate();
+    }
+
     setLoading(true);
     setError(null);
 
@@ -93,20 +160,20 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
         `${BASE_URL}/tripsheet/settle/${params.id}`,
         {
           chamberwiseDipList,
-          pumpReading,
-          odometer,
+          pumpReading: Number(pumpReading),
+          odometer: Number(odometer),
           dateTime,
           userDetails,
           extras: {
-            filledByDriver,
-            saleryDays,
-            foodingDays,
-            rewardTrips,
-            hsdRateFor: hsdRateForDeduction,
-            tollTax,
-            borderOtherExp,
-            unload,
-            hsdPerKm,
+            filledByDriver: Number(filledByDriver),
+            saleryTotal,
+            foodingTotal,
+            rewardTotal,
+            hsdRateFor: Number(hsdRateForDeduction),
+            tollTax: Number(tollTax),
+            borderOtherExp: Number(borderOtherExp),
+            unload: Number(unload),
+            hsdPerKm: Number(hsdPerKm),
           },
         }
       );
@@ -166,7 +233,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
           placeholder="Pump End reading"
           value={pumpReading}
           onChange={(e) => {
-            setPumpReading(Number(e.target.value));
+            setPumpReading(e.target.value);
           }}
           required
         />
@@ -201,7 +268,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
           placeholder="Unload"
           value={unload}
           onChange={(e) => {
-            setUnload(Number(e.target.value));
+            setUnload(e.target.value);
           }}
           required
         />
@@ -212,7 +279,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
           placeholder="HSD Per Km"
           value={hsdPerKm}
           onChange={(e) => {
-            setHsdPerKm(Number(e.target.value));
+            setHsdPerKm(e.target.value);
           }}
           required
         />
@@ -228,39 +295,92 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
           }}
           required
         />
-        <Label htmlFor={`saleryDays`}>Salary Days</Label>
-        <Input
-          id={`saleryDays`}
-          type="string"
-          placeholder="Salary Days"
-          value={saleryDays}
-          onChange={(e) => {
-            setSaleryDays(Number(e.target.value));
-          }}
-          required
-        />
-        <Label htmlFor={`foodingDays`}>Fooding Days</Label>
-        <Input
-          id={`foodingDays`}
-          type="string"
-          placeholder="Fooding Days"
-          value={foodingDays}
-          onChange={(e) => {
-            setFoodingDays(Number(e.target.value));
-          }}
-          required
-        />
-        <Label htmlFor={`rewardTrips`}>Reward Trips</Label>
-        <Input
-          id={`rewardTrips`}
-          type="string"
-          placeholder="Reward Trips"
-          value={rewardTrips}
-          onChange={(e) => {
-            setRewardTrips(Number(e.target.value));
-          }}
-          required
-        />
+
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-left">Purpose</TableHead>
+              <TableHead className="text-center">Count/Days</TableHead>
+              <TableHead className="text-center">Per Count/Day</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {/* Fooding Row */}
+            <TableRow>
+              <TableCell className="font-medium">Fooding</TableCell>
+              <TableCell className="text-center">
+                <Input
+                  type="number"
+                  value={foodingDays}
+                  onChange={(e) => setFoodingDays(Number(e.target.value))}
+                  className="w-20 text-center"
+                />
+              </TableCell>
+              <TableCell className="text-center">
+                <Input
+                  type="number"
+                  value={foodingRate}
+                  onChange={(e) => setFoodingRate(Number(e.target.value))}
+                  className="w-20 text-center"
+                />
+              </TableCell>
+              <TableCell className="text-right font-semibold">
+                {foodingTotal}
+              </TableCell>
+            </TableRow>
+
+            {/* Salary Row */}
+            <TableRow>
+              <TableCell className="font-medium">Salary</TableCell>
+              <TableCell className="text-center">
+                <Input
+                  type="number"
+                  value={saleryDays}
+                  onChange={(e) => setSaleryDays(Number(e.target.value))}
+                  className="w-20 text-center"
+                />
+              </TableCell>
+              <TableCell className="text-center">
+                <Input
+                  type="number"
+                  value={saleryRate}
+                  onChange={(e) => setSaleryRate(Number(e.target.value))}
+                  className="w-20 text-center"
+                />
+              </TableCell>
+              <TableCell className="text-right font-semibold">
+                {saleryTotal}
+              </TableCell>
+            </TableRow>
+
+            {/* Reward Trips Row */}
+            <TableRow>
+              <TableCell className="font-medium">Reward Trips</TableCell>
+              <TableCell className="text-center">
+                <Input
+                  type="number"
+                  value={rewardTrips}
+                  onChange={(e) => setRewardTrips(Number(e.target.value))}
+                  className="w-20 text-center"
+                />
+              </TableCell>
+              <TableCell className="text-center">
+                <Input
+                  type="number"
+                  value={rewardRate}
+                  onChange={(e) => setRewardRate(Number(e.target.value))}
+                  className="w-20 text-center"
+                />
+              </TableCell>
+              <TableCell className="text-right font-semibold">
+                {rewardTotal}
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+
         <Label htmlFor={`hsdRateFor`}>HSD Rate For Deduction</Label>
         <Input
           id={`hsdRateFor`}

@@ -8,7 +8,8 @@ router.get('/:vehicleNumber', async (req, res) => {
 
     try {
         // Step 1: Fetch vehicles based on vehicle number and existing driver info
-        const vehicles = await Vehicle.find({ VehicleNo: { $regex: vehicleNumber, $options: 'i' }, "tripDetails.driver": { $exists: true } }).limit(20).exec();
+        const vehicles = await Vehicle.find({ VehicleNo: { $regex: vehicleNumber, $options: 'i' } }).limit(20);
+        // , "tripDetails.driver": { $exists: true } 
 
         if (vehicles.length === 0) {
             return res.status(404).json({ message: 'No vehicle found with the given search term' });

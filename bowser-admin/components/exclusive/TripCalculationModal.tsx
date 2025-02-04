@@ -207,12 +207,6 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     hsdConsumption + pumpConsumption - (filledByDriver || 0)
   );
   const [shortOrExcessAsPerRecord, setShortOrExcessAsPerRecord] = useState<number>(saleAsPerDriver - saleAsPerLoad);
-  const [saleryDays, setSaleryDays] = useState<number>(
-    record.settelment?.details.extras?.saleryDays || 0
-  );
-  const [foodingDays, setFoodingDays] = useState<number>(
-    record.settelment?.details.extras?.foodingDays || 0
-  );
 
   const [hsdRateFor, setHsdRateFor] = useState<number>(
     record.hsdRate || record.settelment?.details.extras.hsdRateFor || 0
@@ -220,17 +214,13 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
   const [tollTax, setTollTax] = useState<number>(
     record.settelment?.details.extras?.tollTax || 0
   );
-  const [driverFooding, setDriverFooding] = useState<number>(foodingDays * 200);
-  const [driverSalary, setDriverSalary] = useState<number>(saleryDays * 500);
+  const [driverFooding, setDriverFooding] = useState<number | undefined>(record.settelment?.details.extras?.foodingTotal);
+  const [driverSalary, setDriverSalary] = useState<number | undefined>(record.settelment?.details.extras?.saleryTotal);
   const [fuelingCost, setFuelingCost] = useState<number>(
     Math.round(hsdRateFor * filledByDriver)
   );
-  const [borderOtherExp, setBorderOtherExp] = useState<number>(
-    record.settelment?.details.extras?.borderOtherExp || 0
-  );
-  const [reward, setReward] = useState<number>(
-    (record.settelment?.details.extras?.rewardTrips || 0) * 300
-  );
+  const [borderOtherExp, setBorderOtherExp] = useState<number>(record.settelment?.details.extras?.borderOtherExp || 0);
+  const [reward, setReward] = useState<number | undefined>(record.settelment?.details.extras?.rewardTotal);
   // =IF(F14<-ROUND(F11*5%,2),-F14,0)*K16
   const [deductableExcessFuelingValue, setDeductableExcessFuelingValue] =
     useState<number>(
@@ -256,16 +246,9 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     Number((deductableExcessFuelingValue + deductableShortSale).toFixed(2))
   );
   const [totalDistributionCost, setTotalDistributionCost] = useState<number>(
-    tollTax +
-    driverFooding +
-    driverSalary +
-    fuelingCost +
-    borderOtherExp +
-    reward
+    (tollTax ?? 0) + (driverFooding ?? 0) + (driverSalary ?? 0) + (fuelingCost ?? 0) + (borderOtherExp ?? 0) + (reward ?? 0)
   );
-  const [distributionCostPerLtr, setDistributionCostPerLtr] = useState<string>(
-    (totalDistributionCost / saleAsPerDriver).toFixed(2)
-  );
+  const [distributionCostPerLtr, setDistributionCostPerLtr] = useState<string>((totalDistributionCost / saleAsPerDriver).toFixed(2));
 
   return (
     <div id="printable-table">

@@ -61,6 +61,7 @@ export default function AuthScreen() {
       });
 
       const data = await response.json();
+      console.log('url: ' + `${baseUrl}/auth${authNav == "vehicleDriver" ? "/driver" : ""}/${endpoint}`)
       console.log("response", data);
 
       if (!response.ok) {

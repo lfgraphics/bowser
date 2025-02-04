@@ -284,9 +284,9 @@ export interface WholeTripSheet {
 
 export interface Extras {
   filledByDriver: number
-  saleryDays: number
-  foodingDays: number
-  rewardTrips: number
+  saleryTotal: number
+  foodingTotal: number
+  rewardTotal: number
   hsdRateFor: number
   tollTax: number
   borderOtherExp: number
