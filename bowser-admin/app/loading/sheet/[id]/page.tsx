@@ -467,7 +467,7 @@ export default function LoadingSheetPage() {
                             <div className="flex flex-col gap-2 mb-4">
                                 <Label>Odometer</Label>
                                 <Input
-                                    type="number"
+                                    type="string"
                                     value={odoMeter}
                                     onChange={(e) => setOdoMeter(e.target.value)}
                                     required
@@ -487,7 +487,7 @@ export default function LoadingSheetPage() {
                             <div className="flex flex-col gap-2 mb-4">
                                 <Label>Bowser Pump Reading (Before loading starts)</Label>
                                 <Input
-                                    type="number"
+                                    type="string"
                                     value={pumpReadingBefore}
                                     onChange={(e) => setPumpReadingBefore(e.target.value)}
                                 />
@@ -496,7 +496,7 @@ export default function LoadingSheetPage() {
                             <div className="flex flex-col gap-2 mb-4">
                                 <Label>Bowser Pump Reading (After loading done)</Label>
                                 <Input
-                                    type="number"
+                                    type="string"
                                     value={pumpReadingAfter}
                                     onChange={(e) => setPumpReadingAfter(e.target.value)}
                                     required
@@ -512,7 +512,7 @@ export default function LoadingSheetPage() {
                                 <div key={dip.chamberId} className="flex flex-col space-y-1 mb-2">
                                     <Label className="w-24">{dip.chamberId}</Label>
                                     <Input
-                                        type="number"
+                                        type="string"
                                         placeholder="Level Height"
                                         value={dip.levelHeight}
                                         onChange={(e) => {
@@ -539,7 +539,7 @@ export default function LoadingSheetPage() {
                                 <div key={dip.chamberId} className="flex flex-col space-y-1 mb-2">
                                     <Label className="w-24">{dip.chamberId}</Label>
                                     <Input
-                                        type="number"
+                                        type="string"
                                         placeholder="Level Height"
                                         value={dip.levelHeight}
                                         onChange={(e) => {
@@ -670,7 +670,7 @@ export default function LoadingSheetPage() {
                                         <div className="flex flex-col space-y-1 mb-2">
                                             <Label>Slip #{slipIdx + 1}</Label>
                                             <Input
-                                                type="number"
+                                                type="string"
                                                 placeholder="Qty"
                                                 value={slip.qty}
                                                 onChange={(e) => {

@@ -21,6 +21,7 @@ export default function CreateLoadingOrderPage() {
     // Local form fields
     const [regNo, setRegNo] = useState("");
     const [loadingDesc, setLoadingDesc] = useState("");
+    const [prpoduct, setProduct] = useState("");
     const [loadingLocation, setLoadingLocation] = useState("");
     const [petrolPumpName, setPetrolPumpName] = useState<string>("");
     const [petrolPumpPhoneNo, setPetrolPumpPhoneNo] = useState<string>("");
@@ -72,6 +73,7 @@ export default function CreateLoadingOrderPage() {
             // For example, if you want `id` = userId:
             const body = {
                 regNo,
+                prpoduct,
                 loadingDesc,
                 loadingLocation,
                 petrolPump: {
@@ -206,6 +208,16 @@ export default function CreateLoadingOrderPage() {
                                     }
                                 }}
                                 required
+                            />
+                        </div>
+                        <div className="flex flex-col space-y-1">
+                            <Label htmlFor="product">Product</Label>
+                            <Input
+                                required
+                                id="product"
+                                placeholder="Product (HVO/HSD)"
+                                value={prpoduct}
+                                onChange={(e) => setProduct(e.target.value)}
                             />
                         </div>
 

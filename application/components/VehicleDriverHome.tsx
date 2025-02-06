@@ -66,8 +66,33 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
         requestPermissions();
     }, []);
 
+    async function requestedYesterday() {
+        let lastRequestTime = await AsyncStorage.getItem('requestTime');
+        let currentTime = Date.now();
+
+        if (lastRequestTime) {
+            let lastRequestTimeInMs = parseInt(lastRequestTime, 10); // Convert stored string to number
+
+            let hoursDifference = (currentTime - lastRequestTimeInMs) / (1000 * 60 * 60); // Convert ms to hours
+
+            if (hoursDifference < 24) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     const requestFuel = async () => {
         if (userData) {
+
+            if (await requestedYesterday()) {
+                Alert.alert(
+                    'तेल नहीं ले सकते',
+                    'आप की तेल लेने की लिमिट आज समाप्त हो चुकी है।, कृपया कल दुबारा कोशिश करें या डीज़ल डिपार्टमेंट में संपर्क करें।'
+                );
+                return;
+            }
+
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
                 Alert.alert('Permission Denied', 'Location permission is required to request fuel.');
@@ -101,11 +126,25 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                         const data = await response.json();
                         await AsyncStorage.setItem('requestId', JSON.stringify(data.requestId));
                         await AsyncStorage.setItem('sentLocation', gpsLocation);
+                        Alert.alert(
+                            'Sucess',
+                            'सफलतापूर्वक फ्यूल रिक्वेस्ट भेज दी गई है। डीज़ल कंट्रोल डिपार्टमेंट से कॉल आने का इन्तेज़ार करें।'
+                        );
+                        await AsyncStorage.setItem('requestTime', Date.now().toString());
+                    } else {
+                        Alert.alert(
+                            'Error',
+                            'आप को दुबारा लॉग इन करने की आवश्यकता है।'
+                        );
+                        logoutUser();
                     }
                 } catch (err) {
                     console.error('Error syncing offline data:', err);
+                    Alert.alert(
+                        'Error',
+                        'फ्यूल रिक्वेस्ट नहीं भेज पाए, कृपया दोबारा कोशिश करें।'
+                    );
                 }
-
             } catch (error) {
                 console.error('Error getting location:', error);
                 Alert.alert('Error', 'Failed to get current location. Please try again.');

@@ -6,6 +6,7 @@ const loadingOrderSchema = new mongoose.Schema({
     tripSheetId: { type: mongoose.Schema.Types.ObjectId, ref: "TripSheet", required: false },
     regNo: { type: String, require: true, ref: 'Bowser' },
     loadingDesc: { type: String, require: false },
+    product: { type: String, require: false },
     loadingLocation: { type: String, require: true },
     bccAuthorizedOfficer: {
         id: { type: String, required: true },

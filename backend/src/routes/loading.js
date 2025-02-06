@@ -156,7 +156,7 @@ router.patch('/orders/:id', async (req, res) => {
     }
 });
 
-router.delete('/orders/:id', async (req, res) => {
+router.delete('/order/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -164,7 +164,7 @@ router.delete('/orders/:id', async (req, res) => {
             return res.status(400).json({ error: 'Missing required id for deletion' });
         }
 
-        const deletedOrder = await LoadingOrder.findByIdAndDelete({ _id: ObjectId(id) });
+        const deletedOrder = await LoadingOrder.findByIdAndDelete(id);
 
         if (!deletedOrder) {
             return res.status(404).json({ error: 'LoadingOrder not found' });
@@ -430,7 +430,7 @@ router.patch('/sheets/:id', async (req, res) => {
 });
 
 // Delete a LoadingSheet (DELETE)
-router.delete('/sheets/:id', async (req, res) => {
+router.delete('/sheet/:id', async (req, res) => {
     try {
         const { id } = req.params;
 

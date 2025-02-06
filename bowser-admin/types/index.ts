@@ -56,6 +56,7 @@ export interface PumpSlip {
 }
 
 export interface FuelRequest {
+  createdAt: string
   _id: string
   vehicleNumber: string
   driverId: string

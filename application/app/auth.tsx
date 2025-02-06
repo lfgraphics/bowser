@@ -236,7 +236,7 @@ export default function AuthScreen() {
                   >
                     {option == "bowserDriver"
                       ? "बाउज़र ड्राइवर"
-                      : "अन्य वाहन ड्राइवर"}
+                      : "टैंकर या अन्य वाहन ड्राइवर"}
                   </Text>
                 </TouchableOpacity>
               )

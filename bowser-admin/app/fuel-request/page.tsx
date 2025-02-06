@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogContent, AlertDialogAction } from '@/components/ui/alert-dialog';
-import axios from 'axios';
+import { formatDate } from '@/lib/utils';
 
 const page = () => {
     const [loading, setLoading] = useState(false);
@@ -80,6 +80,7 @@ const page = () => {
                             <br />
                             Mobile No.: <Link className='text-blue-500 visited:text-purple-500' href={`tel:${request.driverMobile}`}>{request.driverMobile}</Link>
                             <br />
+                            Request Time: {formatDate(request.createdAt)}
                         </CardContent>
                         <CardFooter>
                             <div className='flex flex-row justify-between items-center w-full'>

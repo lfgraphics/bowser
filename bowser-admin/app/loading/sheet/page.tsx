@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Check, Plus, X } from "lucide-react";
+import { Check, Plus, Trash2, X } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,16 +16,17 @@ import { BASE_URL } from "@/lib/api";
 import Loading from "@/app/loading";
 import { LoadingSheet } from "@/types";
 import OnlyAllowed from "@/components/OnlyAllowed";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function LoadingOrdersPage() {
     const [loadingSheets, setLoadingSheets] = useState<LoadingSheet[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [searchParam, setSearchParam] = useState("");
+    const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
+    const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false);
+    const [showErrorAlert, setShowErrorAlert] = useState<boolean>(false);
+    const [deletingRequestId, setDeletingRequestId] = useState<string>('');
     const [loading, setLoading] = useState(false);
-
-    // We'll store the selected date range from our custom date picker.
-    // Note: The DatePickerWithRange already has internal state, 
-    // but we expose the selected date range to the parent with onDateChange. 
     const [selectedRange, setSelectedRange] = useState<{
         from?: Date;
         to?: Date;
@@ -84,6 +85,33 @@ export default function LoadingOrdersPage() {
             setLoading(false);
         }
     }
+
+    const openDeleteDialogue = (orderId: string) => {
+        setDeletingRequestId(orderId)
+        setShowDeleteDialog(true)
+    }
+
+    const handleDelete = async () => {
+        try {
+            let response = await fetch(`${BASE_URL}/loading/sheet/${deletingRequestId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            if (!response.ok) {
+                throw new Error('Failed to delete');
+            }
+            setShowSuccessAlert(true);
+            window.location.reload();
+        } catch (error) {
+            console.error(error);
+            setError(String(error));
+            setShowErrorAlert(true);
+        } finally {
+            setShowDeleteDialog(false);
+        }
+    };
 
     return (
         <div className="space-y-8 mx-auto py-8 container">
@@ -157,8 +185,8 @@ export default function LoadingOrdersPage() {
                 </OnlyAllowed>
                 {/* Render Filtered Orders */}
                 {loadingSheets.length > 0 && loadingSheets.map((order) => (
-                    <Link href={!order.fulfilled ? `/tripsheets/create/${order._id}` : ''} key={order._id}>
-                        <Card className={`cursor-pointer hover:bg-muted transition-colors ${order.fulfilled ? "bg-gray-100" : "bg-green-100"}`} >
+                    <Card className={`cursor-pointer hover:bg-muted transition-colors ${order.fulfilled ? "bg-gray-100" : "bg-green-100"}`} >
+                        <Link href={!order.fulfilled ? `/tripsheets/create/${order._id}` : ''} key={order._id}>
                             <CardHeader>
                                 <CardTitle className="font-semibold text-lg">
                                     {order.regNo}
@@ -189,10 +217,59 @@ export default function LoadingOrdersPage() {
                                     {order.fulfilled ? <Check color="green" /> : <X color="red" />}
                                 </p>
                             </CardContent>
-                        </Card>
-                    </Link>
+                        </Link>
+                        <CardFooter>
+                            {!order.fulfilled &&
+                                <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
+                                    <Button variant="destructive" onClick={() => openDeleteDialogue(order._id)}>Delete <Trash2 /></Button>
+                                </OnlyAllowed>
+                            }
+                        </CardFooter>
+                    </Card>
                 ))}
             </div>
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this loading sheet order? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogAction onClick={() => handleDelete()}>Delete</AlertDialogAction>
+                    <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>Cancel</AlertDialogCancel>
+                </AlertDialogContent>
+            </AlertDialog>
+            {
+                showSuccessAlert && (
+                    <AlertDialog open={showSuccessAlert} onOpenChange={setShowSuccessAlert}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Success!</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Operation completed successfully.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogAction onClick={() => setShowSuccessAlert(false)}>Close</AlertDialogAction>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )
+            }
+            {
+                error && (
+                    <AlertDialog open={showErrorAlert} onOpenChange={setShowErrorAlert}>
+                        <AlertDialogContent className='bg-red-600 text-white'>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Error</AlertDialogTitle>
+                                <AlertDialogDescription className='text-white'>
+                                    {String(error)}
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogAction onClick={() => setShowErrorAlert(false)}>Close</AlertDialogAction>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )
+            }
         </div>
     );
 }
