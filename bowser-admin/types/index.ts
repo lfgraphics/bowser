@@ -72,6 +72,9 @@ export interface LoadingOrder {
   regNo: string
   tripSheetId?: string
   loadingDesc?: string
+  product: string
+  loadingLocation: string
+  loadingLocationName: string
   bccAuthorizedOfficer: {
     id: string
     name: string
@@ -80,6 +83,7 @@ export interface LoadingOrder {
 }
 
 export interface LoadingSheet {
+  product: string
   _id: string;
   regNo: string;
   odoMeter: number;
@@ -89,7 +93,7 @@ export interface LoadingSheet {
   bccAuthorizedOfficer: {
     id: string;
     name: string;
-    orderId: string;
+    orderId: LoadingOrder;
   };
   chamberwiseDipListAfter: {
     chamberId: string;

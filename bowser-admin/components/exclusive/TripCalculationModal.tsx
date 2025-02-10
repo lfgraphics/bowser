@@ -1,7 +1,9 @@
 "use client"
 import React, { useEffect, useState } from "react";
-import { Table, TableRow, TableBody, TableCell } from "@/components/ui/table";
+import { Table, TableRow, TableBody, TableCell, TableHeader } from "@/components/ui/table";
 import { WholeTripSheet } from "@/types";
+import { formatDate } from "@/lib/utils";
+import "./style.css"
 import Image from "next/image";
 
 interface TripCalculationModalProps {
@@ -136,14 +138,14 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
   const [totalLoadHeight, setTotalLoadHeight] = useState<number>(
     ch1FullLoadAddCm + ch2FullLoadAddCm
   );
-  const [totalLoadQty, setTotalLoadQty] = useState<number>(
-    Number(record?.totalLoadQuantityBySlip?.toFixed(2)) || 0
-  );
   const [totalLoadedQty, setTotalLoadedQty] = useState<number>(
     ch1FullLoadTotalqty + ch2FullLoadTotalqty
   );
   const [totalLoadedQtyByDip, setTotalLoadedQtyByDip] = useState<number>(
     Number(record?.tempLoadByDip?.toFixed(2)) || 0
+  );
+  const [totalLoadedQtyBySlip, setTotalLoadedQtyBySlip] = useState<number>(
+    Number(record?.totalLoadQuantityBySlip?.toFixed(2)) || 0
   );
   // heading and slip total on load
   const [loadQty, setLoadQty] = useState<number>(
@@ -188,13 +190,12 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     distance > 0 && hsdPerKm > 0 ? Math.round(distance / hsdPerKm) : 0
   );
   const [shortExcess, setShortExcess] = useState<number>(
-    totalClosingQty - totalOpeningQty
+    Number((totalClosingQty - totalOpeningQty).toFixed(2))
   );
   //pump consumtion & sale as per load
   const [pumpConsumption, setPumpConsumption] = useState<number>(
     machineSaleQty > 0 ? Math.round((1 * machineSaleQty) / 1000) : 0
   );
-  const [saleAsPerLoad, setSaleAsPerLoad] = useState<number>(netLoadQty - shortExcess);
   // filled by driver, sale as per driver
   const [filledByDriver, setFilledByDriver] = useState<number>(
     record.settelment?.details.extras?.filledByDriver || 0
@@ -206,9 +207,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
   const [shortOrExcessByDriver, setShortOrExcessByDriver] = useState<number>(
     hsdConsumption + pumpConsumption - (filledByDriver || 0)
   );
-  const [shortOrExcessAsPerRecord, setShortOrExcessAsPerRecord] = useState<number>(saleAsPerDriver - saleAsPerLoad);
-
-  const [hsdRateFor, setHsdRateFor] = useState<number>(
+  const [hsdRateForDeduction, setHsdRateForDeduction] = useState<number>(
     record.hsdRate || record.settelment?.details.extras.hsdRateFor || 0
   );
   const [tollTax, setTollTax] = useState<number>(
@@ -217,30 +216,24 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
   const [driverFooding, setDriverFooding] = useState<number | undefined>(record.settelment?.details.extras?.foodingTotal);
   const [driverSalary, setDriverSalary] = useState<number | undefined>(record.settelment?.details.extras?.saleryTotal);
   const [fuelingCost, setFuelingCost] = useState<number>(
-    Math.round(hsdRateFor * filledByDriver)
+    Math.round(hsdRateForDeduction * filledByDriver)
   );
   const [borderOtherExp, setBorderOtherExp] = useState<number>(record.settelment?.details.extras?.borderOtherExp || 0);
   const [reward, setReward] = useState<number | undefined>(record.settelment?.details.extras?.rewardTotal);
   // =IF(F14<-ROUND(F11*5%,2),-F14,0)*K16
   const [deductableExcessFuelingValue, setDeductableExcessFuelingValue] =
     useState<number>(
-      (shortOrExcessByDriver < -parseFloat((hsdConsumption * 0.05).toFixed(2))
+      Number(((shortOrExcessByDriver < -parseFloat((hsdConsumption * 0.05).toFixed(2))
         ? -shortOrExcessByDriver
-        : 0) * hsdRateFor
+        : 0) * hsdRateForDeduction).toFixed(2))
     );
-  console.log(
-    "short or excess by driver: ",
-    shortOrExcessByDriver,
-    "hsd consumption: ",
-    hsdConsumption,
-    "formula",
-    (hsdConsumption * 0.05).toFixed(2),
-    "hsd rate for consumption: ",
-    hsdRateFor
-  );
+  const [saleAsPerReading, setSealeAsPerReading] = useState((record?.loading.sheetId.pumpReadingAfter - (record?.settelment?.details.pumpReading || 0)).toFixed(2));
+  const [totalLoadQty, setTotalLoadQty] = useState<number>(totalOpeningQty + loadQty + addition);
+  const [saleAsPerLoad, setSaleAsPerLoad] = useState<number>(totalLoadQty - totalClosingQty);
+  const [shortOrExcessAsPerRecord, setShortOrExcessAsPerRecord] = useState<number>(saleAsPerDriver - saleAsPerLoad);
   // =IF(K14<-5,-K14,0)*K16
   const [deductableShortSale, setDeductableShortSale] = useState<number>(
-    (shortOrExcessAsPerRecord < -5 ? -shortOrExcessAsPerRecord : 0) * hsdRateFor
+    Number(((shortOrExcessAsPerRecord < -5 ? -shortOrExcessAsPerRecord : 0) * hsdRateForDeduction).toFixed(2))
   );
   const [totalDeduction, setTotalDeduction] = useState<number>(
     Number((deductableExcessFuelingValue + deductableShortSale).toFixed(2))
@@ -251,570 +244,352 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
   const [distributionCostPerLtr, setDistributionCostPerLtr] = useState<string>((totalDistributionCost / saleAsPerDriver).toFixed(2));
 
   return (
-    <div id="printable-table">
-      <Table>
-        <TableBody className="border-gray-400 border">
-          <TableRow className="font-semibold">
-            <TableCell className="border-gray-400 border text-base text-left">
-              Vehicle No.
-            </TableCell>
-            <TableCell
-              className="border-gray-400 border text-base text-left"
-              colSpan={2}
-            >
-              {bowser}
-            </TableCell>
-            <TableCell
-              className="border-gray-400 border text-base text-center"
-              colSpan={2}
-            >
-              Opening
-            </TableCell>
-            <TableCell
-              className="border-gray-400 border text-base text-center"
-              rowSpan={2}
-            >
-              Qty to be Return
-            </TableCell>
-            <TableCell
-              className="border-gray-400 border text-base text-center"
-              colSpan={4}
-            >
-              Full Load
-            </TableCell>
+    <div className="bg-white p-4 text-black">
+      <h2 className="mb-2 font-bold text-center text-xl">Bowser Tripsheet Settlement Statement</h2>
+      <Table className="border border-black">
+        <TableBody>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Driver Name</TableCell>
+            <TableCell className="border border-black">{record?.bowser.driver[0].name}</TableCell>
+            <TableCell className="text-right border border-black font-bold">Tripsheet No.</TableCell>
+            <TableCell className="text-right border border-black font-bold">{record?.tripSheetId}</TableCell>
           </TableRow>
-          <TableRow className="font-semibold">
-            <TableCell className="border-gray-400 border text-base text-left">
-              Chamber
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              CM
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              QTY
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              CM
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              QTY
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              CM
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              Add QTY
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              Total QTY
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              Dip QTY
-            </TableCell>
+          <TableRow className="border-none">
+            <TableCell className="border border-black" colSpan={2}>Driver ID</TableCell>
+            {/* <TableCell className="border border-black">{record?.bowser.driver[0].name}</TableCell> */}
+            <TableCell className="text-right border border-black font-bold">Settlement Date</TableCell>
+            <TableCell className="text-right border border-black font-bold">{formatDate(record?.settelment?.dateTime!)}</TableCell>
           </TableRow>
-          <TableRow>
-            <TableCell className="border-gray-400 border text-base text-left">
-              CH-1
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch1Cm}
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch1qty}
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch1OpeningCm}
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch1Openingqty} Lt.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch1QtyToBeReturn} Lt.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch1FullLoadAddCm}
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch1FullLoadAddqty} Lt.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch1FullLoadTotalqty} Lt.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch1FullLoadDipqty == 0 ? "CN" : ch1FullLoadDipqty + " Lt."}
-            </TableCell>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Driver Mobile</TableCell>
+            <TableCell className="border border-black">{record?.bowser.driver[0].phoneNo}</TableCell>
+            <TableCell className="text-right border border-black">Trip Start Date</TableCell>
+            <TableCell className="text-right border border-black">{formatDate(record?.createdAt!)}</TableCell>
           </TableRow>
-          <TableRow>
-            <TableCell className="border-gray-400 border text-base text-left">
-              CH-2
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch2Cm}
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch2qty}
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch2OpeningCm}
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch2Openingqty} Lt.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch2QtyToBeReturn} Lt.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch2FullLoadAddCm}
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch2FullLoadAddqty} Lt.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch2FullLoadTotalqty} Lt.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {ch2FullLoadTotalqtyByDip == 0
-                ? "CN"
-                : ch2FullLoadTotalqtyByDip + " Lt."}
-            </TableCell>
-          </TableRow>
-          <TableRow className="font-semibold">
-            <TableCell className="border-gray-400 border text-base text-left">
-              Total
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {totalClosingCm}
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {totalClosingQty} Lt.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {totalOpeningCm}
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {totalOpeningQty} Lt.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {totalQtyToBeReturned} Lt.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {totalLoadHeight}
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {totalLoadQty} Lt.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {totalLoadedQty} Lt.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {totalLoadedQtyByDip} Lt.
-            </TableCell>
-          </TableRow>
-          <TableRow className="font-semibold">
-            <TableCell className="border-gray-400 border font-semibold text-base text-left">
-              Machine Reading
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              Lt.
-            </TableCell>
-            <TableCell
-              className="border-gray-400 border text-base text-left"
-              colSpan={2}
-            >
-              HSD Consumption
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              KM
-            </TableCell>
-            <TableCell
-              className="border-gray-400 border text-base text-left"
-              colSpan={4}
-            >
-              Load Qty
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {loadQty}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell className="border-gray-400 border font-semibold text-base text-left">
-              Opening
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {openingPumpReading}
-            </TableCell>
-            <TableCell
-              className="border-gray-400 border font-semibold text-base text-left"
-              colSpan={2}
-            >
-              Opening
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {openingOdoMeter}
-            </TableCell>
-            <TableCell
-              className="border-gray-400 border font-semibold text-base text-left"
-              colSpan={4}
-            >
-              Add Qty
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {addition}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell className="border-gray-400 border font-semibold text-base text-left">
-              Closing
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {closingPumpReading}
-            </TableCell>
-            <TableCell
-              className="border-gray-400 border font-semibold text-base text-left"
-              colSpan={2}
-            >
-              Closing
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {closingOdoMeter}
-            </TableCell>
-            <TableCell
-              className="border-gray-400 border font-semibold text-base text-left"
-              colSpan={4}
-            >
-              Return Qty
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {unload}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell className="border-gray-400 border font-semibold text-base text-left">
-              Machine Sale Qty
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {machineSaleQty}
-            </TableCell>
-            <TableCell
-              className="border-gray-400 border font-semibold text-base text-left"
-              colSpan={2}
-            >
-              Return KM
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {distance} Km
-            </TableCell>
-            <TableCell
-              className="border-gray-400 border font-semibold text-base text-left"
-              colSpan={4}
-            >
-              Net Load Qty
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {netLoadQty} Lt.
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell colSpan={2} rowSpan={4}></TableCell>
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border text-base text-left"
-            >
-              HSD @{hsdPerKm}KM/Lt.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {hsdConsumption}
-            </TableCell>
-            <TableCell
-              className="border-gray-400 border font-semibold text-base text-left"
-              colSpan={4}
-            >
-              Qty. (Short)/Excess (Bal. Dip)
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {shortExcess.toFixed(2)}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border font-semibold text-base text-left"
-            >
-              Pump Consum. Qty
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {pumpConsumption}
-            </TableCell>
-            <TableCell
-              colSpan={4}
-              className="border-gray-400 border text-base text-left"
-            >
-              Sale as per Load
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {saleAsPerLoad}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border font-semibold text-base text-left"
-            >
-              Filled by Driver
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {filledByDriver}
-            </TableCell>
-            <TableCell
-              colSpan={4}
-              className="border-gray-400 border text-base text-left"
-            >
-              Sale as per Driver
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {saleAsPerDriver}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border font-semibold text-base text-left"
-            >
-              Short/(Excess)
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {shortOrExcessByDriver.toFixed(2)}
-            </TableCell>
-            <TableCell
-              colSpan={4}
-              className="border-gray-400 border text-base text-left"
-            >
-              Excess/(Short) Sales
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {shortOrExcessAsPerRecord.toFixed(2)}
-            </TableCell>
-          </TableRow>
-          <TableRow className="font-semibold">
-            <TableCell
-              colSpan={3}
-              className="border-gray-400 border text-base text-left"
-            >
-              Distribution Cost
-            </TableCell>
-            <TableCell
-              colSpan={4}
-              className="border-gray-400 border text-base text-left"
-            ></TableCell>
-            <TableCell
-              colSpan={3}
-              className="border-gray-400 border font-semibold text-base text-center"
-            >
-              Deduction Details
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border text-base text-left"
-            >
-              Toll Tax
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {tollTax}
-            </TableCell>
-            <TableCell
-              colSpan={4}
-              className="border-gray-400 border text-base text-left"
-            ></TableCell>
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border font-semibold text-base text-center"
-            >
-              HSD Rate For Deduction
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {hsdRateFor} /Lt.
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border text-base text-left"
-            >
-              Driver Fooding
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {driverFooding}
-            </TableCell>
-            <TableCell
-              colSpan={4}
-              className="border-gray-400 border text-base text-left"
-            ></TableCell>
-            <TableCell
-              colSpan={2}
-              rowSpan={3}
-              className="border-gray-400 border font-semibold text-base text-left"
-            >
-              Deductable Excess Fueling Value
-            </TableCell>
-            <TableCell
-              rowSpan={3}
-              className="border-gray-400 border text-base text-left"
-            >
-              {deductableExcessFuelingValue.toFixed(2)}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border text-base text-left"
-            >
-              Driver Salary
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {driverSalary}
-            </TableCell>
-            <TableCell
-              colSpan={4}
-              className="border-gray-400 border text-base text-left"
-            ></TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border text-base text-left"
-            >
-              Fueling Cost
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {fuelingCost}
-            </TableCell>
-            <TableCell
-              colSpan={4}
-              className="border-gray-400 border text-base text-left"
-            ></TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border text-base text-left"
-            >
-              Border Other Exp
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {borderOtherExp}
-            </TableCell>
-            <TableCell
-              colSpan={4}
-              className="border-gray-400 border text-base text-left"
-            ></TableCell>
-            <TableCell
-              colSpan={2}
-              rowSpan={3}
-              className="border-gray-400 border font-semibold text-base text-left"
-            >
-              Deductable Short Sale Value
-            </TableCell>
-            <TableCell
-              rowSpan={3}
-              className="border-gray-400 border text-base text-left"
-            >
-              {deductableShortSale.toFixed(2)}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border text-base text-left"
-            >
-              Reward
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {reward}
-            </TableCell>
-            <TableCell
-              colSpan={7}
-              className="border-gray-400 border text-base text-left"
-            ></TableCell>
-          </TableRow>
-          <TableRow className="font-semibold">
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border text-base text-left"
-            >
-              Total Distribution Cost
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {totalDistributionCost}
-            </TableCell>
-            <TableCell
-              colSpan={7}
-              className="border-gray-400 border text-base text-left"
-            ></TableCell>
-          </TableRow>
-          <TableRow className="font-semibold">
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border text-base text-left"
-            >
-              Distribution Cost per Ltr.
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {distributionCostPerLtr}
-            </TableCell>
-            <TableCell
-              colSpan={4}
-              className="border-gray-400 border text-base text-left"
-            ></TableCell>
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border text-base text-left"
-            >
-              Total Deduction Amount
-            </TableCell>
-            <TableCell className="border-gray-400 border text-base text-left">
-              {totalDeduction}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell colSpan={10}></TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border text-base text-left"
-            >
-              Driver
-            </TableCell>
-            <TableCell colSpan={3}>
-              <span className="relative flex gap-3">
-                Supervisor{" "}
-                <Image
-                  src="/assets/sahil-sign.png"
-                  alt="Sahil's signature"
-                  width={120}
-                  height={40}
-                  className="-bottom-3 left-20 absolute"
-                />
-              </span>
-            </TableCell>
-            <TableCell
-              colSpan={2}
-              className="border-gray-400 border text-base text-left"
-            >
-              Verified by
-            </TableCell>
-            <TableCell
-              colSpan={3}
-              className="border-gray-400 border text-base text-left"
-            >
-              Deducted by
-            </TableCell>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Distribution Area</TableCell>
+            <TableCell className="border border-black">{record?.fuelingAreaDestination}</TableCell>
+            <TableCell className="text-right border border-black font-bold">Bowser No.</TableCell>
+            <TableCell className="text-right border border-black font-bold">{record?.bowser.regNo}</TableCell>
           </TableRow>
         </TableBody>
       </Table>
-    </div>
+
+      <h3 className="font-bold">Bowser Departure & Return</h3>
+      <Table className="border border-black">
+        <TableBody>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Departure Date</TableCell>
+            <TableCell className="border border-black">{formatDate(record?.proposedDepartureTime!)}</TableCell>
+            <TableCell className="border border-black">Return Date</TableCell>
+            <TableCell className="border border-black">{formatDate(record?.settelment?.dateTime!)}</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Bowser Departure Odometer</TableCell>
+            <TableCell className="text-right border border-black">{record?.loading.sheetId.odoMeter}</TableCell>
+            <TableCell className="border border-black">Bowser Return Odometer</TableCell>
+            <TableCell className="text-right border border-black">{record.settelment?.details.odometer}</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Pump Departure Reading</TableCell>
+            <TableCell className="text-right border border-black">{record?.loading.sheetId.pumpReadingAfter}</TableCell>
+            <TableCell className="border border-black">Pump Return Reading</TableCell>
+            <TableCell className="text-right border border-black">{record?.settelment?.details.pumpReading}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+
+      <h3 className="font-bold">Loading & Distribution Summary</h3>
+      <Table className="border border-black">
+        <TableBody>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Opening Qty as per Dip</TableCell>
+            <TableCell className="text-right border border-black">{totalOpeningQty} Lt.</TableCell>
+            <TableCell className="border border-black">Qty Returned back in main stock</TableCell>
+            <TableCell className="text-right border border-black">{unload} Lt.</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Loading Qty as per Slip</TableCell>
+            <TableCell className="text-right border border-black">{loadQty} Lt.</TableCell>
+            <TableCell className="border border-black">Sale as per Reading</TableCell>
+            <TableCell className="text-right border border-black">{saleAsPerReading} Lt.</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Addition Qty as per Slip</TableCell>
+            <TableCell className="text-right border border-black">{addition} Lt.</TableCell>
+            <TableCell className="border border-black">Sale as per Driver</TableCell>
+            <TableCell className="text-right border border-black">{saleAsPerDriver} Lt.</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Total Loaded Qty</TableCell>
+            <TableCell className="text-right border border-black">{totalLoadQty} Lt.</TableCell>
+            <TableCell className="border border-black">Sale as per Load</TableCell>
+            <TableCell className="text-right border border-black font-bold">{saleAsPerLoad} Lt.</TableCell>
+          </TableRow>
+          <TableRow className="border border-black font-bold">
+            <TableCell className="border border-black">Net Load Qty</TableCell>
+            <TableCell className="text-right border border-black">{netLoadQty} Lt.</TableCell>
+            <TableCell className="border border-black">Excess/(Short) Sale</TableCell>
+            <TableCell className="text-right border border-black">{shortExcess} Lt.</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+
+      <h3 className="font-bold">Quantitative Statement as per Calibration</h3>
+      <div className="flex flex-row justify-between gap-3 w-full">
+        <Table>
+          <TableHeader className="border-none font-bold">
+            <TableRow className="border-none">
+              <TableCell className="border border-black" rowSpan={2}>Particulars</TableCell>
+              <TableCell className="border border-black" colSpan={2}>Chamber #1</TableCell>
+              <TableCell className="border border-black" colSpan={2}>Chamber #2</TableCell>
+              <TableCell className="border border-black">Total</TableCell>
+              <TableCell className="border-none"></TableCell>
+              <TableCell className="border border-black text-center" colSpan={2} rowSpan={2}>Security Seal</TableCell>
+            </TableRow>
+            <TableRow className="border-none">
+              <TableCell className="border border-black">Dip</TableCell>
+              <TableCell className="border border-black">Qty</TableCell>
+              <TableCell className="border border-black">Dip</TableCell>
+              <TableCell className="border border-black">Qty</TableCell>
+              <TableCell className="border border-black">Qty</TableCell>
+              <TableCell className="border-none"></TableCell>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow className="border-none">
+              <TableCell className="border border-black">Before Loading</TableCell>
+              <TableCell className="text-right border border-black">{ch1OpeningCm} cm</TableCell>
+              <TableCell className="text-right border border-black">{ch1Openingqty} Lt.</TableCell>
+              <TableCell className="text-right border border-black">{ch2OpeningCm} cm</TableCell>
+              <TableCell className="text-right border border-black">{ch2Openingqty} Lt.</TableCell>
+              <TableCell className="text-right border border-black">{totalOpeningQty} Lt.</TableCell>
+              <TableCell className="border-none"></TableCell>
+              <TableCell className="border border-black font-bold text-center" rowSpan={2}>CH-1</TableCell>
+              <TableCell className="border border-black">{record.loading.sheetId.chamberwiseSealList.filter(chamber => chamber.chamberId === "Chamber-1")[0]?.sealId}</TableCell>
+            </TableRow>
+            <TableRow className="border-none">
+              <TableCell className="border border-black">After Loading</TableCell>
+              <TableCell className="text-right border border-black">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-1"))?.levelHeight} cm</TableCell>
+              <TableCell className="text-right border border-black">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-1"))?.qty} Lt.</TableCell>
+              <TableCell className="text-right border border-black">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-2"))?.levelHeight} cm</TableCell>
+              <TableCell className="text-right border border-black">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-2"))?.qty} Lt.</TableCell>
+              <TableCell className="text-right border border-black">{record?.loading.sheetId.tempLoadByDip.toFixed(2)} Lt.</TableCell>
+              <TableCell className="border-none"></TableCell>
+              <TableCell className="border border-black">{record.loading.sheetId.chamberwiseSealList.filter(chamber => chamber.chamberId === "Chamber-1")[1]?.sealId}</TableCell>
+            </TableRow>
+            <TableRow className="border-none">
+              <TableCell className="border border-black font-bold">Net Loaded</TableCell>
+              <TableCell className="text-right border border-black font-bold">{ch1FullLoadAddCm} cm</TableCell>
+              <TableCell className="text-right border border-black font-bold">{ch1FullLoadAddqty} Lt.</TableCell>
+              <TableCell className="text-right border border-black font-bold">{ch2FullLoadAddCm} cm</TableCell>
+              <TableCell className="text-right border border-black font-bold">{ch2FullLoadAddqty} Lt.</TableCell>
+              <TableCell className="text-right border border-black font-bold">{(ch1FullLoadAddqty + ch2FullLoadAddqty).toFixed(2)} Lt.</TableCell>
+              <TableCell className="border-none"></TableCell>
+              <TableCell className="border border-black font-bold text-center" rowSpan={2}>CH-2</TableCell>
+              <TableCell className="border border-black">{record.loading.sheetId.chamberwiseSealList.filter(chamber => chamber.chamberId === "Chamber-2")[0]?.sealId}</TableCell>
+            </TableRow>
+            <TableRow className="border-none">
+              <TableCell className="border border-black font-bold">After Return</TableCell>
+              <TableCell className="text-right border border-black font-bold">{ch1Cm} cm</TableCell>
+              <TableCell className="text-right border border-black font-bold">{ch1qty} Lt.</TableCell>
+              <TableCell className="text-right border border-black font-bold">{ch2Cm} cm</TableCell>
+              <TableCell className="text-right border border-black font-bold">{ch2qty} Lt.</TableCell>
+              <TableCell className="text-right border border-black font-bold">{totalClosingQty} Lt.</TableCell>
+              <TableCell className="border-none"></TableCell>
+              <TableCell className="border border-black">{record.loading.sheetId.chamberwiseSealList.filter(chamber => chamber.chamberId === "Chamber-2")[1]?.sealId}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+
+      <Table className="border-none">
+        <TableHeader className="border-none">
+          <TableRow className="border-none">
+            <TableCell colSpan={2} className="font-bold">Bowser Fuel Consumption</TableCell>
+            <TableCell className="border-none"></TableCell>
+            <TableCell colSpan={2} className="font-bold">Deduction Calculation</TableCell>
+          </TableRow>
+        </TableHeader>
+        <TableBody className="border-none">
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Total Run KM</TableCell>
+            <TableCell className="text-right border border-black">{distance} km</TableCell>
+            <TableCell className="border-none"></TableCell>
+            <TableCell className="border border-black">Effective Fuel Prise</TableCell>
+            <TableCell className="text-right border border-black">&#8377; {hsdRateForDeduction}</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Avg. @{hsdPerKm}KM/Lt.</TableCell>
+            <TableCell className="text-right border border-black">{hsdConsumption} Lt.</TableCell>
+            <TableCell className="border-none"></TableCell>
+            <TableCell className="border border-black">Excess Fueling Amount</TableCell>
+            <TableCell className="text-right border border-black">&#8377; {deductableExcessFuelingValue}</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Fuel Consmed by Pump</TableCell>
+            <TableCell className="text-right border border-black">{pumpConsumption} Lt.</TableCell>
+            <TableCell className="border-none"></TableCell>
+            <TableCell className="border border-black">Short Sale Amount</TableCell>
+            <TableCell className="text-right border border-black">&#8377; {deductableShortSale}</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Estimated Fuel Required</TableCell>
+            <TableCell className="text-right border border-black">{(hsdConsumption + pumpConsumption).toFixed(2)} Lt.</TableCell>
+            <TableCell className="border-none"></TableCell>
+            <TableCell className="border border-black font-bold">Total Deductable Amount</TableCell>
+            <TableCell className="text-right border border-black font-bold">&#8377; {totalDeduction}</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">Filled by Driver</TableCell>
+            <TableCell className="text-right border border-black">{filledByDriver} Lt.</TableCell>
+            <TableCell className="border-none"></TableCell>
+            <TableCell className="border-none" colSpan={2}></TableCell>
+          </TableRow>
+          <TableRow className="border-none font-bold">
+            <TableCell className="border border-black">(Short)/Excess</TableCell>
+            <TableCell className="text-right border border-black">{shortOrExcessByDriver.toFixed(2)} Lt.</TableCell>
+            <TableCell className="border-none"></TableCell>
+            <TableCell className="border-none" colSpan={2}></TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+
+      <Table className="">
+        <TableHeader>
+          <TableRow className="border-none">
+            <TableCell className="font-bold" colSpan={3}>Computation of Actual Sale</TableCell>
+            <TableCell className="border-none"></TableCell>
+            <TableCell className="font-bold" colSpan={2}>Distribution Cost</TableCell>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">a)</TableCell>
+            <TableCell className="border border-black">Opening Qty as per Dip</TableCell>
+            <TableCell className="text-right border border-black">{totalOpeningQty} Lt.</TableCell>
+            <TableCell className="border-none"></TableCell>
+            <TableCell className="border border-black">Toll Tax</TableCell>
+            <TableCell className="text-right border border-black">&#8377; {tollTax}</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">b)</TableCell>
+            <TableCell className="border border-black">Closing Qty as per Dip</TableCell>
+            <TableCell className="text-right border border-black">{totalClosingQty} Lt.</TableCell>
+            <TableCell className="border-none"></TableCell>
+            <TableCell className="border border-black">Driver Fooding</TableCell>
+            <TableCell className="text-right border border-black">&#8377; {driverFooding}</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">c)</TableCell>
+            <TableCell className="border border-black">Qty increase/ (Decrease) (b-a)</TableCell>
+            <TableCell className="text-right border border-black">{(totalClosingQty - totalOpeningQty).toFixed(2)} Lt.</TableCell>
+            <TableCell className="border-none"></TableCell>
+            <TableCell className="border border-black">Driver Salery</TableCell>
+            <TableCell className="text-right border border-black">&#8377; {driverSalary}</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">d)</TableCell>
+            <TableCell className="border border-black">Total Loading Qty as per Slip</TableCell>
+            <TableCell className="text-right border border-black">{totalLoadedQtyBySlip} Lt.</TableCell>
+            <TableCell className="border-none"></TableCell>
+            <TableCell className="border border-black">Fueling Cost</TableCell>
+            <TableCell className="text-right border border-black">&#8377; {fuelingCost}</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">e)</TableCell>
+            <TableCell className="border border-black">Return in Main Stock</TableCell>
+            <TableCell className="text-right border border-black">{unload.toFixed(2)} Lt.</TableCell>
+            <TableCell className="border-none"></TableCell>
+            <TableCell className="border border-black">Border/Other Exp.</TableCell>
+            <TableCell className="text-right border border-black">&#8377; {borderOtherExp}</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">f)</TableCell>
+            <TableCell className="border border-black font-bold">Sale as per Load (d-c-e)</TableCell>
+            <TableCell className="text-right border border-black font-bold">{(totalLoadedQtyBySlip - Number((totalClosingQty - totalOpeningQty).toFixed(2)) - unload).toFixed(2)} Lt.</TableCell>
+            <TableCell className="border-none"></TableCell>
+            <TableCell className="border border-black">Reward</TableCell>
+            <TableCell className="text-right border border-black">&#8377; {reward}</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border-none" colSpan={4}></TableCell>
+            <TableCell className="border border-black font-bold">Total Distribution Cost</TableCell>
+            <TableCell className="text-right border border-black font-bold">&#8377; {totalDistributionCost}</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border-none" colSpan={4}></TableCell>
+            <TableCell className="border border-black font-bold">Distribution Cost per Liter</TableCell>
+            <TableCell className="text-right border border-black font-bold">&#8377; {distributionCostPerLtr}/Lt.</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+
+      <div className="flex flex-row justify-between items-end">
+        <h3 className="font-bold">Bowser Loading Details</h3>
+        <span className="text-right text-xs">CN = Calibration Needed</span>
+      </div>
+      <Table className="border border-black">
+        <TableBody>
+          <TableRow className="border border-black font-bold">
+            <TableCell className="border border-black">Loading Date</TableCell>
+            <TableCell className="border border-black">Product</TableCell>
+            <TableCell className="border border-black">Loading Station/Pump</TableCell>
+            <TableCell className="border border-black">Qty (CH1)</TableCell>
+            <TableCell className="border border-black">Qty (CH2)</TableCell>
+            <TableCell className="border border-black">Total</TableCell>
+          </TableRow>
+          <TableRow className="border-none">
+            <TableCell className="border border-black">{formatDate(record?.loading.sheetId.createdAt!)}</TableCell>
+            <TableCell className="border border-black">{record?.loading.sheetId.product}</TableCell>
+            <TableCell className="border border-black">{record?.loading.sheetId.bccAuthorizedOfficer.orderId.loadingLocationName}</TableCell>
+            <TableCell className="text-right border border-black">{ch1FullLoadAddqty}</TableCell>
+            <TableCell className="text-right border border-black">{ch2FullLoadAddqty}</TableCell>
+            <TableCell className="text-right border border-black">{totalLoadedQtyByDip}</TableCell>
+          </TableRow>
+          {record?.addition?.length && record?.addition?.length > 0 ? record.addition.map((record, index) => (
+            <TableRow key={index} className="border border-black">
+              <TableCell className="border border-black">{record.sheetId.createdAt}</TableCell>
+              <TableCell className="border border-black">{record.sheetId.product}</TableCell>
+              <TableCell className="border border-black">{record.sheetId.bccAuthorizedOfficer.orderId.loadingLocationName}</TableCell>
+              <TableCell className="text-right border border-black">{record.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-1"))?.qty}</TableCell>
+              <TableCell className="text-right border border-black">{record.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-2"))?.qty}</TableCell>
+              <TableCell className="text-right border border-black">{record.sheetId.totalLoadQuantityByDip == 0 ? "CN*" : record.sheetId.totalLoadQuantityByDip}</TableCell>
+            </TableRow>
+          )) : ""}
+        </TableBody>
+      </Table>
+      <div className="flex justify-between items-end w-full">
+        <div className="min-w-5 text-center">
+          Driver
+        </div>
+        <div className="min-w-5 text-center">
+        </div>
+        <div className="min-w-5 text-center">
+          Superviser
+        </div>
+        <div className="min-w-5 text-center">
+          <Image
+            src="/assets/sahil-sign.png"
+            alt="Sahil's signature"
+            width={90}
+            height={30}
+          />
+        </div>
+        <div className="min-w-5 text-center">
+          Verified by
+        </div>
+        <div className="min-w-5 text-center">
+
+        </div>
+        <div className="min-w-5 text-center">
+          Deducted by
+        </div>
+        <div className="min-w-5 text-center">
+
+        </div>
+      </div>
+    </div >
   );
 };
 

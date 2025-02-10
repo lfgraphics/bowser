@@ -13,9 +13,11 @@ import { searchItems } from "@/utils/searchUtils";
 
 const page = ({ params }: { params: { id: string } }) => {
     const sheetId = params.id; // Extract `id` from params
-    
+
     const [regNo, setRegNo] = useState("");
     const [loadingDesc, setLoadingDesc] = useState("");
+    const [prpoduct, setProduct] = useState("");
+    const [locationName, setLocationName] = useState("");
     const [loadingLocation, setLoadingLocation] = useState("");
     const [petrolPumpName, setPetrolPumpName] = useState<string>("");
     const [petrolPumpPhoneNo, setPetrolPumpPhoneNo] = useState<string>("");
@@ -84,9 +86,11 @@ const page = ({ params }: { params: { id: string } }) => {
         try {
             const body = {
                 regNo,
-                tripSheetId: sheetId,
+                prpoduct,
                 loadingDesc,
                 loadingLocation,
+                loadingLocationName: locationName,
+                tripSheetId: sheetId,
                 petrolPump: {
                     name: petrolPumpName,
                     phone: petrolPumpPhoneNo
@@ -193,6 +197,28 @@ const page = ({ params }: { params: { id: string } }) => {
                                 onChange={(e) => setLoadingDesc(e.target.value)}
                             />
                         </div>
+
+                        <div className="flex flex-col space-y-1">
+                            <Label htmlFor="product">Product</Label>
+                            <Input
+                                required
+                                id="product"
+                                placeholder="Product (HVO/HSD)"
+                                value={prpoduct}
+                                onChange={(e) => setProduct(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex flex-col space-y-1">
+                            <Label htmlFor="loadingLocationName">Loading Location Name</Label>
+                            <Input
+                                required
+                                id="loadingLocationName"
+                                placeholder="Location Name (Gida/Reliance)"
+                                value={locationName}
+                                onChange={(e) => setLocationName(e.target.value)}
+                            />
+                        </div>
+
                         <div className="flex flex-col space-y-1">
                             <Label htmlFor="loadingLocation">Loading Location</Label>
                             <RadioGroup

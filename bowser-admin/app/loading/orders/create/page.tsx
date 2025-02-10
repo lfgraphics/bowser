@@ -23,6 +23,7 @@ export default function CreateLoadingOrderPage() {
     const [loadingDesc, setLoadingDesc] = useState("");
     const [prpoduct, setProduct] = useState("");
     const [loadingLocation, setLoadingLocation] = useState("");
+    const [locationName, setLocationName] = useState("");
     const [petrolPumpName, setPetrolPumpName] = useState<string>("");
     const [petrolPumpPhoneNo, setPetrolPumpPhoneNo] = useState<string>("");
 
@@ -68,14 +69,12 @@ export default function CreateLoadingOrderPage() {
         setError(null);
 
         try {
-            // Prepare the payload
-            // bccAuthorizedOfficer can use userId or _id (depending on your DB schema).
-            // For example, if you want `id` = userId:
             const body = {
                 regNo,
                 prpoduct,
                 loadingDesc,
                 loadingLocation,
+                loadingLocationName: locationName,
                 petrolPump: {
                     name: petrolPumpName,
                     phone: petrolPumpPhoneNo
@@ -218,6 +217,16 @@ export default function CreateLoadingOrderPage() {
                                 placeholder="Product (HVO/HSD)"
                                 value={prpoduct}
                                 onChange={(e) => setProduct(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex flex-col space-y-1">
+                            <Label htmlFor="loadingLocationName">Loading Location Name</Label>
+                            <Input
+                                required
+                                id="loadingLocationName"
+                                placeholder="Location Name (Gida/Reliance)"
+                                value={locationName}
+                                onChange={(e) => setLocationName(e.target.value)}
                             />
                         </div>
 

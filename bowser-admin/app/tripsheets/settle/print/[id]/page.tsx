@@ -52,7 +52,7 @@ const SettlementPage = async ({ params }: { params: { id: string } }) => {
   //   const error = tripSheet ? null : "Error fetching TripSheet data";
 
   return (
-    <div className="-ml-4">
+    <div className="">
       {(!record || loading) && <Loading />}
       {record && <TripCalculationModal record={record} />}
       {/* {error && <div>{error}</div>} */}

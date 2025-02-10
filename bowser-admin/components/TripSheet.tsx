@@ -217,11 +217,11 @@ const TripSheetPage = () => {
                                                 </Button>
                                             </Link>
                                         }
-                                        <OnlyAllowed allowedRoles={["Admin"]}>
+                                        {/* <OnlyAllowed allowedRoles={["Admin"]}>
                                             <Button variant="destructive" size="lg" onClick={() => openDeleteDialogue(sheet._id!)}>
                                                 Delete
                                             </Button>
-                                        </OnlyAllowed>
+                                        </OnlyAllowed> */}
                                     </TableCell>
                                 </OnlyAllowed>
                                 <TableCell>{sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.verified?.status) ? <Check className='block mx-auto' /> : (sheet.dispenses && sheet.dispenses.length > 0 ? <X className='block mx-auto' /> : null)}</TableCell>

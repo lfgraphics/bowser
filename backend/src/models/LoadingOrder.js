@@ -7,6 +7,7 @@ const loadingOrderSchema = new mongoose.Schema({
     regNo: { type: String, require: true, ref: 'Bowser' },
     loadingDesc: { type: String, require: false },
     product: { type: String, require: false },
+    loadingLocationName: { type: String, require: false },
     loadingLocation: { type: String, require: true },
     bccAuthorizedOfficer: {
         id: { type: String, required: true },
