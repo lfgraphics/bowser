@@ -1,13 +1,9 @@
-"use client"
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { isAuthenticated } from '@/lib/auth';
+"use client";
 import FuelingAllocation from '@/components/FuelingAllocation';
-import Loading from '../loading';
 import { InstallPrompt } from '../page';
 // import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-export default function Dashboard({ searchParams }: { searchParams: { vehicleNumber: string, driverId: string, driverName: string, driverMobile: string, id: string } }) {
+export default function Dashboard({ searchParams }: { searchParams: { vehicleNumber: string, driverId: string, driverName: string, driverMobile: string, id: string, allocationType: "bowser" | "external" } }) {
 
     return (
         <div>

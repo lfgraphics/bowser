@@ -17,13 +17,15 @@ import Loading from "@/app/loading"
 import { BASE_URL } from "@/lib/api"
 import { updateDriverMobile, updateTripDriver } from "@/utils"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "./ui/select"
 
-const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: string, driverId: string, driverName: string, driverMobile: string, id: string } }) => {
+const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: string, driverId: string, driverName: string, driverMobile: string, id: string, allocationType: "bowser" | "external" } }) => {
     const paramsVehicleNumber = searchParams.vehicleNumber;
     const paramsDriverId = searchParams.driverId;
     const paramsDriverName = searchParams.driverName;
     const paramsDriverMobile = searchParams.driverMobile;
     const requestId = searchParams.id;
+    const allocationType = searchParams.allocationType || "bowser";
 
     const [isSearching, setIsSearching] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -34,10 +36,14 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
     const [driverMobile, setDriverMobile] = useState(paramsDriverMobile)
     const [fuelQuantity, setFuelQuantity] = useState('0')
     const [quantityType, setQuantityType] = useState<'Full' | 'Part'>('Full')
+    const [pumpAllocationType, setPumpAllocationType] = useState<'Any' | 'Specific'>('Any')
     const [bowserDriverName, setBowserDriverName] = useState("")
     const [bowserDriverId, setBowserDriverId] = useState("")
     const [bowserRegNo, setBowserRegNo] = useState("")
     const [bowserDriverMobile, setBowserDriverMobile] = useState<string>("")
+    const [fuelProvider, setFuelProvider] = useState<string>("")
+    const [fuelProviders, setFuelProviders] = useState()
+    const [petrolPump, setPetrolPump] = useState<string>("")
     const [alertDialogOpen, setAlertDialogOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
     const [searchModalConfig, setSearchModalConfig] = useState<{
@@ -64,8 +70,21 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
             window.location.href = '/login';
         }
     };
+    const fetchFuelProviders = async () => {
+        if (allocationType && allocationType === 'external') {
+            try {
+                const response = await fetch(`${BASE_URL}/fuelProviders`);
+                const data = await response.json();
+                setFuelProviders(data);
+            } catch (error) {
+                console.error('Error fetching fuel providers:', error);
+            }
+        }
+    }
+
     useEffect(() => {
         checkAuth();
+        fetchFuelProviders();
     }, []);
 
     useEffect(() => {
@@ -397,6 +416,13 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
             setFuelQuantity('0');
         }
     };
+    const handlePumpAllocationTypeChange = (value: 'Any' | 'Specific') => {
+        setPumpAllocationType(value);
+    };
+
+    useEffect(() => {
+        console.log(fuelProvider)
+    }, [fuelProvider]);
 
     return (
         <div className="flex justify-center items-center bg-background py-4 min-h-full">
@@ -554,58 +580,96 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
                                 </div>
                             </div>
                         </div>
-                        <h3 className="mt-4 mb-2 font-semibold text-lg">Allocate the order to:</h3>
-                        <div className="flex flex-col space-y-1.5 mb-4">
-                            <Label htmlFor="bowserRegNo">Bowser Registration Number</Label>
-                            <Input
-                                id="bowserRegNo"
-                                placeholder="Bowser number/driver name/mobile"
-                                value={bowserRegNo}
-                                onChange={(e) => {
-                                    setBowserRegNo(e.target.value);
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Backspace") {
-                                        return;
-                                    }
-                                    if (bowserRegNo.length > 3) {
-                                        searchBowser(bowserRegNo);
-                                    }
-                                }}
-                                required
-                            />
-                        </div>
-                        <div className="flex flex-col space-y-1.5 mt-4">
-                            <Label htmlFor="bowserDriverName">Bowser Driver Name</Label>
-                            <Input
-                                id="bowserDriverName"
-                                value={bowserDriverName}
-                                required
-                                onChange={(e) => {
-                                    setBowserDriverName(e.target.value);
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Backspace") {
-                                        return;
-                                    }
-                                    if (e.key === 'Enter' && bowserDriverId.length > 3) {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            searchBowserDriver(bowserDriverId);
-                                        }
-                                    }
-                                }}
-                            />
-                        </div>
-                        <div className="flex flex-col space-y-1.5 mt-4">
-                            <Label htmlFor="bowserDriverPhone">Bowser Driver Mobile</Label>
-                            <Input
-                                id="bowserDriverPhone"
-                                value={bowserDriverMobile}
-                                onChange={(e) => setBowserDriverMobile(e.target.value)}
-                                required
-                            />
-                        </div>
+                        <h3 className="mt-4 mb-2 font-semibold text-lg">Allocate the order to {allocationType === "bowser" ? "Bowser" : "Petrol Pump"}:</h3>
+                        {allocationType === "bowser" &&
+                            <>
+                                <div className="flex flex-col space-y-1.5 mb-4">
+                                    <Label htmlFor="bowserRegNo">Bowser Registration Number</Label>
+                                    <Input
+                                        id="bowserRegNo"
+                                        placeholder="Bowser number/driver name/mobile"
+                                        value={bowserRegNo}
+                                        onChange={(e) => {
+                                            setBowserRegNo(e.target.value);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Backspace") {
+                                                return;
+                                            }
+                                            if (bowserRegNo.length > 3) {
+                                                searchBowser(bowserRegNo);
+                                            }
+                                        }}
+                                        required
+                                    />
+                                </div>
+                                <div className="flex flex-col space-y-1.5 mt-4">
+                                    <Label htmlFor="bowserDriverName">Bowser Driver Name</Label>
+                                    <Input
+                                        id="bowserDriverName"
+                                        value={bowserDriverName}
+                                        required
+                                        onChange={(e) => {
+                                            setBowserDriverName(e.target.value);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Backspace") {
+                                                return;
+                                            }
+                                            if (e.key === 'Enter' && bowserDriverId.length > 3) {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    searchBowserDriver(bowserDriverId);
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                <div className="flex flex-col space-y-1.5 mt-4">
+                                    <Label htmlFor="bowserDriverPhone">Bowser Driver Mobile</Label>
+                                    <Input
+                                        id="bowserDriverPhone"
+                                        value={bowserDriverMobile}
+                                        onChange={(e) => setBowserDriverMobile(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </>
+                        }
+                        {allocationType === "external" && <Select onValueChange={setFuelProvider} value={fuelProvider}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a Fuel Provider" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="company-1">Company one</SelectItem>
+                                <SelectItem value="company-2">Company Two</SelectItem>
+                            </SelectContent>
+                        </Select>}
+                        {allocationType === "external" &&
+                            <>
+                                <RadioGroup name="pumpAllocationType" className="flex gap-4 mt-4" defaultValue={pumpAllocationType} onValueChange={(e) => handlePumpAllocationTypeChange(e as "Any" | "Specific")}>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="Any" id="any" />
+                                        <Label htmlFor="any">Any Petrol Pump</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="Specific" id="specific" />
+                                        <Label htmlFor="specific">Specific Petrol Pump</Label>
+                                    </div>
+                                </RadioGroup>
+                            </>
+                        }
+                        {allocationType === "external" && fuelProvider && pumpAllocationType === "Specific" &&
+                            <Select onValueChange={setPetrolPump} value={petrolPump}>
+                                <SelectTrigger className="mt-3">
+                                    <SelectValue placeholder="Select a Petrol Pump" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="company-1">Pump one</SelectItem>
+                                    <SelectItem value="company-2">Pump Two</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        }
                     </CardContent>
                     <CardFooter className="flex justify-between">
                         <Button disabled={submitting || isSearching} variant="outline" type="reset" className="w-[40%]" onClick={resetForm}>Clear</Button>

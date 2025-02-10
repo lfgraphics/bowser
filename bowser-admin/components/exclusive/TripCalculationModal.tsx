@@ -245,32 +245,32 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
 
   return (
     <div className="bg-white p-4 text-black">
-      <h2 className="mb-2 font-bold text-center text-xl">Bowser Tripsheet Settlement Statement</h2>
+      <h2 className="mb-2 font-bold text-xl text-center">Bowser Tripsheet Settlement Statement</h2>
       <Table className="border border-black">
         <TableBody>
           <TableRow className="border-none">
             <TableCell className="border border-black">Driver Name</TableCell>
             <TableCell className="border border-black">{record?.bowser.driver[0].name}</TableCell>
-            <TableCell className="text-right border border-black font-bold">Tripsheet No.</TableCell>
-            <TableCell className="text-right border border-black font-bold">{record?.tripSheetId}</TableCell>
+            <TableCell className="border border-black font-bold text-right">Tripsheet No.</TableCell>
+            <TableCell className="border border-black font-bold text-right">{record?.tripSheetId}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black" colSpan={2}>Driver ID</TableCell>
             {/* <TableCell className="border border-black">{record?.bowser.driver[0].name}</TableCell> */}
-            <TableCell className="text-right border border-black font-bold">Settlement Date</TableCell>
-            <TableCell className="text-right border border-black font-bold">{formatDate(record?.settelment?.dateTime!)}</TableCell>
+            <TableCell className="border border-black font-bold text-right">Settlement Date</TableCell>
+            <TableCell className="border border-black font-bold text-right">{formatDate(record?.settelment?.dateTime!)}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">Driver Mobile</TableCell>
             <TableCell className="border border-black">{record?.bowser.driver[0].phoneNo}</TableCell>
-            <TableCell className="text-right border border-black">Trip Start Date</TableCell>
-            <TableCell className="text-right border border-black">{formatDate(record?.createdAt!)}</TableCell>
+            <TableCell className="border border-black text-right">Trip Start Date</TableCell>
+            <TableCell className="border border-black text-right">{formatDate(record?.createdAt!)}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">Distribution Area</TableCell>
             <TableCell className="border border-black">{record?.fuelingAreaDestination}</TableCell>
-            <TableCell className="text-right border border-black font-bold">Bowser No.</TableCell>
-            <TableCell className="text-right border border-black font-bold">{record?.bowser.regNo}</TableCell>
+            <TableCell className="border border-black font-bold text-right">Bowser No.</TableCell>
+            <TableCell className="border border-black font-bold text-right">{record?.bowser.regNo}</TableCell>
           </TableRow>
         </TableBody>
       </Table>
@@ -286,15 +286,15 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">Bowser Departure Odometer</TableCell>
-            <TableCell className="text-right border border-black">{record?.loading.sheetId.odoMeter}</TableCell>
+            <TableCell className="border border-black text-right">{record?.loading.sheetId.odoMeter}</TableCell>
             <TableCell className="border border-black">Bowser Return Odometer</TableCell>
-            <TableCell className="text-right border border-black">{record.settelment?.details.odometer}</TableCell>
+            <TableCell className="border border-black text-right">{record.settelment?.details.odometer}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">Pump Departure Reading</TableCell>
-            <TableCell className="text-right border border-black">{record?.loading.sheetId.pumpReadingAfter}</TableCell>
+            <TableCell className="border border-black text-right">{record?.loading.sheetId.pumpReadingAfter}</TableCell>
             <TableCell className="border border-black">Pump Return Reading</TableCell>
-            <TableCell className="text-right border border-black">{record?.settelment?.details.pumpReading}</TableCell>
+            <TableCell className="border border-black text-right">{record?.settelment?.details.pumpReading}</TableCell>
           </TableRow>
         </TableBody>
       </Table>
@@ -304,33 +304,33 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
         <TableBody>
           <TableRow className="border-none">
             <TableCell className="border border-black">Opening Qty as per Dip</TableCell>
-            <TableCell className="text-right border border-black">{totalOpeningQty} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{totalOpeningQty} Lt.</TableCell>
             <TableCell className="border border-black">Qty Returned back in main stock</TableCell>
-            <TableCell className="text-right border border-black">{unload} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{unload} Lt.</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">Loading Qty as per Slip</TableCell>
-            <TableCell className="text-right border border-black">{loadQty} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{loadQty} Lt.</TableCell>
             <TableCell className="border border-black">Sale as per Reading</TableCell>
-            <TableCell className="text-right border border-black">{saleAsPerReading} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{saleAsPerReading} Lt.</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">Addition Qty as per Slip</TableCell>
-            <TableCell className="text-right border border-black">{addition} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{addition} Lt.</TableCell>
             <TableCell className="border border-black">Sale as per Driver</TableCell>
-            <TableCell className="text-right border border-black">{saleAsPerDriver} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{saleAsPerDriver} Lt.</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">Total Loaded Qty</TableCell>
-            <TableCell className="text-right border border-black">{totalLoadQty} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{totalLoadQty} Lt.</TableCell>
             <TableCell className="border border-black">Sale as per Load</TableCell>
-            <TableCell className="text-right border border-black font-bold">{saleAsPerLoad} Lt.</TableCell>
+            <TableCell className="border border-black font-bold text-right">{saleAsPerLoad} Lt.</TableCell>
           </TableRow>
           <TableRow className="border border-black font-bold">
             <TableCell className="border border-black">Net Load Qty</TableCell>
-            <TableCell className="text-right border border-black">{netLoadQty} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{netLoadQty} Lt.</TableCell>
             <TableCell className="border border-black">Excess/(Short) Sale</TableCell>
-            <TableCell className="text-right border border-black">{shortExcess} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{shortExcess} Lt.</TableCell>
           </TableRow>
         </TableBody>
       </Table>
@@ -359,43 +359,43 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
           <TableBody>
             <TableRow className="border-none">
               <TableCell className="border border-black">Before Loading</TableCell>
-              <TableCell className="text-right border border-black">{ch1OpeningCm} cm</TableCell>
-              <TableCell className="text-right border border-black">{ch1Openingqty} Lt.</TableCell>
-              <TableCell className="text-right border border-black">{ch2OpeningCm} cm</TableCell>
-              <TableCell className="text-right border border-black">{ch2Openingqty} Lt.</TableCell>
-              <TableCell className="text-right border border-black">{totalOpeningQty} Lt.</TableCell>
+              <TableCell className="border border-black text-right">{ch1OpeningCm} cm</TableCell>
+              <TableCell className="border border-black text-right">{ch1Openingqty} Lt.</TableCell>
+              <TableCell className="border border-black text-right">{ch2OpeningCm} cm</TableCell>
+              <TableCell className="border border-black text-right">{ch2Openingqty} Lt.</TableCell>
+              <TableCell className="border border-black text-right">{totalOpeningQty} Lt.</TableCell>
               <TableCell className="border-none"></TableCell>
               <TableCell className="border border-black font-bold text-center" rowSpan={2}>CH-1</TableCell>
               <TableCell className="border border-black">{record.loading.sheetId.chamberwiseSealList.filter(chamber => chamber.chamberId === "Chamber-1")[0]?.sealId}</TableCell>
             </TableRow>
             <TableRow className="border-none">
               <TableCell className="border border-black">After Loading</TableCell>
-              <TableCell className="text-right border border-black">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-1"))?.levelHeight} cm</TableCell>
-              <TableCell className="text-right border border-black">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-1"))?.qty} Lt.</TableCell>
-              <TableCell className="text-right border border-black">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-2"))?.levelHeight} cm</TableCell>
-              <TableCell className="text-right border border-black">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-2"))?.qty} Lt.</TableCell>
-              <TableCell className="text-right border border-black">{record?.loading.sheetId.tempLoadByDip.toFixed(2)} Lt.</TableCell>
+              <TableCell className="border border-black text-right">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-1"))?.levelHeight} cm</TableCell>
+              <TableCell className="border border-black text-right">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-1"))?.qty} Lt.</TableCell>
+              <TableCell className="border border-black text-right">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-2"))?.levelHeight} cm</TableCell>
+              <TableCell className="border border-black text-right">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-2"))?.qty} Lt.</TableCell>
+              <TableCell className="border border-black text-right">{record?.loading.sheetId.tempLoadByDip.toFixed(2)} Lt.</TableCell>
               <TableCell className="border-none"></TableCell>
               <TableCell className="border border-black">{record.loading.sheetId.chamberwiseSealList.filter(chamber => chamber.chamberId === "Chamber-1")[1]?.sealId}</TableCell>
             </TableRow>
             <TableRow className="border-none">
               <TableCell className="border border-black font-bold">Net Loaded</TableCell>
-              <TableCell className="text-right border border-black font-bold">{ch1FullLoadAddCm} cm</TableCell>
-              <TableCell className="text-right border border-black font-bold">{ch1FullLoadAddqty} Lt.</TableCell>
-              <TableCell className="text-right border border-black font-bold">{ch2FullLoadAddCm} cm</TableCell>
-              <TableCell className="text-right border border-black font-bold">{ch2FullLoadAddqty} Lt.</TableCell>
-              <TableCell className="text-right border border-black font-bold">{(ch1FullLoadAddqty + ch2FullLoadAddqty).toFixed(2)} Lt.</TableCell>
+              <TableCell className="border border-black font-bold text-right">{ch1FullLoadAddCm} cm</TableCell>
+              <TableCell className="border border-black font-bold text-right">{ch1FullLoadAddqty} Lt.</TableCell>
+              <TableCell className="border border-black font-bold text-right">{ch2FullLoadAddCm} cm</TableCell>
+              <TableCell className="border border-black font-bold text-right">{ch2FullLoadAddqty} Lt.</TableCell>
+              <TableCell className="border border-black font-bold text-right">{(ch1FullLoadAddqty + ch2FullLoadAddqty).toFixed(2)} Lt.</TableCell>
               <TableCell className="border-none"></TableCell>
               <TableCell className="border border-black font-bold text-center" rowSpan={2}>CH-2</TableCell>
               <TableCell className="border border-black">{record.loading.sheetId.chamberwiseSealList.filter(chamber => chamber.chamberId === "Chamber-2")[0]?.sealId}</TableCell>
             </TableRow>
             <TableRow className="border-none">
               <TableCell className="border border-black font-bold">After Return</TableCell>
-              <TableCell className="text-right border border-black font-bold">{ch1Cm} cm</TableCell>
-              <TableCell className="text-right border border-black font-bold">{ch1qty} Lt.</TableCell>
-              <TableCell className="text-right border border-black font-bold">{ch2Cm} cm</TableCell>
-              <TableCell className="text-right border border-black font-bold">{ch2qty} Lt.</TableCell>
-              <TableCell className="text-right border border-black font-bold">{totalClosingQty} Lt.</TableCell>
+              <TableCell className="border border-black font-bold text-right">{ch1Cm} cm</TableCell>
+              <TableCell className="border border-black font-bold text-right">{ch1qty} Lt.</TableCell>
+              <TableCell className="border border-black font-bold text-right">{ch2Cm} cm</TableCell>
+              <TableCell className="border border-black font-bold text-right">{ch2qty} Lt.</TableCell>
+              <TableCell className="border border-black font-bold text-right">{totalClosingQty} Lt.</TableCell>
               <TableCell className="border-none"></TableCell>
               <TableCell className="border border-black">{record.loading.sheetId.chamberwiseSealList.filter(chamber => chamber.chamberId === "Chamber-2")[1]?.sealId}</TableCell>
             </TableRow>
@@ -414,41 +414,41 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
         <TableBody className="border-none">
           <TableRow className="border-none">
             <TableCell className="border border-black">Total Run KM</TableCell>
-            <TableCell className="text-right border border-black">{distance} km</TableCell>
+            <TableCell className="border border-black text-right">{distance} km</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border border-black">Effective Fuel Prise</TableCell>
-            <TableCell className="text-right border border-black">&#8377; {hsdRateForDeduction}</TableCell>
+            <TableCell className="border border-black text-right">&#8377; {hsdRateForDeduction}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">Avg. @{hsdPerKm}KM/Lt.</TableCell>
-            <TableCell className="text-right border border-black">{hsdConsumption} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{hsdConsumption} Lt.</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border border-black">Excess Fueling Amount</TableCell>
-            <TableCell className="text-right border border-black">&#8377; {deductableExcessFuelingValue}</TableCell>
+            <TableCell className="border border-black text-right">&#8377; {deductableExcessFuelingValue}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">Fuel Consmed by Pump</TableCell>
-            <TableCell className="text-right border border-black">{pumpConsumption} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{pumpConsumption} Lt.</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border border-black">Short Sale Amount</TableCell>
-            <TableCell className="text-right border border-black">&#8377; {deductableShortSale}</TableCell>
+            <TableCell className="border border-black text-right">&#8377; {deductableShortSale}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">Estimated Fuel Required</TableCell>
-            <TableCell className="text-right border border-black">{(hsdConsumption + pumpConsumption).toFixed(2)} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{(hsdConsumption + pumpConsumption).toFixed(2)} Lt.</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border border-black font-bold">Total Deductable Amount</TableCell>
-            <TableCell className="text-right border border-black font-bold">&#8377; {totalDeduction}</TableCell>
+            <TableCell className="border border-black font-bold text-right">&#8377; {totalDeduction}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">Filled by Driver</TableCell>
-            <TableCell className="text-right border border-black">{filledByDriver} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{filledByDriver} Lt.</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border-none" colSpan={2}></TableCell>
           </TableRow>
           <TableRow className="border-none font-bold">
             <TableCell className="border border-black">(Short)/Excess</TableCell>
-            <TableCell className="text-right border border-black">{shortOrExcessByDriver.toFixed(2)} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{shortOrExcessByDriver.toFixed(2)} Lt.</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border-none" colSpan={2}></TableCell>
           </TableRow>
@@ -467,67 +467,67 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
           <TableRow className="border-none">
             <TableCell className="border border-black">a)</TableCell>
             <TableCell className="border border-black">Opening Qty as per Dip</TableCell>
-            <TableCell className="text-right border border-black">{totalOpeningQty} Lt.</TableCell>
+            <TableCell className="border border-black text-right">{totalOpeningQty} Lt.</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border border-black">Toll Tax</TableCell>
-            <TableCell className="text-right border border-black">&#8377; {tollTax}</TableCell>
+            <TableCell className="border border-black text-right">&#8377; {tollTax}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">b)</TableCell>
-            <TableCell className="border border-black">Closing Qty as per Dip</TableCell>
-            <TableCell className="text-right border border-black">{totalClosingQty} Lt.</TableCell>
+            <TableCell className="border border-black">Total Loading Qty</TableCell>
+            <TableCell className="border border-black text-right">{totalLoadedQtyBySlip} Lt.</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border border-black">Driver Fooding</TableCell>
-            <TableCell className="text-right border border-black">&#8377; {driverFooding}</TableCell>
+            <TableCell className="border border-black text-right">&#8377; {driverFooding}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">c)</TableCell>
-            <TableCell className="border border-black">Qty increase/ (Decrease) (b-a)</TableCell>
-            <TableCell className="text-right border border-black">{(totalClosingQty - totalOpeningQty).toFixed(2)} Lt.</TableCell>
+            <TableCell className="border border-black">Total Departure Qty</TableCell>
+            <TableCell className="border border-black text-right">{(totalLoadedQtyBySlip + totalOpeningQty).toFixed(2)} Lt.</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border border-black">Driver Salery</TableCell>
-            <TableCell className="text-right border border-black">&#8377; {driverSalary}</TableCell>
+            <TableCell className="border border-black text-right">&#8377; {driverSalary}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">d)</TableCell>
-            <TableCell className="border border-black">Total Loading Qty as per Slip</TableCell>
-            <TableCell className="text-right border border-black">{totalLoadedQtyBySlip} Lt.</TableCell>
+            <TableCell className="border border-black">Return back in Main Stock</TableCell>
+            <TableCell className="border border-black text-right">{unload.toFixed(2)} Lt.</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border border-black">Fueling Cost</TableCell>
-            <TableCell className="text-right border border-black">&#8377; {fuelingCost}</TableCell>
+            <TableCell className="border border-black text-right">&#8377; {fuelingCost}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">e)</TableCell>
-            <TableCell className="border border-black">Return in Main Stock</TableCell>
-            <TableCell className="text-right border border-black">{unload.toFixed(2)} Lt.</TableCell>
+            <TableCell className="border border-black">Closing Qty as per Dip</TableCell>
+            <TableCell className="border border-black text-right">{totalClosingQty} Lt.</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border border-black">Border/Other Exp.</TableCell>
-            <TableCell className="text-right border border-black">&#8377; {borderOtherExp}</TableCell>
+            <TableCell className="border border-black text-right">&#8377; {borderOtherExp}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">f)</TableCell>
-            <TableCell className="border border-black font-bold">Sale as per Load (d-c-e)</TableCell>
-            <TableCell className="text-right border border-black font-bold">{(totalLoadedQtyBySlip - Number((totalClosingQty - totalOpeningQty).toFixed(2)) - unload).toFixed(2)} Lt.</TableCell>
+            <TableCell className="border border-black font-bold">Sale as per Load (c-d-e)</TableCell>
+            <TableCell className="border border-black font-bold text-right">{(totalLoadedQtyBySlip + totalOpeningQty) - (unload + totalClosingQty)} Lt.</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border border-black">Reward</TableCell>
-            <TableCell className="text-right border border-black">&#8377; {reward}</TableCell>
+            <TableCell className="border border-black text-right">&#8377; {reward}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border-none" colSpan={4}></TableCell>
             <TableCell className="border border-black font-bold">Total Distribution Cost</TableCell>
-            <TableCell className="text-right border border-black font-bold">&#8377; {totalDistributionCost}</TableCell>
+            <TableCell className="border border-black font-bold text-right">&#8377; {totalDistributionCost}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border-none" colSpan={4}></TableCell>
             <TableCell className="border border-black font-bold">Distribution Cost per Liter</TableCell>
-            <TableCell className="text-right border border-black font-bold">&#8377; {distributionCostPerLtr}/Lt.</TableCell>
+            <TableCell className="border border-black font-bold text-right">&#8377; {distributionCostPerLtr}/Lt.</TableCell>
           </TableRow>
         </TableBody>
       </Table>
 
       <div className="flex flex-row justify-between items-end">
         <h3 className="font-bold">Bowser Loading Details</h3>
-        <span className="text-right text-xs">CN = Calibration Needed</span>
+        <span className="text-xs text-right">CN = Calibration Needed</span>
       </div>
       <Table className="border border-black">
         <TableBody>
@@ -543,18 +543,18 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
             <TableCell className="border border-black">{formatDate(record?.loading.sheetId.createdAt!)}</TableCell>
             <TableCell className="border border-black">{record?.loading.sheetId.product}</TableCell>
             <TableCell className="border border-black">{record?.loading.sheetId.bccAuthorizedOfficer.orderId.loadingLocationName}</TableCell>
-            <TableCell className="text-right border border-black">{ch1FullLoadAddqty}</TableCell>
-            <TableCell className="text-right border border-black">{ch2FullLoadAddqty}</TableCell>
-            <TableCell className="text-right border border-black">{totalLoadedQtyByDip}</TableCell>
+            <TableCell className="border border-black text-right">{ch1FullLoadAddqty}</TableCell>
+            <TableCell className="border border-black text-right">{ch2FullLoadAddqty}</TableCell>
+            <TableCell className="border border-black text-right">{totalLoadedQtyByDip == 0 ? "CN*" : totalLoadedQtyByDip}</TableCell>
           </TableRow>
           {record?.addition?.length && record?.addition?.length > 0 ? record.addition.map((record, index) => (
             <TableRow key={index} className="border border-black">
               <TableCell className="border border-black">{record.sheetId.createdAt}</TableCell>
               <TableCell className="border border-black">{record.sheetId.product}</TableCell>
               <TableCell className="border border-black">{record.sheetId.bccAuthorizedOfficer.orderId.loadingLocationName}</TableCell>
-              <TableCell className="text-right border border-black">{record.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-1"))?.qty}</TableCell>
-              <TableCell className="text-right border border-black">{record.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-2"))?.qty}</TableCell>
-              <TableCell className="text-right border border-black">{record.sheetId.totalLoadQuantityByDip == 0 ? "CN*" : record.sheetId.totalLoadQuantityByDip}</TableCell>
+              <TableCell className="border border-black text-right">{record.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-1"))?.qty}</TableCell>
+              <TableCell className="border border-black text-right">{record.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-2"))?.qty}</TableCell>
+              <TableCell className="border border-black text-right">{record.sheetId.totalLoadQuantityByDip == 0 ? "CN*" : record.sheetId.totalLoadQuantityByDip}</TableCell>
             </TableRow>
           )) : ""}
         </TableBody>
