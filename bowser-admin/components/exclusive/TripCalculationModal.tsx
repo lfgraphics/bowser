@@ -189,9 +189,6 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
   const [hsdConsumption, setHsdConsumption] = useState<number>(
     distance > 0 && hsdPerKm > 0 ? Math.round(distance / hsdPerKm) : 0
   );
-  const [shortExcess, setShortExcess] = useState<number>(
-    Number((totalClosingQty - totalOpeningQty).toFixed(2))
-  );
   //pump consumtion & sale as per load
   const [pumpConsumption, setPumpConsumption] = useState<number>(
     machineSaleQty > 0 ? Math.round((1 * machineSaleQty) / 1000) : 0
@@ -227,9 +224,12 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
         ? -shortOrExcessByDriver
         : 0) * hsdRateForDeduction).toFixed(2))
     );
-  const [saleAsPerReading, setSealeAsPerReading] = useState((record?.loading.sheetId.pumpReadingAfter - (record?.settelment?.details.pumpReading || 0)).toFixed(2));
+  const [saleAsPerReading, setSealeAsPerReading] = useState(((record?.settelment?.details.pumpReading || 0) - record?.loading.sheetId.pumpReadingAfter).toFixed(2));
   const [totalLoadQty, setTotalLoadQty] = useState<number>(totalOpeningQty + loadQty + addition);
   const [saleAsPerLoad, setSaleAsPerLoad] = useState<number>(totalLoadQty - totalClosingQty);
+  const [shortExcess, setShortExcess] = useState<number>(
+    Number((saleAsPerDriver - saleAsPerLoad).toFixed(2))
+  );
   const [shortOrExcessAsPerRecord, setShortOrExcessAsPerRecord] = useState<number>(saleAsPerDriver - saleAsPerLoad);
   // =IF(K14<-5,-K14,0)*K16
   const [deductableShortSale, setDeductableShortSale] = useState<number>(
