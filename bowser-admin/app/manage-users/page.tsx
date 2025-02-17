@@ -196,7 +196,7 @@ const UsersList = () => {
                         >{option}
                         </Button>))}
                 </div>
-                {nav === 'Users' && <div className="flex flex-wrap justify-around gap-3 my-6 w-full filter-container">
+                {nav === 'Users' && <div className="flex flex-wrap justify-around gap-3 filter-container my-6 w-full">
                     {/* Verification Filter */}
                     <div className="flex items-center gap-4 mt-4">
                         <Switch
@@ -224,7 +224,7 @@ const UsersList = () => {
 
                     {/* Search Input */}
                     <div className="relative w-auto">
-                        <Search size={20} className="top-1/2 left-3 absolute text-gray-400 transform -translate-y-1/2" />
+                        <Search size={20} className="top-1/2 left-3 absolute text-gray-400 -translate-y-1/2 transform" />
                         <Input
                             type="text"
                             placeholder="Search name, or phone number"
@@ -280,7 +280,7 @@ const UsersList = () => {
                                     </Button>
                                     <AlertDialog open={selectedUserId === user.userId} onOpenChange={(isOpen) => !isOpen && setSelectedUserId(null)}>
                                         <AlertDialogTrigger asChild>
-                                            <Button variant="destructive" onClick={() => setSelectedUserId(user.userId)}>Delete</Button>
+                                            <Button variant="destructive" onClick={() => setSelectedUserId(user.phoneNo!)}>Delete</Button>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>

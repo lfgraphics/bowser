@@ -312,7 +312,7 @@ export interface User {
 }
 
 export interface MainUser {
-  _id: mongoose.Schema.Types.ObjectId
+  _id: string
   userId: string
   phoneNumber: string
   phoneNo?: string
