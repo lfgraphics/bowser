@@ -9,11 +9,13 @@ import Loading from "@/app/loading";
 import { getCurrentUser } from "@/lib/auth";
 import { User } from "@/types/auth";
 import { BASE_URL } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function TripSheetCreatePage({ searchParams }: { searchParams: { tripSheetId?: number } }) {
     const router = useRouter();
     const params = useParams(); // from /tripsheets/create/[loadingSheetId]
     const [currentUser, setCurrentUser] = useState<User | null>()
+    const { toast } = useToast();
 
     useEffect(() => {
         let user = getCurrentUser()
@@ -40,13 +42,16 @@ export default function TripSheetCreatePage({ searchParams }: { searchParams: { 
                 body: JSON.stringify({
                     quantity,
                     by,
-                    dateTime:date
+                    dateTime: date
                 })
             })
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
+            const responseData = await response.json();
+            toast({ title: 'Success', description: responseData.message, variant: "success" });
         } catch (err) {
+            if (err instanceof Error) toast({ title: 'Success', description: err.message, variant: "destructive" });
             console.log(err)
         } finally {
             setLoading(false)
