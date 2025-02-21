@@ -1,5 +1,6 @@
 import axios from "axios"
-export const baseUrl = "/http://192.168.137.1:5000" //http://192.168.137.1:5000 //https://bowser-backend-2cdr.onrender.com
+import moment from 'moment';
+export const baseUrl = "/https://bowser-backend-2cdr.onrender.com" //http://192.168.137.1:5000 //https://bowser-backend-2cdr.onrender.com
 
 export const getAppUpdate = async () => {
     try {
@@ -9,3 +10,8 @@ export const getAppUpdate = async () => {
         console.log(error)
     }
 }
+
+export const formatDate = (dateInput: string | Date): string => {
+    const date = moment(dateInput);
+    return `${date.format('DD-MM-YY')}, ${date.format('hh:mm A')}`;
+};

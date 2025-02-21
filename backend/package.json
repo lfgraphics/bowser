@@ -36,6 +36,16 @@
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.7",
-    "nodemon": "^3.1.7"
+    "nodemon": "^3.1.9"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "sharp"
+    ],
+    "onlyBuiltDependencies": [
+      "argon2",
+      "protobufjs",
+      "tesseract.js"
+    ]
   }
 }

@@ -95,20 +95,8 @@ export default function NotificationsScreen() {
                             quantity={data.fuelQuantity.toString()}
                             bowser={data.bowser}
                             orderId={data._id.toString()}
-                            allocationAdmin={data.allocationAdmin || {
-                                name: '',
-                                id: '',
-                                allocationTime: ''
-                            }}
-                            request={data.request || {
-                                _id: '',
-                                vehicleNumber: '',
-                                driverName: '',
-                                driverId: '',
-                                driverMobile: '',
-                                location: '',
-                                fullfill: false
-                            }}
+                            allocationAdmin={data.allocationAdmin!}
+                            request={data.request!}
                         />
                     </View>
                 ))

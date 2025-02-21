@@ -5,6 +5,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { FuelNotificationProps } from '../src/types/models';
 import { Link, router } from 'expo-router';
 import { ThemedText } from './ThemedText';
+import { formatDate } from '@/src/utils/helpers';
 
 type RootStackParamList = {
   NotificationFueling: FuelNotificationProps;
@@ -46,23 +47,23 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
         {driverName && <ThemedText style={[styles.detail, { color: colors.text }]}>Driver Name: {driverName}</ThemedText>}
         <ThemedText style={[styles.detail, { color: colors.text }]}>Fueling: {quantityType}</ThemedText>
         {quantity && <ThemedText style={[styles.detail, { color: colors.text }]}>Quantity: {quantity}</ThemedText>}
-        <View style={styles.buttonContainer}>
-          {driverMobile && (
-            <TouchableOpacity style={styles.button} onPress={handleCallDriver}>
-              <Ionicons name="call" size={32} color={'white'} />
+        <View style={[{ flexDirection: "column", gap: 3, alignContent: "flex-end" }]}>
+          <View style={styles.buttonContainer}>
+            {driverMobile && (
+              <TouchableOpacity style={styles.button} onPress={handleCallDriver}>
+                <Ionicons name="call" size={32} color={'white'} />
+              </TouchableOpacity>
+            )}
+            <Link style={[styles.button, (!request.location || request.location?.length < 2) && styles.disabledButton]} disabled={!request.location || request.location?.length < 2} href={`https://www.google.com/maps/dir/?api=1&destination=${request.location.replace(' ', '')}` as any}>
+              <Ionicons name="location" size={32} color={'white'} />
+            </Link>
+            <TouchableOpacity style={styles.button} onPress={handleGiveFuel}>
+              <MaterialIcons name="local-gas-station" size={32} color={'white'} />
             </TouchableOpacity>
-          )}
-          <Link style={[styles.button, (!request.location || request.location?.length < 2) && styles.disabledButton]} disabled={!request.location || request.location?.length < 2} href={`https://www.google.com/maps/dir/?api=1&destination=${request.location.replace(' ', '')}` as any}>
-
-            <Ionicons name="location" size={32} color={'white'} />
-
-          </Link>
-          <TouchableOpacity style={styles.button} onPress={handleGiveFuel}>
-            <MaterialIcons name="local-gas-station" size={32} color={'white'} />
-          </TouchableOpacity>
+          </View>
+          <ThemedText>{formatDate(allocationAdmin.allocationTime)}</ThemedText>
         </View>
       </View>
-      {/* // )} */}
     </>
   );
 };
