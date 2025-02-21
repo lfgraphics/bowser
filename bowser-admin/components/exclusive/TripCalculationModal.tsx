@@ -549,12 +549,12 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
           </TableRow>
           {record?.addition?.length && record?.addition?.length > 0 ? record.addition.map((record, index) => (
             <TableRow key={index} className="border border-black">
-              <TableCell className="border border-black">{record.sheetId.createdAt}</TableCell>
-              <TableCell className="border border-black">{record.sheetId.product}</TableCell>
-              <TableCell className="border border-black">{record.sheetId.bccAuthorizedOfficer.orderId.loadingLocationName}</TableCell>
-              <TableCell className="border border-black text-right">{record.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-1"))?.qty}</TableCell>
-              <TableCell className="border border-black text-right">{record.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-2"))?.qty}</TableCell>
-              <TableCell className="border border-black text-right">{record.sheetId.totalLoadQuantityByDip == 0 ? "CN*" : record.sheetId.totalLoadQuantityByDip}</TableCell>
+              <TableCell className="border border-black">{formatDate(record.sheetId?.createdAt) || formatDate(record.at)}</TableCell>
+              <TableCell className="border border-black">{record.sheetId?.product}</TableCell>
+              <TableCell className="border border-black">{record.sheetId?.bccAuthorizedOfficer.orderId.loadingLocationName}</TableCell>
+              <TableCell className="border border-black text-right">{record.sheetId?.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-1"))?.qty}</TableCell>
+              <TableCell className="border border-black text-right">{record.sheetId?.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-2"))?.qty}</TableCell>
+              <TableCell className="border border-black text-right">{record.sheetId?.totalLoadQuantityByDip == 0 ? "CN*" : record.sheetId?.totalLoadQuantityByDip || record.quantity}</TableCell>
             </TableRow>
           )) : ""}
         </TableBody>

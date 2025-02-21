@@ -250,6 +250,8 @@ export interface WholeTripSheet {
     quantityBySlip: number;
   };
   addition?: {
+    quantity: number
+    at: string | Date
     sheetId: LoadingSheet;
     quantityByDip: number;
     quantityBySlip: number;
