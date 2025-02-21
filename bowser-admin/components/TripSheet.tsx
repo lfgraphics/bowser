@@ -165,7 +165,7 @@ const TripSheetPage = () => {
                                 <TableCell>{sheet.bowser.regNo}</TableCell>
                                 <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.name : ""}</TableCell>
                                 <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.phoneNo : ""}</TableCell>
-                                <TableCell>{sheet.totalLoadQuantity}</TableCell>
+                                <TableCell>{sheet.totalLoadQuantity?.toFixed(2)}</TableCell>
                                 <TableCell className='text-center' >{sheet.dispenses?.length || "0"}</TableCell>
                                 <TableCell>{sheet.saleQty?.toFixed(2)}</TableCell>
                                 <TableCell>{(Number(sheet.totalLoadQuantity?.toFixed(2)) - Number(sheet.saleQty?.toFixed(2))).toFixed(2)}</TableCell>
