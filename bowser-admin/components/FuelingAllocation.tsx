@@ -112,7 +112,7 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
                     title: "Select a Driver",
                     items: drivers,
                     onSelect: handleDriverSelection,
-                    renderItem: (driver) => `${driver.Name}`,
+                    renderItem: (driver) => `${driver.Name}, ${driver.MobileNo.find((num: { LastUsed: boolean }) => num.LastUsed)?.MobileNo || "No Last Used Mobile No."}`,
                     keyExtractor: (driver) => driver.ITPLId || driver.Name,
                 });
             }
@@ -240,8 +240,6 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
                 const firstNumber = driver.MobileNo[0];
                 const mobileNumber = (lastUsedNumber || defaultNumber || firstNumber)?.MobileNo || '';
 
-                setDriverId(driver.ITPLId || '');
-                setDriverName(driver.Name);
                 setDriverMobile(mobileNumber);
                 setDriverMobileNotFound(false);
             } else {
@@ -469,29 +467,18 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
                                         value={vehicleNumber}
                                         onChange={(e: any) => {
                                             setVehicleNumber(e.target.value.toUpperCase());
-                                            if (e.nativeEvent.data) {
-                                                if (fueling == "Own") {
-                                                    if (e.target.value.length > 3) {
-                                                        searchVehicle(e.target.value);
+                                            const nativeEvent = e.nativeEvent as InputEvent;
+                                            if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
+                                                if (e.nativeEvent.data) {
+                                                    if (fueling == "Own") {
+                                                        if (e.target.value.length > 3) {
+                                                            searchVehicle(e.target.value);
+                                                        }
+                                                    } else {
+                                                        if (e.target.value.length > 3) {
+                                                            searchAttatchedVehicle(e.target.value)
+                                                        }
                                                     }
-                                                } else {
-                                                    if (e.target.value.length > 3) {
-                                                        searchAttatchedVehicle(e.target.value)
-                                                    }
-                                                }
-                                            }
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Backspace") {
-                                                return;
-                                            }
-                                            if (fueling == "Own") {
-                                                if (vehicleNumber.length > 3) {
-                                                    searchVehicle(vehicleNumber);
-                                                }
-                                            } else {
-                                                if (vehicleNumber.length > 3) {
-                                                    searchAttatchedVehicle(vehicleNumber)
                                                 }
                                             }
                                         }}
@@ -518,7 +505,8 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         setDriverId(value);
-                                        if (value.length > 3) {
+                                        const nativeEvent = e.nativeEvent as InputEvent;
+                                        if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
                                             searchDriver(value);
                                         }
                                     }}
@@ -591,12 +579,8 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
                                         value={bowserRegNo}
                                         onChange={(e) => {
                                             setBowserRegNo(e.target.value);
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Backspace") {
-                                                return;
-                                            }
-                                            if (bowserRegNo.length > 3) {
+                                            const nativeEvent = e.nativeEvent as InputEvent;
+                                            if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
                                                 searchBowser(bowserRegNo);
                                             }
                                         }}
