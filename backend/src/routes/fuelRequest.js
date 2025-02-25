@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const FuelRequest = require('../models/FuelRequest');
 const { sendBulkNotifications } = require('../utils/pushNotifications');
-const { mongoose } = require('mongoose');
+const { mongoose, ObjectId } = require('mongoose');
 
 router.post('/', async (req, res) => {
     const { vehicleNumber, driverId, driverName, driverMobile, location } = req.body;
@@ -46,8 +46,9 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/vehicle-driver/:id', async (req, res) => {
+    // console.log(req.params.id.length); return res.json({ id: new ObjectId(String(req.params.id)) });
     try {
-        const fuelRequests = await FuelRequest.findById(req.params.id).populate('allocation');
+        const fuelRequests = await FuelRequest.findById(new mongoose.Types.ObjectId(String(req.params.id))).populate('allocation');
         if (!fuelRequests) {
             return res.status(404).json({ message: 'No fuel request found' });
         }

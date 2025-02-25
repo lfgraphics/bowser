@@ -153,6 +153,7 @@ export type FuelingOrderData = {
     allocationTime: string;
   };
   request?: FuelRequest;
+  createdAt?: string;
 };
 
 export interface FuelNotificationProps {
@@ -172,8 +173,8 @@ export interface FuelNotificationProps {
   allocationAdmin: {
     name: string;
     id: string;
-    allocationTime: string;
   };
+  createdAt: string
   request: FuelRequest
 }
 

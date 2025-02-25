@@ -85,6 +85,7 @@ export default function NotificationsScreen() {
                 notificationsData.map((data) => (
                     <View style={{ marginBottom: 10 }} key={data._id}>
                         <FuelNotification
+                            createdAt={data.createdAt!}
                             category={data.category}
                             party={data.party}
                             vehicleNumber={data.vehicleNumber}

@@ -29,7 +29,7 @@ export default function BowserDriverHome() {
     const [isOfflineDataModalVisible, setOfflineDataModalVisible] = useState(false);
     const [isOfflineDataLoading, setIsOfflineDataLoading] = useState(false);
     const { colors } = useTheme();
-    const appVersion = 46;
+    const appVersion = 59;
     const [appurl, setAppUrl] = useState<string | null>(null);
 
     let showUpdateLink = async () => {
@@ -458,6 +458,11 @@ export default function BowserDriverHome() {
             {
                 isOnline && <FuelingRecords />
             }
+            {/* {appurl &&
+                <View style={styles.modalContainer}>
+                    <Link style={styles.button} href={appurl as any}><Text style={{ color: colors.text }}>ऐप अपडेट करें</Text></Link>
+                </View>
+            } */}
 
             <Modal
                 animationType="slide"

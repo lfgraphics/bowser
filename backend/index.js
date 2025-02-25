@@ -6,9 +6,15 @@ const helmet = require('helmet');
 const hpp = require('hpp');
 require('dotenv').config();
 
+const http = require("http");
+const WebSocket = require("ws");
 const { connectDatabases } = require('./config/database');
 const routes = require('./src/routes');
+
 const app = express();
+const server = http.createServer(app); // Shared HTTP server
+const wss = new WebSocket.Server({ server });
+
 const PORT = process.env.PORT || 5000;
 
 // Security middleware
@@ -21,34 +27,35 @@ const allowedOrigins = [
   "https://itpl-bowser-admin.vercel.app"
 ];
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
-
-// Middleware to filter out custom headers
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+}));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-// Routes
+// Pass the WebSocket instance to the route
+const locationRoutes = require('./src/routes/locationUpdate')(wss);
+app.use('/location', locationRoutes);
+
+// Include your main API routes
 app.use('/', routes);
-// Start server after database connections are established
+
+// Start server after database connection
 connectDatabases().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on the backend url, restarted at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running (API + WebSocket) on port ${PORT}, restarted at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
   });
 }).catch(error => {
-  console.error('Failed to connect to databases:', error);
+  console.error('❌ Failed to connect to databases:', error);
   process.exit(1);
 });

@@ -4,9 +4,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { DriverData, UserData } from '../src/types/models';
+import { AppUpdates, DriverData, UserData } from '../src/types/models';
 import { logoutUser } from "@/src/utils/authUtils";
-import { baseUrl } from "@/src/utils/helpers";
+import { baseUrl, getAppUpdate } from "@/src/utils/helpers";
+import DriversRequestStatus from "./DriversRequestStatus";
 
 interface VehicleDriverHomeProps {
     userData: DriverData | UserData | null;
@@ -17,13 +18,21 @@ const isDriverData = (data: DriverData | UserData): data is DriverData => {
 };
 
 const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
+    const [requestId, setRequestId] = useState<string>()
     const [isProfileModalVisible, setProfileModalVisible] = useState(false);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [modalHeading, setModalHeading] = useState('');
     const [permissionsGranted, setPermissionsGranted] = useState(false);
     const [isGPSEnabled, setIsGPSEnabled] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [appurl, setAppUrl] = useState<string | null>(null);
     const { colors } = useTheme();
+
+    useEffect(() => {
+        const updateRequestStatus = async () => {
+            const requestId = await AsyncStorage.getItem('requestId');
+            requestId && setRequestId(requestId);
+        }
+        updateRequestStatus();
+    }, []);
 
     const requestPermissions = async () => {
         try {
@@ -64,7 +73,16 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
     };
     useEffect(() => {
         requestPermissions();
+        // showUpdateLink();
     }, []);
+
+    // let showUpdateLink = async () => {
+    //     let appPushsOnDb: AppUpdates[] = await getAppUpdate()
+    //     let latesApp = appPushsOnDb[0]
+    //     if (latesApp.buildVersion > appVersion) {
+    //         setAppUrl(latesApp.url)
+    //     }
+    // }
 
     async function requestedYesterday() {
         let lastRequestTime = await AsyncStorage.getItem('requestTime');
@@ -88,14 +106,14 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
             if (await requestedYesterday()) {
                 Alert.alert(
                     'तेल नहीं ले सकते',
-                    'आप की तेल लेने की लिमिट आज समाप्त हो चुकी है।, कृपया कल दुबारा कोशिश करें या डीज़ल डिपार्टमेंट में संपर्क करें।'
+                    'आप की रिक्वेस्ट पहले ही भेजी जा चुकी है।'
                 );
                 return;
             }
 
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission Denied', 'Location permission is required to request fuel.');
+                Alert.alert('परमीशन दें', 'रिक्वेस्ट के लिये लोकेशन की परमिशन ज़रूरी है।');
                 return;
             }
 
@@ -125,6 +143,11 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                         }
                         const data = await response.json();
                         await AsyncStorage.setItem('requestId', JSON.stringify(data.requestId));
+                        setRequestId(data.requestId);
+                        /*
+                        - we can use the request id to update the vehicle drivers location in the request body so that the bowser driver will get updated location
+                        - we need to plan interation of proper location sharing in the UI of both
+                        */
                         await AsyncStorage.setItem('sentLocation', gpsLocation);
                         Alert.alert(
                             'Sucess',
@@ -139,7 +162,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                         logoutUser();
                     }
                 } catch (err) {
-                    console.error('Error syncing offline data:', err);
+                    console.error('Could not send the location:', err);
                     Alert.alert(
                         'Error',
                         'फ्यूल रिक्वेस्ट नहीं भेज पाए, कृपया दोबारा कोशिश करें।'
@@ -147,7 +170,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                 }
             } catch (error) {
                 console.error('Error getting location:', error);
-                Alert.alert('Error', 'Failed to get current location. Please try again.');
+                Alert.alert('एरर', 'लोकेशन नहीं मिली| कृपया दोबारा कोशिश करें।');
             } finally {
                 setLoading(false);
             }
@@ -177,12 +200,28 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                 >
                     <Ionicons name="person-circle-outline" size={32} color="#0a7ea4" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.requestButton} onPress={requestFuel}>
-                    <Text style={styles.requestButtonText}>Request Fuel</Text>
-                </TouchableOpacity>
+
+                <View style={{ flexDirection: "column", gap: 8, alignItems: "center", marginBottom: 20 }}>
+                    <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]} onPress={requestFuel}>
+                        <Text style={styles.requestButtonText}>लोड हो गई</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]} onPress={requestFuel}>
+                        <Text style={styles.requestButtonText}>रिपोर्ट हो गई</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]} onPress={requestFuel}>
+                        <Text style={styles.requestButtonText}>ख़ाली हो गई</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.requestButton} onPress={requestFuel}>
+                        <Text style={styles.requestButtonText}>तेल अनुरोद</Text>
+                    </TouchableOpacity>
+                    {/* {appurl &&
+                        <Link style={[styles.button]} href={appurl as any}><Text style={{ color: colors.text }}>ऐप अपडेट करें</Text></Link>
+                    } */}
+                </View>
+                {requestId && <DriversRequestStatus requestId={requestId} />}
 
                 <Modal
-                    animationType="slide"
+                    animationType="fade"
                     transparent={true}
                     visible={isProfileModalVisible}
                     onRequestClose={() => setProfileModalVisible(false)}
@@ -260,11 +299,16 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     requestButton: {
+        marginTop: 30,
+        width: 180,
         transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }],
         backgroundColor: '#0a7ea4',
         padding: 15,
         borderRadius: 5,
         alignItems: 'center',
+    },
+    disabled: {
+        backgroundColor: 'gray',
     },
     requestButtonText: {
         color: 'white',

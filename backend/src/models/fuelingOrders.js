@@ -20,6 +20,7 @@ const fuelingOrderSchema = new mongoose.Schema({
     driver: {
       name: { type: String, },
       phoneNo: { type: String, },
+      location: { type: String }
     }
   },
   allocationAdmin: {

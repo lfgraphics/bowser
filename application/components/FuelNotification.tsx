@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { View, TouchableOpacity, Linking, Alert, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Linking, Alert, StyleSheet, ActivityIndicator, Button } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { FuelNotificationProps } from '../src/types/models';
 import { Link, router } from 'expo-router';
 import { ThemedText } from './ThemedText';
-import { formatDate } from '@/src/utils/helpers';
+import { formatDate, shareLocation } from '@/src/utils/helpers';
 
 type RootStackParamList = {
   NotificationFueling: FuelNotificationProps;
@@ -23,9 +23,30 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
   quantityType,
   bowser,
   allocationAdmin,
+  createdAt,
   request,
 }) => {
+  const [loading, setLoading] = React.useState(false)
   const { colors } = useTheme();
+
+  const handleSareLocation = async () => {
+    /*
+    updates required in this funcion are:
+    - have a track of shared location orderids
+    - update location recursively untill the location track is there
+    - clean up shared track (if found any) on submitting transaction
+    - alert the driver about location is shared for the first time only, use the same function to update later
+    Done - make this function usable from anywhere
+    */
+    setLoading(true);
+    try {
+      // shareLocation(orderId);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const handleCallDriver = () => {
     if (driverMobile) {
@@ -41,13 +62,19 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
 
   return (
     <>
+      {loading &&
+        <View style={{ width: "100%", height: "100%", opacity: 50, position: "absolute", top: 0, right: 0, zIndex: 150, backgroundColor: "black" }}>
+          <ActivityIndicator size="large" color="#0000ff" style={{ position: "relative", top: "50%", }} />
+        </View>
+      }
       <View style={[styles.container, { backgroundColor: colors.card }]}>
-        <ThemedText style={[styles.vehicleNumber, { color: colors.text }]}>{vehicleNumber}</ThemedText>
+        <ThemedText style={[styles.vehicleNumber, { color: colors.text }]}>{vehicleNumber}{party ? `${vehicleNumber ? ", " : ""}${party}` : ""}</ThemedText>
         {driverMobile && <ThemedText style={[styles.detail, { color: colors.text }]}>Mobile No.: {driverMobile}</ThemedText>}
         {driverName && <ThemedText style={[styles.detail, { color: colors.text }]}>Driver Name: {driverName}</ThemedText>}
         <ThemedText style={[styles.detail, { color: colors.text }]}>Fueling: {quantityType}</ThemedText>
         {quantity && <ThemedText style={[styles.detail, { color: colors.text }]}>Quantity: {quantity}</ThemedText>}
-        <View style={[{ flexDirection: "column", gap: 3, alignContent: "flex-end" }]}>
+        <ThemedText>Order Time: {formatDate(createdAt)}</ThemedText>
+        <View style={[{ flexDirection: "column", gap: 3, alignItems: "center" }]}>
           <View style={styles.buttonContainer}>
             {driverMobile && (
               <TouchableOpacity style={styles.button} onPress={handleCallDriver}>
@@ -61,7 +88,7 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
               <MaterialIcons name="local-gas-station" size={32} color={'white'} />
             </TouchableOpacity>
           </View>
-          <ThemedText>{formatDate(allocationAdmin.allocationTime)}</ThemedText>
+          {(request.location && request.location?.length > 2) && <Button onPress={handleSareLocation} title='Share Location' color="#0a7ea4" />}
         </View>
       </View>
     </>

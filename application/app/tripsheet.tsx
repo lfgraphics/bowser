@@ -28,7 +28,6 @@ const Tripsheet: React.FC = () => {
         try {
             if (!tripSheetId) return;
             setLoading(true);
-            const baseUrl = 'http://192.168.137.1:5000' // 'http://192.168.137.1:5000'; // https://bowser-backend-2cdr.onrender.com
             const response = await axios.get(`${baseUrl}/tripSheet/tripSheetId/${tripSheetId}`);
 
             setTripSheet(response.data);
