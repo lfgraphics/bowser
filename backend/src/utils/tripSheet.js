@@ -43,23 +43,22 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
 
         // Update the dispenses array if newDispense is provided
         if (newDispense) {
-            newDispense = { ...newDispense };
+            const updatedDispense = Object.fromEntries(
+                Object.entries(newDispense.toObject ? newDispense.toObject() : { ...newDispense }).filter(
+                    ([key]) => !["vehicleNumberPlateImage", "fuelMeterImage"].includes(key)
+                )
+            );
 
-            delete newDispense.vehicleNumberPlateImage;
-            delete newDispense.fuelMeterImage;
-
-            newDispense.cost = Number((tripSheet.hsdRate * newDispense.fuelQuantity).toFixed(2));
+            updatedDispense.cost = Number((tripSheet.hsdRate * updatedDispense.fuelQuantity).toFixed(2));
 
             const existingDispenseIndex = tripSheet.dispenses.findIndex(
-                (dispense) => dispense?._id?.toString() === newDispense?._id?.toString()
+                (dispense) => dispense?._id?.toString() === updatedDispense?._id?.toString()
             );
 
             if (existingDispenseIndex === -1) {
-                // Add the new dispense record
-                tripSheet.dispenses.push(newDispense);
+                tripSheet.dispenses.push(updatedDispense);
             } else {
-                // Update the existing dispense record
-                tripSheet.dispenses[existingDispenseIndex] = newDispense;
+                tripSheet.dispenses[existingDispenseIndex] = updatedDispense;
             }
         }
 
@@ -72,7 +71,6 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
             if (index !== -1) {
                 tripSheet.dispenses.splice(index, 1);
                 console.log(`Removed dispense with ID: ${removeDispenseId}`);
-                // await tripSheet.save();
             }
         }
 
