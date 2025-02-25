@@ -43,6 +43,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
 
         // Update the dispenses array if newDispense is provided
         if (newDispense) {
+            newDispense = { ...newDispense };
 
             delete newDispense.vehicleNumberPlateImage;
             delete newDispense.fuelMeterImage;
