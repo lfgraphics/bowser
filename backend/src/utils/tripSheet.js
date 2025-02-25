@@ -64,10 +64,15 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
 
         // Remove a dispense if removeDispenseId is provided
         if (removeDispenseId) {
-            tripSheet.dispenses = tripSheet.dispenses.filter(
-                (dispense) => dispense?._id?.toString() !== removeDispenseId.toString()
+            const index = tripSheet.dispenses.findIndex(
+                (dispense) => dispense?._id?.toString() === removeDispenseId.toString()
             );
-            console.log(`Removed dispense with ID: ${removeDispenseId}`);
+
+            if (index !== -1) {
+                tripSheet.dispenses.splice(index, 1);
+                console.log(`Removed dispense with ID: ${removeDispenseId}`);
+                // await tripSheet.save();
+            }
         }
 
         // Perform recalculations

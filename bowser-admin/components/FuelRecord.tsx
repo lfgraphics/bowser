@@ -322,7 +322,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                 <Button className='w-[30%]' variant="default" onClick={handleUpdate}>
                                     Save
                                 </Button>
-                                <OnlyAllowed allowedRoles={["Admin"]}>
+                                <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
                                     <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                                         <AlertDialogTrigger asChild>
                                             <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>Delete this record</Button>
