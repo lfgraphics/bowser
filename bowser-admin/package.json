@@ -32,7 +32,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "fs": "^0.0.1-security",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "jwt-decode": "^4.0.0",
     "localforage": "^1.10.0",
     "lucide-react": "^0.453.0",
