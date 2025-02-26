@@ -36,15 +36,13 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     ) || 0
   );
   const [ch1OpeningCm, setCh1OpeningCm] = useState<number>(
-    record?.loading.sheetId?.chamberwiseDipListBefore.find(
-      (chamber) => chamber.chamberId === "Chamber-1"
-    )?.levelHeight || 0
+    record?.loading.sheetId?.chamberwiseDipListBefore?.find(
+      (chamber) => chamber.chamberId === "Chamber-1")?.levelHeight || 0
   );
   const [ch1Openingqty, setCh1Openingqty] = useState<number>(
     Number(
-      record?.loading.sheetId?.chamberwiseDipListBefore
-        .find((chamber) => chamber.chamberId === "Chamber-1")
-        ?.qty.toFixed(2)
+      record?.loading.sheetId?.chamberwiseDipListBefore?.find(
+        (chamber) => chamber.chamberId === "Chamber-1")?.qty.toFixed(2)
     )
   );
   const [ch1QtyToBeReturn, setCh1QtyToBeReturn] = useState<number>(
@@ -55,7 +53,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     )
   );
   const [ch1FullLoadAddCm, setCh1FullLoadAddCm] = useState<number>(
-    record?.loading.sheetId.chamberwiseDipListAfter.find(
+    record?.loading.sheetId.chamberwiseDipListAfter?.find(
       (chamber) => chamber.chamberId === "Chamber-1"
     )?.levelHeight || 0
   );
@@ -66,7 +64,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     ch1FullLoadAddqty + ch1Openingqty
   );
   const [ch1FullLoadDipqty, setCh1FullLoadDipqty] = useState<number>(
-    Number(record?.loading.sheetId.chamberwiseDipListAfter[0].qty.toFixed(2))
+    Number(record?.loading.sheetId.chamberwiseDipListAfter[0]?.qty.toFixed(2))
   );
   //chamber 2
   const [ch2Cm, setCh2Cm] = useState<number>(
@@ -371,9 +369,9 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
             <TableRow className="border-none">
               <TableCell className="border border-black">After Loading</TableCell>
               <TableCell className="border border-black text-right">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-1"))?.levelHeight} cm</TableCell>
-              <TableCell className="border border-black text-right">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-1"))?.qty} Lt.</TableCell>
+              <TableCell className="border border-black text-right">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-1"))?.qty.toFixed(2)} Lt.</TableCell>
               <TableCell className="border border-black text-right">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-2"))?.levelHeight} cm</TableCell>
-              <TableCell className="border border-black text-right">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-2"))?.qty} Lt.</TableCell>
+              <TableCell className="border border-black text-right">{record?.loading.sheetId.chamberwiseDipListAfter.find(chambers => (chambers.chamberId == "Chamber-2"))?.qty.toFixed(2)} Lt.</TableCell>
               <TableCell className="border border-black text-right">{record?.loading.sheetId.tempLoadByDip.toFixed(2)} Lt.</TableCell>
               <TableCell className="border-none"></TableCell>
               <TableCell className="border border-black">{record.loading.sheetId.chamberwiseSealList.filter(chamber => chamber.chamberId === "Chamber-1")[1]?.sealId}</TableCell>

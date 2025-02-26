@@ -143,8 +143,31 @@ router.get('/all', async (req, res) => {
     }
 
     try {
-        const tripSheets = await TripSheet.find(filter)
-            .sort({ [sortField]: sortOrder === 'asc' ? 1 : -1 })
+        const tripSheets = await TripSheet.aggregate([
+            { $match: filter },
+            {
+                $project: {
+                    tripSheetId: 1,
+                    fuelingAreaDestination: 1,
+                    tripSheetGenerationDateTime: 1,
+                    settelment: 1,
+                    bowser: 1,
+                    totalLoadQuantity: 1,
+                    totalLoadQuantityBySlip: 1,
+                    saleQty: 1,
+                    balanceQtyBySlip: 1,
+                    dispenses: {
+                        $map: {
+                            input: "$dispenses",
+                            as: "dispense",
+                            in: {
+                                _id: "$$dispense._id",
+                            }
+                        }
+                    }
+                }
+            }
+        ]).sort({ [sortField]: sortOrder === 'asc' ? 1 : -1 })
             .skip((page - 1) * limit)
             .limit(Number(limit));
 
@@ -374,6 +397,81 @@ router.post('/settle/:id', async (req, res) => {
             console.error(`Error saving settlement: ${error}`);
             res.status(500).json({ message: 'Failed to process settlement' });
         }
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({ message: error.message });
+    }
+});
+
+router.post('/check-settelment/:id', async (req, res) => {
+    let id = req.params.id;
+    let { chamberwiseDipList, pumpReading, dateTime, odometer, userDetails, extras } = req.body;
+    try {
+        let tripsheet = await TripSheet.findById(new mongoose.Types.ObjectId(id)).populate('loading.sheetId');
+        if (!tripsheet) {
+            throw new Error(`can't find the trip sheet`);
+        }
+        let bowserRegNo = tripsheet.bowser.regNo;
+        let bowser = await Bowser.findOne({ regNo: bowserRegNo });
+        if (!bowser) {
+            throw new Error(`can't find the bowser`);
+        }
+        console.log(chamberwiseDipList);
+        for (const dip of chamberwiseDipList) {
+            if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
+                dip.qty = calculateQty(bowser.chambers, dip.chamberId, dip.levelHeight).toFixed(2);
+            }
+        }
+
+        // Update the tripsheet with the new chamberwiseDipList
+        let totalQty = chamberwiseDipList.reduce((acc, chamber) => {
+            // Remove invalid characters (e.g., multiple decimals)
+            let sanitizedQty = chamber.qty.replace(/[^0-9.]/g, ''); // Remove non-numeric, non-decimal characters
+            let qty = parseFloat(sanitizedQty);
+            if (!isNaN(qty)) {
+                return acc + qty;
+            } else {
+                console.warn(`Invalid qty value after sanitization: ${chamber.qty}`);
+                return acc; // Skip invalid entries
+            }
+        }, 0);
+        console.log(Number(totalQty));
+        let settlement = {
+            dateTime,
+            settled: true,
+            details: {
+                chamberwiseDipList,
+                pumpReading,
+                totalQty,
+                odometer,
+                extras,
+                by: {
+                    id: userDetails.id,
+                    name: userDetails.name
+                }
+            }
+        };
+        tripsheet.settelment = settlement;
+        res.status(200).json({ message: 'Settlement processed successfully', tripsheet }); ``
+        // try {
+        //     await tripsheet.save(); // Save the updated tripsheet
+        //     res.status(200).json({ message: 'Settlement processed successfully' });
+        //     // notify data entry department
+        //     let message = `${tripsheet.tripSheetId} is settled\nNow you can make your move to data entry`;
+        //     let options = {
+        //         title: "Trip Sheet Settled",
+        //         url: `/dispense-records?tripNumber=${tripsheet.tripSheetId}&limit=${tripsheet.dispenses.length}`,
+        //     }
+        //     await sendBulkNotifications({
+        //         groups: ["Data Entry"],
+        //         message: message,
+        //         options: options,
+        //         platform: "web",
+        //     });
+        // } catch (error) {
+        //     console.error(`Error saving settlement: ${error}`);
+        //     res.status(500).json({ message: 'Failed to process settlement' });
+        // }
     } catch (error) {
         console.error(error);
         res.status(400).json({ message: error.message });
