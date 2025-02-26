@@ -36,20 +36,20 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
 
     return (
         <>{loading && <ActivityIndicator color="#0a7ea4" />}
-            <ThemedView style={{ padding: 10, borderRadius: 6, gap: 6 }} >
+            <ThemedView style={{ padding: 12, borderRadius: 6, gap: 6, paddingTop: 16 }} >
                 <ThemedText style={{ textAlign: "center", fontSize: 20, fontWeight: "bold" }}>आपके ईंधन लेने के अनुरोध की जानकारी</ThemedText>
                 {orderData && (
                     <ThemedView>
                         <ThemedText>
                             {orderData.fulfilled ? "स्वीकृत हो गई" : "स्वीकृत नहीं हुई है।"}
                         </ThemedText>
-                        <ThemedText>
+                        {/* <ThemedText> */}
                             {orderData.allocation?.bowser.driver.location ??
                                 <Link style={styles.button} href={`https://www.google.com/maps/dir/?api=1&destination=${orderData.allocation?.bowser.driver.location?.replace(' ', '')}` as any}>
                                     बाउज़र की लोकेशन देखें
                                 </Link>
                             }
-                        </ThemedText>
+                        {/* </ThemedText> */}
                         {orderData.allocation &&
                             <>
                                 <ThemedText>
@@ -79,7 +79,9 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
 
 const styles = StyleSheet.create({
     button: {
-        flex: 1,
+        textAlign: 'center',
+        height: 50,
+        color: 'white',
         marginHorizontal: 8,
         backgroundColor: '#0a7ea4',
         padding: 7,

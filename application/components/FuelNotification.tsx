@@ -81,14 +81,14 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
                 <Ionicons name="call" size={32} color={'white'} />
               </TouchableOpacity>
             )}
-            <Link style={[styles.button, (!request.location || request.location?.length < 2) && styles.disabledButton]} disabled={!request.location || request.location?.length < 2} href={`https://www.google.com/maps/dir/?api=1&destination=${request.location.replace(' ', '')}` as any}>
+            {request !== null && <Link style={[styles.button, (!request.location || request.location?.length < 2) && styles.disabledButton]} disabled={!request.location || request.location?.length < 2} href={`https://www.google.com/maps/dir/?api=1&destination=${request.location?.replace(' ', '')}` as any}>
               <Ionicons name="location" size={32} color={'white'} />
-            </Link>
+            </Link>}
             <TouchableOpacity style={styles.button} onPress={handleGiveFuel}>
               <MaterialIcons name="local-gas-station" size={32} color={'white'} />
             </TouchableOpacity>
           </View>
-          {(request.location && request.location?.length > 2) && <Button onPress={handleSareLocation} title='Share Location' color="#0a7ea4" />}
+          {(request !== null && request.location?.length > 2) && <Button onPress={handleSareLocation} title='Share Location' color="#0a7ea4" />}
         </View>
       </View>
     </>

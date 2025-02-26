@@ -15,7 +15,7 @@ export default function AuthScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const colorScheme = useColorScheme();
-  const [authNav, setAuthNav] = useState<AuthNav>('bowserDriver');
+  const [authNav, setAuthNav] = useState<AuthNav>('vehicleDriver');
   const [isLogin, setIsLogin] = useState(true);
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');

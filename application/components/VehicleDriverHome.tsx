@@ -218,7 +218,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                         <Link style={[styles.button]} href={appurl as any}><Text style={{ color: colors.text }}>ऐप अपडेट करें</Text></Link>
                     } */}
                 </View>
-                {requestId && <DriversRequestStatus requestId={requestId} />}
+                {/* {requestId && <DriversRequestStatus requestId={requestId} />} */}
 
                 <Modal
                     animationType="fade"
