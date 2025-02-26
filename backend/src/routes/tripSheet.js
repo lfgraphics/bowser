@@ -8,7 +8,6 @@ const LoadingSheet = require('../models/LoadingSheet');
 const { calculateQty } = require('../utils/calibration');
 const { updateTripSheet } = require('../utils/tripSheet')
 const { sendNativePushNotification, sendBulkNotifications } = require('../utils/pushNotifications');
-// const Counter = require('../models/Counter');
 
 const notifyDriver = async ({ phoneNumber, bowser, tripsheetId, location }) => {
     let options = {
