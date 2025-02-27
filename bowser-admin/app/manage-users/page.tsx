@@ -24,6 +24,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 
 type Nav = 'Users' | 'Roles' | 'Un Authorized';
 
@@ -222,8 +224,37 @@ const UsersList = () => {
                         </Label>
                     </div>
 
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="lg" className='p-4 h-10 text-center'>
+                                Roles Filter
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className='bg-card text-center'>
+                            {roles.map(role => (
+                                <>
+                                    <DropdownMenuItem className='p-4 w-full h-10 text-center'>
+                                        <Checkbox
+                                            id={role.name}
+                                            key={role._id.toString()}
+                                            checked={selectedRoles.includes(role.name)}
+                                            onCheckedChange={(checked) => {
+                                                const roleName = role.name;
+                                                setSelectedRoles(prev =>
+                                                    checked ? [...prev, roleName] : prev.filter(r => r !== roleName)
+                                                );
+                                            }}
+                                        >
+                                        </Checkbox>
+                                        <Label htmlFor={role.name}>{role.name}</Label>
+                                    </DropdownMenuItem>
+                                </>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
                     {/* Search Input */}
-                    <div className="relative w-auto">
+                    <div className="relative w-[300px]">
                         <Search size={20} className="top-1/2 left-3 absolute text-gray-400 -translate-y-1/2 transform" />
                         <Input
                             type="text"
@@ -232,30 +263,6 @@ const UsersList = () => {
                             onChange={e => setSearchTerm(e.target.value)}
                             className="pl-10 w-full"
                         />
-                    </div>
-
-                    {/* Roles Filter */}
-                    <div className="flex items-center gap-3 roles-filter">
-                        <label>Select Roles:</label>
-                        <div className="flex flex-wrap gap-2">
-                            {roles.map(role => (
-                                <>
-                                    <Checkbox
-                                        id={role.name}
-                                        key={role._id.toString()}
-                                        checked={selectedRoles.includes(role.name)}
-                                        onCheckedChange={(checked) => {
-                                            const roleName = role.name;
-                                            setSelectedRoles(prev =>
-                                                checked ? [...prev, roleName] : prev.filter(r => r !== roleName)
-                                            );
-                                        }}
-                                    >
-                                    </Checkbox>
-                                    <Label htmlFor={role.name}>{role.name}</Label>
-                                </>
-                            ))}
-                        </div>
                     </div>
                 </div>}
                 <div className="gap-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
