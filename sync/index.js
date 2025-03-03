@@ -128,16 +128,29 @@ async function syncVechiclesData() {
 
   const atlasDataMap = new Map(atlasData.map(doc => [doc._id.toString(), doc]));
 
-  const localData = await localCollection.find({ AssetsType: { $regex: 'Own', $options: 'i' } }, { projection: { _id: 1, VehicleNo: 1 } }).toArray();
+  const localData = await localCollection.find({ AssetsType: { $regex: 'Own', $options: 'i' } }, { projection: { _id: 1, VehicleNo: 1, GoodsCategory: 1 } }).toArray();
   console.log("Fetched vehicles data from Local:", localData.length, "documents.");
 
   // Step 2: Prepare new documents to insert into Atlas
   const newDocumentsToAtlas = [];
+  const updatedVehicles = [];
+  const bulkOps = [];
 
   for (const localDoc of localData) {
     if (!atlasDataMap.has(localDoc._id.toString())) {
       // Document exists in Local but not in Atlas, add to newDocumentsToAtlas
       newDocumentsToAtlas.push(localDoc);
+    }
+    const atlasDoc = atlasDataMap.get(localDoc._id.toString());
+    if (atlasDoc && atlasDoc.GoodsCategory !== localDoc.GoodsCategory) {
+      // Update the GoodsCategory in Atlas if it is different
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: atlasDoc._id },
+          update: { $set: { GoodsCategory: localDoc.GoodsCategory } }
+        }
+      });
+      updatedVehicles.push(localDoc._id); // Track the update
     }
   }
 
@@ -145,6 +158,12 @@ async function syncVechiclesData() {
   if (newDocumentsToAtlas.length > 0) {
     await atlasCollection.insertMany(newDocumentsToAtlas);
     console.log(`Inserted ${newDocumentsToAtlas.length} new documents to Atlas.`);
+  } else {
+    console.log('Nothing new to sync')
+  }
+  if (bulkOps.length > 0) {
+    await atlasCollection.bulkWrite(bulkOps);
+    console.log(`Updated ${bulkOps.length} documents to Atlas.`);
   } else {
     console.log('Nothing new to sync')
   }
@@ -160,16 +179,30 @@ async function syncAttachedVechicles() {
 
   const atlasDataMap = new Map(atlasData.map(doc => [doc._id.toString(), doc]));
 
-  const localData = await localCollection.find({ AssetsType: { $regex: 'Attached', $options: 'i' } }, { projection: { _id: 1, VehicleNo: 1, TransportPartenName: 1 } }).toArray();
+  const localData = await localCollection.find({ AssetsType: { $regex: 'Attached', $options: 'i' } }, { projection: { _id: 1, VehicleNo: 1, TransportPartenName: 1, GoodsCategory: 1 } }).toArray();
   console.log("Fetched Attached vehicles data from Local:", localData.length, "documents.");
 
   // Step 2: Prepare new documents to insert into Atlas
   const newDocumentsToAtlas = [];
+  const updatedVehicles = [];
+  const bulkOps = [];
+
 
   for (const localDoc of localData) {
     if (!atlasDataMap.has(localDoc._id.toString())) {
       // Document exists in Local but not in Atlas, add to newDocumentsToAtlas
       newDocumentsToAtlas.push(localDoc);
+    }
+    const atlasDoc = atlasDataMap.get(localDoc._id.toString());
+    if (atlasDoc && atlasDoc.GoodsCategory !== localDoc.GoodsCategory) {
+      // Update the GoodsCategory in Atlas if it is different
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: atlasDoc._id },
+          update: { $set: { GoodsCategory: localDoc.GoodsCategory } }
+        }
+      });
+      updatedVehicles.push(localDoc._id); // Track the update
     }
   }
 
