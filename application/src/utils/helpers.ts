@@ -3,7 +3,7 @@ import * as Location from 'expo-location';
 import moment from 'moment';
 import { Alert } from "react-native";
 import { sendLocationUpdate } from './sendLocationUpdate';
-export const baseUrl = "https://bowser-backend-2cdr.onrender.com" //http://192.168.137.1:5000 //https://bowser-backend-2cdr.onrender.com
+export const baseUrl = "https://bowser-backend-2cdr.onrender.com"    //http://192.168.137.1:5000 //https://bowser-backend-2cdr.onrender.com
 
 export const getAppUpdate = async () => {
     try {

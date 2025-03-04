@@ -2,12 +2,12 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { StyleSheet, ActivityIndicator, ScrollView, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
-import { TripSheet } from '@/src/types/models';
+// import { TripSheet } from '@/src/types/models';
 import { Link } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { baseUrl } from '@/src/utils/helpers';
 // import { useTheme } from '@react-navigation/native';
 
 interface DispensesRecord {
@@ -50,15 +50,14 @@ const FuelingRecords: React.FC = () => {
         setLoading(true);
 
         try {
-            const baseUrl = 'https://bowser-backend-2cdr.onrender.com' // 'http://192.168.137.1:5000'; // https://bowser-backend-2cdr.onrender.com
-            const response = await axios.get(`${baseUrl}/listDispenses`, {
-                params: { tripSheetId },
-            });
-
-            setRecords(response.data.records);
+            const response = await fetch(`${baseUrl}/listDispenses?tripSheetId=${tripSheetId}`);
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to fetch fueling records');
+            }
+            setRecords(data.records);
         } catch (error) {
-            console.error('Error fetching records:', error);
-            // Alert.alert('Error', 'Failed to fetch fueling records');
+            console.log(error);
         } finally {
             setLoading(false);
         }
@@ -106,14 +105,6 @@ const FuelingRecords: React.FC = () => {
                 </ScrollView >
             )}
             <ThemedText style={[styles.noRecordsText]}>एक गाड़ी का रिकॉर्ड ऑनलाइन ना भेजने पर 50 रुपया पेनाल्टी लग सकती है|</ThemedText>
-            <Link style={styles.button} href={'/tripsheet'}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                    <ThemedText style={{ color: 'white' }}>
-                        ट्रिप शीट डीटेल्स
-                    </ThemedText>
-                    <MaterialIcons name="table-chart" size={24} color="white" style={{ marginHorizontal: 10 }} />
-                </View>
-            </Link>
         </ThemedView>
     );
 };

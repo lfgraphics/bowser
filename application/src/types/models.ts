@@ -179,6 +179,13 @@ export interface FuelNotificationProps {
 }
 
 export interface FuelRequest {
+  pumpLocation: string
+  pumpAllocationType: string
+  fuelProvider: string;
+  fuelQuantity: number
+  quantityType: string
+  bowser: any
+  allocationType: string
   _id: string;
   vehicleNumber: string;
   driverName: string;
@@ -205,6 +212,10 @@ export interface FuelRequest {
     fuelQuantity: number;
     fulfilled: boolean;
     createdAt: string;
+    allocationType: string;
+    pumpAllocationType: string;
+    fuelProvider: string;
+    pumpLocation: string;
   }
 }
 

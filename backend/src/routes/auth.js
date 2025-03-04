@@ -28,7 +28,7 @@ router.post('/signup', async (req, res) => {
         if (phoneNumber) {
             const existingUser = await User.findOne({ phoneNumber });
             if (existingUser) {
-                return res.status(400).json({ message: 'User already exists' });
+                return res.status(400).json({ message: 'इस फ़ोन नंबर से कोई ड्राइवर पहले से मौजूद है|' });
             }
         }
 
@@ -49,10 +49,10 @@ router.post('/signup', async (req, res) => {
         // Create and send JWT token
         const token = jwt.sign({ phoneNo: newUser.phoneNumber }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-        res.status(201).json({ message: 'User created successfully', token, verified: false });
+        res.status(201).json({ message: 'आप की आई डी बना डी गई', token, verified: false });
     } catch (error) {
         console.error('Signup error:', error);
-        res.status(500).json({ message: 'Internal server error', error: error.message });
+        res.status(500).json({ message: 'सर्वर एरर', error: error.message });
     }
 });
 
@@ -63,13 +63,13 @@ router.post('/login', async (req, res) => {
         const user = await User.findOne({ phoneNumber });
 
         if (!user) {
-            return res.status(400).json({ message: 'User not found' });
+            return res.status(400).json({ message: 'फ़ोन नंबर मोजूद नहीं या ग़लत फ़ोन नंबर डाला गया है|' });
         }
 
         const isPasswordValid = await argon2.verify(user.password, password);
 
         if (!isPasswordValid) {
-            return res.status(400).json({ message: 'Invalid password' });
+            return res.status(400).json({ message: 'पस्वोर्ड ग़लत है|' });
         }
         let roleNames = [];
         let roles = [];
@@ -85,7 +85,7 @@ router.post('/login', async (req, res) => {
         );
 
         if (!hasAccess) {
-            return res.status(403).json({ message: 'User does not have access to this application' });
+            return res.status(403).json({ message: 'आप को इस एप को इस्तेमाल करने की अनुमति नहीं है|' });
         }
 
         if (deviceUUID && (user.deviceUUID !== deviceUUID)) {
@@ -99,7 +99,7 @@ router.post('/login', async (req, res) => {
             });
 
             await unauthorizedLogin.save();
-            return res.status(403).json({ message: 'You are loggin in from a diffrent device\nContact admin to approve this device' });
+            return res.status(403).json({ message: 'आप किसी नए फ़ोन से लॉग इन क्र रहे हैं\nइस फ़ोन को अप्रूव करने के लिए एडमिन से बात करें' });
         }
 
         const token = jwt.sign({ phoneNumber: user.phoneNumber, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -114,7 +114,7 @@ router.post('/login', async (req, res) => {
         }).select('tripSheetId');
 
         if (userTripSheets.length === 0) {
-            return res.status(404).json({ message: "No unsettled trip sheet found for you \nCan't login" });
+            return res.status(404).json({ message: "आप के लिए कोई भी ट्रिप शीट नहीं खोली गई है\nलॉग इन नहीं क्र सकते|" });
         }
 
         const userTripSheetId = userTripSheets[0].tripSheetId;
@@ -125,19 +125,19 @@ router.post('/login', async (req, res) => {
             'Verified User': user.verified,
             'Role': roleNames,
             'Bowser': user.bowserId,
-            'Trip Sheet Id': userTripSheetId || "Not on a trip",
+            'Trip Sheet Id': userTripSheetId || "किसी ट्रिप पर नहीं है",
         };
 
         res.json({
-            message: 'Login successful',
+            message: 'लॉग इन सफल हुआ',
             token,
             loginTime,
             verified: user.verified,
             user: userData
         });
     } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ message: 'Internal server error', error: error.message });
+        console.error('लॉग इन एरर:', error);
+        res.status(500).json({ message: 'सर्वर एरर', error: error.message });
     }
 });
 
@@ -209,11 +209,11 @@ router.post('/generate-reset-url', async (req, res) => {
     try {
         const user = await User.findOne({ userId });
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: 'यूज़र मोजूद नहीं है' });
         }
 
         const resetToken = generateResetToken();
-        const expiryTime = Date.now() + 3600000; // 1 hour from now
+        const expiryTime = Date.now() + 3600000;
 
         user.resetToken = resetToken;
         user.resetTokenExpiry = expiryTime;
@@ -228,7 +228,7 @@ router.post('/generate-reset-url', async (req, res) => {
         res.json({ resetUrl });
     } catch (error) {
         console.error('Error generating reset URL:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ message: 'सर्वर एरर' });
     }
 });
 
@@ -244,10 +244,9 @@ router.patch('/reset-password', async (req, res) => {
             return res.status(400).json({ message: 'Passwords do not match' });
         }
 
-        // Hash the new password
         user.password = await argon2.hash(password);
-        user.resetToken = undefined; // Clear the reset token
-        user.resetTokenExpiry = undefined; // Clear the expiry time
+        user.resetToken = undefined;
+        user.resetTokenExpiry = undefined;
         await user.save();
 
         res.json({ message: 'Password updated successfully' });

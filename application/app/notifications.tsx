@@ -3,18 +3,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, ScrollView, ActivityIndicator, RefreshControl, View } from 'react-native';
 import FuelNotification from '@/components/FuelNotification';
 import { FuelingOrderData } from '@/src/types/models';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useTheme } from '@react-navigation/native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { baseUrl } from '@/src/utils/helpers';
-
-interface ServerResponse {
-    orders: FuelingOrderData[];
-    totalPages: number;
-    currentPage: number;
-}
 
 export default function NotificationsScreen() {
     const [notificationsData, setNotificationsData] = useState<FuelingOrderData[]>([]);
@@ -42,9 +35,10 @@ export default function NotificationsScreen() {
                 throw new Error('User data not found. Please log in again.');
             }
             const url = `${baseUrl}/fuelingOrders/${userData['Phone Number']}`;
-            const response = await axios.get<ServerResponse>(url);
-            setNotificationsData(response.data.orders);
-            console.log(response.data);
+            console.log(url);
+            const response = await fetch(url);
+            const jsonResponse = await response.json();
+            setNotificationsData(jsonResponse.orders);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');
         } finally {
@@ -104,7 +98,7 @@ export default function NotificationsScreen() {
             ) : (
                 <ThemedText style={styles.noNotifications}>No Pending Orders Available</ThemedText>
             )}
-            <ThemedView style={{ height: 40 }} />
+            {notificationsData.length > 2 && <ThemedView style={{ height: 40 }} />}
         </ScrollView>
     );
 }

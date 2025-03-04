@@ -36,7 +36,8 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
     const [driverMobile, setDriverMobile] = useState(paramsDriverMobile)
     const [fuelQuantity, setFuelQuantity] = useState('0')
     const [quantityType, setQuantityType] = useState<'Full' | 'Part'>('Full')
-    const [pumpAllocationType, setPumpAllocationType] = useState<'Any' | 'Specific'>('Any')
+    const [pumpAllocationType, setPumpAllocationType] = useState<'any' | 'specific'>('any')
+    const [pumpCompany, setPumpCompany] = useState<'Reliance' | 'BPCL' | 'IOCL' | 'HPCL'>('Reliance')
     const [bowserDriverName, setBowserDriverName] = useState("")
     const [bowserDriverId, setBowserDriverId] = useState("")
     const [bowserRegNo, setBowserRegNo] = useState("")
@@ -102,7 +103,7 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
         setIsSearching(true);
         try {
             const drivers = await searchItems<Driver>({
-                url: `${BASE_URL}/searchDriver`, //https://bowser-backend-2cdr.onrender.com
+                url: `${BASE_URL}/searchDriver`,
                 searchTerm: idNumber,
                 errorMessage: 'No driver found with the given ID'
             });
@@ -173,7 +174,7 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
         setIsSearching(true);
         try {
             const vehicles = await searchItems<Vehicle>({
-                url: `${BASE_URL}/searchVehicleNumber`, //https://bowser-backend-2cdr.onrender.com
+                url: `${BASE_URL}/searchVehicleNumber`,
                 searchTerm: vehicleNumber,
                 errorMessage: 'No vehicle found with the given number'
             });
@@ -198,7 +199,7 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
         setIsSearching(true);
         try {
             const vehicles = await searchItems<AttachedVehicle>({
-                url: `${BASE_URL}/attatched/search`, //https://bowser-backend-2cdr.onrender.com
+                url: `${BASE_URL}/attatched/search`,
                 searchTerm: vehicleNumber,
                 errorMessage: 'No vehicle found with the given number'
             });
@@ -338,6 +339,7 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
         }
 
         const allocationData = {
+            allocationType,
             category: fueling,
             party: partyName,
             vehicleNumber,
@@ -353,6 +355,9 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
                     phoneNo: bowserDriverMobile
                 }
             },
+            pumpAllocationType,
+            fuelProvider,
+            petrolPump,
             allocationAdmin: {
                 name: currentUser.name,
                 id: currentUser.userId,
@@ -414,7 +419,7 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
             setFuelQuantity('0');
         }
     };
-    const handlePumpAllocationTypeChange = (value: 'Any' | 'Specific') => {
+    const handlePumpAllocationTypeChange = (value: 'any' | 'specific') => {
         setPumpAllocationType(value);
     };
 
@@ -625,30 +630,34 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
                                 <SelectValue placeholder="Select a Fuel Provider" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="company-1">Company one</SelectItem>
-                                <SelectItem value="company-2">Company Two</SelectItem>
+                                {/* map companies like reliance, iocl, bpcl, hpcl */}
+                                <SelectItem value="Reliance">Reliance</SelectItem>
+                                <SelectItem value="IOCL">IOCL</SelectItem>
+                                <SelectItem value="HPCL">HPCL</SelectItem>
+                                <SelectItem value="BPCL">BPCL</SelectItem>
                             </SelectContent>
                         </Select>}
                         {allocationType === "external" &&
                             <>
-                                <RadioGroup name="pumpAllocationType" className="flex gap-4 mt-4" defaultValue={pumpAllocationType} onValueChange={(e) => handlePumpAllocationTypeChange(e as "Any" | "Specific")}>
+                            <RadioGroup name="pumpAllocationType" className="flex gap-4 mt-4" defaultValue={pumpAllocationType} onValueChange={(e) => handlePumpAllocationTypeChange(e as "any" | "specific")}>
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="Any" id="any" />
                                         <Label htmlFor="any">Any Petrol Pump</Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="Specific" id="specific" />
+                                    <RadioGroupItem value="Specific" id="specific" disabled />
                                         <Label htmlFor="specific">Specific Petrol Pump</Label>
                                     </div>
                                 </RadioGroup>
                             </>
                         }
-                        {allocationType === "external" && fuelProvider && pumpAllocationType === "Specific" &&
+                        {allocationType === "external" && fuelProvider && pumpAllocationType === "specific" &&
                             <Select onValueChange={setPetrolPump} value={petrolPump}>
                                 <SelectTrigger className="mt-3">
                                     <SelectValue placeholder="Select a Petrol Pump" />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    {/* map the pumps of the company with searchable list */}
                                     <SelectItem value="company-1">Pump one</SelectItem>
                                     <SelectItem value="company-2">Pump Two</SelectItem>
                                 </SelectContent>

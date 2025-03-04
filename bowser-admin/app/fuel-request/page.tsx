@@ -3,7 +3,8 @@ import { BASE_URL } from '@/lib/api';
 import { FuelRequest } from '@/types';
 import React, { useEffect, useState } from 'react'
 import Loading from '../loading';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogContent, AlertDialogAction } from '@/components/ui/alert-dialog';
@@ -85,17 +86,43 @@ const page = () => {
                         <CardFooter>
                             <div className='flex flex-row justify-between items-center w-full'>
                                 <Button variant="destructive" size="lg" onClick={() => openDeleteDialogue(request._id!)}>Delete</Button>
-                                <Link type='button' href={{
-                                    pathname: "dashboard", query: {
-                                        id: request._id,
-                                        vehicleNumber: request.vehicleNumber,
-                                        driverId: request.driverId,
-                                        driverName: request.driverName,
-                                        driverMobile: request.driverMobile
-                                    }
-                                }} >
-                                    <Button variant="default" size="lg">Give Fuel</Button>
-                                </Link>
+                                <DropdownMenu >
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="default" size="lg" className='p-4 h-10 text-center'>
+                                            Allocate
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className='bg-card text-center'>
+                                        <DropdownMenuItem>
+                                            <Link className='w-full' type='button' href={{
+                                                pathname: "dashboard", query: {
+                                                    id: request._id,
+                                                    vehicleNumber: request.vehicleNumber,
+                                                    driverId: request.driverId,
+                                                    driverName: request.driverName,
+                                                    driverMobile: request.driverMobile,
+                                                    allocationType: "bowser"
+                                                }
+                                            }} >
+                                                <Button variant="default" size="lg">By Bowser</Button>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem>
+                                            <Link className='w-full' type='button' href={{
+                                                pathname: "dashboard", query: {
+                                                    id: request._id,
+                                                    vehicleNumber: request.vehicleNumber,
+                                                    driverId: request.driverId,
+                                                    driverName: request.driverName,
+                                                    driverMobile: request.driverMobile,
+                                                    allocationType: "external"
+                                                }
+                                            }} >
+                                                <Button variant="default" size="lg">By Petrol Pump</Button>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         </CardFooter>
                     </Card>

@@ -93,7 +93,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
 
             let hoursDifference = (currentTime - lastRequestTimeInMs) / (1000 * 60 * 60); // Convert ms to hours
 
-            if (hoursDifference < 24) {
+            if (hoursDifference < 6) {
                 return true;
             }
         }
@@ -142,8 +142,9 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         const data = await response.json();
-                        await AsyncStorage.setItem('requestId', JSON.stringify(data.requestId));
+                        await AsyncStorage.setItem('requestId', data.requestId);
                         setRequestId(data.requestId);
+                        console.log('request Id:', data.requestId);
                         /*
                         - we can use the request id to update the vehicle drivers location in the request body so that the bowser driver will get updated location
                         - we need to plan interation of proper location sharing in the UI of both
@@ -156,7 +157,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                         await AsyncStorage.setItem('requestTime', Date.now().toString());
                     } else {
                         Alert.alert(
-                            'Error',
+                            'एरर',
                             'आप को दुबारा लॉग इन करने की आवश्यकता है।'
                         );
                         logoutUser();
@@ -164,7 +165,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                 } catch (err) {
                     console.error('Could not send the location:', err);
                     Alert.alert(
-                        'Error',
+                        'एरर',
                         'फ्यूल रिक्वेस्ट नहीं भेज पाए, कृपया दोबारा कोशिश करें।'
                     );
                 }
@@ -218,7 +219,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                         <Link style={[styles.button]} href={appurl as any}><Text style={{ color: colors.text }}>ऐप अपडेट करें</Text></Link>
                     } */}
                 </View>
-                {/* {requestId && <DriversRequestStatus requestId={requestId} />} */}
+                {requestId && <DriversRequestStatus requestId={requestId} />}
 
                 <Modal
                     animationType="fade"

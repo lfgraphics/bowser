@@ -17,18 +17,18 @@ router.post('/signup', async (req, res) => {
 
         if (driver.length > 1) {
             console.error(`Multiple Ids found by ${name}`);
-            return res.status(400).json({ message: `Please specify the id properly. We found ${driver.length} Ids by ${name}` });
+            return res.status(400).json({ message: `कृपया पूरी आईडी दर्ज करें| हमें ${name} इस नाम, आईडी से ${driver.length} आइदियाँ मिलीं|` });
         }
 
         if (driver[0].password) {
             console.error(`User already exist`);
             console.log('driver:', driver[0].Name);
-            return res.status(400).json({ message: `User already existn\nContact admin if you want to update the password.` });
+            return res.status(400).json({ message: `पहले से आईडी व पासवर्ड बना हुआ है\nअगर आप को पासवर्ड बदलना है तो एडमिन से बात करें|` });
         }
 
         if (!driver) {
             console.error(`No data found with the entered Id ${name}`);
-            return res.status(404).json({ message: `No data found with the entered Id ${name}` });
+            return res.status(404).json({ message: `इस (${name}) आईडी से कोई भी डेटा मौजूद नहीं है|` });
         }
 
         const idMatch = driver[0].Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
@@ -61,10 +61,10 @@ router.post('/signup', async (req, res) => {
 
 
         const token = jwt.sign({ user: updatedDriver }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.status(201).json({ message: `Signup successful your Id is ${id}\nuse phone: ${phoneNumber} and entered password to login`, token, verified: false });
+        res.status(201).json({ message: `सफलतापूर्वक आईडी बन गई${id}\n${phoneNumber} फ़ोन नम्बर और पस्वेड दर्ज क्र के लॉग इन करें`, token, verified: false });
     } catch (error) {
         console.error('Signup error:', error);
-        res.status(500).json({ message: 'Internal server error', error: error.message });
+        res.status(500).json({ message: 'सर्वर एरर', error: error.message });
     }
 });
 
@@ -75,13 +75,13 @@ router.post('/login', async (req, res) => {
         const user = await Driver.findOne({ 'MobileNo.MobileNo': phoneNumber });
 
         if (!user) {
-            return res.status(400).json({ message: 'User not found' });
+            return res.status(400).json({ message: 'आईडी मोजूद नहीं है|' });
         }
 
         const isPasswordValid = await argon2.verify(user.password, password);
 
         if (!isPasswordValid) {
-            return res.status(400).json({ message: 'Invalid password' });
+            return res.status(400).json({ message: 'ग़लत पासवर्ड डाला गया|' });
         }
         let roleNames = ['Wehicle Driver'];
         // let roles = [];
@@ -139,11 +139,11 @@ router.post('/login', async (req, res) => {
         if (driversVehicle.length == 1) {
             userData.VehicleNo = driversVehicle[0].VehicleNo;
         } else {
-            userData.VehicleNo = 'No Vehicle Assigned';
+            userData.VehicleNo = 'कोई वाहन नहीं दिया गया है';
         }
 
         res.json({
-            message: 'Login successful',
+            message: 'सफलतापूर्वक लॉग इन हो गया',
             token,
             loginTime,
             verified: user.verified,
@@ -151,7 +151,7 @@ router.post('/login', async (req, res) => {
         });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ message: 'Internal server error', error: error.message });
+        res.status(500).json({ message: 'सर्वर एरर', error: error.message });
     }
 });
 
@@ -204,57 +204,57 @@ router.post('/verify-token', async (req, res) => {
     }
 });
 
-router.post('/generate-reset-url', async (req, res) => {
-    const { userId } = req.body;
-    try {
-        const user = await User.findOne({ userId });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
+// router.post('/generate-reset-url', async (req, res) => {
+//     const { userId } = req.body;
+//     try {
+//         const user = await User.findOne({ userId });
+//         if (!user) {
+//             return res.status(404).json({ message: 'User not found' });
+//         }
 
-        const resetToken = generateResetToken();
-        const expiryTime = Date.now() + 3600000; // 1 hour from now
+//         const resetToken = generateResetToken();
+//         const expiryTime = Date.now() + 3600000; // 1 hour from now
 
-        user.resetToken = resetToken;
-        user.resetTokenExpiry = expiryTime;
+//         user.resetToken = resetToken;
+//         user.resetTokenExpiry = expiryTime;
 
-        try {
-            await user.save();
-        } catch (error) {
-            console.error('Error saving user:', error);
-        }
+//         try {
+//             await user.save();
+//         } catch (error) {
+//             console.error('Error saving user:', error);
+//         }
 
-        const resetUrl = `https://itpl-bowser-admin.vercel.app/reset-password?token=${resetToken}&userId=${userId}`;
-        res.json({ resetUrl });
-    } catch (error) {
-        console.error('Error generating reset URL:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
+//         const resetUrl = `https://itpl-bowser-admin.vercel.app/reset-password?token=${resetToken}&userId=${userId}`;
+//         res.json({ resetUrl });
+//     } catch (error) {
+//         console.error('Error generating reset URL:', error);
+//         res.status(500).json({ message: 'Internal server error' });
+//     }
+// });
 
-router.patch('/reset-password', async (req, res) => {
-    const { userId, token, password, confirmPassword } = req.body;
-    try {
-        const user = await User.findOne({ userId });
-        if (!user || user.resetToken !== token || user.resetTokenExpiry < Date.now()) {
-            return res.status(400).json({ message: 'Invalid or expired token' });
-        }
+// router.patch('/reset-password', async (req, res) => {
+//     const { userId, token, password, confirmPassword } = req.body;
+//     try {
+//         const user = await User.findOne({ userId });
+//         if (!user || user.resetToken !== token || user.resetTokenExpiry < Date.now()) {
+//             return res.status(400).json({ message: 'Invalid or expired token' });
+//         }
 
-        if (password !== confirmPassword) {
-            return res.status(400).json({ message: 'Passwords do not match' });
-        }
+//         if (password !== confirmPassword) {
+//             return res.status(400).json({ message: 'Passwords do not match' });
+//         }
 
-        // Hash the new password
-        user.password = await argon2.hash(password);
-        user.resetToken = undefined; // Clear the reset token
-        user.resetTokenExpiry = undefined; // Clear the expiry time
-        await user.save();
+//         // Hash the new password
+//         user.password = await argon2.hash(password);
+//         user.resetToken = undefined; // Clear the reset token
+//         user.resetTokenExpiry = undefined; // Clear the expiry time
+//         await user.save();
 
-        res.json({ message: 'Password updated successfully' });
-    } catch (error) {
-        console.error('Error resetting password:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
+//         res.json({ message: 'Password updated successfully' });
+//     } catch (error) {
+//         console.error('Error resetting password:', error);
+//         res.status(500).json({ message: 'Internal server error' });
+//     }
+// });
 
 module.exports = router;

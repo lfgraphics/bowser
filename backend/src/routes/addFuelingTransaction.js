@@ -8,6 +8,7 @@ const { sendWebPushNotification } = require('../utils/pushNotifications');
 const { mongoose } = require('mongoose');
 
 router.post('/', async (req, res) => {
+    const { tripSheetId } = req.body;
     try {
         let fuelingTransaction = new FuelingTransaction(req.body);
 

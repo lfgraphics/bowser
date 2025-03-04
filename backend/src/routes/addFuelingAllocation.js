@@ -13,6 +13,10 @@ router.post('/', async (req, res) => {
 
     try {
         const {
+            allocationType,
+            pumpAllocationType,
+            fuelProvider,
+            petrolPump,
             category,
             party,
             vehicleNumber,
@@ -27,6 +31,10 @@ router.post('/', async (req, res) => {
         } = req.body;
 
         newFuelingOrder = new fuelingOrders({
+            allocationType,
+            pumpAllocationType,
+            fuelProvider,
+            petrolPump,
             category,
             party,
             vehicleNumber,
@@ -48,65 +56,66 @@ router.post('/', async (req, res) => {
             },
             request: requestId ? new mongoose.Types.ObjectId(String(requestId)) : null
         });
-        try {
-            // Construct the pushData object properly
-            const pushData = {
-                party: party,
-                category: category,
-                vehicleNumber: vehicleNumber,
-                driverName: driverName,
-                driverId: driverId,
-                driverMobile: driverMobile,
-                quantityType: quantityType,
-                quantity: fuelQuantity,
-                allocationAdminName: allocationAdmin.name,
-                allocationAdminId: allocationAdmin.id,
-                buttons: [
-                    {
-                        text: "Call Driver",
-                        action: "call",
-                        phoneNumber: driverMobile,
-                    },
-                    {
-                        text: "Fuel",
-                        action: "openScreen",
-                        screenName: "NotificationFueling",
-                        params: {
-                            party: party,
-                            category: category,
-                            vehicleNumber: vehicleNumber,
-                            driverName: driverName,
-                            driverId: driverId,
-                            driverMobile: driverMobile,
-                            quantityType: quantityType,
-                            fuelQuantity: fuelQuantity,
-                            allocationAdminName: allocationAdmin.name,
-                            allocationAdminId: allocationAdmin.id,
+        if (allocationType !== 'external') {
+            try {
+                const pushData = {
+                    party: party,
+                    category: category,
+                    vehicleNumber: vehicleNumber,
+                    driverName: driverName,
+                    driverId: driverId,
+                    driverMobile: driverMobile,
+                    quantityType: quantityType,
+                    quantity: fuelQuantity,
+                    allocationAdminName: allocationAdmin.name,
+                    allocationAdminId: allocationAdmin.id,
+                    buttons: [
+                        {
+                            text: "Call Driver",
+                            action: "call",
+                            phoneNumber: driverMobile,
                         },
-                    },
-                ],
-            };
+                        {
+                            text: "Fuel",
+                            action: "openScreen",
+                            screenName: "NotificationFueling",
+                            params: {
+                                party: party,
+                                category: category,
+                                vehicleNumber: vehicleNumber,
+                                driverName: driverName,
+                                driverId: driverId,
+                                driverMobile: driverMobile,
+                                quantityType: quantityType,
+                                fuelQuantity: fuelQuantity,
+                                allocationAdminName: allocationAdmin.name,
+                                allocationAdminId: allocationAdmin.id,
+                            },
+                        },
+                    ],
+                };
 
-            let primaryHead = category == "Bulk Sale" ? `Party: ${party}` : `Vehicle Number: ${vehicleNumber}`;
-            let secondaryHead = category == "Bulk Sale" ? `` : `Driver: ${driverName}\n`;
-            let midHead = category == "Attatch" ? `Vendor: ${party}\n` : ``;
-            // Send the notification request
-            const sentNotificationResponse = await sendNativePushNotification(
-                {
-                    mobileNumber: newFuelingOrder.bowser.driver.phoneNo,
-                    message: `${primaryHead}\n${midHead}${secondaryHead}Allocated by ${allocationAdmin.name} (${allocationAdmin.id})`,
-                    options: { title: 'New Fueling Order', data: JSON.stringify(pushData) }
+                let primaryHead = category == "Bulk Sale" ? `Party: ${party}` : `Vehicle Number: ${vehicleNumber}`;
+                let secondaryHead = category == "Bulk Sale" ? `` : `Driver: ${driverName}\n`;
+                let midHead = category == "Attatch" ? `Vendor: ${party}\n` : ``;
+                // Send the notification request
+                const sentNotificationResponse = await sendNativePushNotification(
+                    {
+                        mobileNumber: newFuelingOrder.bowser.driver.phoneNo,
+                        message: `${primaryHead}\n${midHead}${secondaryHead}Allocated by ${allocationAdmin.name} (${allocationAdmin.id})`,
+                        options: { title: 'New Fueling Order', data: JSON.stringify(pushData) }
+                    }
+                )
+                // Check if the notification was successfully sent
+                if (sentNotificationResponse.success) {
+                    console.log('Notification sent successfully:', sentNotificationResponse.response);
+                    notificationSent = true;
+                } else {
+                    console.warn('Notification was not sent:', sentNotificationResponse.response);
                 }
-            )
-            // Check if the notification was successfully sent
-            if (sentNotificationResponse.success) {
-                console.log('Notification sent successfully:', sentNotificationResponse.response);
-                notificationSent = true;
-            } else {
-                console.warn('Notification was not sent:', sentNotificationResponse.response);
+            } catch (error) {
+                console.error(error);
             }
-        } catch (error) {
-            console.error(error);
         }
         try {
             console.log("New Fueling Order:", newFuelingOrder);
@@ -144,9 +153,10 @@ router.post('/', async (req, res) => {
                     },
                 ]
             };
+            let fuelLer = allocationType !== 'external' ? `${newFuelingOrder.bowser.driver.name} आपके वाहन को ईंधन देने के लिए आ रहे हैं।\nड्राइवर से संपर्क करने के लिए ${newFuelingOrder.bowser.driver.phoneNo} पर कॉल करें।` : `${fuelProvider} ${petrolPump.length && petrolPump.length > 0 ? "के" + petrolPump : "के किसी भी" + "पेट्रोल पंप से तेल ले लें"}`
             await sendNativePushNotification({
                 mobileNumber: fuelRequest.driverMobile,
-                message: `आपका ईंधन अनुरोध ${newFuelingOrder.allocationAdmin.id} द्वारा पूरा कर दिया गया है।\n${newFuelingOrder.bowser.driver.name} आपके वाहन को ईंधन देने के लिए आ रहे हैं।\nड्राइवर से संपर्क करने के लिए ${newFuelingOrder.bowser.driver.phoneNo} पर कॉल करें।`,
+                message: `आपका ईंधन अनुरोध ${newFuelingOrder.allocationAdmin.id} द्वारा पूरा कर दिया गया है।\n${fuelLer}`,
                 options: { title: 'ईंधन अनुरोध पूरा हुआ', data: JSON.stringify({ notificationPayloadData }) }
             });
         }

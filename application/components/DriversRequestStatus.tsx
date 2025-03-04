@@ -1,17 +1,18 @@
-import { FuelRequest } from '@/src/types';
+import { DriverFuelRequest } from '@/src/types';
 import { baseUrl } from '@/src/utils/helpers';
 import React from 'react'
 import { ThemedView } from './ThemedView';
 import { ThemedText } from './ThemedText';
-import { ActivityIndicator, Button, Linking, StyleSheet } from 'react-native';
+import { ActivityIndicator, Button, Linking, StyleSheet, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
     requestId: string;
 }
 
 const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
-    const [orderData, setOrderData] = React.useState<FuelRequest | null>(null);
+    const [orderData, setOrderData] = React.useState<DriverFuelRequest | null>(null);
     const [loading, setLoading] = React.useState(false);
 
     const fetchData = async () => {
@@ -20,10 +21,8 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
             const response = await fetch(`${baseUrl}/fuel-request/vehicle-driver/${requestId}`);
             const json = await response.json();
             setOrderData(json);
-            console.log(json);
-            console.log(requestId);
+            console.log(orderData?.allocation);
         } catch (error) {
-            console.error(error);
             alert(error);
         } finally {
             setLoading(false);
@@ -38,30 +37,38 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
         <>{loading && <ActivityIndicator color="#0a7ea4" />}
             <ThemedView style={{ padding: 12, borderRadius: 6, gap: 6, paddingTop: 16 }} >
                 <ThemedText style={{ textAlign: "center", fontSize: 20, fontWeight: "bold" }}>आपके ईंधन लेने के अनुरोध की जानकारी</ThemedText>
-                {orderData && (
+                {orderData && orderData.allocation.allocationType == "bowser" && (
                     <ThemedView>
-                        <ThemedText>
-                            {orderData.fulfilled ? "स्वीकृत हो गई" : "स्वीकृत नहीं हुई है।"}
-                        </ThemedText>
-                        {/* <ThemedText> */}
-                            {orderData.allocation?.bowser.driver.location ??
-                                <Link style={styles.button} href={`https://www.google.com/maps/dir/?api=1&destination=${orderData.allocation?.bowser.driver.location?.replace(' ', '')}` as any}>
-                                    बाउज़र की लोकेशन देखें
-                                </Link>
-                            }
-                        {/* </ThemedText> */}
+                        {orderData.allocation?.bowser.driver.location &&
+                            <Link style={styles.button} href={`https://www.google.com/maps/dir/?api=1&destination=${orderData.allocation?.bowser.driver.location?.replace(' ', '')}` as any}>
+                                बाउज़र की लोकेशन देखें
+                            </Link>
+                        }
                         {orderData.allocation &&
                             <>
                                 <ThemedText>
-                                    बाउज़र: गाड़ी नं0{orderData.allocation.bowser.regNo}, ड्राईवर{orderData.allocation.bowser.driver.name}
+                                बाउज़र: गाड़ी नं0 {orderData.allocation.bowser.regNo}, ड्राईवर {orderData.allocation.bowser.driver.name}
+                            </ThemedText>
+                                <ThemedText>
+                                    तेल मिलेगा: {orderData.allocation.quantityType === "Full" ? "फुल" : "पार्ट"}, {orderData.allocation.fuelQuantity > 0 ? orderData.allocation.fuelQuantity + "लीटर" : ""}
+                                </ThemedText>
+                                <TouchableOpacity style={styles.button} onPress={() => Linking.openURL(`tel:${orderData.allocation?.bowser.driver.phoneNo}`)}>
+                                    <ThemedText>बाउज़र ड्राईवर को काल करें</ThemedText><Ionicons name="call" size={18} color="white" />
+                                </TouchableOpacity>
+                            </>
+                        }
+                    </ThemedView>
+                )}
+                {orderData && orderData.allocation?.allocationType == "external" && (
+                    <ThemedView>
+                        {orderData.allocation &&
+                            <>
+                                <ThemedText>
+                                    तेल मिलेगा: {orderData.allocation.quantityType === "Full" ? "फुल" : "पार्ट"}, {orderData.allocation.fuelQuantity > 0 ? orderData.allocation.fuelQuantity + "लीटर" : ""}
                                 </ThemedText>
                                 <ThemedText>
-                                    तेल मिलेगा: {orderData.allocation.quantityType === "Full" ? "फुल" : "पार्ट"}, {orderData.allocation.fuelQuantity > 0 ? orderData.allocation.fuelQuantity : ""}
-                                </ThemedText>
-                                <ThemedText>
-                                    के द्वारा: {orderData.allocation.allocationAdmin.name}
-                                </ThemedText>
-                                <Button title="बाउज़र ड्राईवर को काल करें" onPress={() => Linking.openURL(`tel:${orderData.allocation?.bowser.driver.phoneNo}`)} color="#0a7ea4" />
+                                {orderData.allocation.fuelProvider} के {orderData.allocation.pumpAllocationType === "Any" ? "किसी भी पेट्रोल पंप से" : orderData.allocation.pumpLocation + "पेट्रोल पंप से"}
+                            </ThemedText>
                             </>
                         }
                     </ThemedView>
@@ -79,16 +86,17 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
 
 const styles = StyleSheet.create({
     button: {
+        flexDirection: 'row',
+        gap: 8,
         textAlign: 'center',
         height: 50,
         color: 'white',
-        marginHorizontal: 8,
         backgroundColor: '#0a7ea4',
-        padding: 7,
         borderRadius: 5,
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: 26,
+        marginBottom: 12,
     },
     disabledButton: {
         backgroundColor: 'gray',

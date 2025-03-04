@@ -52,7 +52,7 @@ export default function AuthScreen() {
       });
 
       const endpoint = isLogin ? 'login' : 'signup';
-      const response = await fetch(`${baseUrl}/auth${authNav == "vehicleDriver" ? "/driver" : ""}/${endpoint}`, { //https://bowser-backend-2cdr.onrender.com  //http://192.168.137.1:5000
+      const response = await fetch(`${baseUrl}/auth${authNav == "vehicleDriver" ? "/driver" : ""}/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,9 +134,10 @@ export default function AuthScreen() {
                 { cancelable: false }
               );
             }
+          } else {
+            await checkAndRegisterDevice(phoneNumber);
+            router.replace('/');
           }
-          await checkAndRegisterDevice(phoneNumber);
-          router.replace('/');
         } catch (storageError) {
           console.error('Error saving to AsyncStorage:', storageError);
           Alert.alert("स्टोरेज एरर", "डाटा सेव होने में एरर आ रहा है कृपया दोबारा कोशिश करें", [{ text: "ठीक है" }]);
@@ -229,8 +230,8 @@ export default function AuthScreen() {
                     style={[
                       styles.submitButtonText,
                       {
-                        color: `${authNav == option ? colors.card : colors.text
-                          }`,
+                        color: `${authNav == option ? colors.card : colors.text}`,
+                        textAlign: "center"
                       },
                     ]}
                   >
@@ -346,12 +347,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
-    width: '40%',
+    width: '46%',
     alignItems: "center",
     textAlign: "center",
   },
   activeButton: {
     backgroundColor: "#0a7ea4",
+    textAlign: "center",
   },
   container: {
     flex: 1,

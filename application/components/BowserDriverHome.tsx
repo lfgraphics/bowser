@@ -14,6 +14,7 @@ import FuelingRecords from '@/components/FuelingRecords';
 import { useTheme } from '@react-navigation/native';
 import { getAppUpdate } from '@/src/utils/helpers'
 import Accordion from './Accordian';
+import { ThemedText } from './ThemedText';
 
 export default function BowserDriverHome() {
     const router = useRouter();
@@ -437,7 +438,17 @@ export default function BowserDriverHome() {
             >
                 <Ionicons name="person-circle-outline" size={32} color="#0a7ea4" />
             </TouchableOpacity>
-
+            {
+                isOnline && <FuelingRecords />
+            }
+            <Link style={styles.button} href={'/tripsheet'}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                    <ThemedText style={{ color: 'white' }}>
+                        ट्रिप शीट डीटेल्स
+                    </ThemedText>
+                    <MaterialIcons name="table-chart" size={24} color="white" style={{ marginHorizontal: 10 }} />
+                </View>
+            </Link>
             <Link style={styles.button} href={'/fueling'}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={{ color: 'white' }}>
@@ -455,9 +466,6 @@ export default function BowserDriverHome() {
                     <Ionicons name="notifications" size={20} color="white" style={{ marginHorizontal: 10 }} />
                 </View>
             </Link>
-            {
-                isOnline && <FuelingRecords />
-            }
             {/* {appurl &&
                 <View style={styles.modalContainer}>
                     <Link style={styles.button} href={appurl as any}><Text style={{ color: colors.text }}>ऐप अपडेट करें</Text></Link>
@@ -465,7 +473,7 @@ export default function BowserDriverHome() {
             } */}
 
             <Modal
-                animationType="slide"
+                animationType="fade"
                 transparent={true}
                 visible={isProfileModalVisible}
                 onRequestClose={() => setProfileModalVisible(false)}
@@ -512,7 +520,7 @@ export default function BowserDriverHome() {
             </Modal>
 
             <Modal
-                animationType="slide"
+                animationType="fade"
                 transparent={true}
                 visible={isOfflineDataModalVisible}
                 onRequestClose={() => setOfflineDataModalVisible(false)}
@@ -540,13 +548,12 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'dark',
-        height: 80,
         paddingHorizontal: 20,
     },
     button: {
         width: '70%',
         padding: 15,
-        marginVertical: 10,
+        marginVertical: 5,
         backgroundColor: '#0a7ea4',
         borderRadius: 5,
         alignItems: 'center',
@@ -555,19 +562,7 @@ export const styles = StyleSheet.create({
         color: 'white'
     },
     disabledButton: {
-        width: '70%',
-        padding: 15,
-        marginVertical: 10,
         backgroundColor: 'gray',
-        borderRadius: 5,
-        alignItems: 'center',
-        textAlign: 'center',
-        paddingHorizontal: 20,
-        color: 'white'
-    },
-    loadingContainer: {
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     errorContainer: {
         justifyContent: 'center',

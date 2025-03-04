@@ -3,6 +3,17 @@ const moment = require("moment-timezone");
 const { bowsersDatabaseConnection } = require('../../config/database');
 
 const fuelingOrderSchema = new mongoose.Schema({
+  allocationType: {
+    type: String,
+    enum: ["bowser", "external"],
+    required: false
+  },
+  pumpAllocationType: {
+    type: String,
+    required: false
+  },
+  fuelProvider: { type: String, required: false },
+  pumpLocation: { type: String, required: false },
   vehicleNumber: { type: String, required: false },
   category: { type: String, required: true },
   party: { type: String, required: false, default: "Own" },

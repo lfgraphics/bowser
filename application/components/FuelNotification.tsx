@@ -7,10 +7,6 @@ import { Link, router } from 'expo-router';
 import { ThemedText } from './ThemedText';
 import { formatDate, shareLocation } from '@/src/utils/helpers';
 
-type RootStackParamList = {
-  NotificationFueling: FuelNotificationProps;
-};
-
 const FuelNotification: React.FC<FuelNotificationProps> = ({
   category,
   party,
@@ -88,7 +84,7 @@ const FuelNotification: React.FC<FuelNotificationProps> = ({
               <MaterialIcons name="local-gas-station" size={32} color={'white'} />
             </TouchableOpacity>
           </View>
-          {(request !== null && request.location?.length > 2) && <Button onPress={handleSareLocation} title='Share Location' color="#0a7ea4" />}
+          {/* {(request !== null && request.location?.length > 2) && <Button onPress={handleSareLocation} title='Share Location' color="#0a7ea4" />} */}
         </View>
       </View>
     </>

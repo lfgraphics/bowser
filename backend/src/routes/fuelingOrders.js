@@ -8,7 +8,7 @@ router.get('/:phoneNo', async (req, res) => {
 
         const userOrders = await FuelingOrder.find({ 'bowser.driver.phoneNo': phoneNo, fulfilled: false }).populate('request').sort({ createdAt: -1 });
         if (userOrders.length === 0) {
-            return res.status(404).json({ message: 'No fueling orders found' });
+            return res.status(404).json({ message: 'आप के लिए कोई भी ऑर्डर मौजूद नहीं है|' });
         }
 
         res.status(200).json({ orders: userOrders });

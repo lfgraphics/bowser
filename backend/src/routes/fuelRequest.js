@@ -48,7 +48,8 @@ router.get('/', async (req, res) => {
 router.get('/vehicle-driver/:id', async (req, res) => {
     // console.log(req.params.id.length); return res.json({ id: new ObjectId(String(req.params.id)) });
     try {
-        const fuelRequests = await FuelRequest.findById(new mongoose.Types.ObjectId(String(req.params.id))).populate('allocation');
+        console.log(req.params.id);
+        const fuelRequests = await FuelRequest.findById(req.params.id).populate('allocation');
         if (!fuelRequests) {
             return res.status(404).json({ message: 'No fuel request found' });
         }
