@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
+require('../models/role');
+require('../models/department');
 const UnAuthorizedLogin = require('../models/unauthorizedLogin');
 const mongoose = require('mongoose')
 
@@ -22,7 +24,7 @@ router.get('/', async (req, res) => {
                     { verified: true },
                 ]
             };
-            const users = await User.find(filter, { phoneNumber: 1, name: 1, bowserId: 1, _id: '-1' }).lean();
+            const users = await User.find(filter, { phoneNumber: 1, name: 1, bowserId: 1, _id: 0, roles: 1, department: 1 }).populate(['roles', 'department']).lean();
             if (users.length === 0) {
                 return res.status(404).json({
                     title: "Error",
@@ -32,7 +34,7 @@ router.get('/', async (req, res) => {
 
             return res.status(200).json(users);
         } else {
-            const users = await User.find().populate('roles').sort({ generationTime: -1 });
+            const users = await User.find().populate(['roles', 'department']).sort({ generationTime: -1 });
             return res.status(200).json(users);
         }
     } catch (error) {
@@ -96,8 +98,8 @@ router.put('/update/department', async (req, res) => {
         res.status(200).json(updatedUser);
 
     } catch (error) {
-        console.error('Error updating roles:', error);
-        res.status(500).json({ error: 'Failed to update roles', details: error });
+        console.error('Error updating department:', error);
+        res.status(500).json({ error: 'Failed to update department', details: error });
     }
 });
 

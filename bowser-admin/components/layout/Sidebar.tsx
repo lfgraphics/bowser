@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideGitPullRequestDraft, LucideSquareArrowOutUpRight } from 'lucide-react'
+import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideGitPullRequestDraft, LucideSquareArrowOutUpRight, Star, KeyRound } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 import ThemeChanger from '../ThemeChanger'
@@ -290,6 +290,18 @@ export function Sidebar() {
                     </Button>
                   </Link>
                 </li>
+                <OnlyAllowed
+                  allowedRoles={["Admin"]}
+                >
+                  <li onClick={toggleSidebar}>
+                    <Link href="/password-reset-link">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <KeyRound className="mr-2 w-4 h-4" />
+                        Change Password
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
                 <li>
                   <ThemeChanger />
                 </li>

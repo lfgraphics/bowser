@@ -122,7 +122,7 @@ const Profile = () => {
                             <span>{user?.roles.join(', ')}</span>
                         </div>
                         {user?.department && <div className="flex justify-between gap-3">
-                            <Label className='flex-[0.9]'>Department</Label>
+                            <Label className='flex-[0.9]'>Goods Category</Label>
                             <span>{user.department}</span>
                         </div>}
                         <Separator />

@@ -25,8 +25,8 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import Link from "next/link";
 import DepartmentSelectionDialog from "@/components/DepartmentSelectionDialog";
+import { formatDate } from "@/lib/utils";
 
 type Nav = 'Users' | 'Roles' | 'Un Authorized';
 
@@ -57,7 +57,6 @@ const UsersList = () => {
                 const roleDataPromise = getRoles().then((roles) => {
                     const filteredDepartments = roles.filter(role => role.id === "department");
                     setDepartments(filteredDepartments);
-                    console.log(filteredDepartments)
                     const filteredRoles = roles.filter(role => role.id !== "department");
                     setRoles(filteredRoles);
                 }).catch(err => {
@@ -70,7 +69,6 @@ const UsersList = () => {
 
                 // Wait for all promises to complete (even those that fail)
                 await Promise.all([userDataPromise, roleDataPromise, unAuthorizedLoginRequestsPromise]);
-                console.log(userDataPromise)
             } catch (err: any) {
                 // This catch block is unlikely to be triggered since individual errors are caught.
                 toast({ title: 'Error', description: err.message, variant: "destructive" });
@@ -87,7 +85,7 @@ const UsersList = () => {
     }, [users]);
     useEffect(() => {
         const applyFilters = () => {
-            if (!searchTerm && isVerified === null && selectedRoles.length === 0 && selectedDepartment.length === 0) {
+            if (!searchTerm && isVerified === null && selectedRoles.length === 0 && selectedDepartment?.length === 0) {
                 setFilteredUsers(users);
                 return;
             }
@@ -97,7 +95,8 @@ const UsersList = () => {
                 const matchesSearchTerm =
                     user.userId !== undefined && user.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    user.phoneNumber.includes(searchTerm);
+                    user.phoneNumber.includes(searchTerm) ||
+                    user.department && user.department.name.toLowerCase().includes(searchTerm.toLowerCase());
 
                 // Filter by verification status
                 const matchesVerification = isVerified === null || user.verified === isVerified;
@@ -107,16 +106,18 @@ const UsersList = () => {
                     selectedRoles.length === 0 ||
                     user.roles.some(role => selectedRoles.includes(role.name));
 
-                const matchesDepartment = selectedDepartment === null || selectedDepartment?.includes(user.department?.name);
+                const matchedDepartments =
+                    selectedDepartment.length === 0 ||
+                    selectedDepartment?.includes(user.department?.name);
 
-                return matchesSearchTerm && matchesVerification && matchesRoles && matchesDepartment;
+                return matchesSearchTerm && matchesVerification && matchesRoles && matchedDepartments;
             });
 
             setFilteredUsers(filtered);
         };
 
         applyFilters();
-    }, [searchTerm, isVerified, selectedRoles, users, departments]);
+    }, [searchTerm, isVerified, selectedRoles, users, selectedDepartment]);
 
     const handleUpdateVerification = async (phoneNumber: string, verified: boolean) => {
         try {
@@ -281,7 +282,7 @@ const UsersList = () => {
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="lg" className='p-4 h-10 text-center'>
-                                Departments Filter
+                                Goods Category Filter
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className='bg-card text-center'>
@@ -291,7 +292,7 @@ const UsersList = () => {
                                         <Checkbox
                                             id={department.name}
                                             key={department._id.toString()}
-                                            checked={selectedRoles.includes(department.name)}
+                                            checked={selectedDepartment.includes(department.name)}
                                             onCheckedChange={(checked) => {
                                                 const departmentName = department.name;
                                                 setSelectedDepartment(prev =>
@@ -329,10 +330,8 @@ const UsersList = () => {
                                 <div>
                                     <p className="flex gap-4">Verified: {user.verified ? <Check color="green" /> : <X color="red" />}</p>
                                     <p>Roles: {user.roles?.map((role) => role.name).join(', ')}</p>
-                                    {user.department && <p>Departmen: {user.department.name}</p>}
-                                    {user.generationTime && <p>Created on: {`${new Date(user.generationTime)?.toLocaleString('en-GB', {
-                                        day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-                                    }).replace(/\//g, '-')}`}</p>}
+                                    {user.department && <p>Goods Category: {user.department.name}</p>}
+                                    {user.generationTime && <p>Created on: {formatDate(user.generationTime)}</p>}
                                 </div>
                             }
                             footer={

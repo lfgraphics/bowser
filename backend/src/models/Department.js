@@ -6,4 +6,4 @@ const departmentSchema = new mongoose.Schema({
     name: String
 });
 
-module.exports = UsersAndRolesDatabaseConnection.model('Department', departmentSchema, 'RolesCollection');
+module.exports = UsersAndRolesDatabaseConnection.model('Department', departmentSchema, 'DepartmentsCollection');

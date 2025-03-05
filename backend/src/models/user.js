@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Role'
     }],
-    department: { type: mongoose.Schema.Types.ObjectId, ref: 'Role' },
+    department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
     generationTime: { type: Date, default: Date.now, timezone: "Asia/Kolkata" },
 });
 
