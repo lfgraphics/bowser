@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const FuelRequest = require('../models/FuelRequest');
 const { sendBulkNotifications } = require('../utils/pushNotifications');
-const { mongoose, ObjectId } = require('mongoose');
+const { mongoose } = require('mongoose');
 
 router.post('/', async (req, res) => {
     const { vehicleNumber, driverId, driverName, driverMobile, location, department } = req.body;
@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
             { driverMobile: { $regex: param, $options: 'i' } }
         ];
     }
-    console.log('query:', query);
+
     try {
         const fuelRequests = await FuelRequest.find(query).sort({ createdAt: -1 }).limit(20);
         if (fuelRequests.length === 0) {
@@ -46,9 +46,7 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/vehicle-driver/:id', async (req, res) => {
-    // console.log(req.params.id.length); return res.json({ id: new ObjectId(String(req.params.id)) });
     try {
-        console.log(req.params.id);
         const fuelRequests = await FuelRequest.findById(req.params.id).populate('allocation');
         if (!fuelRequests) {
             return res.status(404).json({ message: 'No fuel request found' });
@@ -61,8 +59,9 @@ router.get('/vehicle-driver/:id', async (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
+    const { message } = req.body;
     try {
-        const fuelRequest = await FuelRequest.findByIdAndDelete(req.params.id);
+        const fuelRequest = await FuelRequest.findByIdAndUpdate(req.params.id, { message: message, fulfilled: true }, { new: true });
         if (!fuelRequest) {
             return res.status(404).json({ message: 'Fuel request not found' });
         }
@@ -76,7 +75,7 @@ router.delete('/:id', async (req, res) => {
 router.patch('/update-cordinates/:id', async (req, res) => {
     const { location } = req.body;
     try {
-        const fuelRequest = await FuelRequest.findByIdAndUpdate(new mongoose.Types.ObjectId(String(req.params.id)), { location }, { new: true });
+        const fuelRequest = await FuelRequest.findByIdAndUpdate(req.params.id, { location }, { new: true });
         if (!fuelRequest) {
             return res.status(404).json({ message: 'Fuel request not found' });
         }

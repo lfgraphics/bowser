@@ -38,7 +38,7 @@ export const shareLocation = async (orderId: string) => {
 
         // Establish WebSocket connection if not already connected
         if (!socket) {
-            socket = new WebSocket("ws://192.168.137.1:5000");
+            socket = new WebSocket("wss://bowser-backend-2cdr.onrender.com");
 
             socket.onopen = () => {
                 console.log("WebSocket Connected");

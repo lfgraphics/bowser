@@ -75,7 +75,7 @@ export default function NotificationsScreen() {
                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
         >
-            {notificationsData.length > 0 ? (
+            {notificationsData?.length > 0 ? (
                 notificationsData.map((data) => (
                     <View style={{ marginBottom: 10 }} key={data._id}>
                         <FuelNotification
@@ -98,7 +98,7 @@ export default function NotificationsScreen() {
             ) : (
                 <ThemedText style={styles.noNotifications}>No Pending Orders Available</ThemedText>
             )}
-            {notificationsData.length > 2 && <ThemedView style={{ height: 40 }} />}
+            {notificationsData?.length > 2 && <ThemedView style={{ height: 40 }} />}
         </ScrollView>
     );
 }

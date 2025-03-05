@@ -40,7 +40,7 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
         </View>}
             <ThemedView style={{ padding: 12, borderRadius: 6, gap: 6, paddingTop: 16 }} >
                 <ThemedText style={{ textAlign: "center", fontSize: 20, fontWeight: "bold" }}>आपके डीज़ल अनुरोध की जानकारी</ThemedText>
-                {orderData && !orderData.allocation && <ThemedText style={{ textAlign: "center" }}>आपका डीज़ल अनुरोध अभी पूरा नहीं हुआ है, कृपया थोड़ी देर बाद दोबारा चेक करें।</ThemedText>}
+                {orderData && (!orderData.allocation && !orderData.message) && <ThemedText style={{ textAlign: "center" }}>आपका डीज़ल अनुरोध अभी पूरा नहीं हुआ है, कृपया थोड़ी देर बाद दोबारा चेक करें।</ThemedText>}
                 {orderData && !orderData.allocation && orderData.message && <ThemedText style={{ textAlign: "center" }}>{orderData.message}</ThemedText>}
                 {orderData && orderData.allocation?.allocationType == "bowser" && (
                     <ThemedView>
@@ -78,12 +78,12 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
                         }
                     </ThemedView>
                 )}
-                <Button
+                {orderData && !orderData.message && <Button
                     onPress={fetchData}
                     title="दोबारा चेक करें"
                     color="#0a7ea4"
                     accessibilityLabel="Refresh your fuel request status"
-                />
+                />}
             </ThemedView >
         </>
     )

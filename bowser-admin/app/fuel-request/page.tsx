@@ -9,11 +9,13 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogContent, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { formatDate } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 
 const page = () => {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<FuelRequest[] | []>([]);
     const [error, setError] = useState<string | null>(null);
+    const [deleteMessage, setDeleteMessage] = useState<string>('');
     const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
     const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false);
     const [showErrorAlert, setShowErrorAlert] = useState<boolean>(false);
@@ -43,13 +45,14 @@ const page = () => {
         setDeletingRequestId(sheetId)
         setShowDeleteDialog(true)
     }
-    const handleDelete = async () => {
+    const handleDelete = async (message: string) => {
         try {
             let response = await fetch(`${BASE_URL}/fuel-request/${deletingRequestId}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                body: JSON.stringify({ message })
             });
             if (!response.ok) {
                 throw new Error('Failed to delete');
@@ -134,9 +137,10 @@ const page = () => {
                         <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
                         <AlertDialogDescription>
                             Are you sure you want to delete fuel request? This action cannot be undone.
+                            <Input value={deleteMessage} type="text" onChange={(e) => setDeleteMessage(e.target.value)} placeholder='Enter reason for deletion.' className='mt-3 text-white placeholder:text-gray-300' />
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogAction onClick={() => handleDelete()}>Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={() => handleDelete(deleteMessage)} disabled={deleteMessage?.length < 5}>Delete</AlertDialogAction>
                     <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>Cancel</AlertDialogCancel>
                 </AlertDialogContent>
             </AlertDialog>

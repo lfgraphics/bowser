@@ -9,6 +9,7 @@ const fuelingOrderSchema = new mongoose.Schema({
     driverMobile: { type: String, required: true },
     location: { type: String, required: true },
     fulfilled: { type: Boolean, default: false },
+    message: { type: String, required: false },
     allocation: { type: mongoose.Types.ObjectId, ref: 'FuelingOrder' },
     createdAt: { type: Date, default: () => moment().tz("Asia/Kolkata").toDate() },
 });
