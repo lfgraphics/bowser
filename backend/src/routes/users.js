@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
-require('../models/role');
-require('../models/department');
 const UnAuthorizedLogin = require('../models/unauthorizedLogin');
 const mongoose = require('mongoose')
 
