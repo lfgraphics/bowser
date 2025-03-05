@@ -203,17 +203,19 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                 </TouchableOpacity>
 
                 <View style={{ flexDirection: "column", gap: 8, alignItems: "center", marginBottom: 20 }}>
-                    <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]} onPress={requestFuel}>
-                        <Text style={styles.requestButtonText}>लोड हो गई</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]} onPress={requestFuel}>
-                        <Text style={styles.requestButtonText}>रिपोर्ट हो गई</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]} onPress={requestFuel}>
-                        <Text style={styles.requestButtonText}>ख़ाली हो गई</Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: "column", gap: 8, alignItems: "center", display: "none" }}>
+                        <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]} onPress={requestFuel}>
+                            <Text style={styles.requestButtonText}>लोड हो गई</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]} onPress={requestFuel}>
+                            <Text style={styles.requestButtonText}>रिपोर्ट हो गई</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]} onPress={requestFuel}>
+                            <Text style={styles.requestButtonText}>ख़ाली हो गई</Text>
+                        </TouchableOpacity>
+                    </View>
                     <TouchableOpacity style={styles.requestButton} onPress={requestFuel}>
-                        <Text style={styles.requestButtonText}>तेल अनुरोद</Text>
+                        <Text style={styles.requestButtonText}>डीज़ल अनुरोध</Text>
                     </TouchableOpacity>
                     {/* {appurl &&
                         <Link style={[styles.button]} href={appurl as any}><Text style={{ color: colors.text }}>ऐप अपडेट करें</Text></Link>

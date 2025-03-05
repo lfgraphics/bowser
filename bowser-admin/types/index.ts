@@ -211,7 +211,7 @@ export interface TripSheet {
   saleQty?: number;
   balanceQty?: number;
   balanceQtyBySlip?: number;
-  tempLoadByDip?:number;
+  tempLoadByDip?: number;
   settelment?: {
     dateTime: Date;
     details: {
@@ -307,6 +307,7 @@ export interface User {
   phoneNumber: string
   phoneNo?: string
   name: string
+  department: string
   bowserId: string
   verified: boolean
   roles: string[]
@@ -316,6 +317,7 @@ export interface User {
 export interface MainUser {
   _id: string
   userId: string
+  department: Department
   phoneNumber: string
   phoneNo?: string
   name: string
@@ -326,7 +328,8 @@ export interface MainUser {
 }
 
 export interface Role {
-  _id: mongoose.Schema.Types.ObjectId
+  _id: string
+  id: string
   name: string
   notes: string
   permissions: {
@@ -334,6 +337,12 @@ export interface Role {
     functions: { name: string; allowed: boolean }[]
     customPermissions: Record<string, any>
   }
+}
+
+export interface Department {
+  id: string
+  _id: string
+  name: string
 }
 
 export interface UnauthorizedLogin {

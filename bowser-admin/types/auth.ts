@@ -4,6 +4,7 @@ export interface User {
   _id: mongoose.Types.ObjectId
   userId: string
   name: string
+  department: string
   phoneNumber: string
   verified: boolean
   roles: string[]

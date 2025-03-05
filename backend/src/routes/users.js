@@ -71,7 +71,27 @@ router.put('/update/roles', async (req, res) => {
         user.roles = roleObjectIds;
         await user.save();
 
-        const updatedUser = await User.findOne({ phoneNumber }).populate("roles");
+        const updatedUser = await User.findOne({ phoneNumber }).populate(["roles", "department"]);
+        if (!updatedUser) return res.status(404).json({ error: "User not found" });
+        res.status(200).json(updatedUser);
+
+    } catch (error) {
+        console.error('Error updating roles:', error);
+        res.status(500).json({ error: 'Failed to update roles', details: error });
+    }
+});
+// update or add department
+router.put('/update/department', async (req, res) => {
+    const { department, phoneNumber } = req.body;
+    console.log(req.body)
+    try {
+        const user = await User.findOne({ phoneNumber });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        user.department = department;
+        await user.save();
+
+        const updatedUser = await User.findOne({ phoneNumber }).populate(["roles", "department"]);
         if (!updatedUser) return res.status(404).json({ error: "User not found" });
         res.status(200).json(updatedUser);
 

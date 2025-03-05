@@ -10,4 +10,5 @@ export interface DriverFuelRequest {
     fulfilled: boolean
     createdAt: string
     allocation: FuelRequest
+    message: string
 }

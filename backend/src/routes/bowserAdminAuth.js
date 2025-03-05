@@ -51,7 +51,7 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { userId, password, appName } = req.body;
-        const user = await User.findOne({ userId }).populate('roles');
+        const user = await User.findOne({ userId }).populate(['roles', 'department']);
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
@@ -77,6 +77,10 @@ router.post('/login', async (req, res) => {
         if (user.roles && user.roles.length > 0) {
             roles = await Role.find({ _id: { $in: user.roles } });
             roleNames = roles.map(role => role.name);
+        }
+        let departmentName
+        if (user.department) {
+            departmentName = user.department.name;
         }
 
         const token = jwt.sign(
@@ -108,6 +112,7 @@ router.post('/login', async (req, res) => {
                 name: user.name,
                 phoneNumber: user.phoneNumber,
                 roles: roleNames,
+                department: departmentName,
                 verified: user.verified
             }
         });

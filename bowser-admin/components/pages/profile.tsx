@@ -121,6 +121,10 @@ const Profile = () => {
                             <Label className='flex-[0.9]'>Role/s</Label>
                             <span>{user?.roles.join(', ')}</span>
                         </div>
+                        {user?.department && <div className="flex justify-between gap-3">
+                            <Label className='flex-[0.9]'>Department</Label>
+                            <span>{user.department}</span>
+                        </div>}
                         <Separator />
                         <div className="flex flex-col space-y-4">
                             <div className="flex justify-between items-center gap-3">

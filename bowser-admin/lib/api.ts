@@ -82,6 +82,18 @@ export const updateUserRoles = async (
   if (!response.ok) throw new Error('Failed to update user roles')
   return response.json()
 }
+export const updateUserDepartment = async (
+  phoneNumber: string,
+  department: string
+): Promise<MainUser> => {
+  const response = await fetch(`${BASE_URL}/users/update/department`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phoneNumber, department })
+  })
+  if (!response.ok) throw new Error('Failed to update user department')
+  return response.json()
+}
 
 export const deleteUnAuthorizedRequest = async (
   reqId: string

@@ -5,13 +5,13 @@ const { sendBulkNotifications } = require('../utils/pushNotifications');
 const { mongoose, ObjectId } = require('mongoose');
 
 router.post('/', async (req, res) => {
-    const { vehicleNumber, driverId, driverName, driverMobile, location } = req.body;
+    const { vehicleNumber, driverId, driverName, driverMobile, location, department } = req.body;
     try {
         const fuelRequest = new FuelRequest({ vehicleNumber, driverId, driverName, driverMobile, location });
         await fuelRequest.save();
         let requestId = fuelRequest._id;
         res.status(201).json({ message: 'Fuel request created successfully', requestId });
-        let notificationSent = await sendBulkNotifications({ platform: "web", groups: ['Diesel Control Center Staff'], options: { title: 'New Fuel Request', url: `/dashboard?vehicleNumber=${encodeURIComponent(vehicleNumber)}&driverId=${encodeURIComponent(driverId)}&driverName=${encodeURIComponent(driverName)}&driverMobile=${encodeURIComponent(driverMobile)}&id=${encodeURIComponent(String(requestId))}` }, message: `New fuel request for: ${vehicleNumber} from ${driverName} ${driverId}` });
+        let notificationSent = await sendBulkNotifications({ platform: "web", groups: [department], options: { title: 'New Fuel Request', url: `/dashboard?vehicleNumber=${encodeURIComponent(vehicleNumber)}&driverId=${encodeURIComponent(driverId)}&driverName=${encodeURIComponent(driverName)}&driverMobile=${encodeURIComponent(driverMobile)}&id=${encodeURIComponent(String(requestId))}` }, message: `New fuel request for: ${vehicleNumber} from ${driverName} ${driverId}` });
         console.log('notificationSent:', JSON.stringify(notificationSent));
     } catch (err) {
         console.error('Error creating fuel request:', err);

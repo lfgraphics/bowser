@@ -1,11 +1,11 @@
 "use client"
 import React, { useEffect, useState } from "react";
 import UsersCard from '@/components/UsersCard';
-import { getUsers, updateUserVerification, deleteUser, updateUserRoles, getRoles, getUnAuthorizedLogins, updateUserDevice, deleteUnAuthorizedRequest } from '../../lib/api';
+import { getUsers, updateUserVerification, deleteUser, updateUserRoles, getRoles, getUnAuthorizedLogins, updateUserDevice, deleteUnAuthorizedRequest, updateUserDepartment } from '../../lib/api';
 import { Button } from "@/components/ui/button";
 import { Check, CheckCircle, Search, X, XCircle } from "lucide-react";
 import RoleSelectionDialog from "@/components/RoleSelectionDialog";
-import { MainUser, Role, UnauthorizedLogin } from "@/types";
+import { Department, MainUser, Role, UnauthorizedLogin } from "@/types";
 import Loading from "../loading";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import DepartmentSelectionDialog from "@/components/DepartmentSelectionDialog";
 
 type Nav = 'Users' | 'Roles' | 'Un Authorized';
 
@@ -35,7 +36,9 @@ const UsersList = () => {
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [isVerified, setIsVerified] = useState<boolean | null>(null);
     const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+    const [selectedDepartment, setSelectedDepartment] = useState<string[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
     const [unAuthorizedLoginRequests, setUnAuthorizedLoginRequests] = useState<UnauthorizedLogin[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const { toast } = useToast();
@@ -51,7 +54,13 @@ const UsersList = () => {
                     toast({ title: 'Error fetching users', description: err.message, variant: "destructive" });
                 });
 
-                const roleDataPromise = getRoles().then(setRoles).catch(err => {
+                const roleDataPromise = getRoles().then((roles) => {
+                    const filteredDepartments = roles.filter(role => role.id === "department");
+                    setDepartments(filteredDepartments);
+                    console.log(filteredDepartments)
+                    const filteredRoles = roles.filter(role => role.id !== "department");
+                    setRoles(filteredRoles);
+                }).catch(err => {
                     toast({ title: 'Error fetching roles', description: err.message, variant: "destructive" });
                 });
 
@@ -78,7 +87,7 @@ const UsersList = () => {
     }, [users]);
     useEffect(() => {
         const applyFilters = () => {
-            if (!searchTerm && isVerified === null && selectedRoles.length === 0) {
+            if (!searchTerm && isVerified === null && selectedRoles.length === 0 && selectedDepartment.length === 0) {
                 setFilteredUsers(users);
                 return;
             }
@@ -98,14 +107,16 @@ const UsersList = () => {
                     selectedRoles.length === 0 ||
                     user.roles.some(role => selectedRoles.includes(role.name));
 
-                return matchesSearchTerm && matchesVerification && matchesRoles;
+                const matchesDepartment = selectedDepartment === null || selectedDepartment?.includes(user.department?.name);
+
+                return matchesSearchTerm && matchesVerification && matchesRoles && matchesDepartment;
             });
 
             setFilteredUsers(filtered);
         };
 
         applyFilters();
-    }, [searchTerm, isVerified, selectedRoles, users]);
+    }, [searchTerm, isVerified, selectedRoles, users, departments]);
 
     const handleUpdateVerification = async (phoneNumber: string, verified: boolean) => {
         try {
@@ -142,6 +153,20 @@ const UsersList = () => {
         try {
             setLoading(true);
             const updatedUser = await updateUserRoles(phoneNumber, newRoles);
+            setUsers((prev) =>
+                prev.map((user) => (user.phoneNumber === updatedUser.phoneNumber ? updatedUser : user))
+            );
+            toast({ title: "Success", description: "Roles updated successfully", variant: "success" });
+        } catch (err: any) {
+            toast({ title: "Error", description: err, variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
+    };
+    const handleUpdateDepartment = async (phoneNumber: string, department: string) => {
+        try {
+            setLoading(true);
+            const updatedUser = await updateUserDepartment(phoneNumber, department);
             setUsers((prev) =>
                 prev.map((user) => (user.phoneNumber === updatedUser.phoneNumber ? updatedUser : user))
             );
@@ -253,6 +278,35 @@ const UsersList = () => {
                         </DropdownMenuContent>
                     </DropdownMenu>
 
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="lg" className='p-4 h-10 text-center'>
+                                Departments Filter
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className='bg-card text-center'>
+                            {departments.map(department => (
+                                <>
+                                    <DropdownMenuItem className='p-4 w-full h-10 text-center'>
+                                        <Checkbox
+                                            id={department.name}
+                                            key={department._id.toString()}
+                                            checked={selectedRoles.includes(department.name)}
+                                            onCheckedChange={(checked) => {
+                                                const departmentName = department.name;
+                                                setSelectedDepartment(prev =>
+                                                    checked ? [...prev, departmentName] : prev.filter(r => r !== departmentName)
+                                                );
+                                            }}
+                                        >
+                                        </Checkbox>
+                                        <Label htmlFor={department.name}>{department.name}</Label>
+                                    </DropdownMenuItem>
+                                </>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
                     {/* Search Input */}
                     <div className="relative w-[300px]">
                         <Search size={20} className="top-1/2 left-3 absolute text-gray-400 -translate-y-1/2 transform" />
@@ -275,13 +329,14 @@ const UsersList = () => {
                                 <div>
                                     <p className="flex gap-4">Verified: {user.verified ? <Check color="green" /> : <X color="red" />}</p>
                                     <p>Roles: {user.roles?.map((role) => role.name).join(', ')}</p>
+                                    {user.department && <p>Departmen: {user.department.name}</p>}
                                     {user.generationTime && <p>Created on: {`${new Date(user.generationTime)?.toLocaleString('en-GB', {
                                         day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
                                     }).replace(/\//g, '-')}`}</p>}
                                 </div>
                             }
                             footer={
-                                <div className="flex justify-between gap-2">
+                                <div className="flex flex-wrap justify-between items-center gap-2">
                                     <Button variant='outline' onClick={() => handleUpdateVerification(user.phoneNumber, !user.verified)}>
                                         {user.verified ? 'Unverify' : 'Verify'}
                                     </Button>
@@ -304,6 +359,11 @@ const UsersList = () => {
                                         user={user}
                                         roles={roles}
                                         onUpdateRoles={handleUpdateRoles}
+                                    />
+                                    <DepartmentSelectionDialog
+                                        user={user}
+                                        departments={departments}
+                                        onUpdateRoles={handleUpdateDepartment}
                                     />
                                 </div>
                             }
