@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, ScrollView, View, ActivityIndicator, Alert, Modal, FlatList } from 'react-native';
 import { useState, useRef, useEffect } from 'react';
-import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { ThemedText } from '@/components/ThemedText';
 import { useTheme } from '@react-navigation/native';
@@ -199,7 +198,7 @@ export default function FuelingScreen() {
       quantityType,
       fuelQuantity,
       gpsLocation: currentGpsLocation,
-      location:mLocation,
+      location: mLocation,
       fuelingDateTime: new Date(),
       bowser: {
         regNo: userData.Bowser ? userData.Bowser : "",
@@ -237,7 +236,7 @@ export default function FuelingScreen() {
           [
             {
               text: "OK",
-              onPress: () => {},
+              onPress: () => { },
             },
           ],
           { cancelable: false }
@@ -265,7 +264,7 @@ export default function FuelingScreen() {
           [
             {
               text: "OK",
-              onPress: () => {},
+              onPress: () => { },
             },
           ],
           { cancelable: false }
@@ -293,7 +292,7 @@ export default function FuelingScreen() {
         Alert.alert(
           "Success",
           "Data saved offline. It will be submitted when you're back online.",
-          [{ text: "OK", onPress: () => {} }],
+          [{ text: "OK", onPress: () => { } }],
           { cancelable: false }
         );
         resetForm();
@@ -303,7 +302,7 @@ export default function FuelingScreen() {
         Alert.alert(
           "Error",
           "Failed to handle offline data. Please try again.",
-          [{ text: "OK", onPress: () => {} }],
+          [{ text: "OK", onPress: () => { } }],
           { cancelable: false }
         );
       } finally {
@@ -448,7 +447,7 @@ export default function FuelingScreen() {
           [
             {
               text: "OK",
-              onPress: () => {},
+              onPress: () => { },
             },
           ],
           { cancelable: false }
@@ -541,22 +540,20 @@ export default function FuelingScreen() {
   const validateTrip = async (): Promise<boolean> => {
     if (isOnline && tripSheetId) {
       try {
-        const baseUrl = "https://bowser-backend-2cdr.onrender.com"; //'http://192.168.137.1:5000'; //https://bowser-backend-2cdr.onrender.com
         const endpoint = `/tripSheet/all?tripSheetId=${tripSheetId}&unsettled=true`;
 
         // Fetch data
         const response = await fetch(`${baseUrl}${endpoint}`);
         if (!response.ok) {
-          throw new Error("ट्रिप शीत नहीं मिली कृपया दोबारा लॉग इनकरें");
+          throw new Error("ट्रिप शीट नहीं मिली कृपया दोबारा लॉगइन करें");
         }
 
         const sheets = await response.json();
 
         return sheets.length > 0;
       } catch (error) {
-        console.error(
+        Alert.alert(
           "आप की आई-डी पर कोई भी खुली हुई ट्रिप नहीं मिली:",
-          (error as Error).message
         );
         return false;
       }
@@ -661,17 +658,16 @@ export default function FuelingScreen() {
                     style={[
                       styles.submitButtonText,
                       {
-                        color: `${
-                          fueling == option ? colors.card : colors.text
-                        }`,
+                        color: `${fueling == option ? colors.card : colors.text
+                          }`,
                       },
                     ]}
                   >
                     {option == "Own"
                       ? "अपना"
                       : option == "Attatch"
-                      ? "अटैच"
-                      : "सेल"}
+                        ? "अटैच"
+                        : "सेल"}
                   </Text>
                 </TouchableOpacity>
               )

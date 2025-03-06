@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, ScrollView, ActivityIndicator, RefreshControl, View } from 'react-native';
+import { StyleSheet, ScrollView, ActivityIndicator, RefreshControl, View, Alert } from 'react-native';
 import FuelNotification from '@/components/FuelNotification';
 import { FuelingOrderData } from '@/src/types/models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,17 +8,53 @@ import { useFocusEffect, useTheme } from '@react-navigation/native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { baseUrl } from '@/src/utils/helpers';
+import NetInfo from "@react-native-community/netinfo";
+import { router } from 'expo-router';
 
 export default function NotificationsScreen() {
     const [notificationsData, setNotificationsData] = useState<FuelingOrderData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
+    const [isOnline, setIsOnline] = useState(true);
+    const [tripSheetId, setTripSheetId] = useState<number>(0);
     const { colors } = useTheme();
 
     useEffect(() => {
         fetchNotifications();
     }, []);
+    useEffect(() => {
+        const unsubscribe = NetInfo.addEventListener((state) => {
+            setIsOnline(state.isConnected ?? false);
+        });
+
+        return () => unsubscribe();
+    }, []);
+    const getUserTripSheetId = async () => {
+        try {
+            const userDataString = await AsyncStorage.getItem("userData");
+            const userData = userDataString ? JSON.parse(userDataString) : null;
+            const tripSheetId = userData ? userData["Trip Sheet Id"] : null;
+            setTripSheetId(Number(tripSheetId));
+        } catch (error) {
+            console.error("आप का डाटा नहीं मिल रहा कृपया दोबारा लॉग इन करें:", error);
+        }
+    };
+    useEffect(() => {
+        const checkTripValidity = async () => {
+            await getUserTripSheetId();
+
+            if (tripSheetId) {
+                const isValidTrip = await validateTrip();
+                if (!isValidTrip) {
+                    Alert.alert("एरर", "आप की ट्रिप बंद कर दी गई है");
+                    router.replace("/");
+                }
+            }
+        };
+
+        checkTripValidity();
+    }, [tripSheetId]);
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
@@ -47,6 +83,31 @@ export default function NotificationsScreen() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const validateTrip = async (): Promise<boolean> => {
+        if (isOnline && tripSheetId) {
+            try {
+                const endpoint = `/tripSheet/all?tripSheetId=${tripSheetId}&unsettled=true`;
+
+                // Fetch data
+                const response = await fetch(`${baseUrl}${endpoint}`);
+                if (!response.ok) {
+                    throw new Error("ट्रिप शीट नहीं मिली कृपया दोबारा लॉगइन करें");
+                }
+
+                const sheets = await response.json();
+
+                return sheets.length > 0;
+            } catch (error) {
+                Alert.alert(
+                    "आप की आई-डी पर कोई भी खुली हुई ट्रिप नहीं मिली:",
+                );
+                return false;
+            }
+        }
+        if (!isOnline) return true;
+        return false;
     };
 
     useFocusEffect(
