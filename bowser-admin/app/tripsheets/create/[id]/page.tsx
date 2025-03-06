@@ -41,7 +41,7 @@ export default function TripSheetCreatePage() {
     // Form fields for the new TripSheet
     // Pre-fill from the loadingSheet once fetched
     const [regNo, setRegNo] = useState("");
-    const [hsdRate, setHsdRate] = useState<number>();
+    const [hsdRate, setHsdRate] = useState<string>('');
     const [bowserDriver, setBowserDriver] = useState<{ handOverDate: Date; name: string; phoneNo: string }[]>([
         { handOverDate: new Date(), name: '', phoneNo: '' },
     ]);
@@ -138,21 +138,21 @@ export default function TripSheetCreatePage() {
             setError(null);
 
             const body: TripSheetPayload = {
-              bowser: {
-                regNo,
-                driver: bowserDriver,
-                odometerStartReading,
-                pumpEndReading,
-              },
-              hsdRate,
-              fuelingAreaDestination,
-              proposedDepartureTime,
-              loading: {
-                sheetId: loadingSheet._id,
-                quantityByDip,
-                quantityBySlip,
-                tempLoadByDip,
-              },
+                bowser: {
+                    regNo,
+                    driver: bowserDriver,
+                    odometerStartReading,
+                    pumpEndReading,
+                },
+                hsdRate: Number(hsdRate),
+                fuelingAreaDestination,
+                proposedDepartureTime,
+                loading: {
+                    sheetId: loadingSheet._id,
+                    quantityByDip,
+                    quantityBySlip,
+                    tempLoadByDip,
+                },
             };
 
             const res = await fetch(`${BASE_URL}/tripSheet/create`, {
@@ -162,8 +162,9 @@ export default function TripSheetCreatePage() {
             });
 
             if (!res.ok) {
-                const errData = await res.json().catch(() => ({}));
-                throw new Error(errData?.error || "Failed to create TripSheet.");
+                const errData = await res.json();
+                setError(errData?.message || "Failed to create TripSheet.");
+                throw new Error(errData?.message || "Failed to create TripSheet.");
             }
 
             const created = await res.json();
@@ -171,7 +172,8 @@ export default function TripSheetCreatePage() {
 
             router.replace(`/tripsheets/`);
         } catch (err: any) {
-            setError(err.message || "Error creating TripSheet.");
+            console.error(err);
+            // setError(err.message || "Error creating TripSheet.");
         } finally {
             setIsLoading(false);
         }
@@ -254,11 +256,17 @@ export default function TripSheetCreatePage() {
                                 <Label>{`Driver Name`}</Label>
                                 <Input
                                     value={driver.name}
-                                    onChange={(e) =>
+                                    onChange={(e:any) => {
                                         setBowserDriver(
                                             bowserDriver.map((d, i) => (i === index ? { ...d, name: e.target.value } : d))
                                         )
-                                    }
+                                        const nativeEvent = e.nativeEvent as InputEvent;
+                                        if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
+                                            if (e.nativeEvent.data) {
+                                                searchDriver(e.currentTarget.value);
+                                            }
+                                        }
+                                    }}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' && driver.name.length > 3) {
                                             e.preventDefault();
@@ -301,7 +309,7 @@ export default function TripSheetCreatePage() {
                                 <Input
                                     type="text"
                                     value={hsdRate}
-                                    onChange={(e) => setHsdRate(Number(e.target.value))}
+                                    onChange={(e) => setHsdRate(e.target.value)}
                                 />
                             </div>
                         </div>

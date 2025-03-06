@@ -199,7 +199,15 @@ export default function CreateLoadingOrderPage() {
                                 id="regNo"
                                 placeholder="Bowser registration number"
                                 value={regNo}
-                                onChange={(e) => setRegNo(e.target.value)}
+                                onChange={(e: any) => {
+                                    setRegNo(e.target.value)
+                                    const nativeEvent = e.nativeEvent as InputEvent;
+                                    if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
+                                        if (e.nativeEvent.data) {
+                                            searchBowser(e.currentTarget.value);
+                                        }
+                                    }
+                                }}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         e.preventDefault();

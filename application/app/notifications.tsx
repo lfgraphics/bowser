@@ -38,6 +38,9 @@ export default function NotificationsScreen() {
             console.log(url);
             const response = await fetch(url);
             const jsonResponse = await response.json();
+            if (!response.ok) {
+                throw new Error(jsonResponse.message || 'Failed to fetch data');
+            }
             setNotificationsData(jsonResponse.orders);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');

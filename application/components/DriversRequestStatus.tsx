@@ -20,8 +20,10 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
             setLoading(true);
             const response = await fetch(`${baseUrl}/fuel-request/vehicle-driver/${requestId}`);
             const json = await response.json();
+            if (!response.ok) {
+                throw new Error(json.message || "Failed to fetch data");
+            }
             setOrderData(json);
-            console.log(orderData);
         } catch (error) {
             alert(error);
         } finally {
@@ -52,10 +54,10 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
                         {orderData.allocation &&
                             <>
                                 <ThemedText>
-                                बाउज़र: गाड़ी नं0 {orderData.allocation?.bowser.regNo}, ड्राईवर {orderData.allocation?.bowser.driver.name}
-                            </ThemedText>
+                                    बाउज़र: गाड़ी नं0 {orderData.allocation?.bowser.regNo}, ड्राईवर {orderData.allocation?.bowser.driver.name}
+                                </ThemedText>
                                 <ThemedText>
-                                तेल मिलेगा: {orderData.allocation?.quantityType === "Full" ? "फुल" : "पार्ट"}, {orderData.allocation?.fuelQuantity > 0 ? orderData.allocation?.fuelQuantity + "लीटर" : ""}
+                                    तेल मिलेगा: {orderData.allocation?.quantityType === "Full" ? "फुल" : "पार्ट"}, {orderData.allocation?.fuelQuantity > 0 ? orderData.allocation?.fuelQuantity + "लीटर" : ""}
                                 </ThemedText>
                                 <TouchableOpacity style={styles.button} onPress={() => Linking.openURL(`tel:${orderData.allocation?.bowser.driver.phoneNo}`)}>
                                     <ThemedText>बाउज़र ड्राईवर को काल करें</ThemedText><Ionicons name="call" size={18} color="white" />
@@ -69,11 +71,11 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
                         {orderData.allocation &&
                             <>
                                 <ThemedText>
-                                तेल मिलेगा: {orderData.allocation?.quantityType === "Full" ? "फुल" : "पार्ट"}, {orderData.allocation?.fuelQuantity > 0 ? orderData.allocation?.fuelQuantity + "लीटर" : ""}
+                                    डीज़ल ले लीजिये: {orderData.allocation?.quantityType === "Full" ? "फुल" : "पार्ट"}, {orderData.allocation?.fuelQuantity > 0 ? orderData.allocation?.fuelQuantity + "लीटर" : ""}
                                 </ThemedText>
                                 <ThemedText>
-                                {orderData.allocation?.fuelProvider} के {orderData.allocation?.pumpAllocationType === "Any" ? "किसी भी पेट्रोल पंप से" : orderData.allocation?.pumpLocation + "पेट्रोल पंप से"}
-                            </ThemedText>
+                                    {orderData.allocation?.fuelProvider} के {orderData.allocation?.pumpAllocationType === "Any" ? "किसी भी पेट्रोल पंप से" : orderData.allocation?.pumpLocation + "पेट्रोल पंप से"}
+                                </ThemedText>
                             </>
                         }
                     </ThemedView>
