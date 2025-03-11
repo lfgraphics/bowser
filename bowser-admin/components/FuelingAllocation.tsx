@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { isAuthenticated, getCurrentUser } from "@/lib/auth"
-import { AttachedVehicle, Driver, FuelingTypes, User } from "@/types"
+import { AttachedVehicle, Driver, FuelingTypes, User, VehicleWithTrip } from "@/types"
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { SearchModal } from "@/components/SearchModal"
@@ -268,7 +268,7 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
         }
     }
 
-    const handleVehicleSelection = (vehicle: Vehicle) => {
+    const handleVehicleSelection = (vehicle: VehicleWithTrip) => {
         setVehicleNumber(vehicle.VehicleNo);
         if (vehicle.tripDetails) {
             const idMatch = vehicle.tripDetails.driver.name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
@@ -582,10 +582,10 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
                                         id="bowserRegNo"
                                         placeholder="Bowser number/driver name/mobile"
                                         value={bowserRegNo}
-                                        onChange={(e) => {
+                                        onChange={(e: any) => {
                                             setBowserRegNo(e.target.value);
                                             const nativeEvent = e.nativeEvent as InputEvent;
-                                            if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
+                                            if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3 && e.nativeEvent.data && e.target.value.length > 3) {
                                                 searchBowser(bowserRegNo);
                                             }
                                         }}
@@ -639,13 +639,13 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
                         </Select>}
                         {allocationType === "external" &&
                             <>
-                            <RadioGroup name="pumpAllocationType" className="flex gap-4 mt-4" defaultValue={pumpAllocationType} onValueChange={(e) => handlePumpAllocationTypeChange(e as "any" | "specific")}>
+                                <RadioGroup name="pumpAllocationType" className="flex gap-4 mt-4" defaultValue={pumpAllocationType} onValueChange={(e) => handlePumpAllocationTypeChange(e as "any" | "specific")}>
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="Any" id="any" />
                                         <Label htmlFor="any">Any Petrol Pump</Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="Specific" id="specific" disabled />
+                                        <RadioGroupItem value="Specific" id="specific" disabled />
                                         <Label htmlFor="specific">Specific Petrol Pump</Label>
                                     </div>
                                 </RadioGroup>

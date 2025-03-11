@@ -10,6 +10,7 @@ import Link from "next/link"
 import Loading from "@/app/loading"
 import { User } from "@/types"
 import { useRouter } from 'next/navigation';
+import { PasswordInput } from "@/components/PasswordInput"
 
 export const allowedRoutes: { [key: string]: [string] } = {
   Admin: ["/dashboard"],
@@ -75,7 +76,7 @@ export default function Login() {
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <PasswordInput id="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required />
               </div>
             </div>
           </CardContent>

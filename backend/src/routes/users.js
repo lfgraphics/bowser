@@ -1,4 +1,5 @@
 const express = require('express');
+require('../models/Department')
 const router = express.Router();
 const User = require('../models/user');
 const UnAuthorizedLogin = require('../models/unauthorizedLogin');

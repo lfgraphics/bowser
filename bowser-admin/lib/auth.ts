@@ -49,7 +49,7 @@ export async function login (
 
       if (response.data.user.phoneNumber) {
 
-        let groups = [`${response.data.user.roles}`]
+        let groups = response.data.user.roles
         groups.push(response.data.user.department)
         await registerPushSubscription(
           response.data.user.phoneNumber,

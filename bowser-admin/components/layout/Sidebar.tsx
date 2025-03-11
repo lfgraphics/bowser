@@ -102,6 +102,18 @@ export function Sidebar() {
                   </li>
                 </OnlyAllowed>
                 <OnlyAllowed
+                  allowedRoles={["Diesel Control Center Staff", "Admin"]}
+                >
+                  <li onClick={toggleSidebar}>
+                    <Link href="/manage-vehicles">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <CaravanIcon className="mr-2 w-4 h-4" />
+                        Manage Vehicles
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed
                   allowedRoles={["Admin", "Diesel Control Center Staff"]}
                 >
                   <li onClick={toggleSidebar}>

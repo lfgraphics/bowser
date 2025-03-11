@@ -356,11 +356,30 @@ export interface UnauthorizedLogin {
 }
 
 export interface Vehicle {
+  _id: string
   VehicleNo: string
   tripDetails: {
-    driver: TripDriver
+    driver: {
+      id: string
+      Name: string
+    } | string
     open: boolean
   }
+  GoodsCategory: string
+  manager: string
+}
+
+export interface VehicleWithTrip {
+  VehicleNo: string
+  tripDetails: {
+    driver: {
+      id: string
+      name: string
+      mobile: string
+    }
+    open: boolean
+  }
+  GoodsCategory: string
 }
 export interface AttachedVehicle {
   VehicleNo: string
