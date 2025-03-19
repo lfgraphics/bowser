@@ -93,7 +93,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
 
             let hoursDifference = (currentTime - lastRequestTimeInMs) / (1000 * 60 * 60); // Convert ms to hours
 
-            if (hoursDifference < 6) {
+            if (hoursDifference < 3) {
                 return true;
             }
         }
@@ -106,7 +106,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
             if (await requestedYesterday()) {
                 Alert.alert(
                     'तेल नहीं ले सकते',
-                    'आप की रिक्वेस्ट पहले ही भेजी जा चुकी है।'
+                    'आप का अनुरोध पहले ही भेजा जा चुका है। कृपया इंतज़ार करें।'
                 );
                 return;
             }

@@ -6,7 +6,7 @@ const fuelingOrderSchema = new mongoose.Schema({
     vehicleNumber: { type: String, required: false },
     tripStatus: String,
     trip: String,
-    startDate: String,
+    startDate: Date,
     manager: String,
     driverId: { type: String, required: false },
     driverName: { type: String, required: true },

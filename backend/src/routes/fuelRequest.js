@@ -14,6 +14,8 @@ router.post('/', async (req, res) => {
             vehicleNumber: requestVehicle.VehicleNo, driverId, driverName, driverMobile, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, fulfilled: false
         })
 
+        console.log(fuelRequest)
+
         if (!existingRequest || !existingRequest.length || existingRequest.length == 0) {
             await fuelRequest.save();
             let requestId = fuelRequest._id;
