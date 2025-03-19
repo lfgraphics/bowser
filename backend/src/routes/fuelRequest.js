@@ -7,10 +7,10 @@ const Vehicle = require('../models/vehicle')
 router.post('/', async (req, res) => {
     const { driverId, driverName, driverMobile, location } = req.body;
     try {
-        let requestVehicle = Vehicle.findOne({ 'tripDetails.driver': { $regex: driverId, $options: 'i' } })
+        let requestVehicle = await Vehicle.findOne({ 'tripDetails.driver': { $regex: driverId, $options: 'i' } })
         console.log(requestVehicle)
         const fuelRequest = new FuelRequest({ vehicleNumber: requestVehicle.VehicleNo, driverId, driverName, driverMobile, location, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, manager: requestVehicle.manager, tripStatus: `${requestVehicle.tripDetails.open ? 'Open' : 'Closed'}` });
-        const existingRequest = FuelRequest.find({
+        const existingRequest = await FuelRequest.find({
             vehicleNumber: requestVehicle.VehicleNo, driverId, driverName, driverMobile, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, fulfilled: false
         })
 
