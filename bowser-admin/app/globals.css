@@ -9,32 +9,44 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    /* Name: custom color palette
+         Author: Ilias Ism
+         URL: https://gradient.page */
+
+    /* CSS: .bg-gradient { background: var(--gradient) } */
+    --gradient: linear-gradient(to top left, #360033, #0b8793);
+    --background: -60 100% 98.22%;
+    --foreground: -60 10% 0.44%;
+
+    --muted: -60 10% 91.1%;
+    --muted-foreground: -60 5% 41.1%;
+
+    --popover: -60 10% 91.1%;
+    --popover-foreground: -60 10% 0.55%;
+
+    --card: -60 10% 91.1%;
+    --card-foreground: -60 10% 0.55%;
+
+    --border: -60 15% 89.44%;
+    --input: -60 15% 89.44%;
+
+    --primary: -60 100% 11%;
+    --primary-foreground: -60 2% 91.1%;
+
+    --secondary: -60 5% 95.55%;
+    --secondary-foreground: -60 7% 11.1%;
+
+    --accent: -60 5% 95.55%;
+    --accent-foreground: -60 7% 11.1%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+
+    --ring: -60 100% 11%;
+
     --radius: 0.5rem;
   }
+
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
@@ -67,6 +79,7 @@ body {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }

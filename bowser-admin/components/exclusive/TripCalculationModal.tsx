@@ -226,9 +226,9 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
   const [totalLoadQty, setTotalLoadQty] = useState<number>(totalOpeningQty + loadQty + addition);
   const [saleAsPerLoad, setSaleAsPerLoad] = useState<number>(totalLoadQty - totalClosingQty);
   const [shortExcess, setShortExcess] = useState<number>(
-    Number((saleAsPerDriver - saleAsPerLoad).toFixed(2))
+    Number((saleAsPerDriver - saleAsPerLoad + unload).toFixed(2))
   );
-  const [shortOrExcessAsPerRecord, setShortOrExcessAsPerRecord] = useState<number>(saleAsPerDriver - saleAsPerLoad);
+  const [shortOrExcessAsPerRecord, setShortOrExcessAsPerRecord] = useState<number>(saleAsPerDriver - saleAsPerLoad + unload);
   // =IF(K14<-5,-K14,0)*K16
   const [deductableShortSale, setDeductableShortSale] = useState<number>(
     Number(((shortOrExcessAsPerRecord < -5 ? -shortOrExcessAsPerRecord : 0) * hsdRateForDeduction).toFixed(2))
