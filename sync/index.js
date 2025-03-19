@@ -16,7 +16,7 @@ past30Days.setDate(now.getDate() - 65);
 const localTripFilter = {
   $and: [
     { $or: [{ "TallyLoadDetail.UnloadingDate": { $exists: false } }, { "TallyLoadDetail.UnloadingDate": { $ne: null } }] },
-    { $or: [{ "EndDate": { $exists: false } }] },
+    { "EndDate": { $exists: false } },
     { "TallyLoadDetail.LoadingDate": { $gte: past30Days, $lte: now } },
     { "TallyLoadDetail.Goods": { $ne: "HSD" } }
   ]
@@ -228,7 +228,7 @@ async function syncTripData() {
   const [atlasVehicles, localTrips] = await Promise.all([
     atlasCollection.find().toArray(),
     localCollection.find(localTripFilter, {
-      projection: { _id: 1, VehicleNo: 1, StartDriver: 1, StartDate: 1 },
+      projection: { _id: 1, VehicleNo: 1, StartDriver: 1, StartDate: 1, StartFrom: 1, EndTo: 1 },
     }).toArray(),
   ]);
 
@@ -248,9 +248,12 @@ async function syncTripData() {
       );
 
       const tripDetails = {
-        id: latestTrip._id,               // Set trip ID
-        driver: latestTrip.StartDriver,   // Set StartDriver directly as a string
-        open: true                        // Trip is open
+        id: latestTrip._id,
+        driver: latestTrip.StartDriver,
+        open: true,
+        from: latestTrip.StartFrom,
+        to: latestTrip.EndTo,
+        startedOn: latestTrip.StartDate
       };
 
       // Skip update if tripDetails.id matches current tripDetails.id
@@ -267,7 +270,7 @@ async function syncTripData() {
             $set: {
               tripDetails: {
                 ...tripDetails,
-                driver: latestTrip.StartDriver, // Simplified driver field
+                driver: latestTrip.StartDriver,
               }
             }
           }
@@ -415,7 +418,7 @@ async function main() {
           await syncDriversData();
           console.log("------------Driver data sync completed successfully.------------");
         } catch (error) {
-          console.error("~~~~~~~~~~~~~~~Error syncing driver data:", error);
+          console.error("****************Error syncing driver data:", error);
         }
 
         try {
@@ -423,14 +426,14 @@ async function main() {
           await syncVechiclesData();
           console.log("------------Vehicle data sync completed successfully.------------");
         } catch (error) {
-          console.error("~~~~~~~~~~~~~~~Error syncing vehicle data:", error);
+          console.error("****************Error syncing vehicle data:", error);
         }
         try {
           console.log("------------Syncing Attached vehicle data...------------");
           await syncAttachedVechicles();
           console.log("------------Attached Vehicle data sync completed successfully.------------");
         } catch (error) {
-          console.error("~~~~~~~~~~~~~~~Error syncing Attached vehicle data:", error);
+          console.error("****************Error syncing Attached vehicle data:", error);
         }
 
         try {
@@ -438,7 +441,7 @@ async function main() {
           await syncTripData();
           console.log("------------Trip data sync completed successfully.------------");
         } catch (error) {
-          console.error("~~~~~~~~~~~~~~~Error syncing trip data:", error);
+          console.error("****************Error syncing trip data:", error);
         }
 
         console.log(`..................Sync operations completed at ${new Date().toLocaleTimeString()}..................`);

@@ -6,7 +6,10 @@ const vehicleSchema = new mongoose.Schema({
     tripDetails: {
         id: mongoose.Schema.Types.ObjectId,
         driver: String,
-        open: Boolean
+        open: Boolean,
+        from: String,
+        to: String,
+        startedOn: String
     },
     GoodsCategory: String,
     manager: String

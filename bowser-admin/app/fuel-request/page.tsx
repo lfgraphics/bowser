@@ -10,8 +10,13 @@ import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogContent, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { formatDate } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { User } from '@/types/auth';
+import { isAuthenticated } from '@/lib/auth';
+import { MapPin } from 'lucide-react';
 
-const page = () => {
+const page = ({ params }: { params: { manager: string } }) => {
+    const paramsManager = params.manager
+    const [manager, setManager] = useState<string>(paramsManager)
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<FuelRequest[] | []>([]);
     const [error, setError] = useState<string | null>(null);
@@ -19,14 +24,34 @@ const page = () => {
     const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
     const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false);
     const [showErrorAlert, setShowErrorAlert] = useState<boolean>(false);
+    const [user, setUser] = useState<User>()
 
     const [deletingRequestId, setDeletingRequestId] = useState<string>('');
 
+    const checkAuth = () => {
+        const authenticated = isAuthenticated();
+        if (!authenticated) {
+            window.location.href = '/login';
+        }
+    };
+    useEffect(() => {
+        const storedUser = localStorage.getItem('adminUser');
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!user?.userId) return;
+        fetchFuelRequests();
+    }, [user]);
 
     const fetchFuelRequests = async () => {
+        console.log('user manager: ', user?.userId)
+        console.log('manager: ', manager)
         try {
             setLoading(true);
-            const response = await fetch(`${BASE_URL}/fuel-request`);
+            const response = await fetch(`${BASE_URL}/fuel-request?manager=${user?.userId}`);
             const data = await response.json();
             console.log(data);
             setData(data);
@@ -38,9 +63,7 @@ const page = () => {
             setLoading(false);
         }
     };
-    useEffect(() => {
-        fetchFuelRequests();
-    }, []);
+
     const openDeleteDialogue = (sheetId: string) => {
         setDeletingRequestId(sheetId)
         setShowDeleteDialog(true)
@@ -78,17 +101,25 @@ const page = () => {
                             <CardTitle>{request.vehicleNumber}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            Name: {request.driverName}
+                            Trip: {request.trip}
                             <br />
-                            Id: {request.driverId}
+                            Strart Date: {request.startDate}
                             <br />
-                            Mobile No.: <Link className='text-blue-500 visited:text-purple-500' href={`tel:${request.driverMobile}`}>{request.driverMobile}</Link>
+                            Trip Status: {request.tripStatus}
+                            <br />
+                            Driver Name: {request.driverName}
+                            <br />
+                            Driver Id: {request.driverId}
+                            <br />
+                            Driver Mobile No.: <Link className='text-blue-500 visited:text-purple-500' href={`tel:${request.driverMobile}`}>{request.driverMobile}</Link>
                             <br />
                             Request Time: {formatDate(request.createdAt)}
+                            <br />
+                            Location:  <span className='inline-flex gap-1 justify-end'><MapPin size={20} /> <Link className='text-blue-500' href={`https://www.google.com/maps?q=${request.location}`}>{request.location}</Link></span>
                         </CardContent>
                         <CardFooter>
                             <div className='flex flex-row justify-between items-center w-full'>
-                                <Button variant="destructive" size="lg" onClick={() => openDeleteDialogue(request._id!)}>Delete</Button>
+                                <Button variant="destructive" size="lg" onClick={() => openDeleteDialogue(request._id!)}>Reject</Button>
                                 <DropdownMenu >
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="default" size="lg" className='p-4 h-10 text-center'>
@@ -134,13 +165,13 @@ const page = () => {
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogTitle>Confirm Rejection</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete fuel request? This action cannot be undone.
-                            <Input value={deleteMessage} type="text" onChange={(e) => setDeleteMessage(e.target.value)} placeholder='Enter reason for deletion.' className='mt-3 text-white placeholder:text-gray-300' />
+                            Are you sure you want to Reject this fuel request? This action cannot be undone.
+                            <Input value={deleteMessage} type="text" onChange={(e) => setDeleteMessage(e.target.value)} placeholder='Enter reason for Rejection.' className='mt-3 text-white placeholder:text-gray-300' />
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogAction onClick={() => handleDelete(deleteMessage)} disabled={deleteMessage?.length < 5}>Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={() => handleDelete(deleteMessage)} disabled={deleteMessage?.length < 5}>Reject</AlertDialogAction>
                     <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>Cancel</AlertDialogCancel>
                 </AlertDialogContent>
             </AlertDialog>

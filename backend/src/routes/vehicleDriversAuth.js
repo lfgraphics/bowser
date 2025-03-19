@@ -84,35 +84,6 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'ग़लत पासवर्ड डाला गया|' });
         }
         let roleNames = ['Wehicle Driver'];
-        // let roles = [];
-        // if (user.roles && user.roles.length > 0) {
-        //     roles = await Role.find({ _id: { $in: user.roles } });
-        //     roleNames = roles.map(role => role.name);
-        // }
-
-        // const hasAccess = roles.some(role =>
-        //     role.permissions.apps.some(app =>
-        //         app.name === appName && app.access !== null
-        //     )
-        // );
-
-        // if (!hasAccess) {
-        //     return res.status(403).json({ message: 'User does not have access to this application' });
-        // }
-
-        // if (deviceUUID && (user.deviceUUID !== deviceUUID)) {
-        //     const unauthorizedLogin = new UnAuthorizedLogin({
-        //         userId: user.ITPLId,
-        //         name: user.Name,
-        //         phoneNumber: user.MobileNo[0].MobileNo,
-        //         registeredDeviceUUID: user.deviceUUID,
-        //         attemptedDeviceUUID: deviceUUID,
-        //         timestamp: new Date()
-        //     });
-
-        //     await unauthorizedLogin.save();
-        //     return res.status(403).json({ message: 'You are loggin in from a diffrent device\nContact admin to approve this device' });
-        // }
 
         const token = jwt.sign({ phoneNumber: user.phoneNumber, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
         const loginTime = new Date().toISOString();

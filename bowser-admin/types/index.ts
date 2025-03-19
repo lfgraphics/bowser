@@ -63,6 +63,10 @@ export interface FuelRequest {
   driverName: string
   driverMobile: string
   location: string
+  trip: string
+  startDate: string
+  manager: string
+  tripStatus: string
   fulfilled: boolean
 }
 
@@ -378,6 +382,9 @@ export interface VehicleWithTrip {
       mobile: string
     }
     open: boolean
+    from: string
+    to: string
+    startedOn: string
   }
   GoodsCategory: string
 }

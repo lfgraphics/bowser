@@ -1,17 +1,27 @@
 const express = require('express');
 const router = express.Router();
 const FuelRequest = require('../models/FuelRequest');
-const { sendBulkNotifications } = require('../utils/pushNotifications');
-const { mongoose } = require('mongoose');
+const { sendWebPushNotification } = require('../utils/pushNotifications');
+const Vehicle = require('../models/vehicle')
 
 router.post('/', async (req, res) => {
-    const { vehicleNumber, driverId, driverName, driverMobile, location, department } = req.body;
+    const { driverId, driverName, driverMobile, location } = req.body;
     try {
-        const fuelRequest = new FuelRequest({ vehicleNumber, driverId, driverName, driverMobile, location });
-        await fuelRequest.save();
-        let requestId = fuelRequest._id;
-        res.status(201).json({ message: 'Fuel request created successfully', requestId });
-        let notificationSent = await sendBulkNotifications({ platform: "web", groups: [department], options: { title: 'New Fuel Request', url: `/dashboard?vehicleNumber=${encodeURIComponent(vehicleNumber)}&driverId=${encodeURIComponent(driverId)}&driverName=${encodeURIComponent(driverName)}&driverMobile=${encodeURIComponent(driverMobile)}&id=${encodeURIComponent(String(requestId))}` }, message: `New fuel request for: ${vehicleNumber} from ${driverName} ${driverId}` });
+        let requestVehicle = Vehicle.findOne({ 'tripDetails.driver': { $regex: driverId, $options: 'i' } })
+        const fuelRequest = new FuelRequest({ vehicleNumber: requestVehicle.VehicleNo, driverId, driverName, driverMobile, location, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, manager: requestVehicle.manager, tripStatus: `${requestVehicle.tripDetails.open ? 'Open' : 'Closed'}` });
+        const existingRequest = FuelRequest.find({
+            vehicleNumber: requestVehicle.VehicleNo, driverId, driverName, driverMobile, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, fulfilled: false
+        })
+
+        if (!existingRequest || !existingRequest.length || existingRequest.length == 0) {
+            await fuelRequest.save();
+            let requestId = fuelRequest._id;
+            res.status(201).json({ message: 'Fuel request created successfully', requestId });
+        } else {
+            res.status(400).json({ error: 'आप का अनुरोध पहले ही दर्ज किया जा चुका है' });
+        }
+
+        let notificationSent = await sendWebPushNotification({ userId: requestVehicle.manager, options: { title: 'New Fuel Request', url: `/fuel-request` }, message: `New fuel request for: ${requestVehicle.VehicleNo} from ${driverName} - ${driverId}` });
         console.log('notificationSent:', JSON.stringify(notificationSent));
     } catch (err) {
         console.error('Error creating fuel request:', err);
@@ -20,7 +30,7 @@ router.post('/', async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
-    const { fulfilled = false, dateRange, param } = req.query;
+    const { fulfilled = false, dateRange, param, manager } = req.query;
     let query = {};
     query.fulfilled = fulfilled;
     if (dateRange) query.createdAt = { $gte: dateRange[0], $lte: dateRange[1] };
@@ -32,6 +42,9 @@ router.get('/', async (req, res) => {
             { driverMobile: { $regex: param, $options: 'i' } }
         ];
     }
+    if (manager && manager !== 'undefined') {
+        query.manager = `${manager}`
+    }
 
     try {
         const fuelRequests = await FuelRequest.find(query).sort({ createdAt: -1 }).limit(20);
@@ -39,6 +52,7 @@ router.get('/', async (req, res) => {
             return res.status(404).json({ message: 'No fuel requests found' });
         }
         res.status(200).json(fuelRequests);
+        console.log(fuelRequests.length)
     } catch (err) {
         console.error('Error fetching fuel requests:', err);
         res.status(500).json({ message: 'Server error', error: err.message });
