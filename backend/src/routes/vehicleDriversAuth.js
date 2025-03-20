@@ -15,20 +15,17 @@ router.post('/signup', async (req, res) => {
 
         const driver = await Driver.find({ Name: { $regex: name, $options: 'i' } });
 
+        if (!driver.length == 0) res.status(404).json({ message: "आप की आईडी डेटाबेस में मोजूद नहीं है, कृपया डीज़ल डिपार्टमेंट में संपर्क करें" })
+
         if (driver.length > 1) {
             console.error(`Multiple Ids found by ${name}`);
-            return res.status(400).json({ message: `कृपया पूरी आईडी दर्ज करें| हमें ${name} इस नाम, आईडी से ${driver.length} आइदियाँ मिलीं|` });
+            return res.status(400).json({ message: `कृपया पूरी आईडी दर्ज करें| हमें ${name} इस आईडी से ${driver.length} आइदियाँ मिलीं|` });
         }
 
         if (driver[0].password) {
             console.error(`User already exist`);
             console.log('driver:', driver[0].Name);
-            return res.status(400).json({ message: `पहले से आईडी व पासवर्ड बना हुआ है\nअगर आप को पासवर्ड बदलना है तो एडमिन से बात करें|` });
-        }
-
-        if (!driver) {
-            console.error(`No data found with the entered Id ${name}`);
-            return res.status(404).json({ message: `इस (${name}) आईडी से कोई भी डेटा मौजूद नहीं है|` });
+            return res.status(400).json({ message: `पहले से आईडी व पासवर्ड बना हुआ है\nयदि आपको पासवर्ड बदलना है तो एडमिन से संपर्क करें|` });
         }
 
         const idMatch = driver[0].Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
