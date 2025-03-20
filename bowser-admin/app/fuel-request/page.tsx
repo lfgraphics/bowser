@@ -103,7 +103,7 @@ const page = ({ params }: { params: { manager: string } }) => {
                         <CardContent>
                             Trip: {request.trip}
                             <br />
-                            Strart Date: {request.startDate}
+                            Strart Date: {formatDate(request.startDate)}
                             <br />
                             Trip Status: {request.tripStatus}
                             <br />
