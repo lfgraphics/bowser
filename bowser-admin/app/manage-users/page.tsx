@@ -141,7 +141,7 @@ const UsersList = () => {
         try {
             setLoading(true);
             await deleteUser(selectedUserId);
-            setUsers((prev) => prev.filter((user) => user.userId !== selectedUserId));
+            setUsers((prev) => prev.filter((user) => user._id !== selectedUserId));
         } catch (err: any) {
             toast({ title: 'Error', description: err.message, variant: "destructive" });
         } finally {
@@ -339,9 +339,9 @@ const UsersList = () => {
                                     <Button variant='outline' onClick={() => handleUpdateVerification(user.phoneNumber, !user.verified)}>
                                         {user.verified ? 'Unverify' : 'Verify'}
                                     </Button>
-                                    <AlertDialog open={selectedUserId === user.userId} onOpenChange={(isOpen) => !isOpen && setSelectedUserId(null)}>
+                                    <AlertDialog open={selectedUserId === user._id} onOpenChange={(isOpen) => !isOpen && setSelectedUserId(null)}>
                                         <AlertDialogTrigger asChild>
-                                            <Button variant="destructive" onClick={() => setSelectedUserId(user.phoneNo!)}>Delete</Button>
+                                            <Button variant="destructive" onClick={() => setSelectedUserId(user._id)}>Delete</Button>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>
@@ -394,9 +394,7 @@ const UsersList = () => {
                                 <div>
                                     <p>Phone Number: {data.phoneNumber}</p>
                                     {data.timestamp && (
-                                        <p>Attempted on: {`${new Date(data.timestamp).toLocaleString('en-GB', {
-                                            day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-                                        }).replace(/\//g, '-')}`}</p>
+                                        <p>Attempted on: {formatDate(data.timestamp)}</p>
                                     )}
                                     <p>Registered Device UUID: {data.registeredDeviceUUID}</p>
                                 </div>
