@@ -14,35 +14,35 @@ body {
          URL: https://gradient.page */
 
     /* CSS: .bg-gradient { background: var(--gradient) } */
-    --gradient: linear-gradient(to top left, #360033, #0b8793);
-    --background: -60 100% 98.22%;
-    --foreground: -60 10% 0.44%;
+    --gradient: #16222A;
+    --background: 217 96.55% 98.26%;
+    --foreground: 217 3.1% 0.52%;
 
-    --muted: -60 10% 91.1%;
-    --muted-foreground: -60 5% 41.1%;
+    --muted: 217 3.1% 91.3%;
+    --muted-foreground: 217 1.55% 41.3%;
 
-    --popover: -60 10% 91.1%;
-    --popover-foreground: -60 10% 0.55%;
+    --popover: 217 65.2% 91.3%;
+    --popover-foreground: 217 3.1% 0.65%;
 
-    --card: -60 10% 91.1%;
-    --card-foreground: -60 10% 0.55%;
+    --card: 217 65.2% 91.3%;
+    --card-foreground: 217 3.1% 0.65%;
 
-    --border: -60 15% 89.44%;
-    --input: -60 15% 89.44%;
+    --border: 217 8.1% 89.52%;
+    --input: 217 8.1% 89.52%;
 
-    --primary: -60 100% 11%;
-    --primary-foreground: -60 2% 91.1%;
+    --primary: 217 31% 13%;
+    --primary-foreground: 217 0.62% 91.3%;
 
-    --secondary: -60 5% 95.55%;
-    --secondary-foreground: -60 7% 11.1%;
+    --secondary: 217 1.55% 95.65%;
+    --secondary-foreground: 217 2.86% 11.3%;
 
-    --accent: -60 5% 95.55%;
-    --accent-foreground: -60 7% 11.1%;
+    --accent: 217 1.55% 95.65%;
+    --accent-foreground: 217 2.86% 11.3%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --ring: -60 100% 11%;
+    --ring: 217 31% 13%;
 
     --radius: 0.5rem;
   }

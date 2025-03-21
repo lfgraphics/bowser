@@ -1,7 +1,7 @@
 "use client"
 import { User, Vehicle } from '@/types'
 import React, { useEffect, useState } from 'react'
-import { Table, TableBody, TableHeader, TableHead, TableRow, TableCell } from '@/components/ui/table'
+import { Table, TableBody, TableHeader, TableHead, TableRow, TableCell, TableCaption } from '@/components/ui/table'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { BASE_URL } from '@/lib/api'
@@ -33,7 +33,9 @@ const VehicleManagementPage = () => {
     const [reportMessage, setReportMessage] = useState<string>('')
     const [limit, setLimit] = useState<string>('20')
     const [select, setSelected] = useState<Set<string>>(new Set());
-    const [selectAll, setSelectAll] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalRecords, setTotalRecords] = useState(0);
     const [currentUser, setCurrentUser] = useState<User | null>()
 
     const fetchVehicle = async () => {
@@ -53,9 +55,10 @@ const VehicleManagementPage = () => {
                 setError(error)
                 console.log('fetchVehicle error: ', error)
             }
-            const vehicleDetails: Vehicle[] = await response.json()
-            setVehicles(vehicleDetails)
-            console.log('vehicles: ', vehicleDetails)
+            const jsonResponse = await response.json()
+            setVehicles(jsonResponse.vehicles)
+            setTotalPages(jsonResponse.totalPages);
+            setTotalRecords(jsonResponse.totalRecords);
         } catch (err: any) {
             setError(err)
             console.log('catch error:', err)
@@ -66,7 +69,7 @@ const VehicleManagementPage = () => {
 
     useEffect(() => {
         fetchVehicle()
-    }, [limit, query, renderType])
+    }, [limit, query, renderType, currentPage])
 
     useEffect(() => {
         let user = getCurrentUser() as User | null
@@ -175,6 +178,9 @@ const VehicleManagementPage = () => {
                             <SelectItem value="50">
                                 50
                             </SelectItem>
+                            <SelectItem value="0">
+                                All
+                            </SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -201,14 +207,35 @@ const VehicleManagementPage = () => {
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell onClick={() => toggleRowSelection(vehicle._id)}><Checkbox checked={select.has(vehicle._id)} /></TableCell>
                                 <TableCell>{vehicle.VehicleNo}</TableCell>
-                                <TableCell>{typeof vehicle.tripDetails.driver == 'object' ? vehicle?.tripDetails?.driver?.Name + " - " + vehicle?.tripDetails?.driver?.id : vehicle.tripDetails.driver}</TableCell>
+                                <TableCell>{typeof vehicle.tripDetails?.driver == 'object' ? vehicle?.tripDetails?.driver?.Name + " - " + vehicle?.tripDetails?.driver?.id : vehicle.tripDetails?.driver}</TableCell>
                                 <TableCell>{vehicle.GoodsCategory}</TableCell>
-                                <TableCell><Badge variant={vehicle.tripDetails.open ? "succes" : "destructive"} >{vehicle.tripDetails.open ? "Open" : "Closed"}</Badge></TableCell>
+                                <TableCell><Badge variant={vehicle.tripDetails?.open ? "succes" : "destructive"} >{vehicle.tripDetails?.open ? "Open" : "Closed"}</Badge></TableCell>
                                 <TableCell>{vehicle.manager}</TableCell>
                                 <TableCell><div className="flex gap-2 justify-center">{!vehicle.manager && <Button onClick={() => ownVehicle(vehicle._id)} >Own</Button>}<Button onClick={() => { setReportVehicle(vehicle._id); setIsReportDialogueOpen(true) }} variant="outline">Report</Button></div></TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
+                    <TableCaption>
+                        <div className="flex justify-between mt-4">
+                            <Button
+                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </Button>
+                            <span>
+                                Page {currentPage} of {totalPages}, Total Records are: {totalRecords}
+                            </span>
+                            <Button
+                                onClick={() =>
+                                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                                }
+                                disabled={currentPage === totalPages}
+                            >
+                                Next
+                            </Button>
+                        </div>
+                    </TableCaption>
                 </Table>
             </div>
             <AlertDialog open={isReportDialogueOpen} onOpenChange={setIsReportDialogueOpen}>

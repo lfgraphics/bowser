@@ -18,7 +18,8 @@ router.get('/category/:category', async (req, res) => {
 
 // Get all vehicles
 router.post('/', async (req, res) => {
-    const { query, limit = 20, manager } = req.body;
+    const { query, limit = 20, manager, d = false, page = 1, } = req.body;
+    const skip = (page - 1) * limit;
     try {
         let params = {};
         if (query) {
@@ -42,9 +43,21 @@ router.post('/', async (req, res) => {
                 ...params, manager
             }
         }
+        if (!d) {
+            params = {
+                ...params,
+                VehicleNo: { $not: /^D-/ }
+            }
+        }
 
-        const vehicles = await Vehicle.find(params).limit(limit).lean();
-        return res.status(200).json(vehicles);
+        const vehicles = await Vehicle.find(params).skip(skip).limit(Number(limit)).lean();
+        const totalRecords = await Vehicle.countDocuments(params)
+        return res.status(200).json({
+            vehicles,
+            totalRecords,
+            totalPages: Math.ceil(totalRecords / limit),
+            currentPage: Number(page),
+        });
     } catch (error) {
         console.error('Error fetching vehicles:', error);
         return res.status(500).json({ error: 'Failed to fetch vehicles', details: error });
