@@ -15,7 +15,7 @@ router.post('/signup', async (req, res) => {
 
         const driver = await Driver.find({ Name: { $regex: name, $options: 'i' } });
 
-        // if (!driver.length == 0) res.status(404).json({ message: "आप की आईडी डेटाबेस में मोजूद नहीं है, कृपया डीज़ल डिपार्टमेंट में संपर्क करें" })
+        if (!driver.length == 1) res.status(404).json({ message: "आप की आईडी डेटाबेस में मोजूद नहीं है, कृपया डीज़ल डिपार्टमेंट में संपर्क करें" })
 
         if (driver.length > 1) {
             console.error(`Multiple Ids found by ${name}`);
