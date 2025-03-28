@@ -100,6 +100,53 @@ router.put('/:id/manager', async (req, res) => {
     }
 });
 
+// update bulk vehicles with single manager
+router.put('/manager/vehicle/update', async (req, res) => {
+    try {
+        const { vehicleNumbers, manager } = req.body;
+        if (!vehicleNumbers || !Array.isArray(vehicleNumbers) || vehicleNumbers.length === 0) {
+            return res.status(400).json({ error: 'Vehicle numbers array is required' });
+        }
+        if (!manager) {
+            return res.status(400).json({ error: 'Manager is required' });
+        }
+        // Find all vehicles that match the provided vehicle numbers
+        const existingVehicles = await Vehicle.find({ VehicleNo: { $in: vehicleNumbers } }).lean();
+        // Identify which vehicle numbers were found
+        const foundVehicleNumbers = existingVehicles.map(v => v.VehicleNo);
+        // Identify which vehicle numbers were not found
+        const notFoundVehicleNumbers = vehicleNumbers.filter(no => !foundVehicleNumbers.includes(no));
+        // Perform bulk update operation
+        const bulkUpdateResult = await Vehicle.updateMany(
+            { VehicleNo: { $in: foundVehicleNumbers } },  // Ensure the field name matches the database schema
+            { $set: { manager } }
+        );
+        // Prepare the response
+        const results = {
+            success: foundVehicleNumbers.map(vehicleNo => ({
+                vehicleNo,
+                message: 'Manager updated successfully'
+            })),
+            errors: notFoundVehicleNumbers.map(vehicleNo => ({
+                vehicleNo,
+                message: 'Vehicle not found'
+            }))
+        };
+        return res.status(200).json({
+            message: `Updated ${bulkUpdateResult.modifiedCount} of ${vehicleNumbers.length} vehicles`,
+            matchedCount: bulkUpdateResult.matchedCount,
+            modifiedCount: bulkUpdateResult.modifiedCount,
+            results
+        });
+    } catch (error) {
+        console.error('Error in bulk update vehicle managers:', error);
+        return res.status(500).json({
+            error: 'Failed to process bulk update request',
+            details: error.message
+        });
+    }
+});
+
 // Delete manager field of a vehicle by ID using `$unset`
 router.patch('/:id/manager', async (req, res) => {
     const { userId } = req.body;
