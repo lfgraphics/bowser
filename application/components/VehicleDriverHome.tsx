@@ -91,9 +91,9 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
         if (lastRequestTime) {
             let lastRequestTimeInMs = parseInt(lastRequestTime, 10); // Convert stored string to number
 
-            let hoursDifference = (currentTime - lastRequestTimeInMs) / (1000 * 60 * 60); // Convert ms to hours
+            let hoursDifference = (currentTime - lastRequestTimeInMs) / (1000 * 60); // Convert ms to minutes
 
-            if (hoursDifference < 3) {
+            if (hoursDifference < 20) { // 20 minutes
                 return true;
             }
         }
