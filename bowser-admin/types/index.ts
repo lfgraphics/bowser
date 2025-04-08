@@ -260,12 +260,7 @@ export interface WholeTripSheet {
     quantityByDip: number;
     quantityBySlip: number;
   }[];
-  dispenses: {
-    transaction: string;
-    fuelQuantity: number;
-    isVerified: boolean;
-    isPosted: boolean;
-  }[];
+  dispenses: DispensesRecord[];
   totalLoadQuantity?: number;
   loadQty?: number;
   totalAdditionQty?: number;
@@ -412,7 +407,7 @@ export interface DispensesRecord {
   driverId: string;
   driverMobile: string;
   fuelMeterImage: string[];
-  slipImage: string;
+  slipImage?: string;
   fuelQuantity: string;
   quantityType: string;
   gpsLocation: string;

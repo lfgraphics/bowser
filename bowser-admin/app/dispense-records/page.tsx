@@ -124,12 +124,6 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
             };
             const timestamp: string = date.toLocaleDateString('en-IN', options);
 
-            // const dateFilter = getBackendDateFilter(); // Function to get the date range filter
-
-            // // Construct date description if date range is provided
-            // const dateDescription = dateFilter
-            //     ? `Date-${new Date(dateFilter.fuelingDateTime.$gte).toLocaleDateString()} to ${new Date(dateFilter.fuelingDateTime.$lte).toLocaleDateString()} ,`
-            //     : '';
             const filterDescription = `${filter.bowserNumber ? `Bowser-${filter.bowserNumber} ,` : ''}${filter.driverName ? `Driver-${filter.driverName} ,` : ''}${filter.tripSheetId ? `Trip Sheet-${filter.tripSheetId} ,` : ''}`; //${selectedDateRange != undefined && dateDescription}`;
             const filename = `Dispenses_data ${filterDescription} ${records.length}record${records.length > 1 ? "s" : ""}, downloaded at ${timestamp}.xlsx`;
 
@@ -141,8 +135,6 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                     sortBy,
                     order,
                     limit,
-                    // startDate: dateFilter?.fuelingDateTime.$gte, // Add startDate
-                    // endDate: dateFilter?.fuelingDateTime.$lte, // Add endDate
                 },
                 responseType: "blob",
             });

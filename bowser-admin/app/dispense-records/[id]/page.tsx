@@ -22,6 +22,7 @@ export const page = ({ params }: { params: { id: string } }) => {
         orderId: "ObjectId",
         category: "Own",
         party: "Own",
+        location: "Default Location",
         tripSheetId: "XXXX",
         vehicleNumberPlateImage: "string",
         vehicleNumber: "UPXXATXXXX",

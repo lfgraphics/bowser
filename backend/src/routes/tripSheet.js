@@ -493,4 +493,24 @@ router.post('/addition/:id', async (req, res) => {
     }
 })
 
+router.delete('delete-dispense', async (req, res) => {
+    const id = req.query.id
+    const sheetId = req.query.tripSheetId
+
+    const tripSheet = await TripSheet.findOne({ tripSheetId: sheetId });
+    if (!tripSheet) {
+        return res.status(404).json({ message: 'TripSheet not found' });
+    }
+    // Find the dispense record from tripSheet.dispenses[] to delete
+
+    const dispense = tripSheet.dispenses.find(d => d._id.toString() === id);
+    if (!dispense) {
+        return res.status(404).json({ message: 'Dispense record not found' });
+    }
+    // Remove the dispense record from the array
+    tripSheet.dispenses = tripSheet.dispenses.filter(d => d._id.toString() !== id);
+    // Update the tripSheet in the database
+    await tripSheet.save();
+})
+
 module.exports = router;

@@ -282,7 +282,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                         src={record?.slipImage}
                                         alt="Slip"
                                         className="rounded-md w-32 h-32 object-cover"
-                                        onClick={() => openImageModal(record.slipImage)}
+                                        onClick={() => openImageModal(record.slipImage!)}
                                     />}
                                 </div>}
                             </div>

@@ -4,7 +4,7 @@ import { isAuthenticated } from '@/lib/auth';
 import { formatDate } from '@/lib/utils';
 import { WholeTripSheet } from "@/types";
 import axios from 'axios';
-import React, { useEffect, useState } from 'react'
+import React, { use, useEffect, useState } from 'react'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -12,12 +12,25 @@ import Modal from '@/components/Modal';
 import Loading from '@/app/loading';
 import TripCalculationModal from '@/components/exclusive/TripCalculationModal';
 import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import Link from 'next/link';
+import { Check, Eye, X } from 'lucide-react';
+import OnlyAllowed from '@/components/OnlyAllowed';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { checkTallyStatus } from '@/utils/tally';
 
 interface WholeTripSheetCardProps {
     record: WholeTripSheet;
 }
 
 const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
+    const [loading, setLoading] = useState(true);
+    const [showAlert, setShowAlert] = useState<boolean>(false);
+    const [alertTitle, setAlertTitle] = useState("");
+    const [alertMessage, setAlertMessage] = useState("");
+    const [tallyStatus, setTallyStatus] = useState<string>("Tally Not Opened");
+    const [deleteRecord, setDeleteRecord] = useState<string>("");
+    const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [isCalculationModalOpen, setIsCalculationModalOpen] = useState(false);
@@ -38,6 +51,31 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
     const closeCalculationModal = () => {
         setIsCalculationModalOpen(false);
     };
+
+    const handleDelete = async () => {
+        setLoading(true)
+        try {
+            await axios.delete(`${BASE_URL}/tripSheet/delete-dispense?tripSheetId=${record.tripSheetId}&id=${deleteRecord}`);
+            setShowAlert(true);
+            setAlertTitle("Success");
+            setAlertMessage("Deleted Successfully");
+            window.location.reload();
+        } catch (error) {
+            console.error('Error deleting Trip Sheet:', error);
+            alert(`Error deleting Trip Sheet: ${error}`);
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const status = async () => {
+        const status = await checkTallyStatus();
+        console.log(status);
+    };
+
+    useEffect(() => {
+        status();
+    }, []);
 
     return (
         <>
@@ -104,7 +142,7 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                     <Separator className='my-3' />
                     {record.dispenses && <>
                         <strong>Dispenses: </strong>{record.dispenses.length}
-                        <p>Total Fuel Quantity Dispensed: {record.dispenses.reduce((acc, curr) => acc + curr.fuelQuantity, 0)}</p>
+                        <p>Total Fuel Quantity Dispensed: {record.dispenses.reduce((acc, curr) => acc + Number(curr.fuelQuantity), 0).toFixed(2)}</p>
                     </>
                     }
                     <Separator className='my-3' />
@@ -155,8 +193,11 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                         <h2 className="font-semibold text-md">Settlement Information</h2>
                         {record.settelment?.settled ? <>
                             <strong>Settlement Date: </strong>{formatDate(record.settelment?.dateTime)}
+                            <br />
                             <strong>Qty on return</strong>{record.settelment.details.totalQty}
+                            <br />
                             <strong>Pump Reading on return</strong>{record.settelment.details.pumpReading}
+                            <br />
                             <Badge variant={record.settelment?.settled ? "succes" : "destructive"}>
                                 {record.settelment?.settled ? "Settled" : "Not Settled"}
                             </Badge>
@@ -175,6 +216,102 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                     </Badge>
                 </CardFooter>
             </Card>
+
+
+            <Table className="w-max min-w-full">
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>S N</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Party/Vendor</TableHead>
+                        <TableHead>Fueling Time</TableHead>
+                        <TableHead>Bowser Location</TableHead>
+                        <TableHead>Driver/Manager</TableHead>
+                        <TableHead>Phone No.</TableHead>
+                        <TableHead>Vehicle Number</TableHead>
+                        <TableHead>Odo Meter</TableHead>
+                        <TableHead>Qty Type</TableHead>
+                        <TableHead>Fuel Qty</TableHead>
+                        <TableHead className='text-center'>Action</TableHead>
+                        <TableHead>Verified</TableHead>
+                        <TableHead>Posted</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody className="h-[50%] overflow-y-scroll">
+                    {record.dispenses.length > 0 &&
+                        record.dispenses.map((record, index) => (
+                            <TableRow
+                                key={index}
+                            >
+                                <TableCell>{index + 1}</TableCell>
+                                <TableCell>{record.category}</TableCell>
+                                <TableCell>{record.party}</TableCell>
+                                <TableCell>{`${formatDate(
+                                    record.fuelingDateTime
+                                )}`}</TableCell>
+                                <TableCell>
+                                    {record.location?.substring(0, 15) + "..."}
+                                </TableCell>
+                                <TableCell>{record.driverName}</TableCell>
+                                <TableCell>{record.driverMobile}</TableCell>
+                                <TableCell>{record.vehicleNumber}</TableCell>
+                                <TableCell>{record.odometer}</TableCell>
+                                <TableCell>{record.quantityType}</TableCell>
+                                <TableCell>{record.fuelQuantity}</TableCell>
+                                <TableCell className="flex items-center gap-2">
+                                    <Link href={`/dispense-records/${record._id}`}>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            <Eye />
+                                        </Button>
+                                    </Link>
+
+                                    <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
+                                        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="destructive" onClick={() => { setShowDeleteDialog(true); setDeleteRecord(record._id) }}>Delete</Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Are you sure you want to delete this trip sheet? This action cannot be undone.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </OnlyAllowed>
+                                </TableCell>
+                                <TableCell>
+                                    {record.verified ? (<Check />) : (<X />)}
+                                </TableCell>
+                                <TableCell>
+                                    {record.posted ? (
+                                        <Check />
+                                    ) : (<X />)}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+
+                    <TableRow>
+                        <TableCell colSpan={10} className="text-right font-bold">
+                            Total Fuel Quantity:
+                        </TableCell>
+                        <TableCell colSpan={2}>
+                            {record.dispenses.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)}{" "}L
+                        </TableCell>
+                        <TableCell
+                            colSpan={2}
+                            className="text-right font-bold"
+                        ></TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
+
             <Button onClick={openCalculationModal}>Show Calculations</Button>
             <Modal isOpen={isModalOpen} onClose={closeModal}>
                 {selectedImage && (
@@ -205,6 +342,7 @@ export const page = ({ params }: { params: { id: string } }) => {
     }, []);
 
     const dummyRecord: WholeTripSheet = {
+        hsdRate: 0,
         _id: "someId",
         tripSheetId: 1324,
         createdAt: new Date(),
@@ -229,7 +367,16 @@ export const page = ({ params }: { params: { id: string } }) => {
                 bccAuthorizedOfficer: {
                     id: "string",
                     name: "string",
-                    orderId: "string"
+                    orderId: {
+                        _id: "string",
+                        createdAt: "string",
+                        regNo: "string",
+                        product: "string",
+                        loadingLocation: "string",
+                        loadingLocationName: "string",
+                        bccAuthorizedOfficer: { id: "string", name: "string" },
+                        fulfilled: false
+                    }
                 },
                 chamberwiseDipListAfter: [{
                     chamberId: "chamber1",
@@ -255,12 +402,16 @@ export const page = ({ params }: { params: { id: string } }) => {
                 },
                 pumpReadingAfter: 0,
                 pumpReadingBefore: 0,
-                pumpSlips: []
+                pumpSlips: [],
+                product: "HSD",
+                tempLoadByDip: 0
             },
             quantityByDip: 0,
             quantityBySlip: 0
         },
         addition: [{
+            quantity: 0,
+            at: new Date(),
             sheetId: {
                 _id: "string",
                 regNo: "string",
@@ -270,7 +421,16 @@ export const page = ({ params }: { params: { id: string } }) => {
                 bccAuthorizedOfficer: {
                     id: "string",
                     name: "string",
-                    orderId: "string"
+                    orderId: {
+                        _id: "string",
+                        createdAt: "string",
+                        regNo: "string",
+                        product: "string",
+                        loadingLocation: "string",
+                        loadingLocationName: "string",
+                        bccAuthorizedOfficer: { id: "string", name: "string" },
+                        fulfilled: false
+                    }
                 },
                 chamberwiseDipListAfter: [{
                     chamberId: "chamber2",
@@ -296,7 +456,9 @@ export const page = ({ params }: { params: { id: string } }) => {
                 },
                 pumpReadingAfter: 0,
                 pumpReadingBefore: 0,
-                pumpSlips: []
+                pumpSlips: [],
+                product: "HSD",
+                tempLoadByDip: 0
             },
             quantityByDip: 0,
             quantityBySlip: 0
@@ -314,14 +476,14 @@ export const page = ({ params }: { params: { id: string } }) => {
                 totalQty: 0,
                 extras: {
                     filledByDriver: 0,
-                    saleryDays: 0,
-                    foodingDays: 0,
-                    rewardTrips: 0,
                     hsdRateFor: 0,
                     tollTax: 0,
                     borderOtherExp: 0,
                     unload: 0,
                     hsdPerKm: 0,
+                    saleryTotal: 0,
+                    foodingTotal: 0,
+                    rewardTotal: 0
                 }
             },
             settled: false
