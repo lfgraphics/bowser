@@ -372,7 +372,6 @@ export async function runSync(logger) {
     try {
         await connectToDatabases();
         setLogger(logger);
-        await connectToDatabases();
         await syncDriversData();
         await syncVechiclesData();
         await syncAttachedVechicles();

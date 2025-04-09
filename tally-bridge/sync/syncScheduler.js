@@ -5,15 +5,6 @@ export let isSyncRunning = false;
 export let stopRequested = false;
 export let autoSyncTimer = null;
 
-export function stopSyncScheduler() {
-    if (autoSyncTimer) {
-        clearInterval(autoSyncTimer);
-        autoSyncTimer = null;
-        addLog("Auto sync stopped.", "WARN");
-        notifyRendererToRefreshLogs();
-    }
-}
-
 export async function startSyncScheduler(minutes = 60) {
     if (minutes < 10) {
         addLog("Sync interval must be at least 10 minutes.", "WARN");
