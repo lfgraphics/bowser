@@ -1,63 +1,14 @@
-const TALLY_BRIDGE_URL = 'http://localhost:4000/tally';
+export const getDateInTallyFormate = (dateString: string | Date) => {
+  let date = typeof dateString === "string" ? new Date(dateString) : dateString;
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Add 1 since months are 0-based
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}${month}${day}`;
+};
 
-type TallyStatus =
-    | { status: 'No Company Opened' }
-    | { status: 'Desired Company Opened'; companyName: string }
-    | { status: 'Desired Company Not Opened'; companyName: string }
-    | { status: 'Tally Not Opened' };
-
-export const checkTallyStatus = async (): Promise<TallyStatus> => {
-    const requestXML = `
-    <ENVELOPE>
-      <HEADER>
-        <VERSION>1</VERSION>
-        <TALLYREQUEST>Export</TALLYREQUEST>
-        <TYPE>Collection</TYPE>
-        <ID>COMPANY</ID>
-      </HEADER>
-      <BODY>
-        <DESC>
-          <STATICVARIABLES>
-            <SVEXPORTFORMAT>xml</SVEXPORTFORMAT>
-          </STATICVARIABLES>
-        </DESC>
-      </BODY>
-    </ENVELOPE>
-  `;
-
-    try {
-        const response = await fetch(TALLY_BRIDGE_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/xml',
-            },
-            body: requestXML,
-        });
-
-        const responseXML = await response.text();
-
-        // Check if no company is opened
-        if (
-            responseXML.includes('<COMPANY>0</COMPANY>') &&
-            responseXML.includes('<COLLECTION>   </COLLECTION>')
-        ) {
-            return { status: 'No Company Opened' };
-        }
-
-        // Check if a company is opened
-        const companyMatch = responseXML.match(/<COMPANY NAME="([^"]+)"/);
-        if (companyMatch) {
-            const companyName = companyMatch[1];
-            if (companyName.includes('Indian Tankers')) {
-                return { status: 'Desired Company Opened', companyName };
-            } else {
-                return { status: 'Desired Company Not Opened', companyName };
-            }
-        }
-
-        return { status: 'Tally Not Opened' };
-    } catch (error: unknown) {
-        console.error('Error checking Tally status:', error);
-        return { status: 'Tally Not Opened' };
-    }
+export const getTimeInTallyFormate = (timeString: string | Date) => {
+  let date = typeof timeString === "string" ? new Date(timeString) : timeString;
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}${minutes}00000`;
 };

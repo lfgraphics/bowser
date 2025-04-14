@@ -218,7 +218,6 @@ router.get('/:id', async (req, res) => {
     try {
         // First, find all bowsers with the given registration number.
         const sheet = await TripSheet.findById(new mongoose.Types.ObjectId(id)).populate('loading.sheetId');
-        console.log("sheet extras: ", sheet.settelment?.details.extras);
         res.status(200).json(sheet);
 
     } catch (err) {

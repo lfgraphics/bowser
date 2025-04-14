@@ -39,7 +39,6 @@ export const page = ({ params }: { params: { id: string } }) => {
         verified: {
             status: false
         },
-        posted: false,
         bowser: {
             regNo: "UPXXATXXXX",
             driver: {

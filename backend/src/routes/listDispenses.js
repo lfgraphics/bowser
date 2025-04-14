@@ -242,6 +242,35 @@ router.patch('/verify/:id', async (req, res) => {
         res.status(500).json({ heading: "Failed!", message: 'Internal server error' });
     }
 });
+router.patch('/post/:id', async (req, res) => {
+    console.log(req.body)
+    const { id } = req.params;
+    let { by } = req.body
+    try {
+        const transaction = await FuelingTransaction.findByIdAndUpdate(id, {
+            posted: {
+                status: true,
+                by: {
+                    id: by.id,
+                    name: by.name
+                }
+            }
+        }, { new: true });
+
+        if (transaction) {
+            await updateTripSheet({ tripSheetId: transaction.tripSheetId, post: transaction })
+        }
+
+        if (!transaction) {
+            return res.status(404).json({ heading: "Failed", message: 'Record not found' });
+        }
+
+        res.status(200).json({ heading: "Success!", message: 'Record verified successfully' });
+    } catch (error) {
+        console.error('Error updating record:', error);
+        res.status(500).json({ heading: "Failed!", message: 'Internal server error' });
+    }
+});
 router.post('/verify', async (req, res) => {
     const { ids, by } = req.body;
 

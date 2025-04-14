@@ -420,7 +420,13 @@ export interface DispensesRecord {
       name: string;
     };
   };
-  posted: boolean;
+  posted?: {
+    status: boolean;
+    by: {
+      id: string;
+      name: string;
+    }
+  };
   bowser: {
     regNo: string;
     driver: {
@@ -433,6 +439,7 @@ export interface DispensesRecord {
     name: string;
     id: string;
   };
+  cost?: number
 }
 
 export interface Filters {
