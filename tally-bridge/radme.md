@@ -90,7 +90,7 @@ npx electron-builder --win
 ---
 
 ### 🧾 Related
-- Project Overview: [PROJECT_OVERVIEW.md](./readme.md)
-- Mobile App: [MOBILE_APP.md](./application/readme.md)
-- Web App: [WEB_APP.md](./bowser-admin/readme.md)
+- Project Overview: [PROJECT_OVERVIEW.md](../readme.md)
+- Mobile App: [MOBILE_APP.md](../application/readme.md)
+- Web App: [WEB_APP.md](../bowser-admin/readme.md)
 

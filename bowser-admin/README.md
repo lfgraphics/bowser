@@ -115,7 +115,7 @@ App will be available at `http://localhost:3001`
 
 ### 🧾 Related
 
-- Project Overview: [PROJECT\_OVERVIEW.md](./readme.md)
-- Mobile App: [MOBILE\_APP.md](./application/readme.md)
-- Desktop App: [DESKTOP\_APP.md](./tally-bridge/readme.md)
+- Project Overview: [PROJECT\_OVERVIEW.md](../readme.md)
+- Mobile App: [MOBILE\_APP.md](../application/readme.md)
+- Desktop App: [DESKTOP\_APP.md](../tally-bridge/readme.md)
 

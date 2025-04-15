@@ -103,8 +103,8 @@ Server will run on `http://localhost:5000`
 
 ### 🧾 Related
 
-- Project Overview: [PROJECT\_OVERVIEW.md](./readme.md)
-- Mobile App: [MOBILE\_APP.md](./application/radme.md)
-- Desktop App: [DESKTOP\_APP.md](./tally-bridge/raedme.md)
-- Web App: [WEB\_APP.md](./bowser-admin/readme.md)
+- Project Overview: [PROJECT\_OVERVIEW.md](../readme.md)
+- Mobile App: [MOBILE\_APP.md](../application/radme.md)
+- Desktop App: [DESKTOP\_APP.md](../tally-bridge/raedme.md)
+- Web App: [WEB\_APP.md](../bowser-admin/readme.md)
 

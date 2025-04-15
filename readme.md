@@ -53,7 +53,7 @@ All components are integrated with a centralized backend and MongoDB Atlas cloud
 ---
 
 ### ⚙️ System Architecture
-The overall workflow is defined in the [SRS document](./SRS%20for%20Bowser%20Management.pdf), including:
+The overall workflow is defined in the SRS document, including:
 - Flowcharts
 - Component interaction
 - Entity relationships

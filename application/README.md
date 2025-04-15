@@ -137,7 +137,7 @@ Contact [@lfgraphics](https://github.com/lfgraphics) or your designated admin fo
 
 ### 📁 Related
 
-- Web App: [WEB\_APP.md](./bowser-admin/readme.md)
-- Desktop App: [DESKTOP\_APP.md](./tally-bridge/readme.md)
-- Project Overview: [PROJECT\_OVERVIEW.md](./readme.md)
+- Web App: [WEB\_APP.md](../bowser-admin/readme.md)
+- Desktop App: [DESKTOP\_APP.md](../tally-bridge/readme.md)
+- Project Overview: [PROJECT\_OVERVIEW.md](../readme.md)
 
