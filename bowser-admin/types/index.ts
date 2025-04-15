@@ -442,6 +442,15 @@ export interface DispensesRecord {
   cost?: number
 }
 
+export interface XMLVariables {
+  entryVoucher: string;
+  entryStock: string;
+  entryGodown: string;
+  entryBatch: string;
+  creditEntryTo: string;
+  HSDRate: number | undefined;
+}
+
 export interface Filters {
   driverName: string
   bowserRegNo: string

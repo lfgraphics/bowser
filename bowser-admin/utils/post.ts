@@ -1,19 +1,9 @@
 "use server"
 import fs from 'fs/promises';
-import { DispensesRecord } from "@/types"
+import { DispensesRecord, XMLVariables } from "@/types"
 import { getDateInTallyFormate, getTimeInTallyFormate } from './tally';
 
-export const createTallyPostableXML = async (
-    record: DispensesRecord,
-    variables: {
-        entryVoucher: string
-        entryStock: string
-        entryGodown: string
-        entryBatch: string
-        creditEntryTo: string
-        HSDRate: number | undefined;
-    }) => {
-
+export const createTallyPostableXML = async (record: DispensesRecord, variables: XMLVariables) => {
     let xml = await fs.readFile('./Voucher.xml', 'utf-8');
 
     xml = xml.replace(/entryDate/g, getDateInTallyFormate(Date()))
