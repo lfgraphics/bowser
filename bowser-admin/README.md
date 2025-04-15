@@ -1,36 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Web App - Technical Guide
 
-## Getting Started
+### 🌐 Overview
 
-First, run the development server:
+The Web App is built using **Next.js** with **TypeScript**, styled with **TailwindCSS** and **shadcn/ui components**. It acts as the centralized interface for:
+
+- Fuel allocation
+- Trip sheet management
+- Role and permission assignment
+- Data entry for Tally posting (through Desktop App)
+
+It connects to a custom **Node.js backend** hosted on Render, and syncs with MongoDB Atlas.
+
+---
+
+### 🛠️ Tech Stack
+
+| Feature     | Technology                |
+| ----------- | ------------------------- |
+| Framework   | Next.js (App Router)      |
+| Language    | TypeScript                |
+| Styling     | Tailwind CSS, shadcn/ui   |
+| Backend API | Node.js (Express)         |
+| DB          | MongoDB Atlas             |
+| Auth        | Custom auth (JWT/Session) |
+| Hosting     | Vercel                    |
+
+---
+
+### 🔧 Local Development
+
+1. Clone the repo:
+
+```bash
+git clone https://github.com/lfgraphics/bowser
+cd bowser-admin
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Create `.env.local`:
+   Request from dev or export from [Vercel Project Settings](https://vercel.com/indian-tankers-projects/bowser)
+
+4. Run locally:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App will be available at `http://localhost:3001`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 🔐 Authentication
 
-## Learn More
+- Role-based access (Admin, Manager, Bowser Driver, Vehicle Driver, etc.)
+- Custom login and token system
+- Shared authentication with Mobile App
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 🗂️ Features Summary
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **User Management**: Admin creates/manages user roles
+- **Trip Sheet Handling**: Create, approve, and finalize bowser trip sheets
+- **Fuel Allocation**: Assign fuel requests raised from the mobile app
+- **Request Tracking**: Review fueling transactions and update statuses
+- **Settlement**: Finalize trips and export data to Tally (via Desktop Bridge)
+- **Print View**: Final printable forms for reports
+- **Role Assignment**: Set departments and roles of the users
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 📦 Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Live URL: [https://itpl-bowser-admin.vercel.app/](https://itpl-bowser-admin.vercel.app/)
+- Hosted on: Vercel [https://vercel.com/indian-tankers-projects/bowser](https://vercel.com/indian-tankers-projects/bowser)
+- CI/CD: Automatic via GitHub pushes to main branch
+
+---
+
+### ❌ External API Access
+
+- All APIs are **internal-use only**. No public-facing endpoints.
+- API secured via middleware, token validation, and internal header checks
+
+---
+
+### 📋 Contribution Notes
+
+- Maintain type safety using TypeScript
+- Use shadcn/ui for consistent component styling
+- Use modular folders for `components`, `routes`, `lib`, and `services`
+
+---
+
+### 📬 API Communication
+
+- Uses axios/fetch to communicate with custom Node.js backend on Render
+- Backend handles validation, database operations, and Tally integration queueing
+
+---
+
+### 🧪 Testing & QA
+
+- Role simulation (simulate login for different types of users)
+- Tally submission logs & responses tested via Desktop App bridge
+- Real trip & fueling data verified through field testing
+
+---
+
+### 🧾 Related
+
+- Project Overview: [PROJECT\_OVERVIEW.md](./readme.md)
+- Mobile App: [MOBILE\_APP.md](./application/readme.md)
+- Desktop App: [DESKTOP\_APP.md](./tally-bridge/readme.md)
+

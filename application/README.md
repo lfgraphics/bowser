@@ -1,50 +1,143 @@
-# Welcome to your Expo app 👋
+# Mobile App - Technical Guide
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+### 📱 Overview
 
-## Get started
+This is the official mobile app of the Bowser Fuel Management System. It is built with **Expo (React Native)** and intended for:
 
-1. Install dependencies
+- Bowser Drivers
+- Vehicle Drivers
+- Loading In-Charges
+- Diesel Control Center Staff
 
-   ```bash
-   npm install
-   ```
+All app interfaces are role-based and simplified for on-field usage.
 
-2. Start the app
+---
 
-   ```bash
-    npx expo start
-   ```
+### 🛠️ Tech Stack
 
-In the output, you'll find options to open the app in a
+- **Platform**: Expo (React Native)
+- **Language**: JavaScript
+- **Backend**: Node.js API
+- **Database**: MongoDB Atlas
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### 📦 Build Commands
 
-## Get a fresh project
-
-When you're ready, run:
+You must install the [EAS CLI](https://docs.expo.dev/eas-update/getting-started/):
 
 ```bash
-npm run reset-project
+npm install -g eas-cli
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+**For Development APK:**
 
-## Learn more
+```bash
+eas build -p android --profile development
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+**For Production APK:**
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+eas build -p android --profile production
+```
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+### 🔧 Setup (Local Development)
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. Clone the repo:
+
+```bash
+git clone https://github.com/lfgraphics/bowser
+cd application
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Run in development:
+
+```bash
+npx expo start --dev-client
+```
+
+> You must have the custom dev client installed or use Expo Go (with limited support).
+
+---
+
+### 📱 Installation (Production Use)
+
+- **APK URL**: Provided internally via Expo build links or hosted APK
+- **iOS Support**: Possible via Apple Developer Account (not built yet)
+
+---
+
+### 📍 Permissions Required
+
+- **Camera**: For uploading slip photos & verification images
+- **Location**: For GPS tracking, fueling coordination, and logging
+
+---
+
+### 👤 Role-Specific Interfaces
+
+- **Bowser Driver**: View allocations, submit fueling data, return trip initiation
+- **Vehicle Driver**: Raise fueling request, status updates (loaded/unloaded), location sharing
+
+---
+
+### 💬 Notes for Developer
+
+##### 🧪 MongoDB Cleanup Command
+
+If a **bowser driver** gets a duplicate fueling request or incomplete request and wishes to remove one:
+
+```json
+{
+  $and:[
+    {"bowser.driver.name":"driver's Name"},
+    {"vehicleNumber": { $regex: "Vehile number", $options: "i" }}
+  ]
+}
+```
+
+> 🔒 Use this with caution. Only run with proper verification.
+
+---
+
+### 🔐 Authentication
+
+- The mobile app uses the **same authentication system as the web app**.
+- Secure login with encrypted passwords
+- Role-based content loading
+
+---
+
+### 🧪 Testing Notes
+
+- Test camera and GPS permissions on real device
+- Validate role-based login redirection
+- Verify offline support and sync logic
+
+---
+
+### 🆘 Support
+
+Contact [@lfgraphics](https://github.com/lfgraphics) or your designated admin for:
+
+- Role setup issues
+- Sync-related errors
+- APK download access
+
+---
+
+### 📁 Related
+
+- Web App: [WEB\_APP.md](./bowser-admin/readme.md)
+- Desktop App: [DESKTOP\_APP.md](./tally-bridge/readme.md)
+- Project Overview: [PROJECT\_OVERVIEW.md](./readme.md)
+

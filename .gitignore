@@ -25,6 +25,7 @@ npm-debug.*
 *.tsbuildinfo
 
 # Environment variables
+backend/.env
 .env
 .env.local
 .env.development.local
