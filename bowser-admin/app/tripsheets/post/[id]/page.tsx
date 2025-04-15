@@ -64,10 +64,9 @@ const page = ({ params }: { params: { id: string } }) => {
         checkTallyStatus();
     }, [params.id]);
 
-    const doPost = async (recordId: string) => {
+    const post = async (recordId: string) => {
         setLoading(true);
-
-        const postRecord = record?.dispenses.find(dispense => dispense._id === recordId);
+        const postRecord = record?.dispenses.find(dispense => (dispense._id === recordId))
 
         const storedUserJson = localStorage.getItem("adminUser");
         let userDetails = { id: "", name: "", phoneNumber: "" };
@@ -80,41 +79,69 @@ const page = ({ params }: { params: { id: string } }) => {
             };
         }
 
-        const variables = {
+        let variables = {
             entryVoucher,
             entryStock,
             entryGodown,
             entryBatch,
             creditEntryTo,
             HSDRate: record?.hsdRate,
-        };
-
-        const result = await postToTally({ postRecord: postRecord!, variables });
-
-        if (result.success) {
-            setRecord(prev => {
-                if (!prev) return prev;
-                return {
-                    ...prev,
-                    dispenses: prev.dispenses.map(d =>
-                        d._id === recordId
-                            ? {
-                                ...d,
-                                posted: {
-                                    status: true,
-                                    by: { id: userDetails.id, name: userDetails.name },
-                                },
-                            }
-                            : d
-                    ),
-                };
-            });
-        } else {
-            alert("❌ " + result.error);
         }
-        setLoading(false);
-        return result;
-    };
+
+        const xml = await createTallyPostableXML(postRecord!, variables)
+
+        try {
+            const response = await fetch('http://localhost:4000/tally', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/xml' },
+                body: xml,
+            });
+
+            const result = await response.json();
+
+            console.log('Tally Sync Response:', result);
+
+            if (result.success && result.data?.vchNumber) {
+                // ✅ Update the record in DB
+                let postResponse = await fetch(`${BASE_URL}/listDispenses/post/${recordId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ by: { id: userDetails?.id, name: userDetails?.name } })
+                });
+
+                console.log(postResponse)
+
+                let postResponseData = await postResponse.json()
+                console.log(postResponseData)
+
+                console.log(postResponseData)
+
+
+                setRecord(prev => {
+                    if (!prev) return prev;
+                    return {
+                        ...prev,
+                        dispenses: prev.dispenses.map(d =>
+                            d._id === recordId ? { ...d, posted: { status: true, by: { id: userDetails.id, name: userDetails.name } } } : d
+                        )
+                    };
+                });
+
+            }
+            else {
+                if (result.error) {
+                    alert(result.message)
+                }
+            }
+            return result
+        } catch (error) {
+            console.error('Error occurred while posting to Tally:', error);
+        }
+        finally {
+            setLoading(false)
+        }
+
+    }
 
     const postAll = async () => {
         const nonPostedRecords = record?.dispenses.filter(
@@ -138,14 +165,14 @@ const page = ({ params }: { params: { id: string } }) => {
             console.log(`📤 Posting ${i + 1} of ${nonPostedRecords.length}: ${current._id}`);
 
             try {
-                const result = await doPost(current._id);
+                const result = await post(current._id);
 
                 if (result?.success) {
                     successList.push(current._id);
                 } else {
                     failureList.push({
                         id: current._id,
-                        reason: result?.error || "Unknown server response",
+                        reason: result?.message || "Unknown server response",
                     });
                 }
             } catch (error: any) {
@@ -248,7 +275,7 @@ const page = ({ params }: { params: { id: string } }) => {
                                 <TableCell>{entryStock}</TableCell>
                                 <TableCell>{dispense.bowser.driver.name === "Gida Office" ? entryGodown : `${dispense.bowser.regNo} (Bowser)`}</TableCell>
                                 <TableCell>{dispense.bowser.driver.name === "Gida Office" ? entryBatch : record.tripSheetId}</TableCell>
-                                <TableCell>{<Button onClick={() => doPost(dispense._id)} disabled={dispense.posted?.status} variant="default">{dispense.posted?.status ? "Posted" : "Post"}</Button>}</TableCell>
+                                <TableCell>{<Button onClick={() => post(dispense._id)} disabled={dispense.posted?.status} variant="default">{dispense.posted?.status ? "Posted" : "Post"}</Button>}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
