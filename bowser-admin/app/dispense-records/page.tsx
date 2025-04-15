@@ -576,17 +576,17 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                   </Link>
                 </TableCell>
                 <TableCell>
-                  {record.verified ? (<Check />) : (
+                  {record.verified ? (<Check className="text-green-500 block m-auto" />) : (
                     <Button onClick={() => { verifyOne(String(record._id)) }} variant={selectedRows.has(`${record._id}`) ? "secondary" : "outline"} >
                       Verify
                     </Button>
                   )}
                 </TableCell>
                 <TableCell>
-                  {record.posted ? (
-                    <Check />
+                  {record.posted?.status ? (
+                    <Check className="text-green-500 block m-auto" />
                   ) : (
-                      <X className="text-red-500 block mx-auto" />
+                    <X className="text-red-500 block mx-auto" />
                   )}
                 </TableCell>
               </TableRow>

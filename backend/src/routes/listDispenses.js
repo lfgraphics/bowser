@@ -70,7 +70,8 @@ router.get('/', async (req, res) => {
             verified: 1,
             category: 1,
             party: 1,
-            odometer: 1
+            odometer: 1,
+            posted: 1
         }).skip(skip).limit(Number(limit)).sort({ [sortBy]: sortOrder });
         const totalRecords = await FuelingTransaction.countDocuments();
         console.log(records.length)
