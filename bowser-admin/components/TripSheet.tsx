@@ -168,7 +168,7 @@ const TripSheetPage = () => {
                                 <TableCell>{sheet.totalLoadQuantity! > 0 ? sheet.totalLoadQuantity?.toFixed(2) : sheet.totalLoadQuantityBySlip}</TableCell>
                                 <TableCell className='text-center' >{sheet.dispenses?.length || "0"}</TableCell>
                                 <TableCell>{sheet.saleQty?.toFixed(2)}</TableCell>
-                                <TableCell>{sheet.balanceQtyBySlip?.toFixed(2)}</TableCell>
+                                <TableCell>{Number(sheet.totalLoadQuantity! > 0 ? sheet.totalLoadQuantity?.toFixed(2) : sheet.totalLoadQuantityBySlip) - Number(sheet.saleQty?.toFixed(2))}</TableCell>
                                 <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
                                     <TableCell className="flex justify-center gap-2 w-full">
                                         {sheet.settelment?.dateTime == undefined &&
