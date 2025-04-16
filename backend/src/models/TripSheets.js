@@ -88,7 +88,6 @@ tripSheetSchema.index({ 'loading.sheetId': 1 });
 
 tripSheetSchema.pre('save', async function (next) {
     try {
-        // Auto-increment tripSheetId
         if (this.isNew) {
             const counter = await Counter.findOneAndUpdate(
                 { _id: 'tripSheetId' },
@@ -111,6 +110,10 @@ tripSheetSchema.pre('save', async function (next) {
         this.balanceQty = this.totalLoadQuantity - this.saleQty;
         this.balanceQtyBySlip = this.totalLoadQuantityBySlip - this.saleQty;
 
+        // check for each dispense if all has been posted (posted?.status == true) then make this.posted = true
+        const allDispensesPosted = this.dispenses?.every(dispense => dispense.posted?.status === true);
+        this.posted = allDispensesPosted;
+        
         next();
     } catch (err) {
         console.error('Error in pre-save hook for TripSheet:', err);
