@@ -89,7 +89,7 @@ const tripSheetSchema = new mongoose.Schema({
                 remarks: { type: String },
             }
         }, _id: false
-    }, required: false
+    }
 });
 
 tripSheetSchema.index({ tripSheetId: 1 });
