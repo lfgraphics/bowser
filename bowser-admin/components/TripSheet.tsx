@@ -160,7 +160,7 @@ const TripSheetPage = () => {
                                     </Link>
                                 </TableCell>
                                 <TableCell>{sheet.fuelingAreaDestination}</TableCell>
-                                <TableCell>{`${formatDate(sheet.tripSheetGenerationDateTime ? sheet.tripSheetGenerationDateTime : sheet.createdAt)}`}</TableCell>
+                                <TableCell>{`${formatDate(sheet.createdAt)}`}</TableCell>
                                 <TableCell>{`${sheet.settelment?.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : ""}`}</TableCell>
                                 <TableCell>{sheet.bowser.regNo}</TableCell>
                                 <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.name : ""}</TableCell>
