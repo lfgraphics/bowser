@@ -189,6 +189,11 @@ const TripSheetPage = () => {
                                                             Settle
                                                         </DropdownMenuItem>
                                                     </Link>
+                                                    <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/close/${sheet._id}` : ``}>
+                                                        <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
+                                                            Close
+                                                        </DropdownMenuItem>
+                                                    </Link>
                                                     <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/addition/${sheet._id}?tripSheetId=${sheet.tripSheetId}` : ``}>
                                                         <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
                                                             Reload (+)

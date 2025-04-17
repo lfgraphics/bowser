@@ -81,6 +81,15 @@ const tripSheetSchema = new mongoose.Schema({
         }, _id: false
     },
     posted: { type: Boolean, default: false },
+    closure: {
+        type: {
+            dateTime: { type: Date },
+            details: {
+                reason: { type: String },
+                remarks: { type: String },
+            }
+        }, _id: false
+    }, required: false
 });
 
 tripSheetSchema.index({ tripSheetId: 1 });

@@ -268,41 +268,41 @@ router.patch('/update/:id', async (req, res) => {
     }
 });
 
-router.delete('/delete/:id', async (req, res) => {
-    const { id } = req.params;
+// router.delete('/delete/:id', async (req, res) => {
+//     const { id } = req.params;
 
-    if (!id) {
-        return res.status(400).json({ message: 'TripSheet ID is required.' });
-    }
+//     if (!id) {
+//         return res.status(400).json({ message: 'TripSheet ID is required.' });
+//     }
 
-    try {
-        const deletedTripSheet = await TripSheet.findByIdAndDelete(id);
+//     try {
+//         const deletedTripSheet = await TripSheet.findByIdAndDelete(id);
 
-        if (!deletedTripSheet) {
-            return res.status(404).json({ message: 'TripSheet not found.' });
-        }
+//         if (!deletedTripSheet) {
+//             return res.status(404).json({ message: 'TripSheet not found.' });
+//         }
 
-        // Reindex all remaining TripSheets
-        const tripSheets = await TripSheet.find().sort({ tripSheetId: 1 });
-        const highestId = tripSheets.length > 0 ? tripSheets[tripSheets.length - 1].tripSheetId : 0; // Get the highest existing ID
-        for (let i = 0; i < tripSheets.length; i++) {
-            tripSheets[i].tripSheetId = highestId + i + 1; // Reassign tripSheetId starting from the highest existing ID
-            await tripSheets[i].save(); // Save the updated TripSheet
-        }
+//         // Reindex all remaining TripSheets
+//         const tripSheets = await TripSheet.find().sort({ tripSheetId: 1 });
+//         const highestId = tripSheets.length > 0 ? tripSheets[tripSheets.length - 1].tripSheetId : 0; // Get the highest existing ID
+//         for (let i = 0; i < tripSheets.length; i++) {
+//             tripSheets[i].tripSheetId = highestId + i + 1; // Reassign tripSheetId starting from the highest existing ID
+//             await tripSheets[i].save(); // Save the updated TripSheet
+//         }
 
-        // Update the counter model
-        await Counter.findOneAndUpdate(
-            { _id: 'tripSheetId' },
-            { seq: highestId + tripSheets.length }, // Set the counter to the current number of TripSheets
-            { new: true }
-        );
+//         // Update the counter model
+//         await Counter.findOneAndUpdate(
+//             { _id: 'tripSheetId' },
+//             { seq: highestId + tripSheets.length }, // Set the counter to the current number of TripSheets
+//             { new: true }
+//         );
 
-        res.status(200).json({ message: 'TripSheet deleted successfully', deletedTripSheet });
-    } catch (err) {
-        console.error('Error deleting TripSheet:', err);
-        res.status(500).json({ message: 'Failed to delete TripSheet', error: err.message });
-    }
-});
+//         res.status(200).json({ message: 'TripSheet deleted successfully', deletedTripSheet });
+//     } catch (err) {
+//         console.error('Error deleting TripSheet:', err);
+//         res.status(500).json({ message: 'Failed to delete TripSheet', error: err.message });
+//     }
+// });
 
 router.get('/find-sheet-id-by-userId/:id', async (req, res) => {
     let id = req.params.id
@@ -327,6 +327,45 @@ router.get('/find-sheet-id-by-userId/:id', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.post('/close-trip/:id', async (req, res) => {
+    const id = req.params.id;
+    const { userDetails, reason, remarks, dateTime } = req.body;
+    try {
+        const tripsheet = await TripSheet.findById(new mongoose.Types.ObjectId(id));
+        if (!tripsheet) {
+            throw new Error(`can't find the trip sheet`);
+        }
+
+        let settlement = {
+            dateTime,
+            settled: true,
+            details: {
+
+                by: {
+                    id: userDetails.id,
+                    name: userDetails.name
+                }
+            }
+        };
+        tripsheet.settelment = settlement;
+        let closure = {
+            dateTime,
+            details: {
+                reason,
+                remarks,
+            }
+        }
+
+        tripsheet.closure = closure;
+
+        await tripsheet.save();
+        res.status(200).json({ message: 'Trip sheet closed successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({ message: error.message });
     }
 });
 
