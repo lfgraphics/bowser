@@ -146,6 +146,8 @@ router.get('/all', async (req, res) => {
             { $match: filter },
             {
                 $project: {
+                    totalAdditionQty: 1,
+                    balanceQty: 1,
                     tripSheetId: 1,
                     fuelingAreaDestination: 1,
                     tripSheetGenerationDateTime: 1,
