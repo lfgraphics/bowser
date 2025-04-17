@@ -19,7 +19,8 @@ import {
 } from "@/lib/storage";
 import { openEmbeddedCamera } from "@/components/EmbeddedCamera";
 import { Separator } from "@/components/ui/separator";
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogFooter } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // A single object type for the entire page’s form state
 interface LoadingSheetFormData {
@@ -30,6 +31,10 @@ interface LoadingSheetFormData {
     // Form fields
     odoMeter: string | number;
     fuleingMachine: string;
+    changeInOpeningDip?: {
+        reason: string;
+        remarks: string;
+    }
     pumpReadingBefore: string | number;
     pumpReadingAfter: string | number;
 
@@ -57,6 +62,8 @@ export default function LoadingSheetPage() {
     // -----------------------------------------
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [changeInOpeningDip, setChangeInOpeningDip] = useState<{ reason: string, remarks: string } | undefined>(undefined);
+    const [showdipListEditingReasonModel, setShowdipListEditingReasonModel] = useState(false)
     const [alertMessage, setAlertMessage] = useState<string>()
     const [alertDialogOpen, setAlertDialogOpen] = useState<boolean>(false)
 
@@ -140,7 +147,9 @@ export default function LoadingSheetPage() {
                     }
                     const data: OrderBowserResponse = await res.json();
                     const { order, bowser } = data;
-                    console.log("order: ", order)
+                    console.log("bowser: ", bowser)
+
+                    setChamberwiseDipListBefore(typeof bowser.currentTrip !== 'string' && bowser.currentTrip?.settelment?.details?.chamberwiseDipList ? bowser.currentTrip.settelment.details.chamberwiseDipList : []);
 
                     // If user has no local data, or we want to override
                     if (!didCancel) {
@@ -201,6 +210,7 @@ export default function LoadingSheetPage() {
             bowser,
             odoMeter,
             fuleingMachine,
+            changeInOpeningDip,
             pumpReadingBefore,
             pumpReadingAfter,
             chamberwiseDipListBefore,
@@ -217,6 +227,7 @@ export default function LoadingSheetPage() {
         bowser,
         odoMeter,
         fuleingMachine,
+        changeInOpeningDip,
         pumpReadingBefore,
         pumpReadingAfter,
         chamberwiseDipListBefore,
@@ -507,11 +518,67 @@ export default function LoadingSheetPage() {
                         {/* Chamberwise Dip BEFORE */}
                         <Separator />
                         <div className="p-2 rounded">
-                            <h4 className="mb-2 font-semibold">Chamberwise Dip (Before loading)</h4>
+                            <div className="flex flex-row justify-between items-center mb-2 gap-3">
+                                <h4 className="mb-2 font-semibold">Chamberwise Dip (Before loading)</h4>
+                                <Button variant="default" onClick={() => setShowdipListEditingReasonModel(true)}>Edit dip</Button>
+                            </div>
+                            <AlertDialog open={showdipListEditingReasonModel} onOpenChange={setShowdipListEditingReasonModel} >
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Select Why you want to change the opening dip</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            <Label htmlFor="reason">Reason</Label>
+                                            <Select 
+                                                value={changeInOpeningDip?.reason} 
+                                                onValueChange={(value) => setChangeInOpeningDip(prev => ({
+                                                    reason: value,
+                                                    remarks: prev?.remarks || ''
+                                                }))}
+                                            >
+                                                <SelectTrigger id="reason">
+                                                    <SelectValue placeholder="Select a reason" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Fuel purchase for stock">Fuel purchase for stock</SelectItem>
+                                                    <SelectItem value="Diesel mixing">Diesel mixing</SelectItem>
+                                                    <SelectItem value="Gida Consumption">Gida Consumption</SelectItem>
+                                                    <SelectItem value="Vehicle fueling">Vehicle fueling</SelectItem>
+                                                    <SelectItem value="Empty for maintenance">Empty for maintenance</SelectItem>
+                                                    <SelectItem value="Other bowser loading">Other bowser loading</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <Label htmlFor="remarks">Remarks</Label>
+                                            <Input 
+                                                id="remarks" 
+                                                type="string" 
+                                                value={changeInOpeningDip?.remarks} 
+                                                onChange={(e) => setChangeInOpeningDip(prev => ({
+                                                    reason: prev?.reason || '',
+                                                    remarks: e.target.value
+                                                }))} 
+                                            />
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => {
+                                            if (!changeInOpeningDip?.reason) {
+                                                setAlertMessage("Reason is required.");
+                                                setAlertDialogOpen(true);
+                                                return;
+                                            }
+                                            setShowdipListEditingReasonModel(false);
+                                        }}>
+                                            Change Dip List
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                             {chamberwiseDipListBefore.map((dip, idx) => (
                                 <div key={dip.chamberId} className="flex flex-col space-y-1 mb-2">
                                     <Label className="w-24">{dip.chamberId}</Label>
                                     <Input
+                                        disabled={changeInOpeningDip !== undefined}
                                         type="string"
                                         placeholder="Level Height"
                                         value={dip.levelHeight}

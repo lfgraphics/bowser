@@ -9,6 +9,12 @@ const loadingSheetSchema = new mongoose.Schema({
     pumpReadingBefore: { type: Number, required: false },
     pumpReadingAfter: { type: Number, required: true },
     product: { type: String },
+    changeInOpeningDip: {
+        type: {
+            reason: { type: String, required: true },
+            remarks: { type: String, required: false },
+        }, required: false
+    },
     chamberwiseDipListBefore: {
         type: [
             {

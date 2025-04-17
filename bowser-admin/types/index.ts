@@ -46,7 +46,8 @@ export interface Bowser {
   _id: string
   regNo: string
   chambers: Chamber[]
-  createdAt: Date
+  createdAt: string
+  currentTrip:TripSheet | string
 }
 
 export interface PumpSlip {
@@ -186,7 +187,7 @@ export interface TripSheet {
   fuelingAreaDestination?: string;
   proposedDepartureTime?: string;
   loading: {
-    sheetId: string;
+    sheetId: LoadingSheet |string;
     quantityByDip: number;
     quantityBySlip: number;
   };

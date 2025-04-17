@@ -73,7 +73,7 @@ router.get('/orders/:id', async (req, res) => {
         }
 
         // 2. Fetch the bowser based on regNo
-        const bowser = await Bowser.findOne({ regNo: loadingOrder.regNo }).lean();
+        const bowser = await Bowser.findOne({ regNo: loadingOrder.regNo }).populate('currentTrip').lean();
 
         // 3. Construct the desired response format
         //    - an array containing a single object
