@@ -69,7 +69,7 @@ router.post('/login', async (req, res) => {
     try {
         const { phoneNumber, password, deviceUUID } = req.body;
 
-        const user = await Driver.findOne({ 'MobileNo.MobileNo': phoneNumber });
+        const user = await Driver.findOne({ 'MobileNo.MobileNo': phoneNumber, password: { $exists: true } });
 
         if (!user) {
             return res.status(400).json({ message: 'आईडी मोजूद नहीं है|' });
