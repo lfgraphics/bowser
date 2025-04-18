@@ -158,7 +158,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
     record?.loading.sheetId.odoMeter
   );
   const [addition, setAddition] = useState<number>(
-    record?.totalAdditionQtyBySlip || 0
+    record?.totalAdditionQty || 0
   );
   // while closing (settlment)
   const [closingPumpReading, setclosingPumpReading] = useState<number>(
