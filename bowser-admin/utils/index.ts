@@ -43,3 +43,12 @@ export const updateTripDriver = async (vehicleNo: string, driver: string) => {
         throw error;
     }
 }
+
+
+export const debounce = (func: (...args: any[]) => void, delay: number) => {
+    let timer: NodeJS.Timeout;
+    return (...args: any[]) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => func(...args), delay);
+    };
+};

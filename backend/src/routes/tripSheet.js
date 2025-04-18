@@ -229,6 +229,26 @@ router.get('/:id', async (req, res) => {
         res.status(500).json({ message: 'Server error', error: err.message, stack: err.stack });
     }
 });
+
+router.get('/summary/get/:id', async (req, res) => {
+    const id = req.params.id;
+
+    try {
+        const sheet = await TripSheet.findById(id).populate('loading.sheetId').lean();
+
+        if (!sheet) {
+            return res.status(404).json({ message: 'TripSheet not found' });
+        }
+
+        res.status(200).json(sheet);
+
+    } catch (err) {
+        console.error('Error loading trip summary :', err);
+        console.error('Error stack:', err.stack);
+        res.status(500).json({ message: 'Server error', error: err.message, stack: err.stack });
+    }
+});
+
 router.get('/tripSheetId/:id', async (req, res) => {
     const id = req.params.id;
     try {

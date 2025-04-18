@@ -47,7 +47,7 @@ export interface Bowser {
   regNo: string
   chambers: Chamber[]
   createdAt: string
-  currentTrip:TripSheet | string
+  currentTrip: TripSheet | string
 }
 
 export interface PumpSlip {
@@ -100,6 +100,10 @@ export interface LoadingSheet {
     name: string;
     orderId: LoadingOrder;
   };
+  changeInOpeningDip: {
+    reason: string;
+    remarks: string;
+  },
   chamberwiseDipListAfter: {
     chamberId: string;
     levelHeight: number;
@@ -187,7 +191,7 @@ export interface TripSheet {
   fuelingAreaDestination?: string;
   proposedDepartureTime?: string;
   loading: {
-    sheetId: LoadingSheet |string;
+    sheetId: LoadingSheet | string;
     quantityByDip: number;
     quantityBySlip: number;
   };
@@ -287,6 +291,13 @@ export interface WholeTripSheet {
     settled: boolean;
   };
   posted?: boolean;
+  closure: {
+    dateTime: Date | string;
+    details: {
+      reason: string;
+      remarks: string;
+    };
+  }
 }
 
 export interface Extras {

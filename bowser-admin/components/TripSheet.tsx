@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, } from './ui/table';
 import { Button, } from './ui/button'
@@ -14,24 +14,29 @@ import {
 } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { Toaster } from "@/components/ui/toaster"
-import { Check, Eye, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Eye, X } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
-import { TripSheet } from '@/types/index';
+import { TripSheet, WholeTripSheet } from '@/types/index';
 import { isAuthenticated } from '@/lib/auth';
 import { BASE_URL } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { AlertDialog, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel, AlertDialogContent } from '@/components/ui/alert-dialog';
 import { AlertDialogHeader } from './ui/alert-dialog';
 import OnlyAllowed from './OnlyAllowed';
+import { debounce } from '@/utils';
+import Loading from '@/app/loading';
 
 
-const TripSheetPage = () => {
-
+const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
+    const router = useRouter();
     const checkAuth = () => {
-        const authenticated = isAuthenticated();
-        if (!authenticated) {
-            window.location.href = '/login';
+        if (typeof window !== 'undefined') {
+            const authenticated = isAuthenticated();
+            if (!authenticated) {
+                window.location.href = '/login';
+            }
         }
     };
     useEffect(() => {
@@ -39,17 +44,35 @@ const TripSheetPage = () => {
     }, []);
 
     const [sheets, setSheets] = useState<TripSheet[]>([]);
-    const [searchParam, setSearchParam] = useState<string>('');
+    const [searchParam, setSearchParam] = useState<string>(query?.searchParam || '');
     const [loading, setLoading] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
     const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false);
-    const [settlment, setSettlment] = useState<boolean>(false);
+    const [settlment, setSettlment] = useState<boolean>(query?.settlment === 'true');
     const [deletingSheetId, setDeletingSheetId] = useState<string>('');
+    const [summaryId, setSummaryId] = useState<string | undefined>(undefined);
+    const [showSummaryDialog, setShowSummaryDialog] = useState<boolean>(false);
+    const [summaryLoading, setSummaryLoading] = useState<boolean>(false);
+    const [summaryData, setSummaryData] = useState<WholeTripSheet | null>(null);
     const { toast } = useToast();
 
+    const fetchSummary = async () => {
+        try {
+            const response = await axios.get(`${BASE_URL}/tripsheet/summary/get/${summaryId}`);
+            setSummaryData(response.data);
+        } catch (error) {
+            toast({ title: 'Error', description: 'Failed to load summary', variant: "destructive" });
+        } finally {
+            setSummaryLoading(false);
+        }
+    }
+
     useEffect(() => {
-        loadSheets();
-    }, [searchParam, settlment]);
+        if (!summaryId || summaryId == undefined) return;
+        setShowSummaryDialog(true);
+        setSummaryLoading(true);
+        fetchSummary();
+    }, [summaryId])
 
     const loadSheets = async () => {
         setLoading(true);
@@ -58,13 +81,23 @@ const TripSheetPage = () => {
                 params: { searchParam, settlment },
             });
             setSheets(response.data);
-            console.log(response.data);
         } catch (error) {
             toast({ title: 'Error', description: 'Failed to load sheets', variant: "destructive" });
         } finally {
             setLoading(false);
         }
     };
+
+    const debouncedLoadSheets = useCallback(debounce(loadSheets, 2000), [searchParam, settlment]);
+
+    useEffect(() => {
+        const params = new URLSearchParams();
+        if (searchParam) params.set('searchParam', searchParam);
+        params.set('settlment', settlment.toString());
+        router.push(`?${params.toString()}`);
+
+        debouncedLoadSheets();
+    }, [searchParam, settlment, debouncedLoadSheets]);
 
     const postDispenses = async (sheetId: string) => {
         alert('This Funcitonality is nor avaliable for now')
@@ -83,10 +116,10 @@ const TripSheetPage = () => {
         }
     };
 
-    const openDeleteDialogue = (sheetId: string) => {
-        setDeletingSheetId(sheetId)
-        setShowDeleteDialog(true)
-    }
+    // const openDeleteDialogue = (sheetId: string) => {
+    //     setDeletingSheetId(sheetId)
+    //     setShowDeleteDialog(true)
+    // }
 
     return (
         <div className="bg-background p-6 text-foreground">
@@ -174,7 +207,7 @@ const TripSheetPage = () => {
                                         {sheet.settelment?.dateTime == undefined &&
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button variant="outline" size="lg" className='p-4 h-10 text-center'>
+                                                    <Button variant="default" size="sm" className='p-2 px-4 my-1 h-10 text-center '>
                                                         Update
                                                     </Button>
                                                 </DropdownMenuTrigger>
@@ -216,15 +249,18 @@ const TripSheetPage = () => {
                                             </DropdownMenu>
                                         }
                                         {sheet.settelment?.dateTime !== undefined &&
-                                            <Link href={`/tripsheets/${sheet._id}`}>
-                                                <Button variant="outline" size="lg">
-                                                    <Eye />
-                                                </Button>
-                                            </Link>
+                                            <div className='flex flex-row items-center justify-center gap-2'>
+                                                <Link href={`/tripsheets/${sheet._id}`} className='my-1'>
+                                                    <Button variant="secondary" size="default">
+                                                        <Eye />
+                                                    </Button>
+                                                </Link>
+                                                <Button variant="secondary" onClick={() => { setSummaryId(sheet._id!); setShowSummaryDialog(true) }}>Summary</Button>
+                                            </div>
                                         }
                                     </TableCell>
                                 </OnlyAllowed>
-                                <TableCell>{sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.verified?.status) ? <Link href={`/tripsheets/post/${sheet._id}`}> <Button variant="default">Post</Button> </Link> : (sheet.dispenses && sheet.dispenses.length > 0 ? <X className="text-red-500 block mx-auto" /> : null)}</TableCell>
+                                <TableCell>{sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.verified?.status == true) ? <Link href={`/tripsheets/post/${sheet._id}`}> <Button variant="default">Post</Button> </Link> : (sheet.dispenses && sheet.dispenses.length > 0 ? <X className="text-red-500 block mx-auto" /> : null)}</TableCell>
                             </TableRow>
                         ))
                     )}
@@ -245,6 +281,40 @@ const TripSheetPage = () => {
                     </AlertDialog>
                 )
             }
+
+            {showSummaryDialog && <AlertDialog open={showSummaryDialog} onOpenChange={setShowSummaryDialog}>
+                <AlertDialogContent className='w-[800px]'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Summary</AlertDialogTitle>
+                        <AlertDialogDescription className='text-white'>
+                            {summaryLoading ? (
+                                <Loading />
+                            ) : summaryData ? (
+                                <div className="flex flex-col space-y-4">
+                                    {summaryData.closure && summaryData.closure.details && (
+                                        <div className="relative flex justify-center items-center mb-4">
+                                            <div className="absolute text-center text-red-600 font-bold text-xl transform rotate-[-15deg] border-4 border-red-600 border-dashed px-4 py-2">
+                                                {summaryData.closure.details.reason}
+                                            </div>
+                                        </div>
+                                    )}
+                                    <h2 className="text-lg font-bold">Trip Sheet ID: {summaryData.tripSheetId}</h2>
+                                    <p><strong>Total Load Quantity:</strong> {summaryData.totalLoadQuantityBySlip}</p>
+                                    <p><strong>Total Dispenses:</strong> {summaryData.dispenses.length}</p>
+                                    <p><strong>Total Sale Quantity:</strong> {summaryData.saleQty}</p>
+                                    <p><strong>Total Balance:</strong> {(Number(summaryData.totalLoadQuantityBySlip) - Number(summaryData.saleQty)).toFixed(2)}</p>
+                                    {summaryData.settelment && <p><strong>Dip Quantity after settelment:</strong>{summaryData.settelment.details.chamberwiseDipList.reduce((total, chamber) => total + chamber.qty, 0)}</p>}
+                                    {typeof summaryData.loading.sheetId !== 'string' && summaryData.loading.sheetId.changeInOpeningDip && <p><strong>Cause of change in opening Dip:</strong>{`${summaryData.loading.sheetId.changeInOpeningDip.reason}${summaryData.loading.sheetId.changeInOpeningDip.remarks ? `, ${summaryData.loading.sheetId.changeInOpeningDip.remarks}` : ''}`}</p>}
+                                    {summaryData.closure && summaryData.closure.details && <p><strong>Reason of closure:</strong>{`${summaryData.closure.details.reason} ${summaryData.closure.details.remarks ? ', ' + summaryData.closure.details.remarks : ''}`}</p>}
+                                </div>
+                            ) : (
+                                <div className="text-center">No summary data available.</div>
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogAction onClick={() => { setShowSummaryDialog(false); setSummaryId(undefined) }}>Close</AlertDialogAction>
+                </AlertDialogContent>
+            </AlertDialog>}
         </div >
     );
 };

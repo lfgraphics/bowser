@@ -81,7 +81,7 @@ async function registerSubscription({ mobileNumber, userId, subscription, platfo
 async function sendWebPushNotification({ mobileNumber, userId, message, options = {} }) {
     // Ensure at least one of mobileNumber or userId is provided
     if (!mobileNumber && !userId) {
-        throw new Error('Either mobileNumber or userId must be provided.');
+        return { success: false, message: 'Either mobileNumber or userId must be provided.' };
     }
 
     console.log(userId, mobileNumber, message);
@@ -94,7 +94,7 @@ async function sendWebPushNotification({ mobileNumber, userId, message, options 
         });
 
         if (!subscriptionData || !subscriptionData.subscription) {
-            throw new Error('No web subscription found for the provided userId or mobile number.');
+            return { success: false, message: 'No web subscription found for the provided userId or mobile number.' };
         }
 
         const subscription = subscriptionData.subscription;

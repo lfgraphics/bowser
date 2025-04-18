@@ -522,58 +522,60 @@ export default function LoadingSheetPage() {
                                 <h4 className="mb-2 font-semibold">Chamberwise Dip (Before loading)</h4>
                                 <Button variant="default" onClick={() => setShowdipListEditingReasonModel(true)}>Edit dip</Button>
                             </div>
-                            <AlertDialog open={showdipListEditingReasonModel} onOpenChange={setShowdipListEditingReasonModel} >
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Select Why you want to change the opening dip</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            <Label htmlFor="reason">Reason</Label>
-                                            <Select 
-                                                value={changeInOpeningDip?.reason} 
-                                                onValueChange={(value) => setChangeInOpeningDip(prev => ({
-                                                    reason: value,
-                                                    remarks: prev?.remarks || ''
-                                                }))}
-                                            >
-                                                <SelectTrigger id="reason">
-                                                    <SelectValue placeholder="Select a reason" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Fuel purchase for stock">Fuel purchase for stock</SelectItem>
-                                                    <SelectItem value="Diesel mixing">Diesel mixing</SelectItem>
-                                                    <SelectItem value="Gida Consumption">Gida Consumption</SelectItem>
-                                                    <SelectItem value="Vehicle fueling">Vehicle fueling</SelectItem>
-                                                    <SelectItem value="Empty for maintenance">Empty for maintenance</SelectItem>
-                                                    <SelectItem value="Other bowser loading">Other bowser loading</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <Label htmlFor="remarks">Remarks</Label>
-                                            <Input 
-                                                id="remarks" 
-                                                type="string" 
-                                                value={changeInOpeningDip?.remarks} 
-                                                onChange={(e) => setChangeInOpeningDip(prev => ({
-                                                    reason: prev?.reason || '',
-                                                    remarks: e.target.value
-                                                }))} 
-                                            />
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => {
-                                            if (!changeInOpeningDip?.reason) {
-                                                setAlertMessage("Reason is required.");
-                                                setAlertDialogOpen(true);
-                                                return;
-                                            }
-                                            setShowdipListEditingReasonModel(false);
-                                        }}>
-                                            Change Dip List
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            {showdipListEditingReasonModel &&
+                                <AlertDialog open={showdipListEditingReasonModel} onOpenChange={setShowdipListEditingReasonModel} >
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Select Why you want to change the opening dip</AlertDialogTitle>
+                                            <AlertDialogDescription className="text-center flex flex-col gap-2">
+                                                <Label htmlFor="reason">Reason</Label>
+                                                <Select
+                                                    value={changeInOpeningDip?.reason}
+                                                    onValueChange={(value) => setChangeInOpeningDip(prev => ({
+                                                        reason: value,
+                                                        remarks: prev?.remarks || ''
+                                                    }))}
+                                                >
+                                                    <SelectTrigger id="reason">
+                                                        <SelectValue placeholder="Select a reason" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Fuel purchase for stock">Fuel purchase for stock</SelectItem>
+                                                        <SelectItem value="Diesel mixing">Diesel mixing</SelectItem>
+                                                        <SelectItem value="Gida Consumption">Gida Consumption</SelectItem>
+                                                        <SelectItem value="Vehicle fueling">Vehicle fueling</SelectItem>
+                                                        <SelectItem value="Empty for maintenance">Empty for maintenance</SelectItem>
+                                                        <SelectItem value="Other bowser loading">Other bowser loading</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <Label htmlFor="remarks">Remarks</Label>
+                                                <Input
+                                                    id="remarks"
+                                                    type="string"
+                                                    value={changeInOpeningDip?.remarks}
+                                                    onChange={(e) => setChangeInOpeningDip(prev => ({
+                                                        reason: prev?.reason || '',
+                                                        remarks: e.target.value
+                                                    }))}
+                                                />
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel onClick={() => setChangeInOpeningDip(undefined)}>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => {
+                                                if (!changeInOpeningDip?.reason) {
+                                                    setAlertMessage("Reason is required.");
+                                                    setAlertDialogOpen(true);
+                                                    return;
+                                                }
+                                                setShowdipListEditingReasonModel(false);
+                                            }}>
+                                                Change Dip List
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            }
                             {chamberwiseDipListBefore.map((dip, idx) => (
                                 <div key={dip.chamberId} className="flex flex-col space-y-1 mb-2">
                                     <Label className="w-24">{dip.chamberId}</Label>

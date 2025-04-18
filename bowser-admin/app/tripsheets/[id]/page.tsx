@@ -16,19 +16,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import Link from 'next/link';
 import { Check, Eye, X } from 'lucide-react';
 import OnlyAllowed from '@/components/OnlyAllowed';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { checkTallyStatus } from '@/utils/tally';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface WholeTripSheetCardProps {
     record: WholeTripSheet;
 }
 
 const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [showAlert, setShowAlert] = useState<boolean>(false);
     const [alertTitle, setAlertTitle] = useState("");
     const [alertMessage, setAlertMessage] = useState("");
-    const [tallyStatus, setTallyStatus] = useState<string>("Tally Not Opened");
     const [deleteRecord, setDeleteRecord] = useState<string>("");
     const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,17 +66,9 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
         }
     }
 
-    const status = async () => {
-        const status = await checkTallyStatus();
-        console.log(status);
-    };
-
-    useEffect(() => {
-        status();
-    }, []);
-
     return (
         <>
+            {loading && <Loading />}
             <Card className="shadow-lg mt-8 p-4">
                 {/* Header */}
                 <CardHeader>
@@ -216,8 +206,6 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                     </Badge>
                 </CardFooter>
             </Card>
-
-
             <Table className="w-max min-w-full">
                 <TableHeader>
                     <TableRow>
@@ -312,6 +300,22 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                 </TableBody>
             </Table>
 
+            {showAlert &&
+            <AlertDialog open={showAlert} onOpenChange={setShowAlert} >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{alertTitle}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {alertMessage}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Okay</AlertDialogCancel>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            }
+
             <Button onClick={openCalculationModal}>Show Calculations</Button>
             <Modal isOpen={isModalOpen} onClose={closeModal}>
                 {selectedImage && (
@@ -330,7 +334,7 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
 };
 
 export const page = ({ params }: { params: { id: string } }) => {
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const checkAuth = () => {
         const authenticated = isAuthenticated();
         if (!authenticated) {
@@ -404,7 +408,11 @@ export const page = ({ params }: { params: { id: string } }) => {
                 pumpReadingBefore: 0,
                 pumpSlips: [],
                 product: "HSD",
-                tempLoadByDip: 0
+                tempLoadByDip: 0,
+                changeInOpeningDip: {
+                    reason: '',
+                    remarks: ''
+                }
             },
             quantityByDip: 0,
             quantityBySlip: 0
@@ -458,7 +466,11 @@ export const page = ({ params }: { params: { id: string } }) => {
                 pumpReadingBefore: 0,
                 pumpSlips: [],
                 product: "HSD",
-                tempLoadByDip: 0
+                tempLoadByDip: 0,
+                changeInOpeningDip: {
+                    reason: '',
+                    remarks: ''
+                }
             },
             quantityByDip: 0,
             quantityBySlip: 0
@@ -488,7 +500,14 @@ export const page = ({ params }: { params: { id: string } }) => {
             },
             settled: false
         },
-        posted: false
+        posted: false,
+        closure: {
+            dateTime: '',
+            details: {
+                reason: '',
+                remarks: ''
+            }
+        }
     }
 
     const [record, setRecord] = useState<WholeTripSheet>(dummyRecord);

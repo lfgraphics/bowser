@@ -1,21 +1,14 @@
-"use client"
-import TripSheetPage from '@/components/TripSheet'
-import { isAuthenticated } from '@/lib/auth';
-import React, { useEffect } from 'react'
+"use client";
 
-const page = () => {
-    const checkAuth = () => {
-        const authenticated = isAuthenticated();
-        if (!authenticated) {
-            window.location.href = '/login';
-        }
-    };
-    useEffect(() => {
-        checkAuth();
-    }, []);
-    return (
-        <TripSheetPage />
-    )
-}
+import TripSheetPage from '@/components/TripSheet';
+import { useSearchParams } from 'next/navigation';
 
-export default page;
+const Page = () => {
+    const searchParams = useSearchParams();
+
+    const query = Object.fromEntries(searchParams.entries());
+
+    return <TripSheetPage query={query} />;
+};
+
+export default Page;

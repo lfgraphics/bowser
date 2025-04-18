@@ -333,7 +333,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
         </TableBody>
       </Table>
 
-      <h3 className="font-bold">Quantitative Statement as per Calibration</h3>
+      <h3 className="font-bold">Quantitative Statement as per Calibration</h3> {record.loading.sheetId.changeInOpeningDip && <span className="text-red-600">{`${record.loading.sheetId.changeInOpeningDip.reason}${record.loading.sheetId.changeInOpeningDip.remarks ? `, ${record.loading.sheetId.changeInOpeningDip.remarks}` : ''}`}</span>}
       <div className="flex flex-row justify-between gap-3 w-full">
         <Table>
           <TableHeader className="border-none font-bold">
