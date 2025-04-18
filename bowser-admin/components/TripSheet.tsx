@@ -286,7 +286,7 @@ const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
                 <AlertDialogContent className='w-[800px]'>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Summary</AlertDialogTitle>
-                        <AlertDialogDescription className='text-white'>
+                        <AlertDialogDescription className='text-foreground'>
                             {summaryLoading ? (
                                 <Loading />
                             ) : summaryData ? (

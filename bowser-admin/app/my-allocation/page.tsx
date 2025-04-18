@@ -1,35 +1,18 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { DispensesRecord, FuelingOrder, User } from "@/types";
+import { FuelingOrder, User } from "@/types";
 import {
     Table,
     TableBody,
     TableCell,
     TableHead,
     TableHeader,
-    TableRow,
-    TableCaption
+    TableRow
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from "@/components/ui/accordion"
-import Link from "next/link";
 import { isAuthenticated } from "@/lib/auth";
 import Loading from "../loading";
-import { Check, Eye, ListChecks, ListX, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { BASE_URL } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
@@ -47,10 +30,6 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
     const [filter, setFilter] = useState({ bowserNumber: "", driverName: "", tripSheetId: Number(tripNumber), verified: "all", vehicleNo: "" });
     const [sortBy, setSortBy] = useState("createdAt");
     const [order, setOrder] = useState("desc");
-    const [localBowserNumber, setLocalBowserNumber] = useState("");
-    const [localDriverName, setLocalDriverName] = useState("");
-    const [localTripSheetId, setLocalTripSheetId] = useState<number | undefined>(tripNumber);
-    const [localVehicleNo, setLocalVehicleNo] = useState("");
     const [limit, setLimit] = useState(20);
     const [loading, setLoading] = useState(true);
     const [verificationStatus, setVerificationStatus] = useState("all");
@@ -207,40 +186,6 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
         }
     }
 
-    const verifyMultiple = async () => {
-        if (selectedRows.size === 0) {
-            return;
-        }
-
-        const idsToVerify = Array.from(selectedRows).filter((id) => {
-            const record = records.find((r) => r._id === id);
-            return record && !record.fulfilled;
-        });
-
-        if (idsToVerify.length === 0) {
-            alert('no data to verify')
-            return;
-        }
-
-        try {
-            let response = await axios.post(`${BASE_URL}/listDispenses/verify/`, { ids: idsToVerify, by: { id: user?.userId, name: user?.name } });
-            if (response.status === 200) {
-                setRecords((prevRecords) =>
-                    prevRecords.map((record) =>
-                        idsToVerify.includes(record._id) ? { ...record, verified: { status: true } } : record
-                    )
-                );
-                toast({ title: response.data.heading, description: response.data.message, variant: "success" });
-            }
-        } catch (err) {
-            if (err instanceof Error) {
-                toast({ title: "Error", description: err.message, variant: "destructive" });
-            } else {
-                toast({ title: "Error", description: "An unknown error occurred", variant: "destructive" });
-            }
-        }
-    };
-
     return (
         <div className="relative">
             {(loading || records.length < 1) && (
@@ -252,7 +197,6 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
             </div>
 
             <Table className="w-max min-w-full">
-                {/* <TableCaption>A list of your recent Dispenses.</TableCaption> */}
                 <TableHeader>
                     <TableRow>
                         <TableHead>S N</TableHead>

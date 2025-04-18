@@ -52,7 +52,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
         <Button
           variant="outline"
           onClick={onClose}
-          className="top-2 right-2 absolute font-bold text-2xl text-gray-700 hover:text-gray-900"
+          className="top-2 right-2 absolute font-bold text-2xl text-foreground hover:text-gray-500 transition-colors duration-300"
+          aria-label="Close modal"
         >
           &times;
         </Button>

@@ -258,10 +258,10 @@ export default function LoadingOrdersPage() {
             {
                 error && (
                     <AlertDialog open={showErrorAlert} onOpenChange={setShowErrorAlert}>
-                        <AlertDialogContent className='bg-red-600 text-white'>
+                        <AlertDialogContent className='bg-red-600 text-foreground'>
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Error</AlertDialogTitle>
-                                <AlertDialogDescription className='text-white'>
+                                <AlertDialogDescription className='text-foreground'>
                                     {String(error)}
                                 </AlertDialogDescription>
                             </AlertDialogHeader>

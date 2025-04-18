@@ -168,7 +168,7 @@ const page = ({ params }: { params: { manager: string } }) => {
                         <AlertDialogTitle>Confirm Rejection</AlertDialogTitle>
                         <AlertDialogDescription>
                             Are you sure you want to Reject this fuel request? This action cannot be undone.
-                            <Input value={deleteMessage} type="text" onChange={(e) => setDeleteMessage(e.target.value)} placeholder='Enter reason for Rejection.' className='mt-3 text-white placeholder:text-gray-300' />
+                            <Input value={deleteMessage} type="text" onChange={(e) => setDeleteMessage(e.target.value)} placeholder='Enter reason for Rejection.' className='mt-3 text-foreground placeholder:text-gray-400' />
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogAction onClick={() => handleDelete(deleteMessage)} disabled={deleteMessage?.length < 5}>Reject</AlertDialogAction>
@@ -193,10 +193,10 @@ const page = ({ params }: { params: { manager: string } }) => {
             {
                 error && (
                     <AlertDialog open={showErrorAlert} onOpenChange={setShowErrorAlert}>
-                        <AlertDialogContent className='bg-red-600 text-white'>
+                        <AlertDialogContent className='bg-red-600 text-foreground'>
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Error</AlertDialogTitle>
-                                <AlertDialogDescription className='text-white'>
+                                <AlertDialogDescription className='text-foreground'>
                                     {String(error)}
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
