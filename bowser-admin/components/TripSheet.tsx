@@ -260,7 +260,7 @@ const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
                                         }
                                     </TableCell>
                                 </OnlyAllowed>
-                                <TableCell>{sheet.dispenses && sheet.dispenses.length > 0 && sheet.dispenses.every(dispense => dispense.verified?.status == true) ? <Link href={`/tripsheets/post/${sheet._id}`}> <Button variant="default">Post</Button> </Link> : (sheet.dispenses && sheet.dispenses.length > 0 ? <X className="text-red-500 block mx-auto" /> : null)}</TableCell>
+                                <TableCell>{sheet.dispenses?.length > 0 ? sheet.dispenses.every(d => d.posted) ? <span className="text-gray-500">Posted</span> : sheet.dispenses.every(d => d.verified?.status === true && d.verified.by) ? <Link href={`/tripsheets/post/${sheet._id}`}><Button variant="default">Post</Button></Link> : <X className="text-red-500 block mx-auto" /> : null}</TableCell>
                             </TableRow>
                         ))
                     )}

@@ -164,6 +164,8 @@ router.get('/all', async (req, res) => {
                             as: "dispense",
                             in: {
                                 _id: "$$dispense._id",
+                                verified: "$$dispense.verified",
+                                posted: "$$dispense.posted",
                             }
                         }
                     }

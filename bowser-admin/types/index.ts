@@ -210,7 +210,7 @@ export interface TripSheet {
         name: string;
       };
     }
-    isPosted: boolean;
+    posted: boolean;
   }[];
   totalLoadQuantity?: number;
   loadQty?: number;
