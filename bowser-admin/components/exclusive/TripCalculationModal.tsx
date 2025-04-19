@@ -5,6 +5,7 @@ import { WholeTripSheet } from "@/types";
 import { formatDate } from "@/lib/utils";
 import "./style.css"
 import Image from "next/image";
+import Stamp from "../Stamp";
 
 interface TripCalculationModalProps {
   record: WholeTripSheet; // Trip sheet details
@@ -243,6 +244,9 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
 
   return (
     <div className="bg-white p-4 text-black">
+      {record.closure && record.closure.details && (
+        <Stamp text={record.closure.details.reason} className="translate-y-24" size="scale-125" rounded="rounded-sm" />
+      )}
       <h2 className="mb-2 font-bold text-xl text-center">Bowser Tripsheet Settlement Statement</h2>
       <Table className="border border-black">
         <TableBody>
@@ -296,8 +300,9 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
           </TableRow>
         </TableBody>
       </Table>
-
-      <h3 className="font-bold">Loading & Distribution Summary</h3>
+      <div className="flex flex-row items-center gap-3 w-full">
+        <h3 className="font-bold">Loading & Distribution Summary</h3> <span className="text-red-500 font-semibolds">{record.loading.sheetId.changeInOpeningDip && record.loading.sheetId.changeInOpeningDip.reason + ": " + record.loading.sheetId.changeInOpeningDip.remarks || record.closure && record.closure.details.reason + ": " + record.closure.details.remarks}</span>
+      </div>
       <Table className="border border-black">
         <TableBody>
           <TableRow className="border-none">
@@ -333,7 +338,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
         </TableBody>
       </Table>
 
-      <h3 className="font-bold">Quantitative Statement as per Calibration</h3> {record.loading.sheetId.changeInOpeningDip && <span className="text-red-600">{`${record.loading.sheetId.changeInOpeningDip.reason}${record.loading.sheetId.changeInOpeningDip.remarks ? `, ${record.loading.sheetId.changeInOpeningDip.remarks}` : ''}`}</span>}
+      <h3 className="font-bold">Quantitative Statement as per Calibration</h3>
       <div className="flex flex-row justify-between gap-3 w-full">
         <Table>
           <TableHeader className="border-none font-bold">

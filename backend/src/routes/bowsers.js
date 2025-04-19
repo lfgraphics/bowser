@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Bowser = require('../models/Bowsers');
+const { TripSheet } = require('../models/TripSheets');
 const mongoose = require('mongoose')
 const { calculateChamberLevels } = require('../utils/calibration');
 
@@ -104,6 +105,28 @@ router.delete('/:id', async (req, res) => {
         res.status(200).json({ message: 'Bowser deleted', bowser });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete bowser', details: error });
+    }
+});
+
+router.get('/trips/:bowserNumber', async (req, res) => {
+    const bowserNumber = req.params.bowserNumber;
+    try {
+        const trips = await TripSheet.find({ 'bowser.regNo': { $regex: bowserNumber, $options: 'i' } })
+            .sort({ createdAt: -1 })
+            .populate(
+                'loading.sheetId',
+                '-dispenses -loadingSlips -chamberwiseSealList'
+            ).select('-dispenses')
+            .lean();
+
+        if (!trips || trips.length === 0) {
+            return res.status(404).json({ message: 'No trips found for this bowser number' });
+        }
+
+        res.status(200).json(trips);
+    } catch (error) {
+        console.error('Error fetching trips:', error);
+        res.status(500).json({ error: 'Failed to fetch trips', error });
     }
 });
 

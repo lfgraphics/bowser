@@ -500,4 +500,95 @@ export interface FuelingOrder {
   createdAt: Date
 }
 
+export interface BowserTrips {
+  _id: string;
+  bowser: {
+    regNo: string;
+    driver: Array<{
+      handOverDate: string; // ISO date string
+      name: string;
+      phoneNo: string;
+    }>;
+  };
+  hsdRate: number;
+  fuelingAreaDestination: string;
+  proposedDepartureTime: string; // ISO date string
+  loading: {
+    sheetId: {
+      _id: string;
+      regNo: string;
+      odoMeter: number;
+      fuleingMachine: string;
+      pumpReadingBefore: number;
+      pumpReadingAfter: number;
+      chamberwiseDipListBefore: Array<{
+        chamberId: string;
+        levelHeight: number;
+        qty: number;
+      }>;
+      chamberwiseDipListAfter: Array<{
+        chamberId: string;
+        levelHeight: number;
+        qty: number;
+      }>;
+      changeInOpeningDip: {
+        reason: string;
+        remarks: string;
+      },
+      totalLoadQuantityBySlip: number;
+      totalLoadQuantityByDip: number;
+      tempLoadByDip: number;
+      loadingIncharge: {
+        id: string;
+        name: string;
+      };
+      bccAuthorizedOfficer: {
+        orderId: string;
+        id: string;
+        name: string;
+      };
+      fulfilled: boolean;
+      createdAt: string; // ISO date string
+      __v: number;
+    };
+    quantityByDip: number;
+    quantityBySlip: number;
+  };
+  posted: boolean;
+  createdAt: string; // ISO date string
+  addition: any[];   // adjust `any` if you know the shape
+  tripSheetId: number;
+  loadQty: number;
+  totalAdditionQty: number;
+  totalLoadQuantityBySlip: number;
+  totalLoadQuantity: number;
+  saleQty: number;
+  balanceQty: number;
+  balanceQtyBySlip: number;
+  settelment?: {
+    dateTime: Date;
+    details: {
+      odometer: number;
+      pumpReading: number;
+      chamberwiseDipList: {
+        chamberId: string;
+        levelHeight: number;
+        qty: number;
+      }[];
+      totalQty: number;
+      extras: Extras;
+    };
+    settled: boolean;
+  };
+  closure: {
+    dateTime: Date | string;
+    details: {
+      reason: string;
+      remarks: string;
+    };
+  }
+  __v: number;
+}
+
+
 export type FuelingTypes = 'Own' | 'Attatch' | 'Bulk Sale'

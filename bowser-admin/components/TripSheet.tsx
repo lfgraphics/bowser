@@ -27,6 +27,7 @@ import { AlertDialogHeader } from './ui/alert-dialog';
 import OnlyAllowed from './OnlyAllowed';
 import { debounce } from '@/utils';
 import Loading from '@/app/loading';
+import Stamp from './Stamp';
 
 
 const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
@@ -60,6 +61,7 @@ const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
         try {
             const response = await axios.get(`${BASE_URL}/tripsheet/summary/get/${summaryId}`);
             setSummaryData(response.data);
+            console.log('summary: ', response.data);
         } catch (error) {
             toast({ title: 'Error', description: 'Failed to load summary', variant: "destructive" });
         } finally {
@@ -195,7 +197,7 @@ const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
                                 <TableCell>{sheet.fuelingAreaDestination}</TableCell>
                                 <TableCell>{`${formatDate(sheet.createdAt)}`}</TableCell>
                                 <TableCell>{`${sheet.settelment?.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : ""}`}</TableCell>
-                                <TableCell>{sheet.bowser.regNo}</TableCell>
+                                <TableCell><Link className='text-blue-500 underline' href={`/tripsheets/bowser/${sheet.bowser.regNo}`}>{sheet.bowser.regNo}</Link></TableCell>
                                 <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.name : ""}</TableCell>
                                 <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.phoneNo : ""}</TableCell>
                                 <TableCell>{(sheet.totalLoadQuantityBySlip || 0) + (sheet.totalAdditionQty || 0)}</TableCell>
@@ -292,20 +294,89 @@ const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
                             ) : summaryData ? (
                                 <div className="flex flex-col space-y-4">
                                     {summaryData.closure && summaryData.closure.details && (
-                                        <div className="relative flex justify-center items-center mb-4">
-                                            <div className="absolute text-center text-red-600 font-bold text-xl transform rotate-[-15deg] border-4 border-red-600 border-dashed px-4 py-2">
-                                                {summaryData.closure.details.reason}
-                                            </div>
-                                        </div>
+                                        <Stamp text={summaryData.closure.details.reason} color="red-600" />
                                     )}
-                                    <h2 className="text-lg font-bold">Trip Sheet ID: {summaryData.tripSheetId}</h2>
-                                    <p><strong>Total Load Quantity:</strong> {summaryData.totalLoadQuantityBySlip}</p>
-                                    <p><strong>Total Dispenses:</strong> {summaryData.dispenses.length}</p>
-                                    <p><strong>Total Sale Quantity:</strong> {summaryData.saleQty}</p>
-                                    <p><strong>Total Balance:</strong> {(Number(summaryData.totalLoadQuantityBySlip) - Number(summaryData.saleQty)).toFixed(2)}</p>
-                                    {summaryData.settelment && <p><strong>Dip Quantity after settelment:</strong>{summaryData.settelment.details.chamberwiseDipList.reduce((total, chamber) => total + chamber.qty, 0)}</p>}
-                                    {typeof summaryData.loading.sheetId !== 'string' && summaryData.loading.sheetId.changeInOpeningDip && <p><strong>Cause of change in opening Dip:</strong>{`${summaryData.loading.sheetId.changeInOpeningDip.reason}${summaryData.loading.sheetId.changeInOpeningDip.remarks ? `, ${summaryData.loading.sheetId.changeInOpeningDip.remarks}` : ''}`}</p>}
-                                    {summaryData.closure && summaryData.closure.details && <p><strong>Reason of closure:</strong>{`${summaryData.closure.details.reason} ${summaryData.closure.details.remarks ? ', ' + summaryData.closure.details.remarks : ''}`}</p>}
+                                    {(() => {
+                                        const ch1Openingqty = Number(summaryData.loading.sheetId?.chamberwiseDipListBefore?.find((chamber) => chamber.chamberId === "Chamber-1")?.qty.toFixed(2)) || 0;
+                                        const ch2Openingqty = Number(summaryData.loading.sheetId?.chamberwiseDipListBefore.find((chamber) => chamber.chamberId === "Chamber-2")?.qty.toFixed(2)) || 0;
+                                        const totalOpeningQty = Number((ch1Openingqty + ch2Openingqty).toFixed(2));
+                                        const loadQty = Number(summaryData.loading.quantityBySlip?.toFixed(2)) || 0;
+                                        const addition = summaryData.totalAdditionQty || 0;
+                                        const ch1qty = summaryData.settelment?.details.chamberwiseDipList.find((chamber) => chamber.chamberId === "Chamber-1")?.qty || 0;
+                                        const ch2qty = summaryData.settelment?.details.chamberwiseDipList.find((chamber) => chamber.chamberId === "Chamber-2")?.qty || 0;
+                                        const totalLoadQty = totalOpeningQty + loadQty + addition;
+                                        const totalClosingQty = Number((ch1qty + ch2qty).toFixed(2));
+                                        const saleAsPerDriver = summaryData.saleQty || 0;
+                                        const saleAsPerLoad = totalLoadQty - totalClosingQty;
+                                        const unload = summaryData.settelment?.details.extras?.unload || 0;
+                                        const shortExcess = Number((saleAsPerDriver - saleAsPerLoad + unload).toFixed(2));
+
+                                        return (
+                                            <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
+                                                <h2 className="text-lg font-bold col-span-2">Trip Sheet ID: {summaryData.tripSheetId}</h2>
+
+                                                <div className="grid grid-cols-2 gap-2 col-span-2">
+                                                    <div className="bg-muted p-2 rounded">
+                                                        <span className="font-semibold">Opening Qty:</span>
+                                                        <span className="float-right">{totalOpeningQty.toFixed(2)}</span>
+                                                    </div>
+
+                                                    <div className="bg-muted p-2 rounded">
+                                                        <span className="font-semibold">Closing Qty:</span>
+                                                        <span className="float-right">{totalClosingQty.toFixed(2)}</span>
+                                                    </div>
+
+                                                    <div className="bg-muted p-2 rounded">
+                                                        <span className="font-semibold">Total Load Quantity:</span>
+                                                        <span className="float-right">{totalLoadQty}</span>
+                                                    </div>
+
+                                                    <div className="bg-muted p-2 rounded">
+                                                        <span className="font-semibold">Total Dispenses:</span>
+                                                        <span className="float-right">{summaryData.dispenses.length}</span>
+                                                    </div>
+
+                                                    <div className="bg-muted p-2 rounded">
+                                                        <span className="font-semibold">Total Sale Quantity:</span>
+                                                        <span className="float-right">{summaryData.saleQty?.toFixed(2)}</span>
+                                                    </div>
+
+                                                    <div className="bg-muted p-2 rounded">
+                                                        <span className="font-semibold">Total Balance:</span>
+                                                        <span className="float-right">{(totalLoadQty - Number(summaryData.saleQty)).toFixed(2)}</span>
+                                                    </div>
+
+                                                    {summaryData.settelment && (
+                                                        <>
+                                                            {/* <div className="bg-muted p-2 rounded">
+                                                                <span className="font-semibold">Dip Quantity after settelment:</span>
+                                                                <span className="float-right">{totalClosingQty}</span>
+                                                            </div> */}
+
+                                                            <div className="bg-muted p-2 rounded">
+                                                                <span className="font-semibold">Short/(Excess):</span>
+                                                                <span className="float-right">{shortExcess} Lt.</span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+
+                                                {typeof summaryData.loading.sheetId !== 'string' && summaryData.loading.sheetId.changeInOpeningDip && (
+                                                    <div className="col-span-2 bg-muted p-2 rounded">
+                                                        <span className="font-semibold">Cause of change in opening Dip: </span>
+                                                        <span>{`${summaryData.loading.sheetId.changeInOpeningDip.reason}${summaryData.loading.sheetId.changeInOpeningDip.remarks ? `: ${summaryData.loading.sheetId.changeInOpeningDip.remarks}` : ''}`}</span>
+                                                    </div>
+                                                )}
+
+                                                {summaryData.closure && summaryData.closure.details && (
+                                                    <div className="col-span-2 bg-muted p-2 rounded">
+                                                        <span className="font-semibold">Reason of closure: </span>
+                                                        <span>{`${summaryData.closure.details.reason} ${summaryData.closure.details.remarks ? ': ' + summaryData.closure.details.remarks : ''}`}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             ) : (
                                 <div className="text-center">No summary data available.</div>
