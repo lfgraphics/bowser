@@ -8,13 +8,13 @@ router.post('/', async (req, res) => {
     const { driverId, driverName, driverMobile, location } = req.body;
     try {
         let requestVehicle = await Vehicle.findOne({ 'tripDetails.driver': { $regex: driverId, $options: 'i' } })
-        console.log(requestVehicle)
+        console.info('Fuel request for :',requestVehicle)
         const fuelRequest = new FuelRequest({ vehicleNumber: requestVehicle.VehicleNo, driverId, driverName, driverMobile, location, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, manager: requestVehicle.manager, tripStatus: `${requestVehicle.tripDetails.open ? 'Open' : 'Closed'}` });
         const existingRequest = await FuelRequest.find({
             vehicleNumber: requestVehicle.VehicleNo, driverId, driverName, driverMobile, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, fulfilled: false
         })
 
-        console.log(fuelRequest)
+        console.info('Fuel request :',fuelRequest)
 
         if (!existingRequest || !existingRequest.length || existingRequest.length == 0) {
             await fuelRequest.save();
@@ -25,7 +25,7 @@ router.post('/', async (req, res) => {
         }
 
         let notificationSent = await sendWebPushNotification({ userId: requestVehicle.manager, options: { title: 'New Fuel Request', url: `/fuel-request` }, message: `New fuel request for: ${requestVehicle.VehicleNo} from ${driverName} - ${driverId}` });
-        console.log('notificationSent:', JSON.stringify(notificationSent));
+        console.info('notificationSent status: ', JSON.stringify(notificationSent));
     } catch (err) {
         console.error('Error creating fuel request:', err);
         res.status(500).json({ message: 'Server error', error: err.message });
@@ -55,7 +55,6 @@ router.get('/', async (req, res) => {
             return res.status(404).json({ message: 'No fuel requests found' });
         }
         res.status(200).json(fuelRequests);
-        console.log(fuelRequests.length)
     } catch (err) {
         console.error('Error fetching fuel requests:', err);
         res.status(500).json({ message: 'Server error', error: err.message });

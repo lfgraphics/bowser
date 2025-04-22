@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
         const petrolPumps = await PetrolPump.find({ $or: [{ name: { $regex: name, $options: 'i' } }, { state: { $regex: name, $options: 'i' } }] }).limit(10);
         res.status(200).json(petrolPumps);
     } catch (error) {
-        console.log(error);
+        console.error(error);
         res.status(500).json({ error: 'Failed to fetch petrol pumps.', error });
     }
 });
@@ -31,7 +31,7 @@ router.get('/get', async (req, res) => {
             records: { from: startIndex + 1, to: endIndex > totalDocs ? totalDocs : endIndex }
         });
     } catch (error) {
-        console.log(error);
+        console.error(error);
         res.status(500).json({ error: 'Failed to fetch petrol pumps.', error });
     }
 });
@@ -42,7 +42,7 @@ router.post('/', async (req, res) => {
         await PetrolPump.insertMany(petrolPumps);
         res.status(201).json({ message: 'Petrol pumps added successfully.' });
     } catch (error) {
-        console.log(error);
+        console.error(error);
         res.status(500).json({ error: 'Failed to add petrol pumps.', error });
     }
 });

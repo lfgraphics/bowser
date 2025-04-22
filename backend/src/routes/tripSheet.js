@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { TripSheet, Counter } = require('../models/TripSheets');
+const { TripSheet } = require('../models/TripSheets');
 const mongoose = require('mongoose');
 const User = require('../models/user');
 const Bowser = require('../models/Bowsers');
@@ -22,7 +22,6 @@ const checkExistingTrip = async (regNo) => {
     if (bowser && bowser.currentTrip) {
         const currentTrip = await TripSheet.findById(bowser.currentTrip);
         if (currentTrip && !currentTrip.settelment?.settled) {
-            console.log(currentTrip)
             throw new Error(
                 `This bowser is currently on an unsettled trip. Settle the existing trip (${currentTrip.tripSheetId}) before creating a new one.`
             );
@@ -94,8 +93,6 @@ router.post('/create', async (req, res) => {
                 console.error('Loading order not found');
                 return;
             }
-
-            console.log('Updated Loading Order:', updatedSheet);
 
         } catch (err) {
             console.error("Error updating LoadingSheet:", err);
@@ -255,7 +252,7 @@ router.get('/tripSheetId/:id', async (req, res) => {
     const id = req.params.id;
     try {
         // First, find all bowsers with the given registration number.
-        const sheet = await TripSheet.findOne({ tripSheetId: id }).populate('loading.sheetId addition.sheetId');
+        const sheet = await TripSheet.findOne({ tripSheetId: id }).populate('loading.sheetId');
         res.status(200).json(sheet);
 
     } catch (err) {
@@ -404,7 +401,6 @@ router.post('/settle/:id', async (req, res) => {
         if (!bowser) {
             throw new Error(`can't find the bowser`);
         }
-        console.log(chamberwiseDipList);
         for (const dip of chamberwiseDipList) {
             if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
                 dip.qty = calculateQty(bowser.chambers, dip.chamberId, dip.levelHeight).toFixed(2);
@@ -423,7 +419,6 @@ router.post('/settle/:id', async (req, res) => {
                 return acc; // Skip invalid entries
             }
         }, 0);
-        console.log(Number(totalQty));
         let settlement = {
             dateTime,
             settled: true,
@@ -478,7 +473,6 @@ router.post('/check-settelment/:id', async (req, res) => {
         if (!bowser) {
             throw new Error(`can't find the bowser`);
         }
-        console.log(chamberwiseDipList);
         for (const dip of chamberwiseDipList) {
             if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
                 dip.qty = calculateQty(bowser.chambers, dip.chamberId, dip.levelHeight).toFixed(2);
@@ -497,7 +491,6 @@ router.post('/check-settelment/:id', async (req, res) => {
                 return acc; // Skip invalid entries
             }
         }, 0);
-        console.log(Number(totalQty));
         let settlement = {
             dateTime,
             settled: true,

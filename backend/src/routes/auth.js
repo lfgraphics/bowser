@@ -8,7 +8,6 @@ const UnAuthorizedLogin = require('../models/unauthorizedLogin');
 const argon2 = require('argon2');
 const crypto = require('crypto');
 
-
 function isTokenValid(decodedToken) {
     const now = Date.now();
     const tokenIssueTime = decodedToken.iat * 1000; // Convert to milliseconds

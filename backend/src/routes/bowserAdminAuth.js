@@ -124,17 +124,14 @@ router.post('/login', async (req, res) => {
 
 router.post('/verify-token', async (req, res) => {
     const token = req.cookies.token; // Get the token from cookies
-    console.log('visiting verification route');
-
+   
     if (!token) {
         return res.status(401).json({ message: 'No token provided' });
     }
-    console.log('Token received:', token);
 
     try {
         const secret = process.env.JWT_SECRET; // Ensure this matches your signing secret
         const decoded = jwt.verify(token, secret);
-        console.log('Decoded token:', decoded); // Log the decoded token
 
         // Return the roles directly from the decoded token
         const roleNames = decoded.roles || []; // Assuming roles are stored in the token

@@ -84,7 +84,6 @@ router.put('/update/roles', async (req, res) => {
 // update or add department
 router.put('/update/department', async (req, res) => {
     const { department, phoneNumber } = req.body;
-    console.log(req.body)
     try {
         const user = await User.findOne({ phoneNumber });
         if (!user) return res.status(404).json({ error: 'User not found' });

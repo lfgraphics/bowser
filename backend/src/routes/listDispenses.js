@@ -54,8 +54,6 @@ router.get('/', async (req, res) => {
 
     const sortOrder = order === 'asc' ? 1 : -1;
 
-    console.log("filter: ", filter)
-
     try {
         const records = await FuelingTransaction.find(filter, {
             vehicleNumber: 1,
@@ -74,7 +72,6 @@ router.get('/', async (req, res) => {
             posted: 1
         }).skip(skip).limit(Number(limit)).sort({ [sortBy]: sortOrder });
         const totalRecords = await FuelingTransaction.countDocuments();
-        console.log(records.length)
 
         if (records.length == 0) {
             res.status(400).json({ message: 'No records found' })
@@ -215,7 +212,6 @@ router.patch('/update/:id', async (req, res) => {
     }
 });
 router.patch('/verify/:id', async (req, res) => {
-    console.log(req.body)
     const { id } = req.params;
     let { by } = req.body
     try {
@@ -244,7 +240,6 @@ router.patch('/verify/:id', async (req, res) => {
     }
 });
 router.patch('/post/:id', async (req, res) => {
-    console.log(req.body)
     const { id } = req.params;
     let { by } = req.body
     try {
@@ -315,8 +310,8 @@ router.post('/verify', async (req, res) => {
 });
 
 router.delete('/delete', async (req, res) => {
-    const { tripSheetId, id } = req.body
-    console.log(req.body)
+    const { tripSheetId, id, by } = req.body
+    console.info('Deleting record with ID:', id, 'requested by: ', by);
     try {
         const deletedRecord = await FuelingTransaction.findByIdAndDelete(id);
 

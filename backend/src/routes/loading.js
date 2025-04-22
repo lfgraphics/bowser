@@ -12,7 +12,7 @@ const { calculateQty } = require('../utils/calibration')
 router.post('/orders', async (req, res) => {
     try {
         const { regNo, loadingDesc, loadingLocation, petrolPump, bccAuthorizedOfficer, tripSheetId } = req.body;
-        console.log(req.body)
+        console.inf('Loading order created: ',req.body)
 
         if (!regNo || !loadingLocation || !bccAuthorizedOfficer || !bccAuthorizedOfficer.id || !bccAuthorizedOfficer.name) {
             return res.status(400).json({ error: 'Missing required fields' });
@@ -207,8 +207,6 @@ router.post('/sheet', async (req, res) => {
         if (!bccAuthorizedOfficer?.name) missingFields.push('bccAuthorizedOfficer.name');
 
         if (missingFields.length > 0) {
-            console.log(req.body);
-            console.log(missingFields)
             return res.status(400).json({
                 error: 'Missing required fields',
                 missingFields: missingFields
@@ -314,7 +312,7 @@ router.post('/sheet', async (req, res) => {
                 console.error('Loading order not found');
                 return;
             }
-            console.log('Updated Loading Order:', loadingOrder);
+            console.info('Updated Loading Order:', loadingOrder);
             res.status(200).json(newLoadingSheet);
             // } else {
             //     res.status(500).json({ error: 'Request failed because failed to send notification to BCC' });

@@ -14,7 +14,7 @@ router.post('/', async (req, res) => {
         });
         report.save()
         let sentNotification = await sendBulkNotifications({ groups: ['Admin'], message: String(reportId, reportMessage, devPersonal), platform: "web", options: { title: "New Issue Reported", data: { url: `/issues/${report._id}` } } })
-        console.log(sentNotification);
+        console.info('Report recieved: ', sentNotification);
         res.status(200).json({ report, message: 'successfully submitted' });
     } catch (error) {
         console.error(error)

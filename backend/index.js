@@ -7,13 +7,13 @@ const hpp = require('hpp');
 require('dotenv').config();
 
 const http = require("http");
-const WebSocket = require("ws");
+// const WebSocket = require("ws");
 const { connectDatabases } = require('./config/database');
 const routes = require('./src/routes');
 
 const app = express();
 const server = http.createServer(app); // Shared HTTP server
-const wss = new WebSocket.Server({ server });
+// const wss = new WebSocket.Server({ server });
 
 const PORT = process.env.PORT || 5000;
 
@@ -44,16 +44,17 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 
 // Pass the WebSocket instance to the route
-const locationRoutes = require('./src/routes/locationUpdate')(wss);
-app.use('/location', locationRoutes);
+// const locationRoutes = require('./src/routes/locationUpdate')(wss);
+// app.use('/location', locationRoutes);
 
 // Include your main API routes
 app.use('/', routes);
 
 // Start server after database connection
 connectDatabases().then(() => {
+
   server.listen(PORT, () => {
-    console.log(`🚀 Server running (API + WebSocket) on port ${PORT}, restarted at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
+    console.log(`🚀 Server running on port ${PORT}, restarted at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
   });
 }).catch(error => {
   console.error('❌ Failed to connect to databases:', error);

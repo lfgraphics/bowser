@@ -50,8 +50,6 @@ router.get('/', async (req, res) => {
 
     const sortOrder = order === 'asc' ? 1 : -1;
 
-    console.log("filter: ", filter)
-
     try {
         const records = await FuelingOrder.find(filter).skip(skip).limit(Number(limit)).sort({ [sortBy]: sortOrder });
         const totalRecords = await FuelingOrder.countDocuments();
@@ -65,7 +63,6 @@ router.get('/', async (req, res) => {
                 currentPage: Number(page),
                 records,
             });
-            console.log(records.length)
         }
     } catch (error) {
         console.error('Error fetching fueling records:', error);
@@ -194,7 +191,6 @@ router.patch('/update/:id', async (req, res) => {
     }
 });
 router.patch('/verify/:id', async (req, res) => {
-    console.log(req.body)
     const { id } = req.params;
     let { by } = req.body
     try {
@@ -266,7 +262,6 @@ router.post('/verify', async (req, res) => {
 
 router.delete('/delete', async (req, res) => {
     const { tripSheetId, id } = req.body
-    console.log(req.body)
     try {
         const deletedRecord = await FuelingTransaction.findByIdAndDelete(id);
 

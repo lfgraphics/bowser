@@ -27,7 +27,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
             );
 
             if (existingDispenseIndex === -1) {
-                console.log(`No dispense found for the specified _id: ${verify?._id}`);
+                console.warn(`No dispense found for the specified _id: ${verify?._id}`);
                 return { success: false, message: "No dispense found" };
             } else {
                 tripSheet.dispenses[existingDispenseIndex] = verify;
@@ -42,7 +42,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
             );
 
             if (existingDispenseIndex === -1) {
-                console.log(`No dispense found for the specified _id: ${post?._id}`);
+                console.warn(`No dispense found for the specified _id: ${post?._id}`);
                 return { success: false, message: "No dispense found" };
             } else {
                 tripSheet.dispenses[existingDispenseIndex] = post;
@@ -85,7 +85,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
 
             if (index !== -1) {
                 tripSheet.dispenses.splice(index, 1);
-                console.log(`Removed dispense with ID: ${removeDispenseId}`);
+                console.info(`Removed dispense with ID: ${removeDispenseId}`);
             }
         }
 
@@ -141,7 +141,7 @@ const updateTripSheetBulk = async ({ tripSheetId, dispenses }) => {
         tripSheet.balanceQtyBySlip = tripSheet.totalLoadQuantityBySlip - tripSheet.saleQty;
 
         await tripSheet.save();
-        console.log(`TripSheet updated successfully for tripSheetId: ${tripSheetId}`);
+        console.info(`TripSheet updated successfully for tripSheetId: ${tripSheetId}`);
         return { success: true, message: "TripSheet updated successfully" };
     } catch (error) {
         console.error("Error updating TripSheet:", error);

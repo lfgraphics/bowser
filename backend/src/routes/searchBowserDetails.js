@@ -26,7 +26,6 @@ router.get('/:regNo', async (req, res) => {
 
 router.get('/trip/:bowser', async (req, res) => {
     const bowser = req.params.bowser;
-    console.log(bowser)
 
     try {
         const trip = await TripSheet.findOne({

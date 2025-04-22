@@ -20,8 +20,8 @@ const fetchLocationData = async (latitude, longitude) => {
             // Returning the data as a formatted string
             return `${route}, ${locality}, ${state}, Coordinates: ${latitude},${longitude}`;
         } else {
-            console.log(`Unable to capture the location - Status: ${data.status}`);
-            return data.status;
+            console.warn(`Unable to capture the location - Status: ${data.status}`);
+            return `Coordinates: ${latitude},${longitude}`;
         }
     } catch (error) {
         console.error(error);

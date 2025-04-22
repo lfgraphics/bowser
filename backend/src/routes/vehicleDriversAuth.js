@@ -24,7 +24,6 @@ router.post('/signup', async (req, res) => {
 
         if (driver[0].password) {
             console.error(`User already exist`);
-            console.log('driver:', driver[0].Name);
             return res.status(400).json({ message: `पहले से आईडी व पासवर्ड बना हुआ है\nयदि आपको पासवर्ड बदलना है तो एडमिन से संपर्क करें|` });
         }
 
@@ -94,7 +93,6 @@ router.post('/login', async (req, res) => {
         }
 
         let driversVehicle = await vehicle.find({ 'tripDetails.driver': { $regex: user.ITPLId } });
-        console.log('driversVehicle:', driversVehicle);
 
         let userData = {
             Name: cleanName,

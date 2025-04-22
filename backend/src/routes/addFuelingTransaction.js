@@ -37,13 +37,17 @@ router.post('/', async (req, res) => {
 
         await Promise.race([savePromise, timeoutPromise]);
 
-        console.log(fuelingTransaction)
+        const transactionWithoutImages = fuelingTransaction.toObject();
+        delete transactionWithoutImages.fuelMeterImage;
+        delete transactionWithoutImages.vehicleNumberPlateImage;
+
+        console.info('created fuel transaction: ', transactionWithoutImages)
 
         let tripUpdate = await updateTripSheet({ tripSheetId: fuelingTransaction.tripSheetId, newDispense: fuelingTransaction })
         if (tripUpdate.success) {
             res.status(200).json({ message: 'Data Submitted successfully' });
         } else {
-            console.log(tripUpdate.error);
+            console.error(tripUpdate.error);
             res.status(500).json({ message: 'Failed to submit data', error: tripUpdate.error });
         }
 
