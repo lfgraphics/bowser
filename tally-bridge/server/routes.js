@@ -12,6 +12,7 @@ router.get('/', async (req, res) => {
 
 router.post('/tally', async (req, res) => {
     try {
+        console.log('Received request to Tally:', req.body);
         const response = await axios.post('http://localhost:9000', req.body, {
             headers: { 'Content-Type': 'application/xml' }
         });

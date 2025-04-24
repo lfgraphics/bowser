@@ -5,6 +5,7 @@ const fuelingTransactionSchema = new mongoose.Schema({
     orderId: { type: mongoose.Schema.Types.ObjectId, required: false },
     category: {
         type: String, require: false,
+        default: "Own",
         validate: {
             validator: function (v) {
                 return v === 'Own' || v === 'Attatch' || v === 'Bulk Sale';

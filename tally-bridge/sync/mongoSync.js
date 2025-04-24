@@ -282,14 +282,12 @@ async function syncTripData() {
     const [atlasVehicles, localTrips] = await Promise.all([
         atlasCollection.find().toArray(),
         localCollection.find(localTripFilter, {
-            projection: { _id: 1, VehicleNo: 1, StartDriver: 1, StartDate: 1, StartFrom: 1, EndTo: 1 },
+            projection: { _id: 1, VehicleNo: 1, StartDriver: 1, StartDate: 1, StartFrom: 1, EndTo: 1, 'TallyLoadDetail.TripId': 1 },
         }).toArray(),
     ]);
 
     console.log(`Fetched ${atlasVehicles.length} vehicles from Atlas.`);
-    // addLog(`Fetched ${atlasVehicles.length} vehicles from Atlas.`);
     console.log(`Fetched ${localTrips.length} trips from Local.`);
-    // addLog(`Fetched ${localTrips.length} trips from Local.`);
 
     // Step 2: Prepare bulk operations for MongoDB Atlas
     const bulkOps = [];
@@ -305,6 +303,7 @@ async function syncTripData() {
 
             const tripDetails = {
                 id: latestTrip._id,
+                tripId: latestTrip.TallyLoadDetail.TripId,
                 driver: latestTrip.StartDriver,
                 open: true,
                 from: latestTrip.StartFrom,

@@ -214,6 +214,7 @@ router.patch('/update/:id', async (req, res) => {
 router.patch('/verify/:id', async (req, res) => {
     const { id } = req.params;
     let { by } = req.body
+    console.info('Verifying record with ID:', id, 'requested by: ', by);
     try {
         const transaction = await FuelingTransaction.findByIdAndUpdate(new mongoose.Types.ObjectId(id), {
             verified: {
@@ -242,6 +243,7 @@ router.patch('/verify/:id', async (req, res) => {
 router.patch('/post/:id', async (req, res) => {
     const { id } = req.params;
     let { by } = req.body
+    console.info('Posting record with ID:', id, 'requested by: ', by);
     try {
         const transaction = await FuelingTransaction.findByIdAndUpdate(id, {
             posted: {
@@ -253,12 +255,12 @@ router.patch('/post/:id', async (req, res) => {
             }
         }, { new: true });
 
-        if (transaction) {
-            await updateTripSheet({ tripSheetId: transaction.tripSheetId, post: transaction })
-        }
-
         if (!transaction) {
             return res.status(404).json({ heading: "Failed", message: 'Record not found' });
+        }
+
+        if (transaction) {
+            await updateTripSheet({ tripSheetId: transaction.tripSheetId, post: transaction })
         }
 
         res.status(200).json({ heading: "Success!", message: 'Record verified successfully' });
@@ -318,8 +320,9 @@ router.delete('/delete', async (req, res) => {
         if (!deletedRecord) {
             return res.status(404).json({ message: 'Record not found' });
         }
+        const removeDispenseId = id
 
-        await updateTripSheet({ tripSheetId, removeDispenseId: id })
+        await updateTripSheet({ tripSheetId, removeDispenseId })
 
         res.status(200).json({ message: 'Fueling record deleted successfully', success: true });
     } catch (err) {

@@ -1,5 +1,6 @@
 "use client";
 import Loading from '@/app/loading';
+import RefreshPageButton from '@/components/RefreshPageButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,7 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { BASE_URL } from '@/lib/api';
 import { WholeTripSheet } from '@/types';
 import { createTallyPostableXML } from '@/utils/post';
-import { postToTally } from '@/utils/tally';
+// import { postToTally } from '@/utils/tally';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 
@@ -50,7 +51,7 @@ const page = ({ params }: { params: { id: string } }) => {
             const { data } = await axios.get('http://localhost:4000');
             setStatus(data);
 
-            if (data.companyName) {
+            if (data.companyName == 'Group Company') {
                 await fetchRecords();
             }
         } catch (error) {
@@ -88,7 +89,11 @@ const page = ({ params }: { params: { id: string } }) => {
             HSDRate: record?.hsdRate,
         }
 
-        const xml = await createTallyPostableXML(postRecord!, variables)
+        const { xml } = await fetch('/api/generate-xml', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ record: postRecord, variables }),
+        }).then(res => res.json());
 
         try {
             const response = await fetch('http://localhost:4000/tally', {
@@ -199,7 +204,14 @@ const page = ({ params }: { params: { id: string } }) => {
     if (error) return <div className="text-red-500 text-center">{error === "Network Error" && "Please Open the Tally Bridge Application and refresh this page"}</div>
     if (status && !status.companyName) return (
         <div className="text-center w-full m-4 items-center">
-            {status.status === "Tally is not opened" ? <p className='text-red-500'>{status.status}</p> : status.status === "No company is opened" ? <p className='text-red-500'>{status.status + " Please Open an appropriate Company"}</p> : <p className='text-green-500'>{status.status}</p>}
+            {status.status === "Tally is not opened" ? <p className='text-red-500'>{status.status}. Please Open Tally also & refresh this page</p> : status.status === "No company is opened" ? <p className='text-red-500'>{status.status + " Please Open Group Company"}</p> : <p className='text-green-500'>{status.status}</p>}
+            <RefreshPageButton />
+        </div>
+    )
+    if (status && status.companyName && status.companyName !== "Group Company") return (
+        <div className="text-center w-full m-4 items-center">
+            <p className='text-red-500'>Please Open <strong className='text-green-500'>Group Company</strong> and refresh this page</p>
+            <RefreshPageButton />
         </div>
     )
 

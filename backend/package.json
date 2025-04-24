@@ -1,6 +1,6 @@
 {
   "name": "bowserfuelingreportbackend",
-  "version": "1.0.0",
+  "version": "1.9.0",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -8,9 +8,9 @@
     "dev": "nodemon index.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Taha Kazmi @lfgraphics on github",
   "license": "ISC",
-  "description": "",
+  "description": "This backend was first created only for the Bowsers related fueling reporting system. Later on it is becoming the main backend for the ITPL online applications.",
   "dependencies": {
     "argon2": "^0.41.1",
     "axios": "^1.7.7",

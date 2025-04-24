@@ -31,6 +31,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
                 return { success: false, message: "No dispense found" };
             } else {
                 tripSheet.dispenses[existingDispenseIndex] = verify;
+                tripSheet.dispenses[existingDispenseIndex].cost = Number((tripSheet.hsdRate * updatedDispense.fuelQuantity).toFixed(2));
                 await tripSheet.save()
                 return { success: true, message: "TripSheet updated successfully", tripSheet };
             }
@@ -46,6 +47,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
                 return { success: false, message: "No dispense found" };
             } else {
                 tripSheet.dispenses[existingDispenseIndex] = post;
+                tripSheet.dispenses[existingDispenseIndex].cost = Number((tripSheet.hsdRate * updatedDispense.fuelQuantity).toFixed(2));
                 await tripSheet.save()
                 return { success: true, message: "TripSheet updated successfully", tripSheet };
             }
