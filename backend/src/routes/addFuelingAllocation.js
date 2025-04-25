@@ -9,7 +9,7 @@ const FuelRequest = require('../models/FuelRequest');
 router.post('/', async (req, res) => {
     let newFuelingOrder;
     let notificationSent = false;
-    console.info('allocation body: ', req.body)
+    console.log('allocation body: ', req.body)
 
     try {
         const {
@@ -108,7 +108,7 @@ router.post('/', async (req, res) => {
                 )
                 // Check if the notification was successfully sent
                 if (sentNotificationResponse.success) {
-                    console.info('Notification sent: ', sentNotificationResponse.response);
+                    console.log('Notification sent: ', sentNotificationResponse.response);
                     notificationSent = true;
                 } else {
                     console.warn('Notification was not sent:', sentNotificationResponse.response);
@@ -118,7 +118,7 @@ router.post('/', async (req, res) => {
             }
         }
         try {
-            console.info("New Fueling Order:", newFuelingOrder);
+            console.log("New Fueling Order:", newFuelingOrder);
             await newFuelingOrder.save();
         } catch (error) {
             console.error("Error creating FuelingOrder:", error);

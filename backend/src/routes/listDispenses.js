@@ -214,7 +214,7 @@ router.patch('/update/:id', async (req, res) => {
 router.patch('/verify/:id', async (req, res) => {
     const { id } = req.params;
     let { by } = req.body
-    console.info('Verifying record with ID:', id, 'requested by: ', by);
+    console.log('Verifying record with ID:', id, 'requested by: ', by);
     try {
         const transaction = await FuelingTransaction.findByIdAndUpdate(new mongoose.Types.ObjectId(id), {
             verified: {
@@ -243,7 +243,7 @@ router.patch('/verify/:id', async (req, res) => {
 router.patch('/post/:id', async (req, res) => {
     const { id } = req.params;
     let { by } = req.body
-    console.info('Posting record with ID:', id, 'requested by: ', by);
+    console.log('Posting record with ID:', id, 'requested by: ', by);
     try {
         const transaction = await FuelingTransaction.findByIdAndUpdate(id, {
             posted: {
@@ -313,7 +313,7 @@ router.post('/verify', async (req, res) => {
 
 router.delete('/delete', async (req, res) => {
     const { tripSheetId, id, by } = req.body
-    console.info('Deleting record with ID:', id, 'requested by: ', by);
+    console.log('Deleting record with ID:', id, 'requested by: ', by);
     try {
         const deletedRecord = await FuelingTransaction.findByIdAndDelete(id);
 

@@ -87,7 +87,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
 
             if (index !== -1) {
                 tripSheet.dispenses.splice(index, 1);
-                console.info(`Removed dispense with ID: ${removeDispenseId}`);
+                console.log(`Removed dispense with ID: ${removeDispenseId}`);
             }
         }
 
@@ -143,7 +143,7 @@ const updateTripSheetBulk = async ({ tripSheetId, dispenses }) => {
         tripSheet.balanceQtyBySlip = tripSheet.totalLoadQuantityBySlip - tripSheet.saleQty;
 
         await tripSheet.save();
-        console.info(`TripSheet updated successfully for tripSheetId: ${tripSheetId}`);
+        console.log(`TripSheet updated successfully for tripSheetId: ${tripSheetId}`);
         return { success: true, message: "TripSheet updated successfully" };
     } catch (error) {
         console.error("Error updating TripSheet:", error);

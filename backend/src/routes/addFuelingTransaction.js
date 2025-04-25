@@ -41,7 +41,7 @@ router.post('/', async (req, res) => {
         delete transactionWithoutImages.fuelMeterImage;
         delete transactionWithoutImages.vehicleNumberPlateImage;
 
-        console.info('created fuel transaction: ', transactionWithoutImages)
+        console.log('created fuel transaction: ', transactionWithoutImages)
 
         let tripUpdate = await updateTripSheet({ tripSheetId: fuelingTransaction.tripSheetId, newDispense: fuelingTransaction })
         if (tripUpdate.success) {

@@ -8,13 +8,13 @@ router.post('/', async (req, res) => {
     const { driverId, driverName, driverMobile, location } = req.body;
     try {
         let requestVehicle = await Vehicle.findOne({ 'tripDetails.driver': { $regex: driverId, $options: 'i' } })
-        console.info('Fuel request for :',requestVehicle)
+        console.log('Fuel request for :',requestVehicle)
         const fuelRequest = new FuelRequest({ vehicleNumber: requestVehicle.VehicleNo, driverId, driverName, driverMobile, location, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, manager: requestVehicle.manager, tripStatus: `${requestVehicle.tripDetails.open ? 'Open' : 'Closed'}` });
         const existingRequest = await FuelRequest.find({
             vehicleNumber: requestVehicle.VehicleNo, driverId, driverName, driverMobile, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, fulfilled: false
         })
 
-        console.info('Fuel request :',fuelRequest)
+        console.log('Fuel request :',fuelRequest)
 
         if (!existingRequest || !existingRequest.length || existingRequest.length == 0) {
             await fuelRequest.save();
@@ -25,7 +25,7 @@ router.post('/', async (req, res) => {
         }
 
         let notificationSent = await sendWebPushNotification({ userId: requestVehicle.manager, options: { title: 'New Fuel Request', url: `/fuel-request` }, message: `New fuel request for: ${requestVehicle.VehicleNo} from ${driverName} - ${driverId}` });
-        console.info('notificationSent status: ', JSON.stringify(notificationSent));
+        console.log('notificationSent status: ', JSON.stringify(notificationSent));
     } catch (err) {
         console.error('Error creating fuel request:', err);
         res.status(500).json({ message: 'Server error', error: err.message });

@@ -13,13 +13,13 @@ webpush.setVapidDetails(
 
 async function registerSubscription({ mobileNumber, userId, subscription, platform, groups }) {
     try {
-        console.info(`Registering subscription for mobileNumber: ${mobileNumber}, userId: ${userId}, platform: ${platform}`);
+        console.log(`Registering subscription for mobileNumber: ${mobileNumber}, userId: ${userId}, platform: ${platform}`);
 
         if (!mobileNumber || !subscription || !platform) {
             throw new Error('Mobile number or userId, subscription, and platform are required.');
         }
 
-        console.info(`Checking database for existing subscription or inserting a new one...`);
+        console.log(`Checking database for existing subscription or inserting a new one...`);
         const updatedSubscription = await PushSubscription.findOneAndUpdate(
             { mobileNumber, platform },
             { mobileNumber, userId, subscription, groups, platform },
@@ -31,10 +31,10 @@ async function registerSubscription({ mobileNumber, userId, subscription, platfo
             throw new Error(`Can't register for notifications`);
         }
 
-        console.info(`Subscription registered successfully in the database:`, updatedSubscription);
+        console.log(`Subscription registered successfully in the database:`, updatedSubscription);
 
         if (platform === "web") {
-            console.info(`Sending web push notification...`);
+            console.log(`Sending web push notification...`);
             await sendWebPushNotification({
                 userId,
                 message: "You will now receive necessary notifications on this device",
@@ -43,17 +43,17 @@ async function registerSubscription({ mobileNumber, userId, subscription, platfo
                     url: `/`
                 }
             });
-            console.info(`Web push notification sent successfully.`);
+            console.log(`Web push notification sent successfully.`);
         }
 
         if (platform === "native") {
-            console.info(`Sending native push notification...`);
+            console.log(`Sending native push notification...`);
             await sendNativePushNotification({
                 mobileNumber,
                 message: "You will now receive necessary notifications on this device",
                 options: { title: "Notification Subscription Successful" }
             });
-            console.info(`Native push notification sent successfully.`);
+            console.log(`Native push notification sent successfully.`);
         }
 
         return updatedSubscription;
@@ -84,7 +84,7 @@ async function sendWebPushNotification({ mobileNumber, userId, message, options 
         return { success: false, message: 'Either mobileNumber or userId must be provided.' };
     }
 
-    console.info('sending web push notification to: ',userId, mobileNumber, message);
+    console.log('sending web push notification to: ',userId, mobileNumber, message);
     try {
         const subscriptionData = await PushSubscription.findOne({
             $or: [

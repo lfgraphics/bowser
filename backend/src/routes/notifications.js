@@ -6,7 +6,7 @@ const { sendWebPushNotification, sendNativePushNotification, sendBulkNotificatio
 // Register subscription (web or native)
 router.post('/register', async (req, res) => {
     const { mobileNumber, userId, subscription, platform, groups } = req.body;
-    console.info('notification registration: ', mobileNumber, platform, subscription);
+    console.log('notification registration: ', mobileNumber, platform, subscription);
 
     try {
         const updatedSubscription = await registerSubscription({ mobileNumber, userId, subscription, platform, groups });
@@ -20,7 +20,7 @@ router.post('/register', async (req, res) => {
 // Unregister subscription
 router.post('/unregister', async (req, res) => {
     const { mobileNumber, userId, platform } = req.body;
-    console.info("unregistering", mobileNumber, userId)
+    console.log("unregistering", mobileNumber, userId)
 
     if ((!userId && !mobileNumber) || !platform) {
         return res.status(400).json({ error: 'Mobile number and platform are required.' });
