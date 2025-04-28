@@ -95,6 +95,8 @@ const page = ({ params }: { params: { id: string } }) => {
             body: JSON.stringify({ record: postRecord, variables }),
         }).then(res => res.json());
 
+        console.log(xml)
+
         try {
             const response = await fetch('http://localhost:4000/tally', {
                 method: 'POST',

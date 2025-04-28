@@ -10,12 +10,11 @@
             <REQUESTDATA>
                 <TALLYMESSAGE xmlns:UDF="TallyUDF">
                     <VOUCHER VCHTYPE="entryVoucher" ACTION="Create" OBJVIEW="Accounting Voucher View">
-                        <DATE>entryDate</DATE>
+                        <DATE>fuelingDate</DATE>
                         <!-- tally's date formate in YYYYMMDD -->
-                        <REFERENCEDATE>entryDate</REFERENCEDATE>
+                        <REFERENCEDATE>fuelingDate</REFERENCEDATE>
                         <VOUCHERTYPENAME>entryVoucher</VOUCHERTYPENAME>
-                        <REFERENCE>  
-                        </REFERENCE>
+                        <REFERENCE>voucherNumber</REFERENCE>
                         <!-- "voucherNumber": needs to be unique [will generate it like OTP but sequenced numbers, store in db to keep the uniqueness intact ] -->
                         <VOUCHERNUMBER>voucherNumber</VOUCHERNUMBER>
                         <CSTFORMISSUETYPE/>
@@ -24,7 +23,7 @@
                         <PERSISTEDVIEW>Accounting Voucher View</PERSISTEDVIEW>
                         <VCHGSTCLASS/>
                         <VCHENTRYMODE>As Voucher</VCHENTRYMODE>
-                        <EFFECTIVEDATE>entryDate</EFFECTIVEDATE>
+                        <EFFECTIVEDATE>fuelingDate</EFFECTIVEDATE>
                         <ALLLEDGERENTRIES.LIST>
                             <LEDGERNAME>debitBy</LEDGERNAME>
                            <!-- "Blended Bio-Diesel Consume": for normal vehicles, "Attatched Vendor/ Company Name": for Bulk Sale and Attatched Vehicle's fueling -->
@@ -56,7 +55,7 @@
                                 <!-- the qty.toFixed(3) Ltr. -->
                                 <BILLEDQTY> quantity Ltr.</BILLEDQTY>
                                 <BATCHALLOCATIONS.LIST>
-                                    <MFDON>entryDate</MFDON>
+                                    <MFDON>fuelingDate</MFDON>
                                     <GODOWNNAME>entryGodown</GODOWNNAME>
                                     <BATCHNAME>entryBatch</BATCHNAME>
                                     <DESTINATIONGODOWNNAME>entryGodown</DESTINATIONGODOWNNAME>
@@ -79,7 +78,7 @@
                             <UDF:DMAMOUNT DESC="`DMAMount`"> udfAmount</UDF:DMAMOUNT>
                         </UDF:DMAMOUNT.LIST>
                         <UDF:ITCREATEDATE.LIST DESC="`ITCreateDate`" ISLIST="YES" TYPE="Date" INDEX="652">
-                            <UDF:ITCREATEDATE DESC="`ITCreateDate`">fuelingDate</UDF:ITCREATEDATE>
+                            <UDF:ITCREATEDATE DESC="`ITCreateDate`">entryDate</UDF:ITCREATEDATE>
                         </UDF:ITCREATEDATE.LIST>
                         <UDF:ITCREATEUSER.LIST DESC="`ITCreateUser`" ISLIST="YES" TYPE="String" INDEX="650">
                             <UDF:ITCREATEUSER DESC="`ITCreateUser`">HSDEntryAutomation</UDF:ITCREATEUSER>
