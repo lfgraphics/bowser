@@ -331,4 +331,54 @@ router.delete('/delete', async (req, res) => {
     }
 })
 
+router.post('/transfer', async (req, res) => {
+    const { toTripSheetId, transactionId } = req.body;
+
+    if (!toTripSheetId || !transactionId) {
+        return res.status(400).json({ message: "Both 'toTripSheetId' and 'transactionId' are required." });
+    }
+
+    try {
+        // Fetch the transaction by its ID
+        const transaction = await FuelingTransaction.findById(transactionId);
+
+        if (!transaction) {
+            return res.status(404).json({ message: "Transaction not found." });
+        }
+
+        // Get the current tripSheetId (transfer from)
+        const fromTripSheetId = transaction.tripSheetId;
+
+        if (!fromTripSheetId) {
+            return res.status(400).json({ message: "Transaction is not associated with any trip sheet." });
+        }
+
+        // Update the transaction's tripSheetId to the new one
+        transaction.tripSheetId = toTripSheetId;
+        await transaction.save();
+
+        // Update both the source and destination trip sheets
+        const fromUpdateResult = await updateTripSheet({ tripSheetId: fromTripSheetId, removeDispenseId: transactionId });
+        const toUpdateResult = await updateTripSheet({ tripSheetId: toTripSheetId, newDispense: transaction });
+
+        if (!fromUpdateResult.success || !toUpdateResult.success) {
+            return res.status(500).json({
+                message: "Failed to update one or both trip sheets.",
+                fromUpdateResult,
+                toUpdateResult,
+            });
+        }
+
+        res.status(200).json({
+            message: "Transaction transferred successfully.",
+            fromTripSheetId,
+            toTripSheetId,
+            transaction,
+        });
+    } catch (error) {
+        console.error("Error transferring transaction:", error);
+        res.status(500).json({ message: "Internal server error", error });
+    }
+});
+
 module.exports = router;

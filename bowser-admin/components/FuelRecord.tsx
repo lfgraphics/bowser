@@ -24,6 +24,8 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
+    const [transferDialog, setTransfrerDialog] = useState<boolean>(false);
+    const [transferToSheet, setTransferToSheet] = useState<string>("");
     const [showAlert, setShowAlert] = useState<boolean>(false);
     const [alertTitle, setAlertTitle] = useState("");
     const [alertMessage, setAlertMessage] = useState("");
@@ -145,6 +147,24 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
             }
         } finally {
             setLoading(true)
+        }
+    }
+
+    const transfer = async () => {
+        setLoading(true)
+        try {
+            let response = await axios.post(`${BASE_URL}/listDispenses/transfer`, { toTripSheetId: Number(transferToSheet), transactionId: record._id });
+            setShowAlert(true)
+            setAlertTitle(response.data.heading)
+            setAlertMessage(response.data.message)
+            setTransfrerDialog(false)
+        } catch (error) {
+            console.error('Error transferring record:', error);
+            setShowAlert(true)
+            setAlertTitle("Error")
+            setAlertMessage("Error transferring record")
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -317,6 +337,32 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                         <Button className='w-[30%]' variant="secondary" onClick={() => setEditing(!editing)}>
                             {editing ? 'Cancel Editing' : 'Edit'}
                         </Button>
+                        <Button className='w-[30%]' variant="secondary" onClick={() => setTransfrerDialog(true)}>
+                            Transfer record
+                        </Button>
+                        <AlertDialog open={transferDialog} onOpenChange={setTransfrerDialog}>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Transfer Record</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        <div className='flex flex-col gap-3'>
+                                            <Label className='text-foreground' htmlFor="tripSheetId">Transfer the record to:</Label>
+                                            <Input
+                                            className='text-foreground'
+                                                id="tripSheetId"
+                                                placeholder='Trip Sheet Id'
+                                                value={transferToSheet}
+                                                onChange={(e) => setTransferToSheet(e.target.value)}
+                                            />
+                                        </div>
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <div className="flex justify-end gap-3">
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => transfer()}>Transfer</AlertDialogAction>
+                                </div>
+                            </AlertDialogContent>
+                        </AlertDialog>
                         {editing && (
                             <>
                                 <Button className='w-[30%]' variant="default" onClick={handleUpdate}>
