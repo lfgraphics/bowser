@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const FuelingOrder = require('../models/fuelingOrders');
-const { mongoose } = require('mongoose');
 
 router.get('/', async (req, res) => {
     const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'createdAt', order = 'asc', verified, category, vehicleNo, allocator } = req.query;
@@ -18,7 +17,7 @@ router.get('/', async (req, res) => {
         filter['bowser.regNo'] = bowserNumber;
     }
 
-    if (allocator) {
+    if (allocator && allocator !== null && allocator !== undefined && allocator !== ' ') {
         filter.$or = [
             { 'allocationAdmin.name': { $regex: allocator, $options: "i" } },
             { 'allocationAdmin.id': { $regex: allocator, $options: "i" } }
@@ -52,7 +51,7 @@ router.get('/', async (req, res) => {
 
     try {
         const records = await FuelingOrder.find(filter).skip(skip).limit(Number(limit)).sort({ [sortBy]: sortOrder });
-        const totalRecords = await FuelingOrder.countDocuments();
+        const totalRecords = await FuelingOrder.countDocuments(filter);
 
         if (records.length == 0) {
             res.status(400).json({ message: 'No records found' })
@@ -65,12 +64,12 @@ router.get('/', async (req, res) => {
             });
         }
     } catch (error) {
-        console.error('Error fetching fueling records:', error);
+        console.error('Error fetching Allocation records:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
 
-// Route to export fueling records to Excel
+// Route to export Allocation records to Excel
 router.get('/export/excel', async (req, res) => {
     const { bowserNumber, driverName, tripSheetId, sortBy = 'fuelingDateTime', order = 'desc', limit, verified } = req.query;
     let filter = {};
@@ -97,7 +96,7 @@ router.get('/export/excel', async (req, res) => {
 
     try {
         // Fetch filtered, sorted, and limited records
-        const records = await FuelingTransaction.find(filter, {
+        const records = await FuelingOrder.find(filter, {
             fuelingDateTime: 1,
             tripSheetId: 1,
             bowser: 1,
@@ -158,7 +157,7 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        const singleRecord = await FuelingTransaction.findById(id);
+        const singleRecord = await FuelingOrder.findById(id);
 
         if (!singleRecord) {
             return res.status(404).json({ message: 'Record not found' });
@@ -175,7 +174,7 @@ router.patch('/update/:id', async (req, res) => {
     const updateData = req.body;
 
     try {
-        const updatedRecord = await FuelingTransaction.findByIdAndUpdate(id, updateData, {
+        const updatedRecord = await FuelingOrder.findByIdAndUpdate(id, updateData, {
             new: true,
             runValidators: true,
         });
@@ -190,90 +189,19 @@ router.patch('/update/:id', async (req, res) => {
         res.status(500).json({ heading: "Failed!", message: 'Internal server error' });
     }
 });
-router.patch('/verify/:id', async (req, res) => {
-    const { id } = req.params;
-    let { by } = req.body
+
+router.delete('/delete/:id', async (req, res) => {
+    const { id } = req.params
     try {
-        const transaction = await FuelingTransaction.findByIdAndUpdate(new mongoose.Types.ObjectId(id), {
-            verified: {
-                status: true,
-                by: {
-                    id: by.id,
-                    name: by.name
-                }
-            }
-        });
-        if (transaction) {
-            await addRecordToTrip(transaction)
-        }
-
-        if (!transaction) {
-            return res.status(404).json({ heading: "Failed", message: 'Record not found' });
-        }
-
-        res.status(200).json({ heading: "Success!", message: 'Record verified successfully' });
-    } catch (error) {
-        console.error('Error updating record:', error);
-        res.status(500).json({ heading: "Failed!", message: 'Internal server error' });
-    }
-});
-router.post('/verify', async (req, res) => {
-    const { ids, by } = req.body;
-
-    if (!Array.isArray(ids) || ids.length === 0) {
-        return res.status(400).json({ heading: "Failed!", message: "Invalid or empty ids array" });
-    }
-    try {
-        const result = await FuelingTransaction.updateMany(
-            { _id: { $in: ids } },
-            {
-                $set: {
-                    verified: {
-                        status: true,
-                        by: {
-                            id: by.id,
-                            name: by.name
-                        }
-                    }
-                }
-            }
-        );
-
-        if (result.modifiedCount === 0) {
-            return res.status(404).json({ heading: "Failed!", message: "No records found to update" });
-        }
-
-        const transactions = await FuelingTransaction.find({ _id: { $in: ids } });
-        for (let i = 0; i < transactions.length; i++) {
-            await addRecordToTrip(transactions[i]);
-        }
-
-        res.json({
-            heading: "Success!",
-            message: `${result.modifiedCount} record(s) verified successfully`,
-            result
-        });
-    } catch (error) {
-        console.error('Error updating records:', error);
-        res.status(500).json({ heading: "Failed!", message: 'Internal server error' });
-    }
-});
-
-
-router.delete('/delete', async (req, res) => {
-    const { tripSheetId, id } = req.body
-    try {
-        const deletedRecord = await FuelingTransaction.findByIdAndDelete(id);
+        const deletedRecord = await FuelingOrder.findByIdAndDelete(id);
 
         if (!deletedRecord) {
             return res.status(404).json({ message: 'Record not found' });
         }
 
-        await updateTripSheet({ tripSheetId, removeDispenseId: id })
-
-        res.status(200).json({ message: 'Fueling record deleted successfully', success: true });
+        res.status(200).json({ message: 'Allocation record deleted successfully', success: true });
     } catch (err) {
-        console.error('Error deleting Fueling record:', err);
+        console.error('Error deleting Allocation record:', err);
         res.status(500).json({ message: 'Server error', error: err.message });
     }
 })

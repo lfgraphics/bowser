@@ -176,4 +176,22 @@ router.put('/update', async (req, res) => {
     }
 });
 
+router.get('/allocators', async (req, res) => {
+    try {
+        const allocators = await User.find(
+            { roles: '676ff015f63b19048c04649a' },
+            { name: 1, userId: 1 }
+        ).lean();
+
+        if (!allocators || allocators.length === 0) {
+            return res.status(404).json({ message: 'No allocators found' });
+        }
+
+        res.status(200).json(allocators);
+    } catch (error) {
+        console.error('Error fetching allocators:', error);
+        res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+});
+
 module.exports = router;

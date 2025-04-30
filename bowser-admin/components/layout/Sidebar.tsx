@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideGitPullRequestDraft, LucideSquareArrowOutUpRight, Star, KeyRound } from 'lucide-react'
+import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideGitPullRequestDraft, LucideSquareArrowOutUpRight, Star, KeyRound, LayoutDashboard } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 import ThemeChanger from '../ThemeChanger'
@@ -134,6 +134,18 @@ export function Sidebar() {
                       <Button variant="ghost" className="justify-start w-full">
                         <ListCollapse className="mr-2 w-4 h-4" />
                         My Allocations
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed
+                  allowedRoles={["Admin"]}
+                >
+                  <li onClick={toggleSidebar}>
+                    <Link href='fuel-allocations'>
+                      <Button variant="ghost" className="justify-start w-full">
+                        <LayoutDashboard className="mr-2 w-4 h-4" />
+                        Fuel Allocations
                       </Button>
                     </Link>
                   </li>
@@ -319,7 +331,7 @@ export function Sidebar() {
                 </li>
               </ul>
             </nav>
-            <div className="mt-auto h-[20%]">
+            <div className="mt-auto h-[15%]">
               <Button
                 variant="outline"
                 className="w-full"

@@ -71,7 +71,7 @@ router.get('/', async (req, res) => {
             odometer: 1,
             posted: 1
         }).skip(skip).limit(Number(limit)).sort({ [sortBy]: sortOrder });
-        const totalRecords = await FuelingTransaction.countDocuments();
+        const totalRecords = await FuelingTransaction.countDocuments(filter);
 
         if (records.length == 0) {
             res.status(400).json({ message: 'No records found' })
