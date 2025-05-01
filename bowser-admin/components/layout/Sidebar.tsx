@@ -151,6 +151,18 @@ export function Sidebar() {
                   </li>
                 </OnlyAllowed>
                 <OnlyAllowed
+                  allowedRoles={["Admin"]}
+                >
+                  <li onClick={toggleSidebar}>
+                    <Link href='fuel-requests'>
+                      <Button variant="ghost" className="justify-start w-full">
+                        <LayoutDashboard className="mr-2 w-4 h-4" />
+                        Fuel Reqursts
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed
                   allowedRoles={[
                     "Admin",
                     "Diesel Control Center Staff",

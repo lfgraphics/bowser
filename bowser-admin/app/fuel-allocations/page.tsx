@@ -136,10 +136,10 @@ const Allocations = ({ searchParams }: { searchParams: { tripNumber?: number, al
                 {/* Allocator Filter */}
                 <Select onValueChange={(value) => setSelectedAllocator(value)}>
                     <SelectTrigger>
-                        <SelectValue placeholder="Select Allocator" />
+                        <SelectValue placeholder="Select Vehicle Manager" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value=" ">No Allocator</SelectItem>
+                        <SelectItem value="undefined">All</SelectItem>
                         {allocators.map((allocator) => (
                             <SelectItem key={allocator.userId} value={allocator.userId}>
                                 {allocator.name}
@@ -210,7 +210,7 @@ const Allocations = ({ searchParams }: { searchParams: { tripNumber?: number, al
                             <TableCell>{record.fuelQuantity}</TableCell>
                             <TableCell>{record.bowser.regNo}</TableCell>
                             <TableCell>{record.bowser.driver.name}</TableCell>
-                            <TableCell>{record.fulfilled ? <Check /> : <X />}</TableCell>
+                            <TableCell>{record.fulfilled ? <Check className='text-green-500'/> : <X  className='text-red-500'/>}</TableCell>
                             <TableCell className="text-center"><Button variant="destructive" onClick={() => { setDeleteRecord(record._id); setShowDeleteDialog(true) }}>Delete</Button></TableCell>
                         </TableRow>
                     ))}

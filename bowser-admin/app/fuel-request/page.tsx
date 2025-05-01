@@ -51,10 +51,9 @@ const page = ({ params }: { params: { manager: string } }) => {
         console.log('manager: ', manager)
         try {
             setLoading(true);
-            const response = await fetch(`${BASE_URL}/fuel-request?manager=${user?.userId}`);
+            const response = await fetch(`${BASE_URL}/fuel-request?manager=${user?.userId}&fulfilled=false`);
             const data = await response.json();
-            console.log(data);
-            setData(data);
+            setData(data.requests);
         } catch (error) {
             if (error instanceof Error) {
                 setError(error.message);

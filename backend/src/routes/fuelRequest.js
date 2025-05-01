@@ -8,13 +8,13 @@ router.post('/', async (req, res) => {
     const { driverId, driverName, driverMobile, location } = req.body;
     try {
         let requestVehicle = await Vehicle.findOne({ 'tripDetails.driver': { $regex: driverId, $options: 'i' } })
-        console.log('Fuel request for :',requestVehicle)
+        console.log('Fuel request for :', requestVehicle)
         const fuelRequest = new FuelRequest({ vehicleNumber: requestVehicle.VehicleNo, driverId, driverName, driverMobile, location, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, manager: requestVehicle.manager, tripStatus: `${requestVehicle.tripDetails.open ? 'Open' : 'Closed'}` });
         const existingRequest = await FuelRequest.find({
             vehicleNumber: requestVehicle.VehicleNo, driverId, driverName, driverMobile, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, fulfilled: false
         })
 
-        console.log('Fuel request :',fuelRequest)
+        console.log('Fuel request :', fuelRequest)
 
         if (!existingRequest || !existingRequest.length || existingRequest.length == 0) {
             await fuelRequest.save();
@@ -33,9 +33,11 @@ router.post('/', async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
-    const { fulfilled = false, dateRange, param, manager } = req.query;
+    const { fulfilled, dateRange, param, manager, page = 1, limit = 20 } = req.query;
     let query = {};
-    query.fulfilled = fulfilled;
+    if (fulfilled && fulfilled !== 'undefined') {
+        query.fulfilled = fulfilled;
+    }
     if (dateRange) query.createdAt = { $gte: dateRange[0], $lte: dateRange[1] };
     if (param) {
         query['$or'] = [
@@ -45,16 +47,31 @@ router.get('/', async (req, res) => {
             { driverMobile: { $regex: param, $options: 'i' } }
         ];
     }
-    if (manager && manager !== 'undefined') {
-        query.manager = `${manager}`
+    if (manager && manager != 'undefined') {
+        query.manager = `${manager}`;
     }
 
+    console.log('Query:', query);
+
     try {
-        const fuelRequests = await FuelRequest.find(query).sort({ createdAt: -1 }).limit(20);
-        if (fuelRequests.length === 0) {
-            return res.status(404).json({ message: 'No fuel requests found' });
-        }
-        res.status(200).json(fuelRequests);
+        const skip = (page - 1) * limit;
+        const fuelRequests = await FuelRequest.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        const totalRecords = await FuelRequest.countDocuments(query);
+        const totalPages = Math.ceil(totalRecords / limit);
+
+        res.status(200).json({
+            requests: fuelRequests,
+            pagination: {
+                totalRecords,
+                totalPages,
+                currentPage: parseInt(page),
+                limit: parseInt(limit),
+            },
+        });
     } catch (err) {
         console.error('Error fetching fuel requests:', err);
         res.status(500).json({ message: 'Server error', error: err.message });
