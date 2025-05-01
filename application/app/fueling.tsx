@@ -18,6 +18,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { Ionicons } from "@expo/vector-icons";
 import { capturePhoto } from "@/src/utils/imageManipulation";
 import { baseUrl } from "@/src/utils/helpers";
+import { DualImagePicker } from '@/components/DualImagePicker';
 
 export default function FuelingScreen() {
   // declare state variables---->
@@ -691,37 +692,10 @@ export default function FuelingScreen() {
               />
             )}
             {!vehicleNumberPlateImage && (
-              <TouchableOpacity
-                onPress={() =>
-                  vehicleNumberPlateImage === null
-                    ? openNumberPlateCamera()
-                    : null
-                }
-                style={[styles.photoButton]}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {(fueling == "Own" || fueling == "Attatch") && (
-                    <Ionicons
-                      name="car-outline"
-                      size={20}
-                      color="white"
-                      style={{ marginRight: 5 }}
-                    />
-                  )}
-                  <ThemedText style={{ color: "white" }}>
-                    {fueling == "Own" || fueling == "Attatch"
-                      ? "गाड़ी के नम्बर प्लेट की"
-                      : "सेलिंग पॉइंट की"}{" "}
-                    फ़ोटो खीचें
-                  </ThemedText>
-                </View>
-              </TouchableOpacity>
+              <DualImagePicker
+                onImagePicked={(photo)=>setVehicleNumberPlateImage(photo)}
+                label="गाड़ी के नम्बर प्लेट की फोटो चुनें या खीचें"
+              />
             )}
             {fueling !== "Bulk Sale" && (
               <View style={styles.inputContainer}>
@@ -1008,28 +982,13 @@ export default function FuelingScreen() {
                   </TouchableOpacity>
                 ))}
             </View>
-            <TouchableOpacity
-              onPress={() => openFuelMeterCamera()}
-              style={[styles.photoButton]}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons
-                  name="speedometer-outline"
-                  size={20}
-                  color="white"
-                  style={{ marginRight: 5 }}
-                />
-                <ThemedText style={{ color: "white" }}>
-                  तेल मीटर/ पर्चियों की फ़ोटो खीचें
-                </ThemedText>
-              </View>
-            </TouchableOpacity>
+
+            <DualImagePicker
+              onImagePicked={(uri) =>
+                setFuelMeterImage((prev) => (prev ? [...prev, uri] : [uri]))
+              }
+              label="तेल मीटर और पर्ची की फोटो चुनें या खीचें"
+            />
 
             <View style={styles.inputContainer}>
               <ThemedText>तेल की मात्रा:</ThemedText>

@@ -23,6 +23,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { Ionicons } from "@expo/vector-icons";
 import { capturePhoto } from "@/src/utils/imageManipulation";
 import { baseUrl } from "@/src/utils/helpers";
+import { DualImagePicker } from "@/components/DualImagePicker";
 
 interface RouteParams {
   party: string;
@@ -205,7 +206,7 @@ const NotificationFuelingScreen = () => {
             [
               {
                 text: "OK",
-                onPress: () => {},
+                onPress: () => { },
               },
             ],
             { cancelable: false }
@@ -220,7 +221,7 @@ const NotificationFuelingScreen = () => {
               const errorData = await err.json();
               errorMessage =
                 errorData.message || errorData.error || errorMessage;
-            } catch (jsonError) {}
+            } catch (jsonError) { }
           } else if (err instanceof Error) {
             errorMessage = err.message;
           }
@@ -231,7 +232,7 @@ const NotificationFuelingScreen = () => {
             [
               {
                 text: "OK",
-                onPress: () => {},
+                onPress: () => { },
               },
             ],
             { cancelable: false }
@@ -279,7 +280,7 @@ const NotificationFuelingScreen = () => {
                   Alert.alert(
                     "Success",
                     "Data saved offline. It will be submitted when you're back online.",
-                    [{ text: "OK", onPress: () => {} }],
+                    [{ text: "OK", onPress: () => { } }],
                     { cancelable: false }
                   );
                   resetForm();
@@ -299,7 +300,7 @@ const NotificationFuelingScreen = () => {
           Alert.alert(
             "Error",
             "Failed to handle offline data. Please try again.",
-            [{ text: "OK", onPress: () => {} }],
+            [{ text: "OK", onPress: () => { } }],
             { cancelable: false }
           );
         } finally {
@@ -417,17 +418,16 @@ const NotificationFuelingScreen = () => {
                     style={[
                       styles.submitButtonText,
                       {
-                        color: `${
-                          category == option ? colors.card : colors.text
-                        }`,
+                        color: `${category == option ? colors.card : colors.text
+                          }`,
                       },
                     ]}
                   >
                     {option == "Own"
                       ? "अपना"
                       : option == "Attatch"
-                      ? "अटैच"
-                      : "सेल"}
+                        ? "अटैच"
+                        : "सेल"}
                   </ThemedText>
                 </TouchableOpacity>
               )
@@ -445,37 +445,10 @@ const NotificationFuelingScreen = () => {
               />
             )}
             {!vehicleNumberPlateImage && (
-              <TouchableOpacity
-                onPress={() =>
-                  vehicleNumberPlateImage === null
-                    ? openNumberPlateCamera()
-                    : null
-                }
-                style={[styles.photoButton]}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {(category == "Own" || category == "Attatch") && (
-                    <Ionicons
-                      name="car-outline"
-                      size={20}
-                      color="white"
-                      style={{ marginRight: 5 }}
-                    />
-                  )}
-                  <ThemedText style={{ color: "white" }}>
-                    {category == "Own" || category == "Attatch"
-                      ? "गाड़ी के नम्बर प्लेट की"
-                      : "सेलिंग पॉइंट की"}{" "}
-                    फ़ोटो खीचें
-                  </ThemedText>
-                </View>
-              </TouchableOpacity>
+              <DualImagePicker
+                onImagePicked={(photo) => setVehicleNumberPlateImage(photo)}
+                label="गाड़ी के नम्बर प्लेट की फोटो चुनें या खीचें"
+              />
             )}
             {category !== "Bulk Sale" && (
               <View style={styles.inputContainer}>
@@ -604,28 +577,12 @@ const NotificationFuelingScreen = () => {
                     </TouchableOpacity>
                   ))}
               </View>
-              <TouchableOpacity
-                onPress={() => openFuelMeterCamera()}
-                style={[styles.photoButton]}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons
-                    name="speedometer-outline"
-                    size={20}
-                    color="white"
-                    style={{ marginRight: 5 }}
-                  />
-                  <ThemedText style={{ color: "white" }}>
-                    तेल मीटर/ पर्चियों की फ़ोटो खीचें
-                  </ThemedText>
-                </View>
-              </TouchableOpacity>
+              <DualImagePicker
+                onImagePicked={(uri) =>
+                  setFuelMeterImage((prev) => (prev ? [...prev, uri] : [uri]))
+                }
+                label="तेल मीटर और पर्ची की फोटो चुनें या खीचें"
+              />
 
               <ThemedText>तेल की मात्रा:</ThemedText>
               <View style={styles.rowContainer}>
