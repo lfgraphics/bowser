@@ -313,10 +313,10 @@ async function syncTripData() {
             };
 
             // Skip update if tripDetails.id matches current tripDetails.id
-            if (vehicle.tripDetails?.id?.toString() === latestTrip._id.toString()) {
-                noUpdatesNeeded++;
-                continue;
-            }
+            if (vehicle.tripDetails?.id?.toString() === latestTrip._id.toString()) {  //
+                noUpdatesNeeded++;                                                    //    comment this block to update tripDetails
+                continue;                                                             //    even if the trip is same
+            }                                                                         //
 
             // Update the tripDetails, preserve existing MobileNo
             bulkOps.push({
