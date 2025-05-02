@@ -42,6 +42,13 @@ npx electron-builder --win
 ```
 > This will generate the `.exe` file using `electron-builder` for Windows.
 
+### 🔄 CI/CD
+Here's an example command to release the installable file build with electron:
+```bash
+gh release create exe "./tally-bridge/dist/TallyBridge Setup 1.4.0.exe"  --title "Exe" --notes "Windows build with new fixes" #update the path, file name notes etc. accordingly
+```
+> This will release `.exe` file using `github releases` that is linked with the UI's /download page for ease of users.
+
 **Note**: Windows Defender will show a warning for unknown publisher. Click **"More info" → "Run anyway"** to continue installation. This is expected in local/test builds.
 
 ---

@@ -8,6 +8,24 @@ import {
 import axios from 'axios'
 
 export const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL
+export const gdApiKey = process.env.Google_Drive_Api_Key
+
+export const getDriveFileSize = async (fileUrl: string) => {
+  const fileIdMatch = fileUrl.match(/\/d\/([^/]+)\//);
+  if (!fileIdMatch) return null;
+
+  const fileId = fileIdMatch[1];
+  const apiUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?fields=size&key=${gdApiKey}`;
+
+  try {
+    const res = await axios.get(apiUrl);
+    const sizeInMB = (Number(res.data.size) / (1024 * 1024)).toFixed(2);
+    return sizeInMB;
+  } catch (err) {
+    console.error("Drive API error:", err instanceof Error ? err.message : "Unknown error");
+    return null;
+  }
+}
 // Users and Roles Management
 export const getUsers = async (): Promise<MainUser[]> => {
   const response = await fetch(`${BASE_URL}/users`)

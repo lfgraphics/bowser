@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideGitPullRequestDraft, LucideSquareArrowOutUpRight, Star, KeyRound, LayoutDashboard } from 'lucide-react'
+import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideGitPullRequestDraft, LucideSquareArrowOutUpRight, Star, KeyRound, LayoutDashboard, Download } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 import ThemeChanger from '../ThemeChanger'
@@ -323,6 +323,14 @@ export function Sidebar() {
                     <Button variant="ghost" className="justify-start w-full">
                       <User2 className="mr-2 w-4 h-4" />
                       Profile
+                    </Button>
+                  </Link>
+                </li>
+                <li onClick={toggleSidebar}>
+                  <Link href="/download">
+                    <Button variant="ghost" className="justify-start w-full">
+                      <Download size={18} className="mr-2 w-4 h-4" />
+                      Download
                     </Button>
                   </Link>
                 </li>

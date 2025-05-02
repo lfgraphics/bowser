@@ -4,11 +4,33 @@ const Update = require('../models/updates');
 
 // Get all users with roles populated
 router.get('/', async (req, res) => {
+    const { appName = "drivers" } = req.query
     try {
-        const updates = await Update.find().sort({ buildVersion: -1 }).exec();
+        const updates = await Update.find({ appName }).sort({ buildVersion: -1 }).lean();
         res.status(200).json(updates);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch updates', details: error });
+    }
+});
+// GET /latest
+router.get('/latest', async (req, res) => {
+    try {
+        const latestPerApp = await Update.aggregate([
+            { $sort: { buildVersion: -1 } },
+            {
+                $group: {
+                    _id: "$appName",
+                    latest: { $first: "$$ROOT" }
+                }
+            },
+            {
+                $replaceRoot: { newRoot: "$latest" }
+            }
+        ]);
+
+        res.status(200).json(latestPerApp);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch latest updates', details: error });
     }
 });
 router.get('/:id', async (req, res) => {
@@ -45,7 +67,7 @@ router.delete('/:id', async (req, res) => {
     let { updateId } = req.params
     try {
         await Update.deleteOne(updateId);
-        res.status(200).json({ title: 'Operation Successful', message:'Deleted updated successfully' })
+        res.status(200).json({ title: 'Operation Successful', message: 'Deleted updated successfully' })
     } catch (err) {
         res.status(400).json({ title: err.title, message: err.message })
     }

@@ -42,6 +42,12 @@ eas build -p android --profile development
 eas build -p android --profile production
 ```
 
+**Publish the apk through github release**
+```bash
+gh release create apk ./builds/ITPL.Fueling.V-63.apk --title "Apk" --notes "Integrated image upload feature" #update the path, file name notes etc. accordingly
+```
+> This will release `.akp` file using `github releases` that is linked with the UI's /download page for ease of users.
+
 ---
 
 ### 🔧 Setup (Local Development)
