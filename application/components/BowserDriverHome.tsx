@@ -30,7 +30,7 @@ export default function BowserDriverHome() {
     const [isOfflineDataModalVisible, setOfflineDataModalVisible] = useState(false);
     const [isOfflineDataLoading, setIsOfflineDataLoading] = useState(false);
     const { colors } = useTheme();
-    const appVersion = 59;
+    const appVersion = 63;
     const [appurl, setAppUrl] = useState<string | null>(null);
 
     let showUpdateLink = async () => {
