@@ -68,7 +68,46 @@ router.post('/login', async (req, res) => {
     try {
         const { phoneNumber, password, deviceUUID } = req.body;
 
-        const user = await Driver.findOne({ 'MobileNo.MobileNo': phoneNumber, password: { $exists: true } });
+        const user = await Driver.findOne({
+            $expr: {
+                $gt: [
+                    {
+                        $size: {
+                            $filter: {
+                                input: {
+                                    $cond: [
+                                        { $eq: [{ $type: "$MobileNo" }, "object"] },
+                                        {
+                                            $map: {
+                                                input: { $objectToArray: "$MobileNo" },
+                                                as: "entry",
+                                                in: "$$entry.v"
+                                            }
+                                        },
+                                        {
+                                            $cond: [
+                                                { $eq: [{ $type: "$MobileNo" }, "array"] },
+                                                "$MobileNo",
+                                                [] // fallback if neither object nor array
+                                            ]
+                                        }
+                                    ]
+                                },
+                                as: "mobile",
+                                cond: {
+                                    $and: [
+                                        { $eq: ["$$mobile.MobileNo", phoneNumber] },
+                                        { $eq: ["$$mobile.LastUsed", true] }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    0
+                ]
+            },
+            password: { $exists: true }
+        });
 
         if (!user) {
             return res.status(400).json({ message: 'आईडी मोजूद नहीं है|' });
