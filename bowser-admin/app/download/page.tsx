@@ -32,23 +32,23 @@ interface FormData {
 
 const UpdateManager: React.FC = () => {
     const [updates, setUpdates] = useState<UpdateEntry[]>([]);
-    const [isAdmin, setIsAdmin] = useState(false);
+    // const [isAdmin, setIsAdmin] = useState(false);
     // const [formData, setFormData] = useState<FormData>({ appName: '', buildVersion: '', releaseNotes: '', url: '' });
     // const [loading, setLoading] = useState(false);
     const [user, setUser] = useState<User>()
 
     useEffect(() => {
-        const checkAuth = () => {
-            const authenticated = isAuthenticated();
-            if (!authenticated) {
-                window.location.href = '/login';
-                return;
-            }
-            if ((user?.roles[0] !== 'Admin' && user?.roles[1] !== 'Admin')) {
-                setIsAdmin(true);
-            }
-        };
-        checkAuth();
+        // const checkAuth = () => {
+        //     const authenticated = isAuthenticated();
+        //     if (!authenticated) {
+        //         window.location.href = '/login';
+        //         return;
+        //     }
+        //     if ((user?.roles[0] !== 'Admin' && user?.roles[1] !== 'Admin')) {
+        //         setIsAdmin(true);
+        //     }
+        // };
+        // checkAuth();
         fetchUpdates();
     }, []);
 

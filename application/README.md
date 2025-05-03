@@ -42,11 +42,21 @@ eas build -p android --profile development
 eas build -p android --profile production
 ```
 
-**Publish the apk through github release**
+**Publish the APK through GitHub Release**
+
 ```bash
-gh release create apk ./builds/ITPL.Fueling.V-63.apk --title "Apk" --notes "Integrated image upload feature" #update the path, file name notes etc. accordingly
+# Step 1: Upload or replace the APK file under the 'apk' tag
+gh release upload apk ./builds/latest.apk --clobber  # update the file path accordingly
+
+# Step 2: Update the release title and notes
+gh release edit apk \
+  --title "Android Build v64" \
+  --notes "Bug fixes and performance improvements"
 ```
-> This will release `.akp` file using `github releases` that is linked with the UI's /download page for ease of users.
+
+> This will publish or update the `.apk` file under the `apk` tag using **GitHub Releases**. Your UI's `/download` page automatically fetches this release for easy one-click downloads for users.
+
+The file download URL and release info will reflect immediately without needing to update your frontend code manually.
 
 ---
 
