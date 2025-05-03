@@ -104,7 +104,10 @@ router.post('/login', async (req, res) => {
 
         if (driversVehicle.length == 1) {
             userData.VehicleNo = driversVehicle[0].VehicleNo;
-        } else {
+        } else if (driversVehicle.length > 1) {
+            driversVehicle.find(vehicle => vehicle.tripDetails.open == true) ? userData.VehicleNo = driversVehicle.find(vehicle => vehicle.tripDetails.open == true).VehicleNo : userData.VehicleNo = 'एक से अधिक ट्रिप्स मिली हैं लेकिन कोई चालू ट्रिप नहीं मिली';
+        }
+        else {
             userData.VehicleNo = 'कोई वाहन नहीं दिया गया है';
         }
 
