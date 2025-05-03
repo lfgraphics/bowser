@@ -23,6 +23,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
     const [permissionsGranted, setPermissionsGranted] = useState(false);
     const [isGPSEnabled, setIsGPSEnabled] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [vehicleNumbers, setVehicleNumbers] = useState<string[]>([]);
     const [appurl, setAppUrl] = useState<string | null>(null);
     const { colors } = useTheme();
 
@@ -100,7 +101,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
         return false;
     }
 
-    const requestFuel = async () => {
+    const requestFuel = async (vehicleNumber: string) => {
         if (userData) {
 
             if (await requestedYesterday()) {
@@ -125,7 +126,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                 try {
                     if (userData && isDriverData(userData)) {
                         const body = JSON.stringify({
-                            vehicleNumber: userData.VehicleNo,
+                            vehicleNumber,
                             driverId: userData.Id,
                             driverName: userData.Name,
                             driverMobile: userData['Phone Number'],
@@ -178,6 +179,34 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
         }
     };
 
+    const getVehicleNumber = async () => {
+        if (userData && isDriverData(userData)) {
+            setLoading(true);
+            try {
+                const vehicleNumbers = await fetch(`${baseUrl}/fuel-request/driver?driverId=${userData.Id}`);
+                const vehicleNumbersData = await vehicleNumbers.json();
+                if (vehicleNumbers.status === 200) {
+                    Alert.alert(
+                        'गाड़ी नंबर',
+                        'कृपया गाड़ी नंबर चुनें।',
+                        vehicleNumbersData.map((vehicleNumber: string) => ({
+                            text: vehicleNumber,
+                            onPress: () => requestFuel(vehicleNumber.split(' - ')[0]),
+                        })),
+                        { cancelable: true }
+                    );
+                } else {
+                    Alert.alert('एरर', 'गाड़ी नंबर नहीं मिल पाया। कृपया दोबारा कोशिश करें।');
+                }
+            } catch (error) {
+                console.error('Error fetching vehicle numbers:', error);
+                Alert.alert('एरर', 'गाड़ी नंबर नहीं मिल पाया। कृपया दोबारा कोशिश करें।');
+            } finally {
+                setLoading(false);
+            }
+        }
+    }
+
     if (!permissionsGranted || !isGPSEnabled) {
         return (
             <View style={[styles.container, { backgroundColor: colors.card }]}>
@@ -204,17 +233,17 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
 
                 <View style={{ flexDirection: "column", gap: 8, alignItems: "center", marginBottom: 20 }}>
                     <View style={{ flexDirection: "column", gap: 8, alignItems: "center", display: "none" }}>
-                        <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]} onPress={requestFuel}>
+                        <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]}>
                             <Text style={styles.requestButtonText}>लोड हो गई</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]} onPress={requestFuel}>
+                        <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]}>
                             <Text style={styles.requestButtonText}>रिपोर्ट हो गई</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]} onPress={requestFuel}>
+                        <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]}>
                             <Text style={styles.requestButtonText}>ख़ाली हो गई</Text>
                         </TouchableOpacity>
                     </View>
-                    <TouchableOpacity style={styles.requestButton} onPress={requestFuel}>
+                    <TouchableOpacity style={styles.requestButton} onPress={() => getVehicleNumber()}>
                         <Text style={styles.requestButtonText}>डीज़ल अनुरोध</Text>
                     </TouchableOpacity>
                     {/* {appurl &&

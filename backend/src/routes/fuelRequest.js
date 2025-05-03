@@ -5,9 +5,9 @@ const { sendWebPushNotification } = require('../utils/pushNotifications');
 const Vehicle = require('../models/vehicle')
 
 router.post('/', async (req, res) => {
-    const { driverId, driverName, driverMobile, location } = req.body;
+    const { driverId, driverName, driverMobile, location, vehicleNumber } = req.body;
     try {
-        let requestVehicle = await Vehicle.findOne({ $and: [{ 'tripDetails.driver': { $regex: driverId, $options: 'i' } }, { "tripDetails.open": true }] })
+        let requestVehicle = await Vehicle.findOne({ VehicleNo: vehicleNumber })
         console.log('Fuel request for :', requestVehicle)
         const fuelRequest = new FuelRequest({ vehicleNumber: requestVehicle.VehicleNo, driverId, driverName, driverMobile, location, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, manager: requestVehicle.manager, tripStatus: `${requestVehicle.tripDetails.open ? 'Open' : 'Closed'}` });
         const existingRequest = await FuelRequest.find({
@@ -77,6 +77,21 @@ router.get('/', async (req, res) => {
         res.status(500).json({ message: 'Server error', error: err.message });
     }
 });
+
+router.get('/driver', async (req, res) => {
+    const { driverId } = req.query;
+    try {
+        const driversVehicles = await Vehicle.find({ 'tripDetails.driver': { $regex: driverId } });
+        if (!driversVehicles || driversVehicles.length === 0) {
+            return res.status(404).json({ message: 'No vehicles found for this driver' });
+        }
+        const vehicleNumbers = driversVehicles.map(vehicle => `${vehicle.VehicleNo} - मेनेजर: ${vehicle.manager || 'कोई नहीं'}`);
+        return res.status(200).json(vehicleNumbers);
+    } catch (err) {
+        console.error('Error fetching vehicles for driver:', err);
+        return res.status(500).json({ message: 'Server error', error: err.message });
+    }
+})
 
 router.get('/vehicle-driver/:id', async (req, res) => {
     try {
