@@ -87,7 +87,7 @@ export function Sidebar() {
             {user?.roles.join(", ")}
           </SheetDescription>
           <div className="flex flex-col p-3 h-full">
-            <nav className="h-[80%]">
+            <nav className="h-[80%] overflow-y-auto relative">
               <ul className="space-y-1 text-sm">
                 <OnlyAllowed
                   allowedRoles={["Admin", "Diesel Control Center Staff"]}
@@ -350,6 +350,7 @@ export function Sidebar() {
                   <ThemeChanger />
                 </li>
               </ul>
+              <div className="sticky bottom-0 h-8 w-full bg-gradient-to-t from-background to-transparent z-10"></div>
             </nav>
             <div className="mt-auto h-[15%]">
               <Button
