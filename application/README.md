@@ -45,13 +45,9 @@ eas build -p android --profile production
 **Publish the APK through GitHub Release**
 
 ```bash
-# Step 1: Upload or replace the APK file under the 'apk' tag
-gh release upload apk ./builds/latest.apk --clobber  # update the file path accordingly
+gh release upload apk ./builds/latest.apk --clobber # update the file path accordingly
 
-# Step 2: Update the release title and notes
-gh release edit apk \
-  --title "Android Build v64" \
-  --notes "Bug fixes and performance improvements"
+gh release edit apk --title "Android Build v64" --notes "Bug fixes and performance improvements" #update the title and notes according tothe update
 ```
 
 > This will publish or update the `.apk` file under the `apk` tag using **GitHub Releases**. Your UI's `/download` page automatically fetches this release for easy one-click downloads for users.

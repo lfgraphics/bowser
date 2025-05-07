@@ -10,7 +10,8 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { Download } from 'lucide-react';
+import { Download, GlobeIcon } from 'lucide-react';
+import { InstallPrompt } from '../page';
 
 interface UpdateEntry {
     _id: string;
@@ -36,7 +37,10 @@ const UpdateManager: React.FC = () => {
     // const [formData, setFormData] = useState<FormData>({ appName: '', buildVersion: '', releaseNotes: '', url: '' });
     // const [loading, setLoading] = useState(false);
     const [user, setUser] = useState<User>()
-
+    const [isStandalone, setIsStandalone] = useState(false);
+    useEffect(() => {
+        setIsStandalone(window.matchMedia("(display-mode: standalone)").matches);
+    }, []);
     useEffect(() => {
         // const checkAuth = () => {
         //     const authenticated = isAuthenticated();
@@ -78,7 +82,7 @@ const UpdateManager: React.FC = () => {
 
             // Map to your UpdateEntry format
             const updates: UpdateEntry[] = Object.entries(latestByTag).map(([tag, release]: [string, any]) => {
-                const asset = release.assets?.[0];
+                const asset = release.assets?.[release.assets.length - 1];
                 const fileSizeMB = asset ? (asset.size / (1024 * 1024)).toFixed(2) : 'Unknown';
                 const versionMatch = asset?.name?.match(/V[-.]?(\\d+)/i);
                 const buildVersion = versionMatch ? Number(versionMatch[1]) : 0;
@@ -91,7 +95,7 @@ const UpdateManager: React.FC = () => {
                     releaseNotes: release.body,
                     url: asset?.browser_download_url || '',
                     fileSizeMB,
-                    pushDate: asset?.created_at || release.created_at,
+                    pushDate: asset?.updated_at || release.published_at,
                 };
             });
 
@@ -172,6 +176,23 @@ const UpdateManager: React.FC = () => {
                         </CardFooter>
                     </Card>
                 ))}
+                {!isStandalone &&
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <CardTitle>Office Admins Web Portal</CardTitle>
+                            <GlobeIcon size={40} color='green' />
+                        </CardHeader>
+                        {/* <CardContent>
+                        <p><strong>Release Notes:</strong> {update.releaseNotes || 'N/A'}</p>
+                        <p><strong>Size:</strong> {update.fileSizeMB || 'Unknown'} MB</p>
+                        <p><strong>Released On:</strong> {formatDate(update.pushDate)}</p>
+                    </CardContent> */}
+                        <CardFooter className='text-center items-center justify-center w-full'>
+                            <InstallPrompt />
+                            {/* {isAdmin && <button onClick={() => handleDelete(update._id)} className="ml-4 text-red-600">Delete</button>} */}
+                        </CardFooter>
+                    </Card>
+                }
             </div>
             {/* 
             {isAdmin && (

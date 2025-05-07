@@ -42,14 +42,14 @@ npx electron-builder --win
 ```
 > This will generate the `.exe` file using `electron-builder` for Windows.
 
-### 🔄 CI/CD: Publishing the EXE Build
+### 🔄 CI/CD: Publishing the EXE Installer
 
 Here's a command example to publish your Electron-built Windows installer via GitHub Releases:
 
 ```bash
-gh release create exe "./tally-bridge/dist/TallyBridge Setup 1.4.0.exe" \
-  --title "Windows Build v1.4.0" \
-  --notes "Includes bug fixes, auto-start support, and improved sync stability"
+gh release upload exe ./builds/latest.exe --clobber # update the file path accordingly
+
+gh release edit exe --title "Android Build v64" --notes "Bug fixes and performance improvements" #update the title and notes according tothe update
 ```
 > This command creates a release under the exe tag, uploads your .exe file, and sets the title and changelog accordingly.
 

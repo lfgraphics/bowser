@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { allowedRoutes } from "./(auth)/login/page";
 import { User } from "@/types";
 import Loading from "./loading";
+import { Download } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -70,9 +71,9 @@ export function InstallPrompt() {
 
   return (
     <div>
-      <h3>Install App</h3>
-      <Button variant="secondary" onClick={handleInstallClick}>
-        Add to Home Screen
+      <Button onClick={handleInstallClick} className="w-full inline-flex items-center text-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"      >
+        <Download size={18} className='mr-3' />
+        Install this App
       </Button>
       {isIOS && (
         <p>
