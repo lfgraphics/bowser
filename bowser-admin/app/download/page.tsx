@@ -151,46 +151,45 @@ const UpdateManager: React.FC = () => {
         <div className="p-4 container mx-auto">
             <h1 className="text-2xl font-bold mb-4">App Updates</h1>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
                 {updates.map(update => (
-                    <Card key={update._id}>
+                    <Card key={update._id} className="flex flex-col h-full">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>{update.appName}</CardTitle>
-                            <Image src={update.image} alt='app icon' width={50} height={50} />
+                            <Image src={update.image} alt="app icon" width={50} height={50} />
                         </CardHeader>
-                        <CardContent>
-                            <p><strong>Release Notes:</strong> {update.releaseNotes || 'N/A'}</p>
-                            <p><strong>Size:</strong> {update.fileSizeMB || 'Unknown'} MB</p>
-                            <p><strong>Released On:</strong> {formatDate(update.pushDate)}</p>
-                        </CardContent>
-                        <CardFooter>
-                            <Link
-                                href={update.url}
-                                download
-                                className="w-full inline-flex items-center text-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
-                            >
-                                <Download size={18} className='mr-3' />
-                                Download
-                            </Link>
-                            {/* {isAdmin && <button onClick={() => handleDelete(update._id)} className="ml-4 text-red-600">Delete</button>} */}
-                        </CardFooter>
+                        <div className="flex flex-col flex-1">
+                            <CardContent className="flex-1 flex flex-col justify-start gap-1">
+                                <p><strong>Release Notes:</strong> {update.releaseNotes || 'N/A'}</p>
+                                <p><strong>Size:</strong> {update.fileSizeMB || 'Unknown'} MB</p>
+                                <p><strong>Released On:</strong> {formatDate(update.pushDate)}</p>
+                            </CardContent>
+
+                            <CardFooter className="mt-auto">
+                                <Link
+                                    href={update.url}
+                                    download
+                                    className="w-full inline-flex items-center text-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
+                                >
+                                    <Download size={18} className="mr-3" />
+                                    Download
+                                </Link>
+                            </CardFooter>
+                        </div>
                     </Card>
                 ))}
                 {!isStandalone &&
-                    <Card>
+                    <Card className="flex flex-col h-full">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>Office Admins Web Portal</CardTitle>
                             <GlobeIcon size={40} color='green' />
                         </CardHeader>
-                        {/* <CardContent>
-                        <p><strong>Release Notes:</strong> {update.releaseNotes || 'N/A'}</p>
-                        <p><strong>Size:</strong> {update.fileSizeMB || 'Unknown'} MB</p>
-                        <p><strong>Released On:</strong> {formatDate(update.pushDate)}</p>
-                    </CardContent> */}
-                        <CardFooter className='text-center items-center justify-center w-full'>
-                            <InstallPrompt />
-                            {/* {isAdmin && <button onClick={() => handleDelete(update._id)} className="ml-4 text-red-600">Delete</button>} */}
-                        </CardFooter>
+                        <div className="flex flex-col flex-1">
+                            <CardContent></CardContent>
+                            <CardFooter className='text-center items-center justify-center w-full mt-auto'>
+                                <InstallPrompt />
+                            </CardFooter>
+                        </div>
                     </Card>
                 }
             </div>

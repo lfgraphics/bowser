@@ -77,7 +77,7 @@ export function Sidebar() {
         </SheetTrigger>
         <SheetContent
           side="left"
-          className="top-0 left-0 z-50 fixed bg-background shadow w-60 h-full"
+          className="top-0 left-0 z-50 fixed bg-background shadow w-max h-full"
         >
           <SheetHeader>
             <SheetTitle>Hii {user?.name}</SheetTitle>
