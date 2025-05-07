@@ -38,12 +38,24 @@ export async function registerPushSubscription(mobileNumber: string, userId:stri
 
             // Wait for service worker registration
             const registration = await navigator.serviceWorker.ready;
+            let subscription = await registration.pushManager.getSubscription();
 
-            // Subscribe for push notifications
-            const subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
-            });
+            // Check if already subscribed and valid (VAPID-style endpoint)
+            if (subscription && subscription.endpoint.includes('/wp/')) {
+                console.log("Already subscribed with valid VAPID endpoint");
+            } else {
+                if (subscription) {
+                    await subscription.unsubscribe();
+                    console.log("Old non-VAPID subscription unsubscribed");
+                }
+
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!)
+                });
+
+                console.log("New VAPID subscription created");
+            }
 
             // Send subscription to the backend
             const response = await fetch(`${BASE_URL}/notifications/register`, {
