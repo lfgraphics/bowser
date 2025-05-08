@@ -186,7 +186,7 @@ const UpdateManager: React.FC = () => {
                         </CardHeader>
                         <div className="flex flex-col flex-1">
                             <CardContent></CardContent>
-                            <CardFooter className='text-center items-center justify-center w-full mt-auto'>
+                            <CardFooter className='block mt-auto'>
                                 <InstallPrompt />
                             </CardFooter>
                         </div>
