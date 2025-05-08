@@ -33,6 +33,7 @@ interface FormData {
 
 const UpdateManager: React.FC = () => {
     const [updates, setUpdates] = useState<UpdateEntry[]>([]);
+    const [showAll, setShowAll] = useState(false);
     // const [isAdmin, setIsAdmin] = useState(false);
     // const [formData, setFormData] = useState<FormData>({ appName: '', buildVersion: '', releaseNotes: '', url: '' });
     // const [loading, setLoading] = useState(false);
@@ -152,7 +153,17 @@ const UpdateManager: React.FC = () => {
             <h1 className="text-2xl font-bold mb-4">App Updates</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
-                {updates.map(update => (
+                <div className="w-full text-center">
+                    <Button 
+                        onClick={() => setShowAll(!showAll)} 
+                        variant="outline"
+                    >
+                        {showAll ? 'Show Less' : 'Show More'}
+                    </Button>
+                </div>
+                {updates
+                    .filter((update) => showAll ? true : update.image !== '/windows.png')
+                    .map(update => (
                     <Card key={update._id} className="flex flex-col h-full">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>{update.appName}</CardTitle>
@@ -178,7 +189,7 @@ const UpdateManager: React.FC = () => {
                         </div>
                     </Card>
                 ))}
-                {!isStandalone &&
+                {!isStandalone && showAll &&
                     <Card className="flex flex-col h-full">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>Office Admins Web Portal</CardTitle>
