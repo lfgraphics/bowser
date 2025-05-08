@@ -23,7 +23,7 @@ router.post('/signup', async (req, res) => {
         }
 
         if (driver[0].password) {
-            console.error(`User already exist`);
+            console.error(`User\n ${JSON.stringify(driver[0])}\nalready exist`);
             return res.status(400).json({ message: `पहले से आईडी व पासवर्ड बना हुआ है\nयदि आपको पासवर्ड बदलना है तो एडमिन से संपर्क करें|` });
         }
 
