@@ -11,6 +11,8 @@ const vehicleSchema = new mongoose.Schema({
         to: String,
         startedOn: String
     },
+    operationManager: String,
+    capacity: String,
     GoodsCategory: String,
     manager: String
 });

@@ -43,8 +43,10 @@ router.post('/signup', async (req, res) => {
             { Name: { $regex: name, $options: "i" } },
             {
                 $set: {
-                    "MobileNo.0.MobileNo": phoneNumber,
-                    "MobileNo.0.LastUsed": true,
+                    MobileNo: [{
+                        MobileNo: phoneNumber,
+                        LastUsed: true
+                    }],
                     ITPLId: id,
                     password: hashedPassword,
                     deviceUUID,
@@ -132,7 +134,7 @@ router.post('/login', async (req, res) => {
         }
 
         let driversVehicle = await vehicle.find({ 'tripDetails.driver': { $regex: user.ITPLId } });
-        
+
         console.log(user);
 
         let userData = {
