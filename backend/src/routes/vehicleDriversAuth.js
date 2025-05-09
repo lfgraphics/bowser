@@ -132,11 +132,13 @@ router.post('/login', async (req, res) => {
         }
 
         let driversVehicle = await vehicle.find({ 'tripDetails.driver': { $regex: user.ITPLId } });
+        
+        console.log(user);
 
         let userData = {
             Name: cleanName,
             Id: user.ITPLId,
-            'Phone Number': user.MobileNo[0].MobileNo,
+            'Phone Number': user.MobileNo?.[0]?.MobileNo || user.MobileNo?.['0']?.MobileNo,
             Role: roleNames,
             VehicleNo: ''
         };
