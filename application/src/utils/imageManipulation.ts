@@ -2,7 +2,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 
-const imageToBase64 = async (uri: string): Promise<string> => {
+export const imageToBase64 = async (uri: string): Promise<string> => {
     const base64 = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
     });
