@@ -100,6 +100,8 @@ const page = ({ params }: { params: { manager: string } }) => {
                             <CardTitle>{request.vehicleNumber}</CardTitle>
                         </CardHeader>
                         <CardContent>
+                            Odometer: {request.odometer}
+                            <br />
                             Trip: {request.trip}
                             <br />
                             Strart Date: {formatDate(request.startDate)}

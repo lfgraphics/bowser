@@ -76,6 +76,63 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+router.put('/update-details/:vehicle', async (req, res) => {
+    const { vehicle } = req.body;
+    try {
+        const vehicleDetails = await Vehicle.findOneAndUpdate(
+            { VehicleNo: req.params.vehicle },
+            { $set: vehicle },
+            { new: true }
+        ).lean();
+
+        if (!vehicleDetails) {
+            return res.status(404).json({ error: 'Vehicle not found' });
+        }
+
+        return res.status(200).json(vehicleDetails);
+    } catch (error) {
+        console.error('Error updating vehicle details:', error);
+        return res.status(500).json({ error: 'Failed to update vehicle details', error });
+    }
+});
+
+router.put('/update-details', async (req, res) => {
+    const {vehicles} = req.body;
+    try {
+        // Validate input
+        if (!vehicles || !Array.isArray(vehicles) || vehicles.length === 0) {
+            return res.status(400).json({ error: 'Valid vehicles array is required' });
+        }
+
+        // Create bulk operations array
+        const bulkOps = vehicles.map(vehicle => ({
+            updateOne: {
+                filter: { VehicleNo: vehicle.VehicleNo },
+                update: { $set: vehicle },
+                upsert: false
+            }
+        }));
+
+        // Execute bulk operation
+        const result = await Vehicle.bulkWrite(bulkOps);
+
+        // Get updated vehicles
+        const updatedVehicles = await Vehicle.find({
+            VehicleNo: { $in: vehicles.map(v => v.VehicleNo) }
+        }).lean();
+
+        return res.status(200).json({
+            message: 'Bulk update completed',
+            matchedCount: result.matchedCount,
+            modifiedCount: result.modifiedCount,
+            updatedVehicles
+        });
+    } catch (error) {
+        console.error('Error updating vehicle details:', error);
+        return res.status(500).json({ error: 'Failed to update vehicle details', error });
+    }
+});
+
 // Update vehicle by ID
 router.put('/:id', async (req, res) => {
     try {

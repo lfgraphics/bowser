@@ -101,7 +101,10 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
         return false;
     }
 
-    const requestFuel = async (vehicleNumber: string) => {
+    const requestFuel = async ({ vehicleNumber, odometer }: {
+        vehicleNumber: string;
+        odometer: string;
+    }) => {
         if (userData) {
 
             if (await requestedYesterday()) {
@@ -127,6 +130,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                     if (userData && isDriverData(userData)) {
                         const body = JSON.stringify({
                             vehicleNumber,
+                            odometer,
                             driverId: userData.Id,
                             driverName: userData.Name,
                             driverMobile: userData['Phone Number'],
@@ -191,7 +195,31 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                         'कृपया गाड़ी नंबर चुनें।',
                         vehicleNumbersData.map((vehicleNumber: string) => ({
                             text: vehicleNumber,
-                            onPress: () => requestFuel(vehicleNumber.split(' - ')[0]),
+                            onPress: () => {
+                                Alert.prompt(
+                                    'ओडोमीटर रीडिंग',
+                                    'कृपया वर्तमान ओडोमीटर रीडिंग दर्ज करें',
+                                    [
+                                        {
+                                            text: 'रद्द करें',
+                                            style: 'cancel'
+                                        },
+                                        {
+                                            text: 'भेजें',
+                                            onPress: (odometerValue) => {
+                                                if (odometerValue && !isNaN(Number(odometerValue))) {
+                                                    requestFuel({ vehicleNumber: vehicleNumber.split(' - ')[0], odometer: odometerValue });
+                                                } else {
+                                                    Alert.alert('एरर', 'कृपया सही ओडोमीटर रीडिंग दर्ज करें');
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    'plain-text',
+                                    '',
+                                    'number-pad'
+                                );
+                            }
                         })),
                         { cancelable: true }
                     );

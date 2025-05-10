@@ -32,6 +32,27 @@ router.get('/', (req, res) => {
     res.send('landing page');
 });
 
+router.post('/get-object-from-array', (req, res) => {
+    const { headings, rows } = req.body;
+
+    if (!Array.isArray(headings) || !Array.isArray(rows)) {
+        return res.status(400).json({ error: 'Invalid input. Expected headings: string[], rows: string[]' });
+    }
+
+    const result = rows.map(row => {
+        const values = row.split(',').map(val => val.trim());
+        const obj = {};
+
+        headings.forEach((key, index) => {
+            obj[key] = values[index] || '';
+        });
+
+        return obj;
+    });
+
+    return res.json(result);
+});
+
 router.use('/addFuelingTransaction', fuelingTransactionRouts);
 router.use('/allocateFueling', allocateFuelingRoutes);
 router.use('/auth', authRoutes);

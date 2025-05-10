@@ -60,6 +60,7 @@ export interface FuelRequest {
   createdAt: string
   _id: string
   vehicleNumber: string
+  odometer: string
   driverId: string
   driverName: string
   driverMobile: string
