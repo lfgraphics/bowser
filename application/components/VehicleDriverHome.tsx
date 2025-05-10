@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView, ActivityIndicator, TextInput } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +25,9 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
     const [loading, setLoading] = useState(false);
     const [vehicleNumbers, setVehicleNumbers] = useState<string[]>([]);
     const [appurl, setAppUrl] = useState<string | null>(null);
+    const [odometerModalVisible, setOdometerModalVisible] = useState(false);
+    const [selectedVehicle, setSelectedVehicle] = useState('');
+    const [odometerValue, setOdometerValue] = useState('');
     const { colors } = useTheme();
 
     useEffect(() => {
@@ -196,29 +199,8 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                         vehicleNumbersData.map((vehicleNumber: string) => ({
                             text: vehicleNumber,
                             onPress: () => {
-                                Alert.prompt(
-                                    'ओडोमीटर रीडिंग',
-                                    'कृपया वर्तमान ओडोमीटर रीडिंग दर्ज करें',
-                                    [
-                                        {
-                                            text: 'रद्द करें',
-                                            style: 'cancel'
-                                        },
-                                        {
-                                            text: 'भेजें',
-                                            onPress: (odometerValue) => {
-                                                if (odometerValue && !isNaN(Number(odometerValue))) {
-                                                    requestFuel({ vehicleNumber: vehicleNumber.split(' - ')[0], odometer: odometerValue });
-                                                } else {
-                                                    Alert.alert('एरर', 'कृपया सही ओडोमीटर रीडिंग दर्ज करें');
-                                                }
-                                            }
-                                        }
-                                    ],
-                                    'plain-text',
-                                    '',
-                                    'number-pad'
-                                );
+                                setOdometerModalVisible(true);
+                                setSelectedVehicle(vehicleNumber.split(' - ')[0]);
                             }
                         })),
                         { cancelable: true }
@@ -318,6 +300,51 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                         </View>
                     </View>
                 </Modal >
+
+                <Modal
+                    animationType="fade"
+                    transparent={true}
+                    visible={odometerModalVisible}
+                    onRequestClose={() => setOdometerModalVisible(false)}
+                >
+                    <View style={styles.modalContainer}>
+                        <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+                            <View style={styles.modalHeader}>
+                                <Text style={[styles.modalTitle, { color: colors.text }]}>ओडोमीटर रीडिंग</Text>
+                            </View>
+                            <ScrollView style={styles.modalBody}>
+                                <TextInput
+                                    style={[styles.input, { color: colors.text }]}
+                                    placeholder="ओडोमीटर रीडिंग"
+                                    value={odometerValue}
+                                    onChangeText={setOdometerValue}
+                                    keyboardType="numeric"
+                                />
+                            </ScrollView>
+                            <View style={styles.modalFooter}>
+                                <TouchableOpacity
+                                    style={styles.closeButton}
+                                    onPress={() => setOdometerModalVisible(false)}
+                                >
+                                    <Text style={styles.closeButtonText}>बंद करें</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    disabled={!odometerValue}
+                                    style={styles.logoutButton}
+                                    onPress={() => {
+                                        requestFuel({ vehicleNumber: selectedVehicle, odometer: odometerValue });
+                                        setOdometerModalVisible(false);
+                                        setOdometerValue('');
+                                    }}
+                                >
+                                    <Ionicons name="checkmark-outline" size={24} color="white" />
+                                    <Text style={styles.logoutButtonText}>भेजें</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
             </View >
             {loading && <View style={styles.loaderBg}>
                 <ActivityIndicator size="large" color="#0000ff" />
@@ -449,4 +476,14 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 10,
     },
-});
+    input: {
+        borderWidth: 1,
+        borderColor: '#ddd',
+        padding: 10,
+        marginVertical: 10,
+        borderRadius: 5,
+        width: '90%',
+        alignSelf: 'center',
+    },
+}
+);   
