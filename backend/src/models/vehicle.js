@@ -9,7 +9,8 @@ const vehicleSchema = new mongoose.Schema({
         open: Boolean,
         from: String,
         to: String,
-        startedOn: String
+        startedOn: String,
+        loadStatus: String
     },
     operationManager: String,
     capacity: String,

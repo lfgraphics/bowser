@@ -21,11 +21,16 @@ const past30Days = new Date(now);
 past30Days.setDate(now.getDate() - 65);
 
 const localTripFilter = {
-    $and: [
-        { $or: [{ "TallyLoadDetail.UnloadingDate": { $exists: false } }, { "TallyLoadDetail.UnloadingDate": { $ne: null } }] },
-        { "EndDate": { $exists: false } },
-        { "TallyLoadDetail.LoadingDate": { $gte: past30Days, $lte: now } },
-        { "TallyLoadDetail.Goods": { $ne: "HSD" } }
+    $or: [
+        {
+            $and: [
+                { $or: [{ "TallyLoadDetail.UnloadingDate": { $exists: false } }, { "TallyLoadDetail.UnloadingDate": { $ne: null } }] },
+                { "EndDate": { $exists: false } },
+                { "TallyLoadDetail.LoadingDate": { $gte: past30Days, $lte: now } },
+                { "TallyLoadDetail.Goods": { $ne: "HSD" } }
+            ]
+        },
+        { 'EmptyTripDetail.ProposedDate': { $gte: past30Days, $lte: now } },
     ]
 };
 
@@ -282,7 +287,7 @@ async function syncTripData() {
     const [atlasVehicles, localTrips] = await Promise.all([
         atlasCollection.find().toArray(),
         localCollection.find(localTripFilter, {
-            projection: { _id: 1, VehicleNo: 1, StartDriver: 1, StartDate: 1, StartFrom: 1, EndTo: 1, 'TallyLoadDetail.TripId': 1, 'TallyLoadDetail.Goods': 1 },
+            projection: { _id: 1, VehicleNo: 1, LoadStatus: 1, StartDriver: 1, StartDate: 1, StartFrom: 1, EndTo: 1, 'TallyLoadDetail.TripId': 1, 'TallyLoadDetail.Goods': 1, 'EmptyTripDetail.ProposedDate': 1 },
         }).toArray(),
     ]);
 
@@ -303,10 +308,11 @@ async function syncTripData() {
 
             const tripDetails = {
                 id: latestTrip._id,
-                tripId: latestTrip.TallyLoadDetail.TripId,
-                product: latestTrip.TallyLoadDetail.Goods,
+                tripId: latestTrip.TallyLoadDetail?.TripId,
+                product: latestTrip.TallyLoadDetail?.Goods,
                 driver: latestTrip.StartDriver,
                 open: true,
+                loadStatus: latestTrip.LoadStatus == 0 ? 'Empty' : 'Loaded',
                 from: latestTrip.StartFrom,
                 to: latestTrip.EndTo,
                 startedOn: latestTrip.StartDate

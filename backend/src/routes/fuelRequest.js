@@ -9,9 +9,9 @@ router.post('/', async (req, res) => {
     try {
         let requestVehicle = await Vehicle.findOne({ VehicleNo: vehicleNumber })
         console.log('Fuel request for :', requestVehicle)
-        const fuelRequest = new FuelRequest({ vehicleNumber: requestVehicle.VehicleNo, odometer, driverId, driverName, driverMobile, location, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, manager: requestVehicle.manager, tripStatus: `${requestVehicle.tripDetails.open ? 'Open' : 'Closed'}` });
+        const fuelRequest = new FuelRequest({ vehicleNumber: requestVehicle.VehicleNo, loadStatus: requestVehicle.tripDetails.loadStatus, capacity: requestVehicle.capacity, odometer, driverId, driverName, driverMobile, location, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, manager: requestVehicle.manager, tripStatus: `${requestVehicle.tripDetails.open ? 'Open' : 'Closed'}` });
         const existingRequest = await FuelRequest.find({
-            vehicleNumber: requestVehicle.VehicleNo, odometer, driverId, driverName, driverMobile, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, fulfilled: false
+            vehicleNumber: requestVehicle.VehicleNo, loadStatus: requestVehicle.tripDetails.loadStatus, capacity: requestVehicle.capacity, odometer, driverId, driverName, driverMobile, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, fulfilled: false
         })
 
         console.log('Fuel request :', fuelRequest)

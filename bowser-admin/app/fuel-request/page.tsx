@@ -102,6 +102,10 @@ const page = ({ params }: { params: { manager: string } }) => {
                         <CardContent>
                             Odometer: {request.odometer}
                             <br />
+                            Load Status: {request.loadStatus}
+                            <br />
+                            Capacity/ KL: {request.capacity}
+                            <br />
                             Trip: {request.trip}
                             <br />
                             Strart Date: {formatDate(request.startDate)}

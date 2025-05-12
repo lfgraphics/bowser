@@ -8,6 +8,7 @@ import { AppUpdates, DriverData, UserData } from '../src/types/models';
 import { logoutUser } from "@/src/utils/authUtils";
 import { baseUrl, getAppUpdate } from "@/src/utils/helpers";
 import DriversRequestStatus from "./DriversRequestStatus";
+import OdometerModal from "./OdometerModal";
 
 interface VehicleDriverHomeProps {
     userData: DriverData | UserData | null;
@@ -26,9 +27,32 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
     const [vehicleNumbers, setVehicleNumbers] = useState<string[]>([]);
     const [appurl, setAppUrl] = useState<string | null>(null);
     const [odometerModalVisible, setOdometerModalVisible] = useState(false);
-    const [selectedVehicle, setSelectedVehicle] = useState('');
+    const [vehicleSelectionModalVisible, setVehicleSelectionModalVisible] = useState(false);
     const [odometerValue, setOdometerValue] = useState('');
+    const [selectedFunction, setSelectedFunction] = useState<(value: string) => void>(() => () => { });
+    const [selectedVehicle, setSelectedVehicle] = useState('');
+    const [processFunction, setProcessFunction] = useState<((vehicleNumber: string) => void) | null>(() => null);
     const { colors } = useTheme();
+
+    const openModalWithFunction = (callback: (value: string) => Promise<void> | void) => {
+        setSelectedFunction(() => (value: string) => {
+            Promise.resolve(callback(value)).catch((error) => {
+                console.error("Error in callback function:", error);
+            });
+        });
+        setVehicleSelectionModalVisible(true);
+    };
+
+    const openProcessModal = async (processFn: (vehicleNumber: string) => void) => {
+        // Step 1: Fetch vehicle numbers
+        await getVehicleNumber();
+
+        // Step 2: Set the process function dynamically
+        setProcessFunction(() => processFn);
+
+        // Step 3: Open the modal for vehicle selection
+        setOdometerModalVisible(true);
+    };
 
     useEffect(() => {
         const updateRequestStatus = async () => {
@@ -103,6 +127,42 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
         }
         return false;
     }
+
+    const handleRequestFuel = async () => {
+        await getVehicleNumber();
+
+        setVehicleSelectionModalVisible(true);
+
+        setProcessFunction(() => async (vehicleNumber: string) => {
+            openModalWithFunction(async (odometer: string) => {
+                await requestFuel({ vehicleNumber, odometer });
+            });
+        });
+    };
+
+    const handleLoadingReport = async () => {
+        await getVehicleNumber();
+
+        setVehicleSelectionModalVisible(true);
+
+        setProcessFunction(() => async (vehicleNumber: string) => {
+            openModalWithFunction(async (odometer: string) => {
+                await requestFuel({ vehicleNumber, odometer });
+            });
+        });
+    };
+
+    const handleUnloadingReport = async () => {
+        await getVehicleNumber();
+
+        setVehicleSelectionModalVisible(true);
+
+        setProcessFunction(() => async (vehicleNumber: string) => {
+            openModalWithFunction(async (odometer: string) => {
+                await requestFuel({ vehicleNumber, odometer });
+            });
+        });
+    };
 
     const requestFuel = async ({ vehicleNumber, odometer }: {
         vehicleNumber: string;
@@ -186,36 +246,70 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
         }
     };
 
+    const handleLoadingSubmit = async ({ vehicleNumber, odometer }: {
+        vehicleNumber: string;
+        odometer: string;
+    }) => {
+        try {
+            if (userData && isDriverData(userData)) {
+                const body = JSON.stringify({
+                    vehicleNumber,
+                    odometer,
+                    driverId: userData.Id,
+                    driverName: userData.Name,
+                    driverMobile: userData['Phone Number'],
+                });
+                const response = await fetch(`${baseUrl}/fuel-request/loading-report`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body,
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Loading report response:', data);
+                Alert.alert('सफलता', 'लोडिंग रिपोर्ट सफलतापूर्वक भेज दी गई है।');
+            } else {
+                Alert.alert('एरर', 'आप को दुबारा लॉग इन करने की आवश्यकता है।');
+                logoutUser();
+            }
+        } catch (error) {
+            console.error('Error in handleLoadingSubmit:', error);
+            Alert.alert('एरर', 'लोडिंग रिपोर्ट नहीं भेज पाए, कृपया दोबारा कोशिश करें।');
+        }
+    }
+
     const getVehicleNumber = async () => {
         if (userData && isDriverData(userData)) {
             setLoading(true);
             try {
-                const vehicleNumbers = await fetch(`${baseUrl}/fuel-request/driver?driverId=${userData.Id}`);
-                const vehicleNumbersData = await vehicleNumbers.json();
-                if (vehicleNumbers.status === 200) {
-                    Alert.alert(
-                        'गाड़ी नंबर',
-                        'कृपया गाड़ी नंबर चुनें।',
-                        vehicleNumbersData.map((vehicleNumber: string) => ({
-                            text: vehicleNumber,
-                            onPress: () => {
-                                setOdometerModalVisible(true);
-                                setSelectedVehicle(vehicleNumber.split(' - ')[0]);
-                            }
-                        })),
-                        { cancelable: true }
-                    );
-                } else {
-                    Alert.alert('एरर', 'गाड़ी नंबर नहीं मिल पाया। कृपया दोबारा कोशिश करें।');
+                const response = await fetch(`${baseUrl}/fuel-request/driver?driverId=${userData.Id}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch vehicle numbers. Status: ${response.status}`);
                 }
+
+                const vehicleNumbersData = await response.json();
+                if (vehicleNumbersData.length === 0) {
+                    Alert.alert('एरर', 'कोई गाड़ी नंबर नहीं मिला। कृपया दोबारा कोशिश करें।');
+                    return;
+                }
+
+                // Update the vehicle numbers state
+                setVehicleNumbers(vehicleNumbersData);
             } catch (error) {
                 console.error('Error fetching vehicle numbers:', error);
                 Alert.alert('एरर', 'गाड़ी नंबर नहीं मिल पाया। कृपया दोबारा कोशिश करें।');
             } finally {
                 setLoading(false);
             }
+        } else {
+            Alert.alert('एरर', 'आप को दुबारा लॉग इन करने की आवश्यकता है।');
+            logoutUser();
         }
-    }
+    };
 
     if (!permissionsGranted || !isGPSEnabled) {
         return (
@@ -242,23 +336,25 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                 </TouchableOpacity>
 
                 <View style={{ flexDirection: "column", gap: 8, alignItems: "center", marginBottom: 20 }}>
-                    <View style={{ flexDirection: "column", gap: 8, alignItems: "center", display: "none" }}>
-                        <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]}>
-                            <Text style={styles.requestButtonText}>लोड हो गई</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]}>
-                            <Text style={styles.requestButtonText}>रिपोर्ट हो गई</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity disabled style={[styles.requestButton, styles.disabled]}>
-                            <Text style={styles.requestButtonText}>ख़ाली हो गई</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <TouchableOpacity style={styles.requestButton} onPress={() => getVehicleNumber()}>
+                    <TouchableOpacity
+                        style={[styles.requestButton, {display:'none'}]}
+                        onPress={handleLoadingReport}
+                    >
+                        <Text style={styles.requestButtonText}>रिपोर्ट लोडिंग</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.requestButton, { display: 'none' }]}
+                        onPress={handleUnloadingReport}
+                    >
+                        <Text style={styles.requestButtonText}>रिपोर्ट अनलोडिंग</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.requestButton}
+                        onPress={handleRequestFuel}
+                    >
                         <Text style={styles.requestButtonText}>डीज़ल अनुरोध</Text>
                     </TouchableOpacity>
-                    {/* {appurl &&
-                        <Link style={[styles.button]} href={appurl as any}><Text style={{ color: colors.text }}>ऐप अपडेट करें</Text></Link>
-                    } */}
                 </View>
                 {requestId && <DriversRequestStatus requestId={requestId} />}
 
@@ -301,47 +397,40 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                     </View>
                 </Modal >
 
-                <Modal
-                    animationType="fade"
-                    transparent={true}
+                <OdometerModal
                     visible={odometerModalVisible}
-                    onRequestClose={() => setOdometerModalVisible(false)}
+                    onClose={() => setOdometerModalVisible(false)}
+                    onSubmit={selectedFunction}
+                    placeholder="ओडोमीटर (किलोमीटर) रीडिंग दर्ज करें"
+                    value={odometerValue}
+                    setValue={setOdometerValue}
+                    title="ओडोमीटर (किलोमीटर) रीडिंग"
+                    submitButtonText="भेजें"
+                />
+
+                <Modal
+                    visible={vehicleSelectionModalVisible}
+                    onRequestClose={() => setVehicleSelectionModalVisible(false)}
                 >
                     <View style={styles.modalContainer}>
-                        <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-                            <View style={styles.modalHeader}>
-                                <Text style={[styles.modalTitle, { color: colors.text }]}>ओडोमीटर रीडिंग</Text>
-                            </View>
-                            <ScrollView style={styles.modalBody}>
-                                <TextInput
-                                    style={[styles.input, { color: colors.text }]}
-                                    placeholder="ओडोमीटर रीडिंग"
-                                    value={odometerValue}
-                                    onChangeText={setOdometerValue}
-                                    keyboardType="numeric"
-                                />
-                            </ScrollView>
-                            <View style={styles.modalFooter}>
-                                <TouchableOpacity
-                                    style={styles.closeButton}
-                                    onPress={() => setOdometerModalVisible(false)}
-                                >
-                                    <Text style={styles.closeButtonText}>बंद करें</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    disabled={!odometerValue}
-                                    style={styles.logoutButton}
-                                    onPress={() => {
-                                        requestFuel({ vehicleNumber: selectedVehicle, odometer: odometerValue });
-                                        setOdometerModalVisible(false);
-                                        setOdometerValue('');
-                                    }}
-                                >
-                                    <Ionicons name="checkmark-outline" size={24} color="white" />
-                                    <Text style={styles.logoutButtonText}>भेजें</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
+                        <Text style={styles.modalTitle}>गाड़ी नंबर चुनें</Text>
+                        {vehicleNumbers.map((vehicleNumber) => (
+                            <TouchableOpacity
+                                key={vehicleNumber}
+                                style={styles.button}
+                                onPress={() => {
+                                    if (processFunction) {
+                                        processFunction(vehicleNumber.split(' - ')[0]);
+                                        setVehicleSelectionModalVisible(false);
+                                        setOdometerModalVisible(true);
+                                    } else {
+                                        console.error("processFunction is not set");
+                                    }
+                                }}
+                            >
+                                <Text style={styles.buttonText}>{vehicleNumber}</Text>
+                            </TouchableOpacity>
+                        ))}
                     </View>
                 </Modal>
 
@@ -486,4 +575,4 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
     },
 }
-);   
+);

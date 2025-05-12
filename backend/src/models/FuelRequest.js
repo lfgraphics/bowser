@@ -4,8 +4,10 @@ const { bowsersDatabaseConnection } = require('../../config/database');
 
 const fuelingOrderSchema = new mongoose.Schema({
     vehicleNumber: { type: String, required: true},
+    capacity: { type: String, required: false},
     odometer: { type: String, required: false},
     tripStatus: String,
+    loadStatus: String,
     trip: String,
     startDate: Date,
     manager: String,
