@@ -1,10 +1,13 @@
 "use server"
+import path from 'path';
 import fs from 'fs/promises';
 import { DispensesRecord, XMLVariables } from "@/types"
 import { getDateInTallyFormate, getTimeInTallyFormate } from './tally';
 
 export const createTallyPostableXML = async (record: DispensesRecord, variables: XMLVariables) => {
-    let xml = await fs.readFile('./Voucher.xml', 'utf-8');
+    const filePath = path.join(process.cwd(), 'app', 'api', 'generate-xml', 'Voucher.xml');
+    
+    let xml = await fs.readFile(filePath, 'utf-8');
 
     xml = xml.replace(/entryDate/g, getDateInTallyFormate(Date()))
         .replace(/debitBy/g, record.category === "Own" ? "Blended Bio-Diesel Consume" : record.party)

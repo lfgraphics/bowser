@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { FuelingTransaction } = require('../models/Transaction');
+const { TripSheet } = require('../models/TripSheets')
 const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
@@ -225,12 +226,15 @@ router.patch('/verify/:id', async (req, res) => {
                 }
             }
         }, { new: true });
-
+        let tripUpdate;
         if (transaction) {
-            await updateTripSheet({ tripSheetId: transaction.tripSheetId, verify: transaction })
+            tripUpdate = await updateTripSheet({ tripSheetId: transaction.tripSheetId, verify: transaction })
         }
 
-        if (!transaction) {
+        if (!transaction || !tripUpdate.status) {
+            await FuelingTransaction.findByIdAndUpdate(id, {
+                $unset: { verified: "" }
+            })
             return res.status(404).json({ heading: "Failed", message: 'Record not found' });
         }
 
@@ -378,6 +382,93 @@ router.post('/transfer', async (req, res) => {
     } catch (error) {
         console.error("Error transferring transaction:", error);
         res.status(500).json({ message: "Internal server error", error });
+    }
+});
+
+router.post('/sync-id', async (req, res) => {
+    const { tripSheetId } = req.query
+    const allTransactions = await FuelingTransaction.find({ tripSheetId: tripSheetId })
+    const tripSheet = await TripSheet.findOne({ tripSheetId })
+    if (!tripSheet) {
+        return res.status(404).json({ message: 'Trip sheet not found' });
+    }
+    if (!allTransactions || allTransactions.length === 0) {
+        return res.status(404).json({ message: 'No transactions found for this trip sheet' });
+    }
+    try {
+        const updatedDispenses = [];
+        
+        for (const transaction of allTransactions) {
+            const matchingDispense = tripSheet.dispenses.find(dispense => 
+                dispense.fuelingDateTime.getTime() === transaction.fuelingDateTime.getTime() &&
+                dispense.fuelQuantity === transaction.fuelQuantity &&
+                dispense.vehicleNumber === transaction.vehicleNumber
+            );
+
+            if (matchingDispense && matchingDispense._id.toString() !== transaction._id.toString()) {
+                // Update the dispense _id in tripSheet to match transaction _id
+                matchingDispense._id = transaction._id;
+                updatedDispenses.push({
+                    oldDispenseId: matchingDispense._id,
+                    newDispenseId: transaction._id
+                });
+            }
+        }
+
+        if (updatedDispenses.length > 0) {
+            await tripSheet.save(); // Save the updated tripSheet
+        }
+
+        return res.status(200).json({
+            message: 'TripSheet dispenses synced successfully',
+            updatedDispenses
+        });
+    } catch (error) {
+        console.error('Error syncing dispenses:', error);
+        return res.status(500).json({ message: 'Error syncing dispenses', error: error.message });
+    }
+});
+
+router.post('/sync-verification', async (req, res) => {
+    const { tripSheetId } = req.query
+    const allTransactions = await FuelingTransaction.find({ tripSheetId: tripSheetId })
+    const tripSheet = await TripSheet.findOne({ tripSheetId })
+    if (!tripSheet) {
+        return res.status(404).json({ message: 'Trip sheet not found' });
+    }
+    if (!allTransactions || allTransactions.length === 0) {
+        return res.status(404).json({ message: 'No transactions found for this trip sheet' });
+    }
+    try {
+        const updatedDispenses = [];
+        
+        for (const transaction of allTransactions) {
+            const matchingDispense = tripSheet.dispenses.find(dispense => 
+                dispense.fuelingDateTime.getTime() === transaction.fuelingDateTime.getTime() &&
+                dispense.fuelQuantity === transaction.fuelQuantity &&
+                dispense.vehicleNumber === transaction.vehicleNumber
+            );
+
+            if (matchingDispense && matchingDispense.verified !== transaction.verified) {
+                // Update the dispense _id in tripSheet to match transaction _id
+                matchingDispense.verified = transaction.verified;
+                updatedDispenses.push({
+                    'Updated dispense for': transaction._id,
+                });
+            }
+        }
+
+        if (updatedDispenses.length > 0) {
+            await tripSheet.save(); // Save the updated tripSheet
+        }
+
+        return res.status(200).json({
+            message: 'TripSheet dispenses synced successfully',
+            updatedDispenses
+        });
+    } catch (error) {
+        console.error('Error syncing dispenses:', error);
+        return res.status(500).json({ message: 'Error syncing dispenses', error: error.message });
     }
 });
 

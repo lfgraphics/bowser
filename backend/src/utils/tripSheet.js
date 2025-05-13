@@ -23,15 +23,16 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
 
         if (verify) {
             const existingDispenseIndex = tripSheet.dispenses.findIndex(
-                (dispense) => dispense?._id?.toString() === verify?._id?.toString()
+                (dispense) => { dispense?._id?.toString() === verify?._id?.toString(); console.log(dispense?._id?.toString(), verify?._id?.toString()) }
             );
+            console.log('verification dispense: ', verify);
 
             if (existingDispenseIndex === -1) {
-                console.warn(`No dispense found for the specified _id: ${verify?._id}`);
+                console.error(`No dispense found for the specified _id: ${verify?._id}`);
                 return { success: false, message: "No dispense found" };
             } else {
                 tripSheet.dispenses[existingDispenseIndex] = verify;
-                tripSheet.dispenses[existingDispenseIndex].cost = Number((tripSheet.hsdRate * updatedDispense.fuelQuantity).toFixed(2));
+                tripSheet.dispenses[existingDispenseIndex].cost = Number((tripSheet.hsdRate * verify.fuelQuantity).toFixed(2));
                 await tripSheet.save()
                 return { success: true, message: "TripSheet updated successfully", tripSheet };
             }
@@ -43,7 +44,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
             );
 
             if (existingDispenseIndex === -1) {
-                console.warn(`No dispense found for the specified _id: ${post?._id}`);
+                console.error(`No dispense found for the specified _id: ${post?._id}`);
                 return { success: false, message: "No dispense found" };
             } else {
                 tripSheet.dispenses[existingDispenseIndex] = post;
@@ -75,7 +76,7 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
             if (existingDispenseIndex === -1) {
                 tripSheet.dispenses.push(updatedDispense);
             } else {
-                tripSheet.dispenses[existingDispenseIndex] = updatedDispense;
+                Object.assign(tripSheet.dispenses[existingDispenseIndex], updatedDispense);
             }
         }
 
