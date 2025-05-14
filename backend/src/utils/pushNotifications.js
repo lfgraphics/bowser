@@ -1,5 +1,6 @@
 const webpush = require('web-push');
 const PushSubscription = require('../models/pushSubscription');
+const RequestTransfer = require('../models/RequestTransfer');
 const { Expo } = require('expo-server-sdk');
 
 const expo = new Expo();
@@ -84,7 +85,7 @@ async function sendWebPushNotification({ mobileNumber, userId, message, options 
         return { success: false, message: 'Either mobileNumber or userId must be provided.' };
     }
 
-    console.log('sending web push notification to: ',userId, mobileNumber, message);
+    console.log('sending web push notification to: ', userId, mobileNumber, message);
     try {
         const subscriptionData = await PushSubscription.findOne({
             $or: [
@@ -177,7 +178,7 @@ async function sendBulkNotifications({ groups = [], recipients = [], message, pl
         const groupRecipients = await PushSubscription.find({
             groups: { $in: groups },
         }).select('mobileNumber userId -_id'); // Fetch only mobileNumber and userId fields
-        console.log('bulk notification recipients: ',groupRecipients)
+        console.log('bulk notification recipients: ', groupRecipients)
         // Add group recipients to the list
         allRecipients.push(...groupRecipients.map((rec) => ({
             mobileNumber: rec.mobileNumber,
@@ -238,4 +239,35 @@ async function sendBulkNotifications({ groups = [], recipients = [], message, pl
     return { results, errors };
 }
 
-module.exports = { sendWebPushNotification, sendNativePushNotification, sendBulkNotifications, registerSubscription };
+
+/**
+ * Checks if a user's work is actively transferred to someone else.
+ * @param {string} userId - The user ID to check.
+ * @returns {Promise<string>} - The ID of the person to whom it's transferred, or the original userId.
+ */
+async function getActiveTransferTargetUserId(userId) {
+    try {
+        const transfer = await RequestTransfer.findOne({
+            by: userId,
+            accepted: true,
+            $or: [
+                { cancellation: { $exists: false } },
+                { 'cancellation.time': { $exists: false } },
+                { cancellation: null },
+            ]
+        }).sort({ generationTime: -1 }).lean();
+
+        if (transfer && transfer.to) {
+            return transfer.to;
+        }
+
+        return userId;
+    } catch (error) {
+        console.error('Error checking transfer status:', error);
+        // You might choose to throw, return null, or return original userId
+        return userId;
+    }
+}
+
+
+module.exports = { sendWebPushNotification, sendNativePushNotification, sendBulkNotifications, registerSubscription, getActiveTransferTargetUserId };

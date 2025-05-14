@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const FuelRequest = require('../models/FuelRequest');
-const { sendWebPushNotification } = require('../utils/pushNotifications');
+const { sendWebPushNotification, sendBulkNotifications, getActiveTransferTargetUserId } = require('../utils/pushNotifications');
 const Vehicle = require('../models/vehicle')
 
 router.post('/', async (req, res) => {
@@ -9,7 +9,7 @@ router.post('/', async (req, res) => {
     try {
         let requestVehicle = await Vehicle.findOne({ VehicleNo: vehicleNumber })
         console.log('Fuel request for :', requestVehicle)
-        const fuelRequest = new FuelRequest({ vehicleNumber: requestVehicle.VehicleNo, loadStatus: requestVehicle.tripDetails.loadStatus, capacity: requestVehicle.capacity, odometer, driverId, driverName, driverMobile, location, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, manager: requestVehicle.manager, tripStatus: `${requestVehicle.tripDetails.open ? 'Open' : 'Closed'}` });
+        const fuelRequest = new FuelRequest({ vehicleNumber: requestVehicle.VehicleNo, loadStatus: requestVehicle.tripDetails.loadStatus, capacity: requestVehicle.capacity, odometer, driverId, driverName, driverMobile, location, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, manager: requestVehicle.manager || 'none', tripStatus: `${requestVehicle.tripDetails.open ? 'Open' : 'Closed'}` });
         const existingRequest = await FuelRequest.find({
             vehicleNumber: requestVehicle.VehicleNo, loadStatus: requestVehicle.tripDetails.loadStatus, capacity: requestVehicle.capacity, odometer, driverId, driverName, driverMobile, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, fulfilled: false
         })
@@ -24,7 +24,21 @@ router.post('/', async (req, res) => {
             res.status(400).json({ error: 'आप का अनुरोध पहले ही दर्ज किया जा चुका है' });
         }
 
-        let notificationSent = await sendWebPushNotification({ userId: requestVehicle.manager, options: { title: 'New Fuel Request', url: `/fuel-request` }, message: `New fuel request for: ${requestVehicle.VehicleNo} from ${driverName} - ${driverId}` });
+        const notify = async () => {
+            const options = { title: 'New Fuel Request', url: `/fuel-request` }
+            const message = `New fuel request for: ${requestVehicle.VehicleNo} from ${driverName} - ${driverId}`
+            let notificationSent;
+            if (requestVehicle.manager) {
+                const notifyTo = await getActiveTransferTargetUserId(requestVehicle.manager)
+                notificationSent = await sendWebPushNotification({ userId: notifyTo, options, message });
+                console.log('notificationSent status: ', JSON.stringify(notificationSent));
+            } else {
+                notificationSent = await sendBulkNotifications({ groups: ['Diesel Control Center Staff'], message, platform: "web", options })
+            }
+        }
+
+        await notify();
+
         console.log('notificationSent status: ', JSON.stringify(notificationSent));
     } catch (err) {
         console.error('Error creating fuel request:', err);
@@ -47,8 +61,8 @@ router.get('/', async (req, res) => {
             { driverMobile: { $regex: param, $options: 'i' } }
         ];
     }
-    if (manager && manager != 'undefined') {
-        query.manager = `${manager}`;
+    if (manager && manager !== 'undefined') {
+        query.manager = { $in: [manager, 'none'] };
     }
 
     console.log('Query:', query);
@@ -95,7 +109,7 @@ router.get('/driver', async (req, res) => {
 
 router.get('/vehicle-driver/:id', async (req, res) => {
     try {
-        const fuelRequests = await FuelRequest.findById(req.params.id).populate('allocation');
+        const fuelRequests = await FuelRequest.findById(req.params.id).populate('noneocation');
         if (!fuelRequests) {
             return res.status(404).json({ message: 'No fuel request found' });
         }
