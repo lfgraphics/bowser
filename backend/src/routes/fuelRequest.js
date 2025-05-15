@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const FuelRequest = require('../models/FuelRequest');
+require('../models/fuelingOrders');
 const { sendWebPushNotification, sendBulkNotifications, getActiveTransferTargetUserId } = require('../utils/pushNotifications');
 const Vehicle = require('../models/vehicle')
 
@@ -8,32 +9,72 @@ router.post('/', async (req, res) => {
     const { driverId, driverName, driverMobile, location, vehicleNumber, odometer } = req.body;
     try {
         let requestVehicle = await Vehicle.findOne({ VehicleNo: vehicleNumber })
-        console.log('Fuel request for :', requestVehicle)
-        const fuelRequest = new FuelRequest({ vehicleNumber: requestVehicle.VehicleNo, loadStatus: requestVehicle.tripDetails.loadStatus, capacity: requestVehicle.capacity, odometer, driverId, driverName, driverMobile, location, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, manager: requestVehicle.manager || 'none', tripStatus: `${requestVehicle.tripDetails.open ? 'Open' : 'Closed'}` });
+        if (!requestVehicle) {
+            return res.status(404).json({ error: 'Vehicle not found' });
+        }
+
+        let managers = await getActiveTransferTargetUserId(requestVehicle.manager) || ['none'];
+        if (!Array.isArray(managers)) {
+            managers = [requestVehicle.manager];
+        }
+
+        const fuelRequest = new FuelRequest({
+            vehicleNumber: requestVehicle.VehicleNo,
+            loadStatus: requestVehicle.tripDetails.loadStatus || 'Not found',
+            capacity: requestVehicle.capacity,
+            odometer,
+            driverId,
+            driverName,
+            driverMobile,
+            location, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`,
+            startDate: requestVehicle.tripDetails.startedOn,
+            manager: managers,
+            tripStatus: `${requestVehicle.tripDetails.open ? 'Open' : 'Closed'}`,
+            tripId: requestVehicle.tripDetails.id
+        });
+
         const existingRequest = await FuelRequest.find({
-            vehicleNumber: requestVehicle.VehicleNo, loadStatus: requestVehicle.tripDetails.loadStatus, capacity: requestVehicle.capacity, odometer, driverId, driverName, driverMobile, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`, startDate: requestVehicle.tripDetails.startedOn, fulfilled: false
+            vehicleNumber: requestVehicle.VehicleNo,
+            tripId: requestVehicle.tripDetails.id,
+            loadStatus: requestVehicle.tripDetails.loadStatus || 'Not found',
+            driverMobile,
+            fulfilled: false
         })
 
         console.log('Fuel request :', fuelRequest)
 
-        if (!existingRequest || !existingRequest.length || existingRequest.length == 0) {
+        if (!existingRequest.length) {
             await fuelRequest.save();
             let requestId = fuelRequest._id;
             res.status(201).json({ message: 'Fuel request created successfully', requestId });
         } else {
-            res.status(400).json({ error: 'आप का अनुरोध पहले ही दर्ज किया जा चुका है' });
+            res.status(400).json({ error: 'आप का अनुरोध पहले ही दर्ज किया जा चुका है कृपया इंतज़ार करें' });
         }
 
+        const options = { title: 'New Fuel Request', url: `/fuel-request` }
+        const message = `New fuel request for: ${requestVehicle.VehicleNo} from ${driverName} - ${driverId}`
+        let notificationSent;
         const notify = async () => {
-            const options = { title: 'New Fuel Request', url: `/fuel-request` }
-            const message = `New fuel request for: ${requestVehicle.VehicleNo} from ${driverName} - ${driverId}`
-            let notificationSent;
-            if (requestVehicle.manager) {
-                const notifyTo = await getActiveTransferTargetUserId(requestVehicle.manager)
-                notificationSent = await sendWebPushNotification({ userId: notifyTo, options, message });
-                console.log('notificationSent status: ', JSON.stringify(notificationSent));
+            if (managers.includes('all')) {
+                notificationSent = await sendBulkNotifications({
+                    groups: ['Diesel Control Center Staff'],
+                    message,
+                    platform: "web",
+                    options
+                });
+            } else if (managers.length === 1) {
+                notificationSent = await sendWebPushNotification({
+                    userId: managers[0],
+                    message,
+                    options
+                });
             } else {
-                notificationSent = await sendBulkNotifications({ groups: ['Diesel Control Center Staff'], message, platform: "web", options })
+                notificationSent = await sendBulkNotifications({
+                    recipients: managers.map(userId => ({ userId })),
+                    message,
+                    platform: "web",
+                    options
+                });
             }
         }
 
@@ -61,8 +102,8 @@ router.get('/', async (req, res) => {
             { driverMobile: { $regex: param, $options: 'i' } }
         ];
     }
-    if (manager && manager !== 'undefined') {
-        query.manager = { $in: [manager, 'none'] };
+    if (manager && typeof manager !== 'undefined') {
+        query.manager = { $in: [manager, 'none', 'all'] };
     }
 
     console.log('Query:', query);
@@ -109,7 +150,7 @@ router.get('/driver', async (req, res) => {
 
 router.get('/vehicle-driver/:id', async (req, res) => {
     try {
-        const fuelRequests = await FuelRequest.findById(req.params.id).populate('noneocation');
+        const fuelRequests = await FuelRequest.findById(req.params.id).populate('allocation');
         if (!fuelRequests) {
             return res.status(404).json({ message: 'No fuel request found' });
         }
