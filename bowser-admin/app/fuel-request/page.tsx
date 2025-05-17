@@ -81,6 +81,30 @@ const page = ({ params }: { params: { manager: string } }) => {
                 throw new Error('Failed to delete');
             }
             setShowSuccessAlert(true);
+            setData(data.filter(request => request._id !== deletingRequestId));
+        } catch (error) {
+            console.error(error);
+            setError(String(error));
+            setShowErrorAlert(true);
+        } finally {
+            setShowDeleteDialog(false);
+        }
+    };
+    const handleClearHistory = async () => {
+        try {
+            let response = await fetch(`${BASE_URL}/fuel-request/clear`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ids: data.map(request => request._id)
+                })
+            });
+            if (!response.ok) {
+                throw new Error('Failed to delete');
+            }
+            alert('All requests deleted successfully\nReloading to check for other requests');
             window.location.reload();
         } catch (error) {
             console.error(error);
@@ -94,6 +118,11 @@ const page = ({ params }: { params: { manager: string } }) => {
     return (
         <>
             {loading && <Loading />}
+            <Button variant="destructive" size="lg" className='w-full md:max-w-lg mt-6 block mx-auto' onClick={() => {
+                if (confirm('Are you sure you want to clear all the visible previous fuel requests?')) {
+                    handleClearHistory();
+                }
+            }}>Clear All</Button>
             <div className="gap-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-8">
                 {data?.length && data.length > 0 ? data.map((request, index) => (
                     <Card key={index}>

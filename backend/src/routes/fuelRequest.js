@@ -161,6 +161,23 @@ router.get('/vehicle-driver/:id', async (req, res) => {
     }
 });
 
+router.put('/bulk-delete', async (req, res) => {
+    const { ids } = req.body;
+    try {
+        const fuelRequests = await FuelRequest.updateMany(
+            { _id: { $in: ids } },
+            { fulfilled: true, message: 'Fullfillment not required or made over call, history cleared by the dieserl manager' }
+        );
+        if (!fuelRequests) {
+            return res.status(404).json({ message: 'Fuel requests not found' });
+        }
+        res.status(200).json({ message: 'Fuel requests deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting fuel requests:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+});
+
 router.delete('/:id', async (req, res) => {
     const { message } = req.body;
     try {
