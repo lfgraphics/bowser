@@ -1,7 +1,7 @@
 const express = require('express');
-require('../models/Department')
 const router = express.Router();
 const RequestTransfer = require('../models/RequestTransfer');
+const { sendWebPushNotification } = require('../utils/pushNotifications'); // Import the notification function
 
 // Get all request transfers
 router.get('/', async (req, res) => {
@@ -214,6 +214,16 @@ router.patch('/:id', async (req, res) => {
                 message: "No Request Transfer found by the given id"
             });
         }
+
+        // Send notification to the "to" user
+        if (to) {
+            await sendWebPushNotification({
+                userId: to,
+                message: `The request transfer has been updated.`,
+                options: { title: "Transfer Request Updated", url: `/fuel-request` }
+            });
+        }
+
         return res.status(200).json(requestTransfer);
     } catch (error) {
         console.error('Error updating request transfer:', error);
@@ -222,13 +232,21 @@ router.patch('/:id', async (req, res) => {
 });
 
 router.post('/create', async (req, res) => {
-    const { by, to } = req.body;
+    const { by, to, transferReason } = req.body;
     if (!by || !to) {
         return res.status(400).json({ error: "'by' and 'to' are required" });
     }
     try {
-        const requestTransfer = new RequestTransfer({ by, to });
+        const requestTransfer = new RequestTransfer({ by, to, transferReason });
         await requestTransfer.save();
+
+        // Send notification to the "to" user
+        await sendWebPushNotification({
+            userId: to,
+            message: `You have received a new Fuel requests transfer - accept request\nBy: ${by}\nReason: ${transferReason}`,
+            options: { title: "New Request Transfer", url: `/fuel-request` }
+        });
+
         return res.status(201).json(requestTransfer);
     } catch (error) {
         console.error('Error creating request transfer:', error);
@@ -247,6 +265,14 @@ router.patch('/accept/:id', async (req, res) => {
                 message: "No Request Transfer found by the given id"
             });
         }
+
+        // Notify the "by" user
+        await sendWebPushNotification({
+            userId: requestTransfer.by,
+            message: `Your transfer request has been accepted.`,
+            options: { title: "Transfer Request Accepted", url: `/fuel-request` }
+        });
+
         return res.status(200).json(requestTransfer);
     } catch (error) {
         console.error('Error accepting request transfer:', error);
@@ -266,6 +292,14 @@ router.patch('/reject/:id', async (req, res) => {
                 message: "No Request Transfer found by the given id"
             });
         }
+
+        // Notify the "by" user
+        await sendWebPushNotification({
+            userId: requestTransfer.by,
+            message: `Your transfer request has been rejected.\nReason: ${reason}`,
+            options: { title: "Transfer Request Rejected", url: `/fuel-request` }
+        });
+
         return res.status(200).json(requestTransfer);
     } catch (error) {
         console.error('Error rejecting request transfer:', error);
@@ -284,10 +318,43 @@ router.delete('/:id', async (req, res) => {
                 message: "No Request Transfer found by the given id"
             });
         }
+
+        // Notify the "to" user
+        await sendWebPushNotification({
+            userId: requestTransfer.to,
+            message: `A transfer request has been deleted.\nwas Requested By: ${requestTransfer.by}\nDate: ${requestTransfer.generationTime}`,
+            options: { title: "Transfer Request Deleted", url: `/fuel-request` }
+        });
+
         return res.status(200).json(requestTransfer);
     } catch (error) {
         console.error('Error deleting request transfer:', error);
         return res.status(500).json({ error: 'Failed to delete request transfer', details: error });
+    }
+});
+
+router.get('/mark-fulfilled/:id', async (req, res) => {
+    const id = req.params.id;
+    try {
+        const requestTransfer = await RequestTransfer.findByIdAndUpdate(id, { fulfilled: true }, { new: true }).lean();
+        if (!requestTransfer) {
+            return res.status(404).json({
+                title: "Error",
+                message: "No Request Transfer found by the given id"
+            });
+        }
+
+        // Notify the "by" user
+        await sendWebPushNotification({
+            userId: requestTransfer.by,
+            message: `Your request transfer has been marked as fulfilled.`,
+            options: { title: "Request Transfer Fulfilled" }
+        });
+
+        return res.status(200).json(requestTransfer);
+    } catch (error) {
+        console.error('Error marking request transfer as fulfilled:', error);
+        return res.status(500).json({ error: 'Failed to mark request transfer as fulfilled', details: error });
     }
 });
 

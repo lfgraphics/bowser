@@ -19,7 +19,7 @@ import { updateDriverMobile, updateTripDriver } from "@/utils"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "./ui/select"
 
-const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: string, driverId: string, driverName: string, driverMobile: string, id: string, allocationType: "bowser" | "external" } }) => {
+const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: string, driverId: string, driverName: string, driverMobile: string, id: string, allocationType: "bowser" | "external" | "internal" } }) => {
     const paramsVehicleNumber = searchParams.vehicleNumber;
     const paramsDriverId = searchParams.driverId;
     const paramsDriverName = searchParams.driverName;
@@ -662,6 +662,58 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
                                     <SelectItem value="company-2">Pump Two</SelectItem>
                                 </SelectContent>
                             </Select>
+                        }
+                        {allocationType === "internal" &&
+                            <>
+                                <div className="flex flex-col space-y-1.5 mb-4">
+                                    <Label htmlFor="bowserRegNo">Machine</Label>
+                                    <Input
+                                        className="placeholder:text-muted-foreground"
+                                        id="bowserRegNo"
+                                        placeholder="Machine-1"
+                                        value={bowserRegNo}
+                                        onChange={(e: any) => {
+                                            setBowserRegNo(e.target.value);
+                                            const nativeEvent = e.nativeEvent as InputEvent;
+                                            if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3 && e.nativeEvent.data && e.target.value.length > 3) {
+                                                searchBowser(bowserRegNo);
+                                            }
+                                        }}
+                                        required
+                                    />
+                                </div>
+                                <div className="flex flex-col space-y-1.5 mt-4">
+                                    <Label htmlFor="bowserDriverName">Office</Label>
+                                    <Input
+                                        id="bowserDriverName"
+                                        value={bowserDriverName}
+                                        required
+                                        onChange={(e) => {
+                                            setBowserDriverName(e.target.value);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Backspace") {
+                                                return;
+                                            }
+                                            if (e.key === 'Enter' && bowserDriverId.length > 3) {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    searchBowserDriver(bowserDriverId);
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                <div className="flex flex-col space-y-1.5 mt-4">
+                                    <Label htmlFor="bowserDriverPhone">Office Contact Mobile</Label>
+                                    <Input
+                                        id="bowserDriverPhone"
+                                        value={bowserDriverMobile}
+                                        onChange={(e) => setBowserDriverMobile(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </>
                         }
                     </CardContent>
                     <CardFooter className="flex justify-between">

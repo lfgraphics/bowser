@@ -153,7 +153,7 @@ router.post('/', async (req, res) => {
                     },
                 ]
             };
-            let fuelLer = allocationType !== 'external' ? `${newFuelingOrder.bowser.driver.name} आपके वाहन को ईंधन देने के लिए आ रहे हैं।\nड्राइवर से संपर्क करने के लिए ${newFuelingOrder.bowser.driver.phoneNo} पर कॉल करें।` : `${fuelProvider} ${petrolPump.length && petrolPump.length > 0 ? "के" + petrolPump : "के किसी भी" + "पेट्रोल पंप से तेल ले लें"}`
+            let fuelLer = allocationType == 'bowser' ? `${newFuelingOrder.bowser.driver.name} आपके वाहन को ईंधन देने के लिए आ रहे हैं।\nड्राइवर से संपर्क करने के लिए ${newFuelingOrder.bowser.driver.phoneNo} पर कॉल करें।` : allocationType == "external" ? `${fuelProvider} ${petrolPump.length && petrolPump.length > 0 ? "के" + petrolPump : "के किसी भी" + "पेट्रोल पंप से डीज़ल ले लें"}` : allocationType == "internal" ? newFuelingOrder.bowser.driver.name + "से" + newFuelingOrder.fuelQuantity > 0 ? newFuelingOrder.fuelQuantity + " लीटर तेल ले लीजिये" : "फुल टंकी तेल ले लीजिये" : ""
             await sendNativePushNotification({
                 mobileNumber: fuelRequest.driverMobile,
                 message: `आपका ईंधन अनुरोध ${newFuelingOrder.allocationAdmin.id} द्वारा पूरा कर दिया गया है।\n${fuelLer}`,

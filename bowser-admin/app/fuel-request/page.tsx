@@ -13,10 +13,13 @@ import { Input } from '@/components/ui/input';
 import { User } from '@/types/auth';
 import { isAuthenticated } from '@/lib/auth';
 import { MapPin } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import FuelRequestTransfer from '@/components/FuelRequestTransfer';
 
 const page = ({ params }: { params: { manager: string } }) => {
     const paramsManager = params.manager
     const [manager, setManager] = useState<string>(paramsManager)
+    const [openItem, setOpenItem] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<FuelRequest[] | []>([]);
     const [error, setError] = useState<string | null>(null);
@@ -47,8 +50,6 @@ const page = ({ params }: { params: { manager: string } }) => {
     }, [user]);
 
     const fetchFuelRequests = async () => {
-        console.log('user manager: ', user?.userId)
-        console.log('manager: ', manager)
         try {
             setLoading(true);
             const response = await fetch(`${BASE_URL}/fuel-request?manager=${user?.userId}&fulfilled=false`);
@@ -143,7 +144,7 @@ const page = ({ params }: { params: { manager: string } }) => {
                                                     allocationType: "bowser"
                                                 }
                                             }} >
-                                                <Button variant="default" size="lg">By Bowser</Button>
+                                                <Button variant="default" className='w-full' size="lg">By Bowser</Button>
                                             </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem>
@@ -157,7 +158,21 @@ const page = ({ params }: { params: { manager: string } }) => {
                                                     allocationType: "external"
                                                 }
                                             }} >
-                                                <Button variant="default" size="lg">By Petrol Pump</Button>
+                                                <Button variant="default" className='w-full' size="lg">By Petrol Pump</Button>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem>
+                                            <Link className='w-full' type='button' href={{
+                                                pathname: "dashboard", query: {
+                                                    id: request._id,
+                                                    vehicleNumber: request.vehicleNumber,
+                                                    driverId: request.driverId,
+                                                    driverName: request.driverName,
+                                                    driverMobile: request.driverMobile,
+                                                    allocationType: "internal"
+                                                }
+                                            }} >
+                                                <Button variant="default" className='w-full' size="lg">From Office</Button>
                                             </Link>
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>

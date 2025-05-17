@@ -10,6 +10,21 @@ export interface Driver {
   }>
 }
 
+export interface TransferRequest {
+  _id: string
+  by: string
+  to: string
+  transferReason: string
+  accepted: boolean
+  fulfilled: boolean
+  cancellation: {
+    by: string
+    reason: string
+    time: string
+  },
+  generationTime: string
+}
+
 // Define the BowserResponse interface
 export interface BowserResponse {
   regNo: string

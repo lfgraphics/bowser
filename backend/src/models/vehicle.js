@@ -4,13 +4,13 @@ const { transportDatabaseConnection } = require('../../config/database');
 const vehicleSchema = new mongoose.Schema({
     VehicleNo: String,
     tripDetails: {
-        id: mongoose.Schema.Types.ObjectId,
-        driver: String,
-        open: Boolean,
-        from: String,
-        to: String,
-        startedOn: String,
-        loadStatus: String
+        id: { type: mongoose.Schema.Types.ObjectId, required: false },
+        driver: { type: String, required: true },
+        open: { type: Boolean, required: false },
+        from: { type: String, required: false },
+        to: { type: String, required: false },
+        startedOn: { type: String, required: false },
+        loadStatus: { type: String, required: false }
     },
     operationManager: String,
     capacity: String,

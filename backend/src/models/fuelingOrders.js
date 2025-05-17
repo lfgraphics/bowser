@@ -5,7 +5,7 @@ const { bowsersDatabaseConnection } = require('../../config/database');
 const fuelingOrderSchema = new mongoose.Schema({
   allocationType: {
     type: String,
-    enum: ["bowser", "external"],
+    enum: ["bowser", "external", "internal"],
     required: false
   },
   pumpAllocationType: {

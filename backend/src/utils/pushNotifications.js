@@ -100,6 +100,10 @@ async function sendWebPushNotification({ mobileNumber, userId, message, options 
 
         const subscription = subscriptionData.subscription;
 
+        if (!subscription || !subscription.endpoint) {
+            return { success: false, message: 'Invalid subscription object' };
+        }
+
         const payload = JSON.stringify({
             title: options.title || 'Notification',
             body: message,
@@ -232,7 +236,7 @@ async function sendBulkNotifications({ groups = [], recipients = [], message, pl
                 errors.push({ recipient, error: result.error });
             }
         } catch (error) {
-            errors.push({ recipient, error: error.message });
+            errors.push({ recipient, error });
         }
     }
 
@@ -243,29 +247,29 @@ async function sendBulkNotifications({ groups = [], recipients = [], message, pl
 /**
  * Checks if a user's work is actively transferred to someone else.
  * @param {string} userId - The user ID to check.
- * @returns {Promise<string>} - The ID of the person to whom it's transferred, or the original userId.
+ * @returns {Promise[string]} - The ID's of the persons to whom it's transferred, or the original userId.
  */
 async function getActiveTransferTargetUserId(userId) {
     try {
-        const transfer = await RequestTransfer.findOne({
+        const transfers = await RequestTransfer.find({
             by: userId,
             accepted: true,
+            fulfilled: false,
             $or: [
                 { cancellation: { $exists: false } },
                 { 'cancellation.time': { $exists: false } },
                 { cancellation: null },
             ]
         }).sort({ generationTime: -1 }).lean();
-
-        if (transfer && transfer.to) {
-            return transfer.to;
+        if (transfers && transfers.length > 0) {
+            return transfers.map(transfer => transfer.to);
         }
 
-        return userId;
+        return [userId];
     } catch (error) {
         console.error('Error checking transfer status:', error);
         // You might choose to throw, return null, or return original userId
-        return userId;
+        return [userId];
     }
 }
 

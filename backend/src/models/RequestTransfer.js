@@ -10,7 +10,9 @@ const cancellationSchema = new mongoose.Schema({
 const requestTransferSchema = new mongoose.Schema({
     by: { type: String, required: true },
     to: { type: String, required: true },
+    transferReason: { type: String, required: true },
     accepted: { type: Boolean, default: false },
+    fulfilled: { type: Boolean, default: false },
     cancellation: { type: cancellationSchema, required: false },
     generationTime: { type: Date, default: Date.now, timezone: "Asia/Kolkata" },
 });

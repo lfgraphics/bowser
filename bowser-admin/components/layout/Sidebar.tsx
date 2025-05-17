@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideGitPullRequestDraft, LucideSquareArrowOutUpRight, Star, KeyRound, LayoutDashboard, Download } from 'lucide-react'
+import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideGitPullRequestDraft, LucideSquareArrowOutUpRight, Star, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 import ThemeChanger from '../ThemeChanger'
@@ -119,8 +119,20 @@ export function Sidebar() {
                   <li onClick={toggleSidebar}>
                     <Link href="/fuel-request">
                       <Button variant="ghost" className="justify-start w-full">
-                        <LucideGitPullRequestDraft className="mr-2 w-4 h-4" />
-                        Requests
+                        <Fuel className="mr-2 w-4 h-4" />
+                        Fuel Requests
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed
+                  allowedRoles={["Admin", "Diesel Control Center Staff"]}
+                >
+                  <li onClick={toggleSidebar}>
+                    <Link href="/manage-requests">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <ArrowLeftRight className="mr-2 w-4 h-4" />
+                        Manage Requests
                       </Button>
                     </Link>
                   </li>
@@ -132,7 +144,7 @@ export function Sidebar() {
                   <li onClick={toggleSidebar}>
                     <Link href={`/my-allocation?allocator=${user?.userId}`}>
                       <Button variant="ghost" className="justify-start w-full">
-                        <ListCollapse className="mr-2 w-4 h-4" />
+                        <List className="mr-2 w-4 h-4" />
                         My Allocations
                       </Button>
                     </Link>
