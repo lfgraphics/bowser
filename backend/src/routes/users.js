@@ -1,5 +1,5 @@
 const express = require('express');
-require('../models/Department')
+const Department = require('../models/Department');
 const router = express.Router();
 const User = require('../models/user');
 const UnAuthorizedLogin = require('../models/unauthorizedLogin');
@@ -177,11 +177,21 @@ router.put('/update', async (req, res) => {
 });
 
 router.get('/allocators', async (req, res) => {
+    const { department} = req.query;
+    let filter = { roles: '676ff015f63b19048c04649a' };
     try {
+        if (department && typeof department !== 'undefined') {
+            const deptDoc = await Department.findOne({ name: department });
+            if (!deptDoc) {
+                return res.status(404).json({ message: 'Department not found' });
+            }
+            filter.department = deptDoc._id;
+        }
+
         const allocators = await User.find(
-            { roles: '676ff015f63b19048c04649a' },
-            { name: 1, userId: 1 }
-        ).lean();
+            filter,
+            { name: 1, userId: 1, department: 1 }
+        ).populate('department').lean();
 
         if (!allocators || allocators.length === 0) {
             return res.status(404).json({ message: 'No allocators found' });

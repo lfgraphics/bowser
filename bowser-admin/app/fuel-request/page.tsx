@@ -92,8 +92,8 @@ const page = ({ params }: { params: { manager: string } }) => {
     };
     const handleClearHistory = async () => {
         try {
-            let response = await fetch(`${BASE_URL}/fuel-request/clear`, {
-                method: 'DELETE',
+            let response = await fetch(`${BASE_URL}/fuel-request/bulk-delete`, {
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },

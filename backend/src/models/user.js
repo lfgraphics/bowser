@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+require('./Department');
 const { UsersAndRolesDatabaseConnection } = require('../../config/database');
 
 const userSchema = new mongoose.Schema({
