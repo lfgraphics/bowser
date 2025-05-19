@@ -53,34 +53,47 @@ const UpdateManager: React.FC = () => {
 
     const fetchUpdates = async () => {
         try {
-            const res = await axios.get('/api/github-releases');
-            const releases = res.data;
+            const releasesRes = await axios.get('/api/github-releases');
+            const releases = releasesRes.data;
 
-            // Group by tag_name and pick latest created_at per tag
-            const latestByTag: Record<string, any> = {};
+            // Filter only apk and exe releases
+            const filtered = releases.filter((r: any) => ['apk', 'exe'].includes(r.tag_name));
 
-            releases.forEach((release: any) => {
+            // Fetch assets directly from each release's assets_url
+            const latestAssetsByTag: Record<string, any> = {};
+
+            for (const release of filtered) {
                 const tag = release.tag_name;
-                const current = latestByTag[tag];
 
-                if (!current || new Date(release.created_at) > new Date(current.created_at)) {
-                    latestByTag[tag] = release;
-                }
-            });
+                if (!release.assets_url) continue;
 
-            // Map to your UpdateEntry format
-            const updates: UpdateEntry[] = Object.entries(latestByTag).map(([tag, release]: [string, any]) => {
-                const asset = release.assets?.[release.assets.length - 1];
+                // Fetch the full assets list from the assets_url
+                const assetsRes = await axios.get(release.assets_url);
+                const assets = assetsRes.data;
+
+                if (!assets.length) continue;
+
+                // Find the most recently updated asset
+                const latestAsset = assets.reduce((latest: any, current: any) =>
+                    new Date(current.updated_at) > new Date(latest.updated_at) ? current : latest,
+                    assets[0]);
+
+                latestAssetsByTag[tag] = {
+                    release,
+                    asset: latestAsset
+                };
+            }
+
+            // Format for frontend
+            const updates: UpdateEntry[] = Object.entries(latestAssetsByTag).map(([tag, { release, asset }]) => {
                 const fileSizeMB = asset ? (asset.size / (1024 * 1024)).toFixed(2) : 'Unknown';
-                const versionMatch = asset?.name?.match(/V[-.]?(\\d+)/i);
-                const buildVersion = versionMatch ? Number(versionMatch[1]) : 0;
 
                 return {
                     _id: release.id.toString(),
-                    appName: asset.name,
+                    appName: asset?.name || '',
                     image: tag === 'apk' ? '/android.png' : '/windows.png',
-                    buildVersion,
-                    releaseNotes: release.body,
+                    buildVersion: 0,
+                    releaseNotes: release.body || '',
                     url: asset?.browser_download_url || '',
                     fileSizeMB,
                     pushDate: asset?.updated_at || release.published_at,
@@ -89,7 +102,7 @@ const UpdateManager: React.FC = () => {
 
             setUpdates(updates);
         } catch (err) {
-            console.error('Failed to fetch GitHub releases:', err);
+            console.error('Error fetching updates:', err);
         }
     };
 
@@ -99,8 +112,8 @@ const UpdateManager: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
                 <div className="w-full text-center">
-                    <Button 
-                        onClick={() => setShowAll(!showAll)} 
+                    <Button
+                        onClick={() => setShowAll(!showAll)}
                         variant="outline"
                     >
                         {showAll ? 'Show Less' : 'Show More'}
@@ -109,31 +122,31 @@ const UpdateManager: React.FC = () => {
                 {updates
                     .filter((update) => showAll ? true : update.image !== '/windows.png')
                     .map(update => (
-                    <Card key={update._id} className="flex flex-col h-full">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>{update.appName}</CardTitle>
-                            <Image src={update.image} alt="app icon" width={50} height={50} />
-                        </CardHeader>
-                        <div className="flex flex-col flex-1">
-                            <CardContent className="flex-1 flex flex-col justify-start gap-1">
-                                <p><strong>Release Notes:</strong> {update.releaseNotes || 'N/A'}</p>
-                                <p><strong>Size:</strong> {update.fileSizeMB || 'Unknown'} MB</p>
-                                <p><strong>Released On:</strong> {formatDate(update.pushDate)}</p>
-                            </CardContent>
+                        <Card key={update._id} className="flex flex-col h-full">
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <CardTitle>{update.appName}</CardTitle>
+                                <Image src={update.image} alt="app icon" width={50} height={50} />
+                            </CardHeader>
+                            <div className="flex flex-col flex-1">
+                                <CardContent className="flex-1 flex flex-col justify-start gap-1">
+                                    <p><strong>Release Notes:</strong> {update.releaseNotes || 'N/A'}</p>
+                                    <p><strong>Size:</strong> {update.fileSizeMB || 'Unknown'} MB</p>
+                                    <p><strong>Released On:</strong> {formatDate(update.pushDate)}</p>
+                                </CardContent>
 
-                            <CardFooter className="mt-auto">
-                                <Link
-                                    href={update.url}
-                                    download
-                                    className="w-full inline-flex items-center text-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
-                                >
-                                    <Download size={18} className="mr-3" />
-                                    Download
-                                </Link>
-                            </CardFooter>
-                        </div>
-                    </Card>
-                ))}
+                                <CardFooter className="mt-auto">
+                                    <Link
+                                        href={update.url}
+                                        download
+                                        className="w-full inline-flex items-center text-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
+                                    >
+                                        <Download size={18} className="mr-3" />
+                                        Download
+                                    </Link>
+                                </CardFooter>
+                            </div>
+                        </Card>
+                    ))}
                 {!isStandalone && showAll &&
                     <Card className="flex flex-col h-full">
                         <CardHeader className="flex flex-row items-center justify-between">
