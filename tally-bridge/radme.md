@@ -47,9 +47,12 @@ npx electron-builder --win
 Here's a command example to publish your Electron-built Windows installer via GitHub Releases:
 
 ```bash
-gh release upload exe "./tally-bridge/dist/TallyBridge setup 1.8.0.exe"  --clobber # update the file path accordingly
+# Tag the release (must match package.json version)
+git tag v1.9.0 #must update the version code accordingly
+git push origin v1.9.0
 
-gh release edit exe --title "Android Build v64" --notes "Bug fixes and performance improvements" #update the title and notes according tothe update
+# Upload .exe and .yml file
+gh release create v1.9.0 "./dist/Tally Bridge Setup 1.9.0.exe" "./dist/latest.yml" --title "Tally Bridge v1.9.0" --notes "DB connection IP updated"
 ```
 > This command creates a release under the exe tag, uploads your .exe file, and sets the title and changelog accordingly.
 

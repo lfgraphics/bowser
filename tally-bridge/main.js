@@ -1,5 +1,5 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
-import { join, dirname } from 'path';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import isDev from 'electron-is-dev';
 import { checkTallyStatus } from './server/tallyStatus.js';
@@ -8,6 +8,8 @@ import { runSync } from './sync/mongoSync.js';
 import { startSyncScheduler, stopSyncScheduler } from './sync/syncScheduler.js';
 import { addLog, getLogs, getNextSyncTime, setNextSyncTime } from './logger.js';
 import { setMainWindow } from './windowManager.js';
+import { autoUpdater } from 'electron-updater';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,7 +23,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 900,
     height: 700,
-    icon: join(__dirname, 'assets', 'icon.ico'), // or icon.ico if on Windows
+    icon: join(__dirname, 'assets', 'icon.ico'),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -44,36 +46,37 @@ function createWindow() {
   mainWindow.on('closed', () => (mainWindow = null));
 }
 
-// ========== Logging System with Levels ==========
-function stopSyncInterval() {
-  if (autoSyncInterval) {
-    clearInterval(autoSyncInterval);
-    autoSyncInterval = null;
-    setNextSyncTime(null);
-    addLog('Auto sync stopped.', 'WARN');
-  }
+// ========== Auto-Updater Setup ==========
+function setupAutoUpdater() {
+  const repo = 'lfgraphics/bowser';
+  const packageJson = JSON.parse(
+    fs.readFileSync(resolve(__dirname, './package.json'), 'utf-8')
+  );
+  const version = packageJson.version;
+  const platform = `${process.platform}-${process.arch}`;
+  const feedURL = `https://update.electronjs.org/${repo}/${platform}/${version}`;
+
+  autoUpdater.setFeedURL({ url: feedURL });
+
+  setInterval(() => {
+    autoUpdater.checkForUpdates();
+  }, 10 * 60 * 1000); // every 10 minutes
+
+  autoUpdater.on('update-downloaded', () => {
+    dialog.showMessageBox({
+      type: 'info',
+      buttons: ['Restart', 'Later'],
+      title: 'Update Ready',
+      message: 'A new version has been downloaded. Restart the app to apply it.',
+    }).then((result) => {
+      if (result.response === 0) autoUpdater.quitAndInstall();
+    });
+  });
+
+  autoUpdater.on('error', (error) => {
+    console.error('Auto updater error:', error);
+  });
 }
-
-// function setSyncInterval() {
-//   stopSyncInterval();
-//   addLog('Auto sync started.');
-//   autoSyncInterval = setInterval(async () => {
-//     try {
-//       const now = new Date();
-//       addLog('Auto sync started at: ' + now.toLocaleTimeString());
-//       setNextSyncTime(new Date(now.getTime() + 3600 * 1000));
-//       await runSync(addLog);
-//       addLog('Auto sync completed at: ' + new Date().toLocaleTimeString());
-//     } catch (err) {
-//       addLog('Auto sync error: ' + err.message, 'ERROR');
-//     }
-//   }, 3600 * 1000);
-
-//   const firstRun = new Date();
-//   setNextSyncTime(new Date(firstRun.getTime() + 3600 * 1000));
-//   const currNextsynctime = getNextSyncTime();
-//   addLog('Auto sync interval started (every 1 hour). Next at: ' + currNextsynctime.toLocaleTimeString());
-// }
 
 // ========== IPC Handlers ==========
 ipcMain.handle('run-manual-sync', async () => {
@@ -97,12 +100,6 @@ ipcMain.handle('set-sync-interval', async (event, minutes) => {
   return `Auto sync enabled every ${minutes} minutes`;
 });
 
-// ipcMain.handle('stop-sync-interval', async () => {
-//   stopSyncInterval();
-//   setNextSyncTime('Stopped');
-//   return 'Auto sync disabled';
-// });
-
 ipcMain.handle('stop-sync-interval', async () => {
   stopSyncScheduler();
   setNextSyncTime('Stopped');
@@ -112,8 +109,8 @@ ipcMain.handle('stop-sync-interval', async () => {
 // ========== App Ready Setup ==========
 app.whenReady().then(() => {
   createWindow();
-
   startBridgeServer();
+  setupAutoUpdater();
 
   ipcMain.handle('check-tally-status', async () => await checkTallyStatus());
 
