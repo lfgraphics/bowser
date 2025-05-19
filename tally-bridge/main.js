@@ -8,7 +8,8 @@ import { runSync } from './sync/mongoSync.js';
 import { startSyncScheduler, stopSyncScheduler } from './sync/syncScheduler.js';
 import { addLog, getLogs, getNextSyncTime, setNextSyncTime } from './logger.js';
 import { setMainWindow } from './windowManager.js';
-import { autoUpdater } from 'electron-updater';
+import pkg from 'electron-updater';
+const { autoUpdater } = pkg;
 import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -48,33 +49,41 @@ function createWindow() {
 
 // ========== Auto-Updater Setup ==========
 function setupAutoUpdater() {
-  const repo = 'lfgraphics/bowser';
-  const packageJson = JSON.parse(
-    fs.readFileSync(resolve(__dirname, './package.json'), 'utf-8')
-  );
-  const version = packageJson.version;
-  const platform = `${process.platform}-${process.arch}`;
-  const feedURL = `https://update.electronjs.org/${repo}/${platform}/${version}`;
-
-  autoUpdater.setFeedURL({ url: feedURL });
+  console.log('⚙️ Setting up auto-updater...');
 
   setInterval(() => {
+    console.log('⏱️ Checking for updates (interval)...');
     autoUpdater.checkForUpdates();
-  }, 10 * 60 * 1000); // every 10 minutes
+  }, 10 * 60 * 1000);
 
-  autoUpdater.on('update-downloaded', () => {
-    dialog.showMessageBox({
-      type: 'info',
-      buttons: ['Restart', 'Later'],
-      title: 'Update Ready',
-      message: 'A new version has been downloaded. Restart the app to apply it.',
-    }).then((result) => {
-      if (result.response === 0) autoUpdater.quitAndInstall();
-    });
+  autoUpdater.checkForUpdatesAndNotify();
+  console.log('🔍 Initial update check fired.');
+
+  autoUpdater.on('checking-for-update', () => {
+    console.log('🛰️ Checking for update...');
   });
-
+  autoUpdater.on('update-available', () => {
+    console.log('⬇️ Update available!');
+  });
+  autoUpdater.on('update-not-available', () => {
+    console.log('✅ No update available.');
+  });
   autoUpdater.on('error', (error) => {
-    console.error('Auto updater error:', error);
+    console.error('🚨 Auto updater error:', error);
+  });
+  autoUpdater.on('update-downloaded', () => {
+    console.log('📦 Update downloaded!');
+    dialog
+      .showMessageBox({
+        type: 'info',
+        buttons: ['Restart', 'Later'],
+        title: 'Update Ready',
+        message:
+          'A new version has been downloaded. Restart the app to apply it.',
+      })
+      .then((result) => {
+        if (result.response === 0) autoUpdater.quitAndInstall();
+      });
   });
 }
 
@@ -108,11 +117,11 @@ ipcMain.handle('stop-sync-interval', async () => {
 
 // ========== App Ready Setup ==========
 app.whenReady().then(() => {
+  ipcMain.handle('check-tally-status', async () => await checkTallyStatus());
+
   createWindow();
   startBridgeServer();
   setupAutoUpdater();
-
-  ipcMain.handle('check-tally-status', async () => await checkTallyStatus());
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

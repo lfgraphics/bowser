@@ -38,7 +38,9 @@
     "productName": "Tally Bridge",
     "publish": [
       {
-        "provider": "github"
+        "provider": "github",
+        "owner": "lfgraphics",
+        "repo": "bowser"
       }
     ],
     "win": {
