@@ -15,7 +15,9 @@ router.post('/signup', async (req, res) => {
 
         const driver = await Driver.find({ Name: { $regex: name, $options: 'i' } });
 
-        if (!driver.length == 1) res.status(404).json({ message: "आप की आईडी डेटाबेस में मोजूद नहीं है, कृपया डीज़ल डिपार्टमेंट में संपर्क करें" })
+        if (driver.length === 0) {
+            return res.status(404).json({ message: "आप की आईडी डेटाबेस में मोजूद नहीं है, कृपया डीज़ल डिपार्टमेंट में संपर्क करें" });
+        }
 
         if (driver.length > 1) {
             console.error(`Multiple Ids found by ${name}`);
@@ -43,10 +45,7 @@ router.post('/signup', async (req, res) => {
             { Name: { $regex: name, $options: "i" } },
             {
                 $set: {
-                    MobileNo: [{
-                        MobileNo: phoneNumber,
-                        LastUsed: true
-                    }],
+                    MobileNo: [{ MobileNo: phoneNumber, LastUsed: true }],
                     ITPLId: id,
                     password: hashedPassword,
                     deviceUUID,
@@ -57,12 +56,16 @@ router.post('/signup', async (req, res) => {
             { new: true, upsert: true }
         );
 
-
         const token = jwt.sign({ user: updatedDriver }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.status(201).json({ message: `सफलतापूर्वक आईडी बन गई${id}\n${phoneNumber} फ़ोन नम्बर और पस्वेड दर्ज क्र के लॉग इन करें`, token, verified: false });
+        return res.status(201).json({
+            message: `सफलतापूर्वक आईडी बन गई${id}\n${phoneNumber} फ़ोन नम्बर और पस्वेड दर्ज क्र के लॉग इन करें`,
+            token,
+            verified: false
+        });
+
     } catch (error) {
         console.error('Signup error:', error);
-        res.status(500).json({ message: 'सर्वर एरर', error: error.message });
+        return res.status(500).json({ message: 'सर्वर एरर', error: error.message });
     }
 });
 
