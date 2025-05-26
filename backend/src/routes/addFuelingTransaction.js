@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { FuelingTransaction } = require('../models/Transaction');
 const FuelingOrder = require('../models/fuelingOrders');
+const FuelRequest = require('../models/FuelRequest');
 const { fetchLocationData } = require('../utils/fuelTransactions');
 const { updateTripSheet, updateTripSheetBulk } = require('../utils/tripSheet')
 const { sendWebPushNotification } = require('../utils/pushNotifications');
@@ -17,7 +18,6 @@ router.post('/', async (req, res) => {
         }
 
         let cordinates = fuelingTransaction.gpsLocation?.split(',')
-
 
         let location = await fetchLocationData(cordinates[0], cordinates[1]);
 
@@ -90,6 +90,49 @@ router.post('/', async (req, res) => {
             });
         }
     }
+});
+
+router.put('/update-from-driver/:id', async (req, res) => {
+    const { id } = req.params;
+    const { odometer, fuelQuantity, allocationType, orderId, tripId } = req.body;
+    const fuelRequest = await FuelRequest.findById(id).populate('allocation');
+    const allocation = fuelRequest.allocation;
+    if (!fuelRequest) {
+        return res.status(404).json({ message: 'Fuel request not found' });
+    }
+    let fuelingTransaction = new FuelingTransaction({
+        orderId: allocation._id,
+        trip: tripId,
+        category: allocation.category,
+        party: allocation.party,
+        odometer: odometer,
+        vehicleNumber: fuelRequest.vehicleNumber,
+        driverId: fuelRequest.driverId,
+        driverName: fuelRequest.driverName,
+        driverMobile: fuelRequest.driverMobile,
+        quantityType: allocation.quantityType,
+        fuelQuantity: fuelQuantity,
+        location: allocation.pumpLocation || allocation.fuelProvider,
+        fuelingDateTime: new Date(),
+        verified: {
+            status: true,
+        },
+        allocationType: allocationType || 'Fuel Request',
+        orderId: orderId,
+
+        allocationAdmin: allocation.allocationAdmin,
+    });
+
+    const fuelingOrder = await FuelingOrder.findById(orderId);
+
+    if (fuelingOrder && fuelingOrder !== null) {
+        fuelingOrder.fuelQuantity = fuelQuantity;
+        fuelingOrder.fulfilled = true;
+        await fuelingOrder.save();
+    }
+    await fuelingTransaction.save()
+    res.status(200).json({ message: 'Fueling transaction created successfully', fuelingTransaction });
+
 });
 
 router.post('/bulk', async (req, res) => {

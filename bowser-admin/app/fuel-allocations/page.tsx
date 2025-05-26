@@ -208,8 +208,8 @@ const Allocations = ({ searchParams }: { searchParams: { tripNumber?: number, al
                             <TableCell>{record.driverMobile}</TableCell>
                             <TableCell>{record.quantityType}</TableCell>
                             <TableCell>{record.fuelQuantity}</TableCell>
-                            <TableCell>{record.bowser.regNo}</TableCell>
-                            <TableCell>{record.bowser.driver.name}</TableCell>
+                            <TableCell>{record.bowser.regNo || record.fuelProvider}</TableCell>
+                            <TableCell>{record.bowser.driver.name || record.pumpLocation}</TableCell>
                             <TableCell>{record.fulfilled ? <Check className='text-green-500'/> : <X  className='text-red-500'/>}</TableCell>
                             <TableCell className="text-center"><Button variant="destructive" onClick={() => { setDeleteRecord(record._id); setShowDeleteDialog(true) }}>Delete</Button></TableCell>
                         </TableRow>

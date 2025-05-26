@@ -166,7 +166,7 @@ router.put('/bulk-delete', async (req, res) => {
     try {
         const fuelRequests = await FuelRequest.updateMany(
             { _id: { $in: ids } },
-            { fulfilled: true, message: 'Fullfillment not required or made over call, history cleared by the dieserl manager' }
+            { fulfilled: true, message: 'ईंधन प्रबंधक द्वारा ईंधन भरवाई आवश्यक नहीं थी या फोन पर की गई थी, हिस्ट्री साफ़ कर दिया गया' }
         );
         if (!fuelRequests) {
             return res.status(404).json({ message: 'Fuel requests not found' });

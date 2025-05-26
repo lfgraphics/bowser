@@ -5,6 +5,8 @@ const { sendNativePushNotification } = require('../utils/pushNotifications')
 const fuelingOrders = require('../models/fuelingOrders');
 const Vehicle = require('../models/vehicle')
 const FuelRequest = require('../models/FuelRequest');
+const TankersTrip = require('../models/VehiclesTrip');
+const { FuelingTransaction } = require('../models/Transaction');
 
 router.post('/', async (req, res) => {
     let newFuelingOrder;
@@ -20,6 +22,8 @@ router.post('/', async (req, res) => {
             category,
             party,
             vehicleNumber,
+            odometer,
+            tripId,
             driverId,
             driverName,
             driverMobile,
@@ -38,6 +42,8 @@ router.post('/', async (req, res) => {
             category,
             party,
             vehicleNumber,
+            odometer,
+            tripId,
             driverId,
             driverName,
             driverMobile,
@@ -59,13 +65,15 @@ router.post('/', async (req, res) => {
         if (allocationType !== 'external') {
             try {
                 const pushData = {
-                    party: party,
-                    category: category,
-                    vehicleNumber: vehicleNumber,
-                    driverName: driverName,
-                    driverId: driverId,
-                    driverMobile: driverMobile,
-                    quantityType: quantityType,
+                    party,
+                    category,
+                    vehicleNumber,
+                    driverName,
+                    driverId,
+                    driverMobile,
+                    quantityType,
+                    odometer,
+                    tripId,
                     quantity: fuelQuantity,
                     allocationAdminName: allocationAdmin.name,
                     allocationAdminId: allocationAdmin.id,
@@ -199,6 +207,31 @@ router.post('/updateTripDriver', async (req, res) => {
             message: "Server error while updating driver details",
             error: err.message
         });
+    }
+});
+
+router.patch('/update/:id', async (req, res) => {
+    const { id } = req.params;
+
+    const order = await fuelingOrders.findByIdAndUpdate(id, req.body, { new: true });
+    if (!order) {
+        return res.status(404).json({ message: 'Fueling order not found' });
+    }
+    return res.status(200).json({ message: 'Fueling order updated successfully', order });
+})
+
+router.delete('/delete/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const order = await fuelingOrders.findByIdAndDelete(id);
+        if (!order) {
+            return res.status(404).json({ message: 'Fueling order not found' });
+        }
+        return res.status(200).json({ message: 'Fueling order deleted successfully' });
+    } catch (error) {
+        console.error("Error deleting fueling order:", error);
+        return res.status(500).json({ message: 'Error deleting fueling order', error: error.message });
     }
 });
 

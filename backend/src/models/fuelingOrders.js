@@ -15,6 +15,8 @@ const fuelingOrderSchema = new mongoose.Schema({
   fuelProvider: { type: String, required: false },
   pumpLocation: { type: String, required: false },
   vehicleNumber: { type: String, required: false },
+  odoMeter: { type: String, required: false },
+  tripId: { type: String, required: false },
   category: { type: String, required: true },
   party: { type: String, required: false, default: "Own" },
   driverId: { type: String, required: false },

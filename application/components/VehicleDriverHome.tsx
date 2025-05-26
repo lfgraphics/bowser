@@ -101,16 +101,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
     };
     useEffect(() => {
         requestPermissions();
-        // showUpdateLink();
     }, []);
-
-    // let showUpdateLink = async () => {
-    //     let appPushsOnDb: AppUpdates[] = await getAppUpdate()
-    //     let latesApp = appPushsOnDb[0]
-    //     if (latesApp.buildVersion > appVersion) {
-    //         setAppUrl(latesApp.url)
-    //     }
-    // }
 
     async function requestedYesterday() {
         let lastRequestTime = await AsyncStorage.getItem('requestTime');
@@ -141,6 +132,18 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
     };
 
     const handleLoadingReport = async () => {
+        await getVehicleNumber();
+
+        setVehicleSelectionModalVisible(true);
+
+        setProcessFunction(() => async (vehicleNumber: string) => {
+            openModalWithFunction(async (odometer: string) => {
+                await requestFuel({ vehicleNumber, odometer });
+            });
+        });
+    };
+
+    const handleReporting = async () => {
         await getVehicleNumber();
 
         setVehicleSelectionModalVisible(true);
@@ -220,7 +223,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                         await AsyncStorage.setItem('sentLocation', gpsLocation);
                         Alert.alert(
                             'Sucess',
-                            'सफलतापूर्वक फ्यूल रिक्वेस्ट भेज दी गई है। डीज़ल कंट्रोल डिपार्टमेंट से कॉल आने का इन्तेज़ार करें।'
+                            'सफलतापूर्वक फ्यूल रिक्वेस्ट भेज दी गई है। ईंधन कंट्रोल डिपार्टमेंट से कॉल आने का इन्तेज़ार करें।'
                         );
                         await AsyncStorage.setItem('requestTime', Date.now().toString());
                     } else {
@@ -313,7 +316,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
 
     if (!permissionsGranted || !isGPSEnabled) {
         return (
-            <View style={[styles.container, { backgroundColor: colors.card }]}>
+            <View style={[styles.container, { backgroundColor: colors.card, justifyContent: 'center', alignItems: 'center' }]}>
                 <Text style={styles.errorText}>ऐप को संचलित रखने के लिए कृपया जी पी एस को ऑन करें और लोकेशन परमिशन दें|</Text>
                 <TouchableOpacity style={styles.button} onPress={requestPermissions}>
                     <Text style={styles.buttonText}>परमिशन दें</Text>
@@ -327,7 +330,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
 
     return (
         <>
-            <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <View style={[styles.container, { backgroundColor: colors.background, alignItems: "center", justifyContent: "center" }]}>
                 <TouchableOpacity
                     style={styles.profileButton}
                     onPress={() => setProfileModalVisible(true)}
@@ -337,23 +340,29 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
 
                 <View style={{ flexDirection: "column", gap: 8, alignItems: "center", marginBottom: 20 }}>
                     <TouchableOpacity
-                        style={[styles.requestButton, {display:'none'}]}
+                        style={[styles.requestButton, { display: 'none' }]}
                         onPress={handleLoadingReport}
                     >
-                        <Text style={styles.requestButtonText}>रिपोर्ट लोडिंग</Text>
+                        <Text style={styles.requestButtonText}>लोड हो गई</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={[styles.requestButton, { display: 'none' }]}
+                        onPress={handleReporting}
+                    >
+                        <Text style={styles.requestButtonText}>पहुँच गई</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.requestButton, { display: 'none' }]}
                         onPress={handleUnloadingReport}
                     >
-                        <Text style={styles.requestButtonText}>रिपोर्ट अनलोडिंग</Text>
+                        <Text style={styles.requestButtonText}>ख़ाली हो गई</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.requestButton}
                         onPress={handleRequestFuel}
                     >
-                        <Text style={styles.requestButtonText}>डीज़ल अनुरोध</Text>
+                        <Text style={styles.requestButtonText}>ईंधन अनुरोध</Text>
                     </TouchableOpacity>
                 </View>
                 {requestId && <DriversRequestStatus requestId={requestId} />}
@@ -370,7 +379,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                                 <Text style={[styles.modalTitle, { color: colors.text }]}>प्रोफ़ाइल</Text>
                             </View>
                             {userData && isDriverData(userData) ? (
-                                <ScrollView style={styles.modalBody}>
+                                <ScrollView contentContainerStyle={{ alignItems: "flex-start", justifyContent: "center" }} style={styles.modalBody}>
                                     <Text style={[styles.profileText, { color: colors.text }]}>नाम: {userData?.Name}</Text>
                                     <Text style={[styles.profileText, { color: colors.text }]}>अई-डी: {userData?.Id}</Text>
                                     <Text style={[styles.profileText, { color: colors.text }]}>फ़ोन नम्बर: {userData && userData['Phone Number']}</Text>
@@ -447,8 +456,6 @@ export default VehicleDriverHome;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
         padding: 20,
     },
     loaderBg: {
@@ -477,7 +484,7 @@ const styles = StyleSheet.create({
     requestButton: {
         marginTop: 30,
         width: 180,
-        transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }],
+        transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }],
         backgroundColor: '#0a7ea4',
         padding: 15,
         borderRadius: 5,

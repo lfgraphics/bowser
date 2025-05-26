@@ -87,6 +87,7 @@ export interface FuelRequest {
   manager: string
   tripStatus: string
   fulfilled: boolean
+  tripId: string
 }
 
 export interface LoadingOrder {
@@ -388,12 +389,19 @@ export interface Vehicle {
   _id: string
   VehicleNo: string
   tripDetails: {
+    id: string
     driver: {
       id: string
       Name: string
     } | string
     open: boolean
+    from: string
+    to: string
+    startedOn: string
+    loadStatus: string
   }
+  operationManager: string
+  capacity: string
   GoodsCategory: string
   manager: string
 }
@@ -494,7 +502,15 @@ export interface Sort {
 }
 
 export interface FuelingOrder {
+  petrolPump: string
+  pumpAllocationType: string
+  partyName: string
   _id: string
+  allocationType: "bowser" | "external" | "internal"
+  odometer: string
+  tripId: string
+  fuelProvider: string
+  pumpLocation: string
   vehicleNumber: string
   category: string
   party: string

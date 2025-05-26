@@ -1,9 +1,9 @@
 "use client";
-import FuelingAllocation from '@/components/FuelingAllocation';
+import FuelingAllocation, { SearchParams } from '@/components/FuelingAllocation';
 import { InstallPrompt } from '../page';
 // import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-export default function Dashboard({ searchParams }: { searchParams: { vehicleNumber: string, driverId: string, driverName: string, driverMobile: string, id: string, allocationType: "bowser" | "external" } }) {
+export default function Dashboard({ searchParams }: { searchParams: SearchParams }) {
 
     return (
         <div>

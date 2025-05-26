@@ -192,7 +192,7 @@ export interface FuelRequest {
   driverId: string;
   driverMobile: string;
   location: string;
-  fullfill: boolean;
+  fulfilled: boolean;
   createdAt: string;
   allocation: string | {
     bowser: {
@@ -207,6 +207,7 @@ export interface FuelRequest {
       id: string;
     },
     category: string;
+    tripId: string;
     party: string;
     quantityType: string;
     fuelQuantity: number;
@@ -227,6 +228,7 @@ export interface AppUpdates {
 }
 
 export interface FormData {
+  tripId:string;
   category: FuelingTypes;
   party: string;
   odometer: Number | null;

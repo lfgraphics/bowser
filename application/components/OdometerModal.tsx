@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     },
     submitButtonText: {
         color: 'white',
-        marginLeft: 10,
+        marginLeft: 5,
     },
     input: {
         borderWidth: 1,
