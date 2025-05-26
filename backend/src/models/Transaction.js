@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 const { bowsersDatabaseConnection } = require('../../config/database');
 
 const fuelingTransactionSchema = new mongoose.Schema({
-    orderId: { type: mongoose.Schema.Types.ObjectId, required: false },
+    orderId: { type: mongoose.Schema.Types.ObjectId, required: false, ref: 'FuelingOrder' },
+    tripId: { type: mongoose.Schema.Types.ObjectId, required: false, ref: 'TankersTrip' },
     category: {
         type: String, require: false,
         default: "Own",
@@ -21,7 +22,7 @@ const fuelingTransactionSchema = new mongoose.Schema({
     driverId: { type: String, required: false },
     driverName: { type: String, required: false },
     driverMobile: { type: String, required: false },
-    fuelMeterImage: { type: [String], _id: false, required: true },
+    fuelMeterImage: { type: [String], _id: false, required: false },
     quantityType: {
         type: String,
         required: false,
@@ -34,22 +35,13 @@ const fuelingTransactionSchema = new mongoose.Schema({
     },
     fuelQuantity: { type: Number, required: false },
     cost: { type: Number },
-    gpsLocation: {
-        type: String, required: false,
-        validate: {
-            validator: function (value) {
-                return value.trim().length > 0;
-            },
-            message: "Gps location can't be blank"
-        }
-    },
+    gpsLocation: { type: String, required: false },
     location: { type: String, required: false },
     fuelingDateTime: { type: Date, required: false },
     bowser: {
         regNo: { type: String, require: false },
         driver: {
             name: { type: String, required: false },
-            // id: { type: String, required: false },
             phoneNo: { type: String, required: false }
         },
     },

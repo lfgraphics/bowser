@@ -13,8 +13,6 @@ import { Input } from '@/components/ui/input';
 import { User } from '@/types/auth';
 import { isAuthenticated } from '@/lib/auth';
 import { MapPin } from 'lucide-react';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import FuelRequestTransfer from '@/components/FuelRequestTransfer';
 
 const page = ({ params }: { params: { manager: string } }) => {
     const paramsManager = params.manager
@@ -167,6 +165,8 @@ const page = ({ params }: { params: { manager: string } }) => {
                                                 pathname: "dashboard", query: {
                                                     id: request._id,
                                                     vehicleNumber: request.vehicleNumber,
+                                                    odoMeter: request.odometer,
+                                                    tripId: request.tripId,
                                                     driverId: request.driverId,
                                                     driverName: request.driverName,
                                                     driverMobile: request.driverMobile,
@@ -181,6 +181,8 @@ const page = ({ params }: { params: { manager: string } }) => {
                                                 pathname: "dashboard", query: {
                                                     id: request._id,
                                                     vehicleNumber: request.vehicleNumber,
+                                                    odoMeter: request.odometer,
+                                                    tripId: request.tripId,
                                                     driverId: request.driverId,
                                                     driverName: request.driverName,
                                                     driverMobile: request.driverMobile,
@@ -195,6 +197,8 @@ const page = ({ params }: { params: { manager: string } }) => {
                                                 pathname: "dashboard", query: {
                                                     id: request._id,
                                                     vehicleNumber: request.vehicleNumber,
+                                                    odoMeter: request.odometer,
+                                                    tripId: request.tripId,
                                                     driverId: request.driverId,
                                                     driverName: request.driverName,
                                                     driverMobile: request.driverMobile,

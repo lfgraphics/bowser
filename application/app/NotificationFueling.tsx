@@ -28,6 +28,7 @@ import { DualImagePicker } from "@/components/DualImagePicker";
 interface RouteParams {
   party: string;
   odometer: string;
+  tripId: string;
   category: FuelingTypes;
   orderId: string;
   vehicleNumber: string;
@@ -54,6 +55,8 @@ const NotificationFuelingScreen = () => {
     category,
     orderId,
     vehicleNumber = "N/A",
+    odometer = "0",
+    tripId = "N/A",
     driverId = "N/A",
     driverMobile = "N/A",
     driverName = "N/A",
@@ -68,7 +71,7 @@ const NotificationFuelingScreen = () => {
     string | null
   >(null);
   const [fuelMeterImage, setFuelMeterImage] = useState<string[] | null>(null);
-  const [odometer, setOdodmeter] = useState<string>("");
+  const [localOdometer, setOdodmeter] = useState<string>(odometer);
   const [foundPumps, setFoundPumps] = useState<Pump[] | null>(null);
   const [fuelQuantity, setFuelQuantity] = useState<string>(quantity);
   const [driverMobileNo, setDriverMobileNo] = useState(driverMobile);
@@ -158,7 +161,8 @@ const NotificationFuelingScreen = () => {
     if (currentGpsLocation) {
       const formData: FormData = {
         party,
-        odometer: Number(odometer),
+        odometer: Number(localOdometer),
+        tripId,
         orderId,
         category,
         vehicleNumberPlateImage,
@@ -476,7 +480,7 @@ const NotificationFuelingScreen = () => {
                     !vehicleNumberPlateImage && openNumberPlateCamera()
                   }
                   style={[styles.input, { color: colors.text }]}
-                  value={odometer}
+                  value={localOdometer}
                   onChangeText={(text) => {
                     setOdodmeter(text);
                   }}

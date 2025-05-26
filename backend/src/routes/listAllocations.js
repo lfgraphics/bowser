@@ -199,10 +199,10 @@ router.delete('/delete/:id', async (req, res) => {
             return res.status(404).json({ message: 'Record not found' });
         }
 
-        res.status(200).json({ message: 'Allocation record deleted successfully', success: true });
+        return res.status(200).json({ message: 'Allocation record deleted successfully', success: true });
     } catch (err) {
         console.error('Error deleting Allocation record:', err);
-        res.status(500).json({ message: 'Server error', error: err.message });
+        return res.status(500).json({ message: 'Server error', error: err.message });
     }
 })
 

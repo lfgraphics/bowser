@@ -35,6 +35,7 @@ export default function FuelRequestTransfer() {
     }, []);
     const fetchAllocators = async () => {
         let url = user?.department ? `${BASE_URL}/users/allocators?department=${user?.department}` : `${BASE_URL}/users/allocators`;
+        console.log(url);
         try {
             const response = await axios.get(url);
             setAllocators(response.data);

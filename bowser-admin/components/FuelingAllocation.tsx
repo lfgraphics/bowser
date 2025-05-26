@@ -19,32 +19,72 @@ import { updateDriverMobile, updateTripDriver } from "@/utils"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "./ui/select"
 
-const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: string, driverId: string, driverName: string, driverMobile: string, id: string, allocationType: "bowser" | "external" | "internal" } }) => {
+export interface SearchParams {
+    vehicleNumber: string
+    odoMeter: string
+    tripId: string
+    driverId: string
+    driverName: string
+    driverMobile: string
+    id: string
+    orderId: string
+    category: "Own" | "Attatch" | "Bulk Sale"
+    party: string
+    partyName: string
+    odometer: string
+    quantityType: 'Full' | 'Part'
+    fuelQuantity: string
+    pumpAllocationType: 'any' | 'specific'
+    allocationType: string
+    bowserDriverName: string
+    bowserDriverMobile: string
+    bowserRegNo: string
+    fuelProvider: string
+    petrolPump: string
+    editing: boolean,
+}
+
+const FuelingAllocation = ({ searchParams }: { searchParams: SearchParams }) => {
     const paramsVehicleNumber = searchParams.vehicleNumber;
+    const paramsOdoMeter = searchParams.odoMeter;
+    const paramsTripId = searchParams.tripId;
     const paramsDriverId = searchParams.driverId;
     const paramsDriverName = searchParams.driverName;
     const paramsDriverMobile = searchParams.driverMobile;
     const requestId = searchParams.id;
     const allocationType = searchParams.allocationType || "bowser";
+    const orderId = searchParams.orderId;
+    const paramsCategory = searchParams.category;
+    const paramsPartyName = searchParams.partyName;
+    const paramsQuantityType = searchParams.quantityType;
+    const paramsFuelQuantity = searchParams.fuelQuantity;
+    const paramsPumpAllocationType = searchParams.pumpAllocationType;
+    const paramsBowserDriverName = searchParams.bowserDriverName;
+    const paramsBowserDriverMobile = searchParams.bowserDriverMobile;
+    const paramsBowserRegNo = searchParams.bowserRegNo;
+    const paramsFuelProvider = searchParams.fuelProvider;
+    const paramsPetrolPump = searchParams.petrolPump;
+    const editing = searchParams.editing;
+
+    console.log(editing, orderId)
 
     const [isSearching, setIsSearching] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [vehicleNumber, setVehicleNumber] = useState(paramsVehicleNumber)
-    const [partyName, setPartyName] = useState("Own")
+    const [partyName, setPartyName] = useState(paramsPartyName || "Own")
     const [driverId, setDriverId] = useState(paramsDriverId)
     const [driverName, setDriverName] = useState(paramsDriverName)
     const [driverMobile, setDriverMobile] = useState(paramsDriverMobile)
-    const [fuelQuantity, setFuelQuantity] = useState('0')
-    const [quantityType, setQuantityType] = useState<'Full' | 'Part'>('Full')
-    const [pumpAllocationType, setPumpAllocationType] = useState<'any' | 'specific'>('any')
-    const [pumpCompany, setPumpCompany] = useState<'Reliance' | 'BPCL' | 'IOCL' | 'HPCL'>('Reliance')
-    const [bowserDriverName, setBowserDriverName] = useState("")
-    const [bowserDriverId, setBowserDriverId] = useState("")
-    const [bowserRegNo, setBowserRegNo] = useState("")
-    const [bowserDriverMobile, setBowserDriverMobile] = useState<string>("")
-    const [fuelProvider, setFuelProvider] = useState<string>("")
+    const [fuelQuantity, setFuelQuantity] = useState(paramsFuelQuantity || '0')
+    const [quantityType, setQuantityType] = useState<'Full' | 'Part'>(paramsQuantityType || 'Full')
+    const [pumpAllocationType, setPumpAllocationType] = useState<'any' | 'specific'>(paramsPumpAllocationType || 'any')
+    const [bowserDriverName, setBowserDriverName] = useState(paramsBowserDriverName || "")
+    const [bowserDriverId, setBowserDriverId] = useState(paramsBowserDriverMobile || "")
+    const [bowserRegNo, setBowserRegNo] = useState(paramsBowserRegNo || "")
+    const [bowserDriverMobile, setBowserDriverMobile] = useState<string>(paramsBowserDriverMobile || "")
+    const [fuelProvider, setFuelProvider] = useState<string>(paramsFuelProvider || "")
     const [fuelProviders, setFuelProviders] = useState()
-    const [petrolPump, setPetrolPump] = useState<string>("")
+    const [petrolPump, setPetrolPump] = useState<string>(paramsPetrolPump || "")
     const [alertDialogOpen, setAlertDialogOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
     const [searchModalConfig, setSearchModalConfig] = useState<{
@@ -63,7 +103,7 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
         keyExtractor: () => "",
     });
     const [driverMobileNotFound, setDriverMobileNotFound] = useState(false);
-    const [fueling, setFueling] = useState<FuelingTypes>('Own')
+    const [fueling, setFueling] = useState<FuelingTypes>(paramsCategory || 'Own')
 
     const checkAuth = () => {
         const authenticated = isAuthenticated();
@@ -343,6 +383,8 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
             category: fueling,
             party: partyName,
             vehicleNumber,
+            odometer: paramsOdoMeter || '0',
+            tripId: paramsTripId,
             driverId,
             driverName,
             driverMobile,
@@ -366,8 +408,9 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
         };
 
         try {
-            const response = await fetch(`${BASE_URL}/allocateFueling`, {
-                method: 'POST',
+            const url = editing ? `${BASE_URL}/allocateFueling/update/${orderId}` : `${BASE_URL}/allocateFueling`;
+            const response = await fetch(url, {
+                method: editing ? 'PATCH' : 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -719,7 +762,7 @@ const FuelingAllocation = ({ searchParams }: { searchParams: { vehicleNumber: st
                     <CardFooter className="flex justify-between">
                         <Button disabled={submitting || isSearching} variant="outline" type="reset" className="w-[40%]" onClick={resetForm}>Clear</Button>
                         <Button disabled={submitting || isSearching} className="w-[50%]" variant="default" type="submit">
-                            Allocate Fueling
+                            {editing ? "Update Allocation" : "Allocate Fueling"}
                         </Button>
                     </CardFooter>
                 </form>

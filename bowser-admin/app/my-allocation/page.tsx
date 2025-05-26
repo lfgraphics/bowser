@@ -17,6 +17,9 @@ import { BASE_URL } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { formatDate } from "@/lib/utils";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: number, allocator: string } }) => {
     const tripNumber = searchParams.tripNumber;
@@ -34,7 +37,6 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
     const [loading, setLoading] = useState(true);
     const [verificationStatus, setVerificationStatus] = useState("all");
     const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-    const [selectAll, setSelectAll] = useState(false);
     const [user, setUser] = useState<User>()
     const { toast } = useToast();
 
@@ -85,62 +87,6 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
             setLoading(false);
         }
     };
-
-    const exportToExcel = async () => {
-        setLoading(true);
-        try {
-            const date = new Date();
-            const options: Intl.DateTimeFormatOptions = {
-                weekday: 'short',
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
-                timeZone: 'Asia/Kolkata',
-            };
-            const timestamp: string = date.toLocaleDateString('en-IN', options);
-
-            // const dateFilter = getBackendDateFilter(); // Function to get the date range filter
-
-            // // Construct date description if date range is provided
-            // const dateDescription = dateFilter
-            //     ? `Date-${new Date(dateFilter.fuelingDateTime.$gte).toLocaleDateString()} to ${new Date(dateFilter.fuelingDateTime.$lte).toLocaleDateString()} ,`
-            //     : '';
-            const filterDescription = `${filter.bowserNumber ? `Bowser-${filter.bowserNumber} ,` : ''}${filter.driverName ? `Driver-${filter.driverName} ,` : ''}${filter.tripSheetId ? `Trip Sheet-${filter.tripSheetId} ,` : ''}`; //${selectedDateRange != undefined && dateDescription}`;
-            const filename = `Dispenses_data ${filterDescription} ${records.length}record${records.length > 1 ? "s" : ""}, downloaded at ${timestamp}.xlsx`;
-
-            const response = await axios.get(`${BASE_URL}/listDispenses/export/excel`, {
-                params: {
-                    bowserNumber: filter.bowserNumber,
-                    driverName: filter.driverName,
-                    tripSheetId: filter.tripSheetId,
-                    sortBy,
-                    order,
-                    limit,
-                    // startDate: dateFilter?.fuelingDateTime.$gte, // Add startDate
-                    // endDate: dateFilter?.fuelingDateTime.$lte, // Add endDate
-                },
-                responseType: "blob",
-            });
-
-            // Create a URL for the Blob and trigger the download
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement("a");
-            link.href = url;
-            link.setAttribute("download", filename); // Use the generated filename
-            document.body.appendChild(link);
-            link.click();
-            link.remove(); // Clean up the link element
-        } catch (error) {
-            console.error("Error exporting data:", error);
-            alert("Error exporting data.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
     // Function to toggle selection of a row
     const toggleRowSelection = (id: string) => {
         setSelectedRows((prev) => {
@@ -153,36 +99,29 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
             return newSelectedRows;
         });
     };
-    const toggleSelectAll = async () => {
-        if (selectAll) {
-            setSelectedRows(new Set()); // Deselect all
-        } else {
-            const allRowIds = new Set(records.map(record => record._id.toString())); // Create a set of all row IDs
-            setSelectedRows(allRowIds); // Select all
-        }
-        setSelectAll(!selectAll); // Toggle the select all state
-    };
 
-    const verifyOne = async (id: string) => {
+    const deleteAllocation = (id: string) => async () => {
+        const confirmation = confirm("Are you sure you want to delete this allocation?");
+        if (!confirmation) return;
+
         try {
-            setLoading(true)
-            let response = await axios.patch(`${BASE_URL}/listDispenses/verify/${id}`, { by: { id: user?.userId, name: user?.name } })
-            if (response.status == 200) {
-                setRecords((prevRecords) =>
-                    prevRecords.map((record) =>
-                        record._id === id ? { ...record, verified: { status: true } } : record
-                    )
-                );
-                toast({ title: response.data.heading, description: response.data.message, variant: "success" });
+            const response = await axios.delete(`${BASE_URL}/listAllocations/delete/${id}`);
+            if (response.status === 200) {
+                toast({
+                    title: "Success",
+                    description: "Allocation deleted successfully.",
+                    variant: "success",
+                });
+                setRecords(records.filter(record => record._id !== id));
+                setSelectedRows(new Set());
             }
-        } catch (err) {
-            if (err instanceof Error) {
-                toast({ title: "Error", description: err.message, variant: "destructive" });
-            } else {
-                toast({ title: "Error", description: "An unknown error occurred", variant: "destructive" });
-            }
-        } finally {
-            setLoading(false)
+        } catch (error) {
+            console.error("Error deleting allocation:", error);
+            toast({
+                title: "Error",
+                description: "Failed to delete allocation.",
+                variant: "destructive",
+            });
         }
     }
 
@@ -211,6 +150,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                         <TableHead>Bowser No.</TableHead>
                         <TableHead>Bowser Driver</TableHead>
                         <TableHead>Fulfilled</TableHead>
+                        <TableHead className="text-center">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody className="h-[50%] overflow-y-scroll">
@@ -236,37 +176,40 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                             <TableCell>{record.fuelQuantity}</TableCell>
                             <TableCell>{record.bowser.regNo}</TableCell>
                             <TableCell>{record.bowser.driver.name}</TableCell>
-                            <TableCell>{record.fulfilled ? <Check /> : <X />}</TableCell>
+                            <TableCell>{record.fulfilled ? <Check className="text-green-500" /> : <X className="text-red-500" />}</TableCell>
+                            <TableCell className="flex gap-2">
+                                <Link href={{
+                                    pathname: '/dashboard',
+                                    query: {
+                                        orderId: record._id,
+                                        category: record.category,
+                                        party: record.party,
+                                        partyName: record.partyName,
+                                        tripId: record.tripId,
+                                        vehicleNumber: record.vehicleNumber,
+                                        odometer: record.odometer,
+                                        driverId: record.driverId,
+                                        driverName: record.driverName,
+                                        driverMobile: record.driverMobile,
+                                        quantityType: record.quantityType,
+                                        fuelQuantity: record.fuelQuantity,
+                                        pumpAllocationType: record.pumpAllocationType,
+                                        allocationType: record.allocationType,
+                                        bowserDriverName: record.bowser.driver.name,
+                                        bowserDriverMobile: record.bowser.driver.phoneNo,
+                                        bowserRegNo: record.bowser.regNo,
+                                        fuelProvider: record.fuelProvider,
+                                        petrolPump: record.petrolPump,
+                                        editing: true,
+                                    }
+                                }}>
+                                    <Button variant="default">Edit</Button>
+                                </Link>
+                                <Button variant="destructive" onClick={deleteAllocation(record._id)}>Delete</Button>
+                            </TableCell>
                         </TableRow>
                     ))}
-                    {/* Calculate total fuel quantity if filtered by tripSheetId */}
-                    {/* <TableRow>
-                        <TableCell colSpan={12} className="text-right font-bold">Total Fuel Quantity:</TableCell>
-                        <TableCell colSpan={2}>
-                            {records.reduce((total, record) => total + Number(record.fuelQuantity), 0).toFixed(2)} L
-                        </TableCell>
-                        <TableCell colSpan={2} className="text-right font-bold"></TableCell>
-                    </TableRow> */}
                 </TableBody>
-                {/* <TableCaption>
-                    <div className="flex justify-between mt-4">
-                        <Button
-                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                        >
-                            Previous
-                        </Button>
-                        <span>
-                            Page {currentPage} of {totalPages}
-                        </span>
-                        <Button
-                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                        >
-                            Next
-                        </Button>
-                    </div>
-                </TableCaption> */}
             </Table>
         </div >
     );
