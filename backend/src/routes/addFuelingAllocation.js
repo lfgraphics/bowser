@@ -7,6 +7,8 @@ const Vehicle = require('../models/vehicle')
 const FuelRequest = require('../models/FuelRequest');
 const TankersTrip = require('../models/VehiclesTrip');
 const { FuelingTransaction } = require('../models/Transaction');
+const TankersTrip = require('../models/VehiclesTrip');
+const { FuelingTransaction } = require('../models/Transaction');
 
 router.post('/', async (req, res) => {
     let newFuelingOrder;
@@ -22,6 +24,8 @@ router.post('/', async (req, res) => {
             category,
             party,
             vehicleNumber,
+            odometer,
+            tripId,
             odometer,
             tripId,
             driverId,
@@ -42,6 +46,8 @@ router.post('/', async (req, res) => {
             category,
             party,
             vehicleNumber,
+            odometer,
+            tripId,
             odometer,
             tripId,
             driverId,
@@ -65,6 +71,15 @@ router.post('/', async (req, res) => {
         if (allocationType !== 'external') {
             try {
                 const pushData = {
+                    party,
+                    category,
+                    vehicleNumber,
+                    driverName,
+                    driverId,
+                    driverMobile,
+                    quantityType,
+                    odometer,
+                    tripId,
                     party,
                     category,
                     vehicleNumber,
