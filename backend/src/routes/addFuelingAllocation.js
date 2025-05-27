@@ -5,10 +5,6 @@ const { sendNativePushNotification } = require('../utils/pushNotifications')
 const fuelingOrders = require('../models/fuelingOrders');
 const Vehicle = require('../models/vehicle')
 const FuelRequest = require('../models/FuelRequest');
-const TankersTrip = require('../models/VehiclesTrip');
-const { FuelingTransaction } = require('../models/Transaction');
-const TankersTrip = require('../models/VehiclesTrip');
-const { FuelingTransaction } = require('../models/Transaction');
 
 router.post('/', async (req, res) => {
     let newFuelingOrder;
@@ -24,8 +20,6 @@ router.post('/', async (req, res) => {
             category,
             party,
             vehicleNumber,
-            odometer,
-            tripId,
             odometer,
             tripId,
             driverId,

@@ -82,7 +82,7 @@ const FuelingAllocation = ({ searchParams }: { searchParams: SearchParams }) => 
     const [bowserDriverId, setBowserDriverId] = useState(paramsBowserDriverMobile || "")
     const [bowserRegNo, setBowserRegNo] = useState(paramsBowserRegNo || "")
     const [bowserDriverMobile, setBowserDriverMobile] = useState<string>(paramsBowserDriverMobile || "")
-    const [fuelProvider, setFuelProvider] = useState<string>(paramsFuelProvider || "")
+    const [fuelProvider, setFuelProvider] = useState<string>(paramsFuelProvider || "Reliance")
     const [fuelProviders, setFuelProviders] = useState()
     const [petrolPump, setPetrolPump] = useState<string>(paramsPetrolPump || "")
     const [alertDialogOpen, setAlertDialogOpen] = useState(false);
@@ -682,7 +682,7 @@ const FuelingAllocation = ({ searchParams }: { searchParams: SearchParams }) => 
                         </Select>}
                         {allocationType === "external" &&
                             <>
-                                <RadioGroup name="pumpAllocationType" className="flex gap-4 mt-4" defaultValue={pumpAllocationType} onValueChange={(e) => handlePumpAllocationTypeChange(e as "any" | "specific")}>
+                                <RadioGroup required={allocationType === "external"} name="pumpAllocationType" className="flex gap-4 mt-4" defaultValue={pumpAllocationType} onValueChange={(e) => handlePumpAllocationTypeChange(e as "any" | "specific")}>
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="Any" id="any" />
                                         <Label htmlFor="any">Any Petrol Pump</Label>
