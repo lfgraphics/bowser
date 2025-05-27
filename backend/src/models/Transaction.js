@@ -3,7 +3,7 @@ const { bowsersDatabaseConnection } = require('../../config/database');
 
 const fuelingTransactionSchema = new mongoose.Schema({
     orderId: { type: mongoose.Schema.Types.ObjectId, required: false, ref: 'FuelingOrder' },
-    tripId: { type: mongoose.Schema.Types.ObjectId, required: false, ref: 'TankersTrip' },
+    tripId: { type: String, required: false },
     category: {
         type: String, require: false,
         default: "Own",
