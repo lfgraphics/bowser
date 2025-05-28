@@ -257,6 +257,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                     `${updatedRecord?.fuelQuantity} Liter - ${updatedRecord?.quantityType}`
                                 )}</p>
                                 <p className="text-sm"><strong>Date & Time:</strong> {formatDate(record?.fuelingDateTime!)}</p>
+                                <p className="text-sm"><strong>Fueling Location:</strong> {record.location}</p>
                                 <p className="flex items-center text-sm">
                                     <MapPin className="mr-1 w-4 h-4" />
                                     {editing ? (

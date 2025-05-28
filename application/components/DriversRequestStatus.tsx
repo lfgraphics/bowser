@@ -93,7 +93,7 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
                     <ActivityIndicator color="#0a7ea4" />
                 </View>
             }
-            {orderData && (typeof orderData.allocation !== "string" && !orderData.allocation.fulfilled) &&
+            {orderData && 
                 <ThemedView style={{ padding: 12, borderRadius: 6, gap: 6, paddingTop: 16 }} >
                     <ThemedText style={{ textAlign: "center", fontSize: 20, fontWeight: "bold" }}>आपके ईंधन अनुरोध की जानकारी</ThemedText>
                     {orderData && (!orderData.allocation && !orderData.message) && <ThemedText style={{ textAlign: "center" }}>आपका ईंधन अनुरोध अभी पूरा नहीं हुआ है, कृपया थोड़ी देर बाद दोबारा चेक करें।</ThemedText>}
@@ -128,7 +128,7 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
                                         ईंधन ले लीजिये: {orderData.allocation?.quantityType === "Full" ? "फुल" : "पार्ट"}, {orderData.allocation?.fuelQuantity > 0 ? orderData.allocation?.fuelQuantity + "लीटर" : ""}
                                     </ThemedText>
                                     <ThemedText>
-                                        {orderData.allocation?.fuelProvider} के {orderData.allocation?.pumpAllocationType === "Any" ? "किसी भी पेट्रोल पंप से" : orderData.allocation?.pumpLocation + "पेट्रोल पंप से"}
+                                    {orderData.allocation?.fuelProvider} के {orderData.allocation?.pumpAllocationType === "Any" ? "किसी भी पेट्रोल पंप से" : orderData.allocation?.petrolPump + "पेट्रोल पंप से"}
                                     </ThemedText>
                                     <Image
                                         source={imageMap[(orderData.allocation?.fuelProvider as FuelProvider) || 'Reliance']}

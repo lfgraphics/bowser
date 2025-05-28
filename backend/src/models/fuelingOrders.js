@@ -13,6 +13,7 @@ const fuelingOrderSchema = new mongoose.Schema({
     required: false
   },
   fuelProvider: { type: String, required: false },
+  petrolPump: { type: String, required: false },
   pumpLocation: { type: String, required: false },
   vehicleNumber: { type: String, required: false },
   odoMeter: { type: String, required: false },

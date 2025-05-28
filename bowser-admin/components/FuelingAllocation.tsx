@@ -18,6 +18,8 @@ import { BASE_URL } from "@/lib/api"
 import { updateDriverMobile, updateTripDriver } from "@/utils"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "./ui/select"
+import { ComboboxOption } from "./Combobox"
+import ComboBox from "./Combobox"
 
 export interface SearchParams {
     vehicleNumber: string
@@ -34,13 +36,14 @@ export interface SearchParams {
     odometer: string
     quantityType: 'Full' | 'Part'
     fuelQuantity: string
-    pumpAllocationType: 'any' | 'specific'
+    pumpAllocationType: 'Any' | 'Specific'
     allocationType: string
     bowserDriverName: string
     bowserDriverMobile: string
     bowserRegNo: string
     fuelProvider: string
     petrolPump: string
+    fuelStation: string
     editing: boolean,
 }
 
@@ -66,8 +69,6 @@ const FuelingAllocation = ({ searchParams }: { searchParams: SearchParams }) => 
     const paramsPetrolPump = searchParams.petrolPump;
     const editing = searchParams.editing;
 
-    console.log(editing, orderId)
-
     const [isSearching, setIsSearching] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [vehicleNumber, setVehicleNumber] = useState(paramsVehicleNumber)
@@ -77,13 +78,14 @@ const FuelingAllocation = ({ searchParams }: { searchParams: SearchParams }) => 
     const [driverMobile, setDriverMobile] = useState(paramsDriverMobile)
     const [fuelQuantity, setFuelQuantity] = useState(paramsFuelQuantity || '0')
     const [quantityType, setQuantityType] = useState<'Full' | 'Part'>(paramsQuantityType || 'Full')
-    const [pumpAllocationType, setPumpAllocationType] = useState<'any' | 'specific'>(paramsPumpAllocationType || 'any')
+    const [pumpAllocationType, setPumpAllocationType] = useState<'Any' | 'Specific'>(paramsPumpAllocationType || 'Any')
     const [bowserDriverName, setBowserDriverName] = useState(paramsBowserDriverName || "")
     const [bowserDriverId, setBowserDriverId] = useState(paramsBowserDriverMobile || "")
     const [bowserRegNo, setBowserRegNo] = useState(paramsBowserRegNo || "")
     const [bowserDriverMobile, setBowserDriverMobile] = useState<string>(paramsBowserDriverMobile || "")
     const [fuelProvider, setFuelProvider] = useState<string>(paramsFuelProvider || "Reliance")
-    const [fuelProviders, setFuelProviders] = useState()
+    const [search, setSearch] = useState<string>("")
+    const [fuelProviders, setFuelProviders] = useState<ComboboxOption[]>([])
     const [petrolPump, setPetrolPump] = useState<string>(paramsPetrolPump || "")
     const [alertDialogOpen, setAlertDialogOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
@@ -111,12 +113,17 @@ const FuelingAllocation = ({ searchParams }: { searchParams: SearchParams }) => 
             window.location.href = '/login';
         }
     };
+
     const fetchFuelProviders = async () => {
         if (allocationType && allocationType === 'external') {
             try {
-                const response = await fetch(`${BASE_URL}/fuelProviders`);
+                const response = await fetch(`${BASE_URL}/fuel-station?name=${search}`);
                 const data = await response.json();
-                setFuelProviders(data);
+                const formattedData: ComboboxOption[] = data.map((item: { _id: string, name: string }) => ({
+                    value: item.name,
+                    label: item.name
+                }));
+                setFuelProviders(formattedData);
             } catch (error) {
                 console.error('Error fetching fuel providers:', error);
             }
@@ -124,8 +131,11 @@ const FuelingAllocation = ({ searchParams }: { searchParams: SearchParams }) => 
     }
 
     useEffect(() => {
-        checkAuth();
         fetchFuelProviders();
+    }, [search]);
+
+    useEffect(() => {
+        checkAuth();
     }, []);
 
     useEffect(() => {
@@ -462,13 +472,9 @@ const FuelingAllocation = ({ searchParams }: { searchParams: SearchParams }) => 
             setFuelQuantity('0');
         }
     };
-    const handlePumpAllocationTypeChange = (value: 'any' | 'specific') => {
+    const handlePumpAllocationTypeChange = (value: 'Any' | 'Specific') => {
         setPumpAllocationType(value);
     };
-
-    useEffect(() => {
-        console.log(fuelProvider)
-    }, [fuelProvider]);
 
     return (
         <div className="flex justify-center items-center bg-background py-4 min-h-full">
@@ -682,29 +688,27 @@ const FuelingAllocation = ({ searchParams }: { searchParams: SearchParams }) => 
                         </Select>}
                         {allocationType === "external" &&
                             <>
-                                <RadioGroup required={allocationType === "external"} name="pumpAllocationType" className="flex gap-4 mt-4" defaultValue={pumpAllocationType} onValueChange={(e) => handlePumpAllocationTypeChange(e as "any" | "specific")}>
+                                <RadioGroup required={allocationType === "external"} name="pumpAllocationType" className="flex gap-4 mt-4" defaultValue={pumpAllocationType} onValueChange={(e) => handlePumpAllocationTypeChange(e as "Any" | "Specific")}>
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="Any" id="any" />
                                         <Label htmlFor="any">Any Petrol Pump</Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="Specific" id="specific" disabled />
+                                        <RadioGroupItem value="Specific" id="specific" />
                                         <Label htmlFor="specific">Specific Petrol Pump</Label>
                                     </div>
                                 </RadioGroup>
                             </>
                         }
-                        {allocationType === "external" && fuelProvider && pumpAllocationType === "specific" &&
-                            <Select onValueChange={setPetrolPump} value={petrolPump}>
-                                <SelectTrigger className="mt-3">
-                                    <SelectValue placeholder="Select a Petrol Pump" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {/* map the pumps of the company with searchable list */}
-                                    <SelectItem value="company-1">Pump one</SelectItem>
-                                    <SelectItem value="company-2">Pump Two</SelectItem>
-                                </SelectContent>
-                            </Select>
+                        {allocationType === "external" && pumpAllocationType === "Specific" &&
+                            <ComboBox
+                                className="w-full mt-3"
+                                options={fuelProviders}
+                                value={petrolPump}
+                                onChange={setPetrolPump}
+                                searchTerm={search}
+                                onSearchTermChange={setSearch}
+                            />
                         }
                         {allocationType === "internal" &&
                             <>

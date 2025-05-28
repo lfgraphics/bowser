@@ -179,7 +179,7 @@ export interface FuelNotificationProps {
 }
 
 export interface FuelRequest {
-  pumpLocation: string
+  petrolPump: string
   pumpAllocationType: string
   fuelProvider: string;
   fuelQuantity: number
