@@ -42,6 +42,7 @@ const fuelingOrderSchema = new mongoose.Schema({
     id: { type: String, required: true },
   },
   request: { type: mongoose.Types.ObjectId, ref: 'FuelRequest' },
+  seen: { type: Boolean, default: false },
   fulfilled: { type: Boolean, default: false },
   createdAt: { type: Date, default: () => moment().tz("Asia/Kolkata").toDate() },
 });

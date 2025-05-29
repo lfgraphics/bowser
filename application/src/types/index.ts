@@ -9,6 +9,7 @@ export interface DriverFuelRequest {
     driverMobile: string
     location: string
     tripId:string
+    seen: boolean
     fulfilled: boolean
     createdAt: string
     allocation: FuelRequest

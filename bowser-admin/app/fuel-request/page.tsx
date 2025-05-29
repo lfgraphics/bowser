@@ -53,6 +53,12 @@ const page = ({ params }: { params: { manager: string } }) => {
             const response = await fetch(`${BASE_URL}/fuel-request?manager=${user?.userId}&fulfilled=false`);
             const data = await response.json();
             setData(data.requests);
+            const unseenRequestIds: string[] = data.requests.filter((req: FuelRequest) => !req.seen).map((req: FuelRequest) => req._id!);
+            console.log('data:', unseenRequestIds);
+            console.log('Unseen Request IDs:', unseenRequestIds);
+            if (unseenRequestIds.length > 0) {
+                await markAsSeen(unseenRequestIds);
+            }
         } catch (error) {
             if (error instanceof Error) {
                 setError(error.message);
@@ -61,6 +67,24 @@ const page = ({ params }: { params: { manager: string } }) => {
             setLoading(false);
         }
     };
+
+    const markAsSeen = async (requestIds: string[]) => {
+        try {
+            const response = await fetch(`${BASE_URL}/notification-update/request-seen`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ids: requestIds
+                })
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                setError(error.message);
+            }
+        }
+    }
 
     const openDeleteDialogue = (sheetId: string) => {
         setDeletingRequestId(sheetId)

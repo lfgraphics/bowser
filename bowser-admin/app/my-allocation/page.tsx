@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { isAuthenticated } from "@/lib/auth";
 import Loading from "../loading";
-import { Check, X } from "lucide-react";
+import { Check, CheckCheck, X } from "lucide-react";
 import { BASE_URL } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
@@ -149,6 +149,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                         <TableHead>Fuel Qty</TableHead>
                         <TableHead>Bowser No.</TableHead>
                         <TableHead>Bowser Driver</TableHead>
+                        <TableHead>Seen</TableHead>
                         <TableHead>Fulfilled</TableHead>
                         <TableHead className="text-center">Actions</TableHead>
                     </TableRow>
@@ -176,6 +177,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                             <TableCell>{record.fuelQuantity}</TableCell>
                             <TableCell>{record.bowser.regNo}</TableCell>
                             <TableCell>{record.bowser.driver.name}</TableCell>
+                            <TableCell>{record.seen ? <CheckCheck className="text-blue-500" /> : <CheckCheck className="text-gray-500" />}</TableCell>
                             <TableCell>{record.fulfilled ? <Check className="text-green-500" /> : <X className="text-red-500" />}</TableCell>
                             <TableCell className="flex gap-2">
                                 <Link href={{
