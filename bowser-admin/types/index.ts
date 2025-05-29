@@ -86,6 +86,7 @@ export interface FuelRequest {
   startDate: string
   manager: string
   tripStatus: string
+  seen: boolean
   fulfilled: boolean
   tripId: string
 }
@@ -530,6 +531,7 @@ export interface FuelingOrder {
     name: string
     id: string
   }
+  seen: boolean
   fulfilled: boolean
   createdAt: Date
 }

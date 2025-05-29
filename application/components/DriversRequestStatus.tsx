@@ -43,6 +43,9 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
             setOrderData(json);
             setQty(json?.allocation?.fuelQuantity);
             setOdometerValue(json?.odometer || '');
+            if (json?.allocation?._id && !json?.allocation?.seen) {
+                markAsSeen(json);
+            }
             console.log('allocation fulfilled: ', json?.allocation?.fulfilled);
         } catch (error) {
             alert(error);
@@ -50,6 +53,27 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
             setLoading(false);
         }
     };
+
+    const markAsSeen = async (responseData: DriverFuelRequest) => {
+        try {
+            const response = await fetch(`${baseUrl}/notification-update/order-seen`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: responseData?.allocation?._id,
+                }),
+            });
+            const json = await response.json();
+            if (!response.ok) {
+                throw new Error(json.message || "Failed to mark request as seen");
+            }
+            console.log("Request marked as seen successfully");
+        } catch (error) {
+            console.error("Error marking request as seen:", error);
+        }
+    }
 
     const sybmitFuelStatus = async () => {
         try {
@@ -93,9 +117,13 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
                     <ActivityIndicator color="#0a7ea4" />
                 </View>
             }
-            {orderData && 
+            {orderData &&
                 <ThemedView style={{ padding: 12, borderRadius: 6, gap: 6, paddingTop: 16 }} >
                     <ThemedText style={{ textAlign: "center", fontSize: 20, fontWeight: "bold" }}>आपके ईंधन अनुरोध की जानकारी</ThemedText>
+                    {orderData.seen && <ThemedView style={{ flexDirection: "row", alignItems: "center",  gap: 8 }}>
+                        <ThemedText>देख लिया गया</ThemedText>
+                        <Ionicons name="checkmark-done" size={18} color="green" />
+                    </ThemedView>}
                     {orderData && (!orderData.allocation && !orderData.message) && <ThemedText style={{ textAlign: "center" }}>आपका ईंधन अनुरोध अभी पूरा नहीं हुआ है, कृपया थोड़ी देर बाद दोबारा चेक करें।</ThemedText>}
                     {orderData && !orderData.allocation && orderData.message && <ThemedText style={{ textAlign: "center" }}>{orderData.message}</ThemedText>}
                     {orderData && orderData.allocation?.allocationType == "bowser" && (
@@ -128,17 +156,11 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
                                         ईंधन ले लीजिये: {orderData.allocation?.quantityType === "Full" ? "फुल" : "पार्ट"}, {orderData.allocation?.fuelQuantity > 0 ? orderData.allocation?.fuelQuantity + "लीटर" : ""}
                                     </ThemedText>
                                     <ThemedText>
-                                    {orderData.allocation?.fuelProvider} के {orderData.allocation?.pumpAllocationType === "Any" ? "किसी भी पेट्रोल पंप से" : orderData.allocation?.petrolPump + "पेट्रोल पंप से"}
+                                        {orderData.allocation?.fuelProvider} के {orderData.allocation?.pumpAllocationType === "Any" ? "किसी भी पेट्रोल पंप से" : orderData.allocation?.petrolPump + "पेट्रोल पंप से"}
                                     </ThemedText>
                                     <Image
                                         source={imageMap[(orderData.allocation?.fuelProvider as FuelProvider) || 'Reliance']}
                                         style={styles.image}
-                                    />
-                                    <Button
-                                        onPress={() => setOdometerModalVisible(true)}
-                                        title="डीजल ले लिया"
-                                        color="#0a7ea4"
-                                        accessibilityLabel="update your fuel request status"
                                     />
                                 </>
                             }

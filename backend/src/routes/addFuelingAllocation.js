@@ -65,6 +65,7 @@ router.post('/', async (req, res) => {
         if (allocationType !== 'external') {
             try {
                 const pushData = {
+                    id: String(newFuelingOrder._id),
                     party,
                     category,
                     vehicleNumber,

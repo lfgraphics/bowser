@@ -48,10 +48,10 @@ router.post('/', async (req, res) => {
             let requestId = fuelRequest._id;
             res.status(201).json({ message: 'Fuel request created successfully', requestId });
         } else {
-            res.status(400).json({ error: 'आप का अनुरोध पहले ही दर्ज किया जा चुका है कृपया इंतज़ार करें' });
+            res.status(400).json({ message: 'आप का अनुरोध पहले ही दर्ज किया जा चुका है कृपया इंतज़ार करें' });
         }
 
-        const options = { title: 'New Fuel Request', url: `/fuel-request` }
+        const options = { title: 'New Fuel Request', url: `/fuel-request`, id: String(fuelRequest._id) };
         const message = `New fuel request for: ${requestVehicle.VehicleNo} from ${driverName} - ${driverId}`
         let notificationSent;
         const notify = async () => {

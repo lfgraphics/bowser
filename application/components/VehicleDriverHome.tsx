@@ -30,7 +30,6 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
     const [vehicleSelectionModalVisible, setVehicleSelectionModalVisible] = useState(false);
     const [odometerValue, setOdometerValue] = useState('');
     const [selectedFunction, setSelectedFunction] = useState<(value: string) => void>(() => () => { });
-    const [selectedVehicle, setSelectedVehicle] = useState('');
     const [processFunction, setProcessFunction] = useState<((vehicleNumber: string) => void) | null>(() => null);
     const { colors } = useTheme();
 
@@ -210,16 +209,13 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                             body,
                         });
                         if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
+                            const errorData = await response.json();
+                            throw new Error(`${errorData.message}`);
                         }
                         const data = await response.json();
                         await AsyncStorage.setItem('requestId', data.requestId);
                         setRequestId(data.requestId);
                         console.log('request Id:', data.requestId);
-                        /*
-                        - we can use the request id to update the vehicle drivers location in the request body so that the bowser driver will get updated location
-                        - we need to plan interation of proper location sharing in the UI of both
-                        */
                         await AsyncStorage.setItem('sentLocation', gpsLocation);
                         Alert.alert(
                             'Sucess',
@@ -237,7 +233,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                     console.error('Could not send the location:', err);
                     Alert.alert(
                         'एरर',
-                        'फ्यूल रिक्वेस्ट नहीं भेज पाए, कृपया दोबारा कोशिश करें।'
+                        err instanceof Error ? err.message : String(err)
                     );
                 }
             } catch (error) {
@@ -365,7 +361,8 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                         <Text style={styles.requestButtonText}>ईंधन अनुरोध</Text>
                     </TouchableOpacity>
                 </View>
-                {requestId && <DriversRequestStatus requestId={requestId} />}
+
+                {requestId && <DriversRequestStatus key={requestId} requestId={requestId} />}
 
                 <Modal
                     animationType="fade"
