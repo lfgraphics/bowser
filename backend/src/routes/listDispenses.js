@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
     const skip = (page - 1) * limit;
     let filter = {};
 
-    filter.tripSheetId = {$exists: true};
+    filter.tripSheetId = { $exists: true };
 
     if (verified === 'true') {
         filter.verified = true;
@@ -58,34 +58,39 @@ router.get('/', async (req, res) => {
     const sortOrder = order === 'asc' ? 1 : -1;
 
     try {
-        const records = await FuelingTransaction.find(filter, {
-            vehicleNumber: 1,
-            tripSheetId: 1,
-            quantityType: 1,
-            fuelQuantity: 1,
-            driverName: 1,
-            driverMobile: 1,
-            bowser: 1,
-            fuelingDateTime: 1,
-            location: 1,
-            verified: 1,
-            category: 1,
-            party: 1,
-            odometer: 1,
-            posted: 1
-        }).skip(skip).limit(Number(limit)).sort({ [sortBy]: sortOrder });
+        const records = await FuelingTransaction.collection.aggregate([
+            { $match: filter },
+            { $sort: { [sortBy]: sortOrder } },
+            { $skip: skip },
+            { $limit: Number(limit) },
+            {
+                $project: {
+                    vehicleNumber: 1,
+                    tripSheetId: 1,
+                    quantityType: 1,
+                    fuelQuantity: 1,
+                    driverName: 1,
+                    driverMobile: 1,
+                    bowser: 1,
+                    fuelingDateTime: 1,
+                    location: 1,
+                    verified: 1,
+                    category: 1,
+                    party: 1,
+                    odometer: 1,
+                    posted: 1
+                }
+            }
+        ], { allowDiskUse: true }).toArray();
+
         const totalRecords = await FuelingTransaction.countDocuments(filter);
 
-        if (records.length == 0) {
-            res.status(400).json({ message: 'No records found' })
-        } else {
-            res.json({
-                totalRecords,
-                totalPages: Math.ceil(totalRecords / limit),
-                currentPage: Number(page),
-                records,
-            });
-        }
+        res.json({
+            totalRecords,
+            totalPages: Math.ceil(totalRecords / limit),
+            currentPage: Number(page),
+            records, // can be empty []
+        });
     } catch (error) {
         console.error('Error fetching fueling records:', error);
         res.status(500).json({ message: 'Internal server error' });
@@ -399,9 +404,9 @@ router.post('/sync-id', async (req, res) => {
     }
     try {
         const updatedDispenses = [];
-        
+
         for (const transaction of allTransactions) {
-            const matchingDispense = tripSheet.dispenses.find(dispense => 
+            const matchingDispense = tripSheet.dispenses.find(dispense =>
                 dispense.fuelingDateTime.getTime() === transaction.fuelingDateTime.getTime() &&
                 dispense.fuelQuantity === transaction.fuelQuantity &&
                 dispense.vehicleNumber === transaction.vehicleNumber
@@ -443,9 +448,9 @@ router.post('/sync-verification', async (req, res) => {
     }
     try {
         const updatedDispenses = [];
-        
+
         for (const transaction of allTransactions) {
-            const matchingDispense = tripSheet.dispenses.find(dispense => 
+            const matchingDispense = tripSheet.dispenses.find(dispense =>
                 dispense.fuelingDateTime.getTime() === transaction.fuelingDateTime.getTime() &&
                 dispense.fuelQuantity === transaction.fuelQuantity &&
                 dispense.vehicleNumber === transaction.vehicleNumber
