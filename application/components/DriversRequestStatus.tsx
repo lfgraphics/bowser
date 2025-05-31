@@ -1,5 +1,5 @@
 import { DriverFuelRequest } from '@/src/types';
-import { baseUrl } from '@/src/utils/helpers';
+import { baseUrl, formatDate } from '@/src/utils/helpers';
 import React, { useState } from 'react'
 import { ThemedView } from './ThemedView';
 import { ThemedText } from './ThemedText';
@@ -120,12 +120,13 @@ const DriversRequestStatus: React.FC<Props> = ({ requestId }) => {
             {orderData &&
                 <ThemedView style={{ padding: 12, borderRadius: 6, gap: 6, paddingTop: 16 }} >
                     <ThemedText style={{ textAlign: "center", fontSize: 20, fontWeight: "bold" }}>आपके ईंधन अनुरोध की जानकारी</ThemedText>
-                    {orderData.seen && <ThemedView style={{ flexDirection: "row", alignItems: "center",  gap: 8 }}>
+                    {orderData.seen && <ThemedView style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                         <ThemedText>देख लिया गया</ThemedText>
                         <Ionicons name="checkmark-done" size={18} color="green" />
                     </ThemedView>}
                     {orderData && (!orderData.allocation && !orderData.message) && <ThemedText style={{ textAlign: "center" }}>आपका ईंधन अनुरोध अभी पूरा नहीं हुआ है, कृपया थोड़ी देर बाद दोबारा चेक करें।</ThemedText>}
                     {orderData && !orderData.allocation && orderData.message && <ThemedText style={{ textAlign: "center" }}>{orderData.message}</ThemedText>}
+                    {orderData && orderData.allocation && orderData.allocation.createdAt && <ThemedText style={{ textAlign: "center" }}>{formatDate(orderData.allocation.createdAt)}</ThemedText>}
                     {orderData && orderData.allocation?.allocationType == "bowser" && (
                         <ThemedView>
                             {orderData.allocation?.bowser.driver.location &&
