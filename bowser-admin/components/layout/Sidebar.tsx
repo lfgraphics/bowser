@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideGitPullRequestDraft, LucideSquareArrowOutUpRight, Star, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List } from 'lucide-react'
+import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideGitPullRequestDraft, LucideSquareArrowOutUpRight, Star, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List, Bell } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 import ThemeChanger from '../ThemeChanger'
@@ -109,6 +109,18 @@ export function Sidebar() {
                       <Button variant="ghost" className="justify-start w-full">
                         <CaravanIcon className="mr-2 w-4 h-4" />
                         Manage Vehicles
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed
+                  allowedRoles={["Diesel Control Center Staff", "Admin", "BCC Authorized Officer"]}
+                >
+                  <li onClick={toggleSidebar}>
+                    <Link href="/push-notifications">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <Bell className="mr-2 w-4 h-4" />
+                        Notification
                       </Button>
                     </Link>
                   </li>
@@ -319,7 +331,7 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>
-                <OnlyAllowed allowedRoles={["Admin"]}>
+                <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
                   <li onClick={toggleSidebar}>
                     <Link href="/manage-users">
                       <Button variant="ghost" className="justify-start w-full">
