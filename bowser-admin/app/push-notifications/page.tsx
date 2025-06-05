@@ -29,6 +29,7 @@ import {
 import { Label } from "@/components/ui/label";
 
 import OnlyAllowed from "@/components/OnlyAllowed";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Vehicle = {
     VehicleNo: string;
@@ -49,7 +50,7 @@ export default function PushNotificationsPage() {
     const [bowserDrivers, setBowserDrivers] = useState<BowserDriver[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [selected, setSelected] = useState<string[]>([]);
-    const [platform, setPlatform] = useState<"web" | "native">("web");
+    const [platform, setPlatform] = useState<"web" | "native">("native");
     const [openDialog, setOpenDialog] = useState(false);
     const [title, setTitle] = useState("");
     const [message, setMessage] = useState("");
@@ -62,6 +63,7 @@ export default function PushNotificationsPage() {
 
     useEffect(() => {
         const stored = localStorage.getItem("adminUser");
+        console.log("stored user: ", stored);
         if (stored) {
             const u = JSON.parse(stored);
             setUser(u);
@@ -69,8 +71,9 @@ export default function PushNotificationsPage() {
             if (u.roles?.includes("Admin")) setRole("admin");
             else if (u.roles?.includes("Diesel")) setRole("diesel");
             else if (u.roles?.includes("Bowser")) setRole("bowser");
+            console.log("detecrted roles: ", u.roles);
             setTab(
-                u.roles?.includes("Admin") ? "admin" : u.roles?.includes("Diesel") ? "diesel" : "bowser"
+                u.roles?.includes("Bowser Control Center Staff") ? "bowser" : u.roles?.includes("Diesel Control Center Staff") ? "diesel" : u.roles?.includes("Admin") ? "admin" : "diesel"
             );
         }
     }, []);
@@ -79,7 +82,6 @@ export default function PushNotificationsPage() {
     useEffect(() => {
         setSelected([]);
         if (tab === "diesel") {
-            if (vehicles?.length > 0) return;
             fetch(`${BASE_URL}/searchVehicleNumber/managed/${user?.userId}?page=${page}&limit=${limit}`)
                 .then((res) => res.json())
                 .then((data) => {
@@ -246,87 +248,90 @@ export default function PushNotificationsPage() {
         }
         // Admin: show users and vehicles in tabs
         return (
-            <Tabs defaultValue="users" className="w-full">
-                <TabsList>
-                    <TabsTrigger value="users">Users</TabsTrigger>
-                    <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
-                </TabsList>
-                <TabsContent value="users">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>SN</TableHead>
-                                <TableHead>Select</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Phone</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {users.map((u, index) => (
-                                <TableRow key={u.userId}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell>
-                                        <input
-                                            type="checkbox"
-                                            checked={selected.includes(u.phoneNumber)}
-                                            onChange={(e) => {
-                                                setSelected((sel) =>
-                                                    e.target.checked
-                                                        ? [...sel, u.phoneNumber]
-                                                        : sel.filter((id) => id !== u.phoneNumber)
-                                                );
-                                            }}
-                                        />
-                                    </TableCell>
-                                    <TableCell>{u.name}</TableCell>
-                                    <TableCell>{u.phoneNumber}</TableCell>
+            <OnlyAllowed allowedRoles={["Admin"]}>
+                <Tabs defaultValue="vehicles" className="w-full">
+                    <TabsList>
+                        <TabsTrigger value="users">Users</TabsTrigger>
+                        <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="users">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>SN</TableHead>
+                                    <TableHead>Select</TableHead>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Phone</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TabsContent>
-                <TabsContent value="vehicles">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>SN</TableHead>
-                                <TableHead>Select</TableHead>
-                                <TableHead>Vehicle</TableHead>
-                                <TableHead>Driver</TableHead>
-                                <TableHead>Phone</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {vehicles?.length > 0 && vehicles.map((v, index) => (
-                                <TableRow key={v._id}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell>
-                                        <Input
-                                            type="checkbox"
-                                            checked={selected.includes(v?.driver?.phoneNumber)}
-                                            onChange={(e) => {
-                                                setSelected((sel) =>
-                                                    e.target.checked
-                                                        ? [...sel, v?.driver?.phoneNumber]
-                                                        : sel.filter((id) => id !== v?.driver?.phoneNumber)
-                                                );
-                                            }}
-                                        />
-                                    </TableCell>
-                                    <TableCell>{v.name}</TableCell>
-                                    <TableCell>{v?.driver?.name}</TableCell>
-                                    <TableCell>{v?.driver?.phoneNumber}</TableCell>
+                            </TableHeader>
+                            <TableBody>
+                                {users.map((u, index) => (
+                                    <TableRow key={u.userId}>
+                                        <TableCell>{index + 1}</TableCell>
+                                        <TableCell>
+                                            <input
+                                                type="checkbox"
+                                                checked={selected.includes(u.phoneNumber)}
+                                                onChange={(e) => {
+                                                    setSelected((sel) =>
+                                                        e.target.checked
+                                                            ? [...sel, u.phoneNumber]
+                                                            : sel.filter((id) => id !== u.phoneNumber)
+                                                    );
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell>{u.name}</TableCell>
+                                        <TableCell>{u.phoneNumber}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TabsContent>
+                    <TabsContent value="vehicles">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>SN</TableHead>
+                                    <TableHead>Select</TableHead>
+                                    <TableHead>Vehicle</TableHead>
+                                    <TableHead>Driver</TableHead>
+                                    <TableHead>Phone</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TabsContent>
-            </Tabs>
+                            </TableHeader>
+                            <TableBody>
+                                {vehicles?.length > 0 && vehicles.map((v, index) => (
+                                    <TableRow key={v._id}>
+                                        <TableCell>{index + 1}</TableCell>
+                                        <TableCell>
+                                            <Input
+                                                type="checkbox"
+                                                checked={selected.includes(v?.driver?.phoneNumber)}
+                                                onChange={(e) => {
+                                                    setSelected((sel) =>
+                                                        e.target.checked
+                                                            ? [...sel, v?.driver?.phoneNumber]
+                                                            : sel.filter((id) => id !== v?.driver?.phoneNumber)
+                                                    );
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell>{v.name}</TableCell>
+                                        <TableCell>{v?.driver?.name}</TableCell>
+                                        <TableCell>{v?.driver?.phoneNumber}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TabsContent>
+                </Tabs>
+            </OnlyAllowed>
         );
     }
 
     return (
         <div className="p-6">
+            <Toaster />
             <h1 className="text-2xl font-bold mb-4">Send Push Notification</h1>
             <Tabs
                 value={tab}
@@ -373,37 +378,38 @@ export default function PushNotificationsPage() {
                     placeholder="Notification Message"
                     className="max-w-xs"
                 />
-                <select
-                    value={platform}
-                    onChange={(e) =>
-                        setPlatform(e.target.value as "web" | "native")
-                    }
-                >
-                    <option value="web">Web</option>
-                    <option value="native">Native</option>
-                </select>
+                <Select value={platform} onValueChange={(value) => setPlatform(value as "web" | "native")}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select platform" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="web">Web</SelectItem>
+                        <SelectItem value="native">Native</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <AlertDialog open={openDialog} onOpenChange={setOpenDialog}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Send Notification</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                <div className="space-y-2">
+                                    <div>To: {selected.length} recipient(s)</div>
+                                    <div>Title: {title}</div>
+                                    <div>Message: {message}</div>
+                                    <div>Platform: {platform}</div>
+                                </div>
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction disabled={loading} onClick={handleSend}>
+                                {loading ? "Sending..." : "Send"}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
-            <AlertDialog open={openDialog} onOpenChange={setOpenDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Send Notification</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            <div className="space-y-2">
-                                <div>To: {selected.length} recipient(s)</div>
-                                <div>Title: {title}</div>
-                                <div>Message: {message}</div>
-                                <div>Platform: {platform}</div>
-                            </div>
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction disabled={loading} onClick={handleSend}>
-                            {loading ? "Sending..." : "Send"}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     );
 }
