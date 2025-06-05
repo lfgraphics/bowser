@@ -238,7 +238,9 @@ router.patch('/verify/:id', async (req, res) => {
             tripUpdate = await updateTripSheet({ tripSheetId: transaction.tripSheetId, verify: transaction })
         }
 
-        if (!transaction || !tripUpdate.status) {
+        console.log('Trip update result:', tripUpdate);
+
+        if (!transaction || !tripUpdate.success) {
             await FuelingTransaction.findByIdAndUpdate(id, {
                 $unset: { verified: "" }
             })

@@ -146,7 +146,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                 toast({ title: "Error", description: "An unknown error occurred", variant: "destructive" });
             }
         } finally {
-            setLoading(true)
+            setLoading(false)
         }
     }
 

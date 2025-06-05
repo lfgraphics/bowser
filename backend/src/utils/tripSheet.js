@@ -23,9 +23,8 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
 
         if (verify) {
             const existingDispenseIndex = tripSheet.dispenses.findIndex(
-                (dispense) => { dispense?._id?.toString() === verify?._id?.toString(); console.log(dispense?._id?.toString(), verify?._id?.toString()) }
+                (dispense) => dispense?._id?.toString() === verify?._id?.toString()
             );
-            console.log('verification dispense: ', verify);
 
             if (existingDispenseIndex === -1) {
                 console.error(`No dispense found for the specified _id: ${verify?._id}`);
