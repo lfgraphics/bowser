@@ -27,6 +27,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
+
 import OnlyAllowed from "@/components/OnlyAllowed";
 
 type Vehicle = {
@@ -153,6 +154,7 @@ export default function PushNotificationsPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
+
                         {vehicles?.length > 0 && vehicles?.map((v, index) => (
                             <TableRow key={v._id}>
                                 <TableCell>{index + 1}</TableCell>
@@ -203,7 +205,7 @@ export default function PushNotificationsPage() {
                             </div>
                         </div>
                     </TableCaption>
-                </Table>
+                </Table >
             );
         }
         if (tab === "bowser") {
