@@ -95,11 +95,10 @@ router.post('/bulk-send', async (req, res) => {
     }
 
     try {
-        const { results, errors } = await sendBulkNotifications(groups, recipients, message, platform, options);
-
+        const { results, errors } = await sendBulkNotifications({ groups, recipients, message, platform, options });
         res.status(200).json({ success: true, results, errors });
     } catch (error) {
-        console.error('Error sending bulk notifications:', error.message);
+        console.error('Error sending bulk notifications:', error);
         res.status(500).json({ error: error.message });
     }
 });

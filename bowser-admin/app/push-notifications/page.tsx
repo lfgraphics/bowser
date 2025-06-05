@@ -35,7 +35,10 @@ type Vehicle = {
     VehicleNo: string;
     _id: string;
     name: string;
-    driver: { ITPLId: string; name: string; phoneNumber: string };
+    tripDetails: {
+        _id: string;
+        driver: { name: string; mobile: string };
+    };
 };
 type BowserDriver = {
     roles: [{ _id: string, name: string }]; id: string; name: string; phoneNumber: string
@@ -82,10 +85,12 @@ export default function PushNotificationsPage() {
     useEffect(() => {
         setSelected([]);
         if (tab === "diesel") {
+            if (!user || !user.userId) return;
             fetch(`${BASE_URL}/searchVehicleNumber/managed/${user?.userId}?page=${page}&limit=${limit}`)
                 .then((res) => res.json())
                 .then((data) => {
                     setVehicles(data.vehicles);
+                    console.log("vehicles: ", data.vehicles);
                     setTotalPages(data.pagination.totalPages);
                     setTotalItems(data.pagination.totalItems);
                 })
@@ -102,10 +107,6 @@ export default function PushNotificationsPage() {
                 .then((res) => res.json())
                 .then((data) => setUsers(data))
                 .catch(() => toast({ variant: "destructive", description: "Failed to fetch users" }));
-            fetch(`${BASE_URL}/vehicle`)
-                .then((res) => res.json())
-                .then((data) => setVehicles(data))
-                .catch(() => toast({ variant: "destructive", description: "Failed to fetch vehicles" }));
         }
     }, [tab, user, page, limit]);
 
@@ -118,7 +119,7 @@ export default function PushNotificationsPage() {
         setLoading(true);
         try {
             const payload = {
-                recipients: selected,
+                recipients: selected.map(number => ({ mobileNumber: number })),
                 message,
                 platform,
                 options: { title },
@@ -130,11 +131,21 @@ export default function PushNotificationsPage() {
                 body: JSON.stringify(payload),
             });
             if (!res.ok) throw new Error("Failed to send notification");
-            toast({ variant: "default", description: "Notification sent!" });
-            setOpenDialog(false);
-            setTitle("");
-            setMessage("");
-            setSelected([]);
+            const data = await res.json();
+            if (data.success) {
+                toast({ variant: "default", description: "Notification sent successfully!" });
+                setOpenDialog(false);
+                setTitle("");
+                setMessage("");
+                setSelected([]);
+            } else {
+                const errorCount = data.errors?.length || 0;
+                const successCount = data.results?.length || 0;
+                toast({ 
+                    variant: errorCount > 0 ? "destructive" : "default",
+                    description: `${successCount} notifications sent, ${errorCount} failed.`
+                });
+            }
         } catch (e) {
             toast({ variant: "destructive", description: "Failed to send notification." });
         } finally {
@@ -149,6 +160,7 @@ export default function PushNotificationsPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead>SN</TableHead>
                             <TableHead>Select</TableHead>
                             <TableHead>Vehicle</TableHead>
                             <TableHead>Driver</TableHead>
@@ -163,19 +175,19 @@ export default function PushNotificationsPage() {
                                 <TableCell>
                                     <input
                                         type="checkbox"
-                                        checked={selected.includes(v?.driver?.phoneNumber)}
+                                        checked={selected.includes(v?.tripDetails?.driver?.mobile)}
                                         onChange={(e) => {
                                             setSelected((sel) =>
                                                 e.target.checked
-                                                    ? [...sel, v?.driver?.phoneNumber]
-                                                    : sel.filter((id) => id !== v?.driver?.phoneNumber)
+                                                    ? [...sel, v?.tripDetails?.driver?.mobile]
+                                                    : sel.filter((id) => id !== v?.tripDetails?.driver?.mobile)
                                             );
                                         }}
                                     />
                                 </TableCell>
                                 <TableCell>{v.VehicleNo}</TableCell>
-                                <TableCell>{v?.driver?.name}</TableCell>
-                                <TableCell>{v?.driver?.phoneNumber}</TableCell>
+                                <TableCell>{v?.tripDetails?.driver?.name}</TableCell>
+                                <TableCell>{v?.tripDetails?.driver?.mobile}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -246,87 +258,125 @@ export default function PushNotificationsPage() {
                 </Table>
             );
         }
+        if (tab === "admin") {
+            return (
+                <OnlyAllowed allowedRoles={["Admin"]}>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>SN</TableHead>
+                                <TableHead>Select</TableHead>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Phone</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {users.map((u, index) => (
+                                <TableRow key={u.userId}>
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>
+                                        <input
+                                            type="checkbox"
+                                            checked={selected.includes(u.phoneNumber)}
+                                            onChange={(e) => {
+                                                setSelected((sel) =>
+                                                    e.target.checked
+                                                        ? [...sel, u.phoneNumber]
+                                                        : sel.filter((id) => id !== u.phoneNumber)
+                                                );
+                                            }}
+                                        />
+                                    </TableCell>
+                                    <TableCell>{u.name}</TableCell>
+                                    <TableCell>{u.phoneNumber}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </OnlyAllowed>
+            );
+        }
         // Admin: show users and vehicles in tabs
-        return (
-            <OnlyAllowed allowedRoles={["Admin"]}>
-                <Tabs defaultValue="vehicles" className="w-full">
-                    <TabsList>
-                        <TabsTrigger value="users">Users</TabsTrigger>
-                        <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="users">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>SN</TableHead>
-                                    <TableHead>Select</TableHead>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Phone</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {users.map((u, index) => (
-                                    <TableRow key={u.userId}>
-                                        <TableCell>{index + 1}</TableCell>
-                                        <TableCell>
-                                            <input
-                                                type="checkbox"
-                                                checked={selected.includes(u.phoneNumber)}
-                                                onChange={(e) => {
-                                                    setSelected((sel) =>
-                                                        e.target.checked
-                                                            ? [...sel, u.phoneNumber]
-                                                            : sel.filter((id) => id !== u.phoneNumber)
-                                                    );
-                                                }}
-                                            />
-                                        </TableCell>
-                                        <TableCell>{u.name}</TableCell>
-                                        <TableCell>{u.phoneNumber}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TabsContent>
-                    <TabsContent value="vehicles">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>SN</TableHead>
-                                    <TableHead>Select</TableHead>
-                                    <TableHead>Vehicle</TableHead>
-                                    <TableHead>Driver</TableHead>
-                                    <TableHead>Phone</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {vehicles?.length > 0 && vehicles.map((v, index) => (
-                                    <TableRow key={v._id}>
-                                        <TableCell>{index + 1}</TableCell>
-                                        <TableCell>
-                                            <Input
-                                                type="checkbox"
-                                                checked={selected.includes(v?.driver?.phoneNumber)}
-                                                onChange={(e) => {
-                                                    setSelected((sel) =>
-                                                        e.target.checked
-                                                            ? [...sel, v?.driver?.phoneNumber]
-                                                            : sel.filter((id) => id !== v?.driver?.phoneNumber)
-                                                    );
-                                                }}
-                                            />
-                                        </TableCell>
-                                        <TableCell>{v.name}</TableCell>
-                                        <TableCell>{v?.driver?.name}</TableCell>
-                                        <TableCell>{v?.driver?.phoneNumber}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TabsContent>
-                </Tabs>
-            </OnlyAllowed>
-        );
+        // return (
+        //     <OnlyAllowed allowedRoles={["Admin"]}>
+        //         <Tabs defaultValue="vehicles" className="w-full">
+        //             <TabsList>
+        //                 <TabsTrigger value="users">Users</TabsTrigger>
+        //                 <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
+        //             </TabsList>
+        //             <TabsContent value="users">
+        //                 <Table>
+        //                     <TableHeader>
+        //                         <TableRow>
+        //                             <TableHead>SN</TableHead>
+        //                             <TableHead>Select</TableHead>
+        //                             <TableHead>Name</TableHead>
+        //                             <TableHead>Phone</TableHead>
+        //                         </TableRow>
+        //                     </TableHeader>
+        //                     <TableBody>
+        //                         {users.map((u, index) => (
+        //                             <TableRow key={u.userId}>
+        //                                 <TableCell>{index + 1}</TableCell>
+        //                                 <TableCell>
+        //                                     <input
+        //                                         type="checkbox"
+        //                                         checked={selected.includes(u.phoneNumber)}
+        //                                         onChange={(e) => {
+        //                                             setSelected((sel) =>
+        //                                                 e.target.checked
+        //                                                     ? [...sel, u.phoneNumber]
+        //                                                     : sel.filter((id) => id !== u.phoneNumber)
+        //                                             );
+        //                                         }}
+        //                                     />
+        //                                 </TableCell>
+        //                                 <TableCell>{u.name}</TableCell>
+        //                                 <TableCell>{u.phoneNumber}</TableCell>
+        //                             </TableRow>
+        //                         ))}
+        //                     </TableBody>
+        //                 </Table>
+        //             </TabsContent>
+        //             <TabsContent value="vehicles">
+        //                 <Table>
+        //                     <TableHeader>
+        //                         <TableRow>
+        //                             <TableHead>SN</TableHead>
+        //                             <TableHead>Select</TableHead>
+        //                             <TableHead>Vehicle</TableHead>
+        //                             <TableHead>Driver</TableHead>
+        //                             <TableHead>Phone</TableHead>
+        //                         </TableRow>
+        //                     </TableHeader>
+        //                     <TableBody>
+        //                         {vehicles?.length > 0 && vehicles.map((v, index) => (
+        //                             <TableRow key={v._id}>
+        //                                 <TableCell>{index + 1}</TableCell>
+        //                                 <TableCell>
+        //                                     <Input
+        //                                         type="checkbox"
+        //                                         checked={selected.includes(v?.tripDetails?.driver?.mobile)}
+        //                                         onChange={(e) => {
+        //                                             setSelected((sel) =>
+        //                                                 e.target.checked
+        //                                                     ? [...sel, v?.tripDetails?.driver?.mobile]
+        //                                                     : sel.filter((id) => id !== v?.tripDetails?.driver?.mobile)
+        //                                             );
+        //                                         }}
+        //                                     />
+        //                                 </TableCell>
+        //                                 <TableCell>{v.name}</TableCell>
+        //                                 <TableCell>{v?.tripDetails?.driver?.name}</TableCell>
+        //                                 <TableCell>{v?.tripDetails?.driver?.mobile}</TableCell>
+        //                             </TableRow>
+        //                         ))}
+        //                     </TableBody>
+        //                 </Table>
+        //             </TabsContent>
+        //         </Tabs>
+        //     </OnlyAllowed>
+        // );
     }
 
     return (
