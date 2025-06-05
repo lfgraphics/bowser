@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { downloadExcel } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
     AlertDialog,
@@ -31,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import OnlyAllowed from "@/components/OnlyAllowed";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import Loading from "../loading";
 
 type Vehicle = {
     VehicleNo: string;
@@ -46,8 +48,73 @@ type BowserDriver = {
 };
 type Role = "admin" | "diesel" | "bowser";
 
+const createExcelData = ({
+    vehicles,
+    bowserDrivers,
+    users,
+}: { vehicles: Vehicle[], bowserDrivers: BowserDriver[], users: User[] }) => {
+    let data: any[] = [];
+    let columns: { label: string, value: string }[] = [];
+    let sheet = "";
+
+    if (vehicles.length > 0) {
+        sheet = "Vehicles";
+        columns = [
+            { label: "SN", value: "SN" },
+            { label: "Vehicle No", value: "Vehicle No" },
+            { label: "Driver Name", value: "Driver Name" },
+            { label: "Driver Phone", value: "Driver Phone" },
+            { label: "Registered", value: "Registered" },
+        ];
+        data = vehicles.map((v, index) => ({
+            "SN": index + 1,
+            "Vehicle No": v.VehicleNo,
+            "Driver Name": v?.tripDetails?.driver?.name,
+            "Driver Phone": v?.tripDetails?.driver?.mobile,
+            "Registered": v?.tripDetails?.driver?.isRegistered ? "Yes" : "No",
+        }));
+    } else if (bowserDrivers.length > 0) {
+        sheet = "Bowser Drivers";
+        columns = [
+            { label: "SN", value: "SN" },
+            { label: "Name", value: "Name" },
+            { label: "Phone", value: "Phone" },
+        ];
+        data = bowserDrivers.map((d, index) => ({
+            "SN": index + 1,
+            "Name": d.name,
+            "Phone": d.phoneNumber,
+        }));
+    } else if (users.length > 0) {
+        sheet = "Users";
+        columns = [
+            { label: "SN", value: "SN" },
+            { label: "Name", value: "Name" },
+            { label: "User ID", value: "User ID" },
+            { label: "Phone", value: "Phone" },
+        ];
+        data = users.map((u, index) => ({
+            "SN": index + 1,
+            "Name": u.name,
+            "User ID": u.userId,
+            "Phone": u.phoneNumber,
+        }));
+    }
+
+    if (!data.length) return [];
+
+    return [
+        {
+            sheet,
+            columns,
+            content: data,
+        },
+    ];
+}
+
 export default function PushNotificationsPage() {
     const { toast } = useToast();
+    const [loadings, setLoadings] = useState(true);
     const [user, setUser] = useState<User | null>(null);
     const [role, setRole] = useState<Role>("admin");
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -67,18 +134,24 @@ export default function PushNotificationsPage() {
 
     useEffect(() => {
         const stored = localStorage.getItem("adminUser");
-        console.log("stored user: ", stored);
-        if (stored) {
-            const u = JSON.parse(stored);
-            setUser(u);
-            // Set role based on user (adjust as per your logic)
-            if (u.roles?.includes("Admin")) setRole("admin");
-            else if (u.roles?.includes("Diesel")) setRole("diesel");
-            else if (u.roles?.includes("Bowser")) setRole("bowser");
-            console.log("detecrted roles: ", u.roles);
-            setTab(
-                u.roles?.includes("Bowser Control Center Staff") ? "bowser" : u.roles?.includes("Diesel Control Center Staff") ? "diesel" : u.roles?.includes("Admin") ? "admin" : "diesel"
-            );
+        try {
+            setLoadings(true);
+            if (stored) {
+                const u = JSON.parse(stored);
+                setUser(u);
+                // Set role based on user (adjust as per your logic)
+                if (u.roles?.includes("Admin")) setRole("admin");
+                else if (u.roles?.includes("Diesel")) setRole("diesel");
+                else if (u.roles?.includes("Bowser")) setRole("bowser");
+                console.log("detecrted roles: ", u.roles);
+                setTab(
+                    u.roles?.includes("Bowser Control Center Staff") ? "bowser" : u.roles?.includes("Diesel Control Center Staff") ? "diesel" : u.roles?.includes("Admin") ? "admin" : "diesel"
+                );
+            }
+        } catch (e) {
+            console.error("Failed to parse user data from localStorage", e);
+        } finally {
+            setLoadings(false);
         }
     }, []);
 
@@ -191,7 +264,7 @@ export default function PushNotificationsPage() {
                                 <TableCell>{v?.tripDetails?.driver?.mobile}</TableCell>
                                 <TableCell>
                                     <Badge variant={v?.tripDetails?.driver?.isRegistered ? "succes" : "destructive"}>
-                                        {v?.tripDetails?.driver?.isRegistered? "Yes" : "No"}
+                                        {v?.tripDetails?.driver?.isRegistered ? "Yes" : "No"}
                                     </Badge>
                                 </TableCell>
                             </TableRow>
@@ -345,54 +418,17 @@ export default function PushNotificationsPage() {
         //                 </Table>
         //             </TabsContent>
         //             <TabsContent value="vehicles">
-        //                 <Table>
-        //                     <TableHeader>
-        //                         <TableRow>
-        //                             <TableHead>SN</TableHead>
-        //                             <TableHead>Select</TableHead>
-        //                             <TableHead>Vehicle</TableHead>
-        //                             <TableHead>Driver</TableHead>
-        //                             <TableHead>Phone</TableHead>
-        //                         </TableRow>
-        //                     </TableHeader>
-        //                     <TableBody>
-        //                         {vehicles?.length > 0 && vehicles.map((v, index) => (
-        //                             <TableRow key={v._id}>
-        //                                 <TableCell>{index + 1}</TableCell>
-        //                                 <TableCell>
-        //                                     <Input
-        //                                         type="checkbox"
-        //                                         checked={selected.includes(v?.tripDetails?.driver?.mobile)}
-        //                                         onChange={(e) => {
-        //                                             setSelected((sel) =>
-        //                                                 e.target.checked
-        //                                                     ? [...sel, v?.tripDetails?.driver?.mobile]
-        //                                                     : sel.filter((id) => id !== v?.tripDetails?.driver?.mobile)
-        //                                             );
-        //                                         }}
-        //                                     />
-        //                                 </TableCell>
-        //                                 <TableCell>{v.name}</TableCell>
-        //                                 <TableCell>{v?.tripDetails?.driver?.name}</TableCell>
-        //                                 <TableCell>{v?.tripDetails?.driver?.mobile}</TableCell>
-        //                             </TableRow>
-        //                         ))}
-        //                     </TableBody>
-        //                 </Table>
-        //             </TabsContent>
-        //         </Tabs>
-        //     </OnlyAllowed>
-        // );
     }
 
     return (
         <div className="p-6">
             <Toaster />
+            {loading && <Loading />}
             <h1 className="text-2xl font-bold mb-4">Send Push Notification</h1>
             <Tabs
                 value={tab}
                 onValueChange={(v) => setTab(v as Role)}
-                className="mb-4"
+                className="mb-4 flex flex-col md:flex-row items-start md:items-center justify-between"
             >
                 <TabsList>
                     {(role === "admin" || role === "diesel") && (
@@ -411,6 +447,16 @@ export default function PushNotificationsPage() {
                         </OnlyAllowed>
                     }
                 </TabsList>
+                <Button onClick={() => {
+                    const filename = `${tab}-data-${new Date().toISOString().split('T')[0]}`;
+                    downloadExcel(createExcelData({
+                        vehicles: tab === "diesel" ? vehicles : [],
+                        bowserDrivers: tab === "bowser" ? bowserDrivers : [],
+                        users: tab === "admin" ? users : []
+                    }), filename);
+                }}>
+                    Download as Excel
+                </Button>
             </Tabs>
             <div className="mb-4">{renderSelection()}</div>
             <div className="flex gap-2 mb-4">

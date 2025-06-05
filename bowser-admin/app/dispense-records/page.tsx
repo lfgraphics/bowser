@@ -33,7 +33,7 @@ import { Check, Eye, ListChecks, ListX, X } from "lucide-react";
 import { BASE_URL } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
-import { formatDate } from "@/lib/utils";
+import { downloadExcel, formatDate } from "@/lib/utils";
 
 const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: number, allocator: string, limit?: number } }) => {
   const tripNumber = searchParams.tripNumber;
@@ -108,45 +108,58 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
     }
   };
 
-  const exportToExcel = async () => {
+  const exportToExcel = () => {
     setLoading(true);
     try {
-      const date = new Date();
-      const options: Intl.DateTimeFormatOptions = {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-        timeZone: 'Asia/Kolkata',
-      };
-      const timestamp: string = date.toLocaleDateString('en-IN', options);
+      const timestamp = formatDate(new Date());
+      const filterDescription = `${filter.bowserNumber ? `Bowser-${filter.bowserNumber} ,` : ''}${filter.driverName ? `Driver-${filter.driverName} ,` : ''}${filter.tripSheetId ? `Trip Sheet-${filter.tripSheetId} ,` : ''}`;
+      const filename = `Dispenses_data ${filterDescription} ${records.length}record${records.length > 1 ? "s" : ""}, downloaded at ${timestamp}`;
 
-      const filterDescription = `${filter.bowserNumber ? `Bowser-${filter.bowserNumber} ,` : ''}${filter.driverName ? `Driver-${filter.driverName} ,` : ''}${filter.tripSheetId ? `Trip Sheet-${filter.tripSheetId} ,` : ''}`; //${selectedDateRange != undefined && dateDescription}`;
-      const filename = `Dispenses_data ${filterDescription} ${records.length}record${records.length > 1 ? "s" : ""}, downloaded at ${timestamp}.xlsx`;
+      const columns = [
+        { label: 'S.No', value: 'S.No' },
+        { label: 'Trip Sheet Id', value: 'Trip Sheet Id' },
+        { label: 'Category', value: 'Category' },
+        { label: 'Party/Vendor', value: 'Party/Vendor' },
+        { label: 'Fueling Time', value: 'Fueling Time' },
+        { label: 'Bowser No.', value: 'Bowser No.' },
+        { label: 'Bowser Location', value: 'Bowser Location' },
+        { label: 'Driver/Manager', value: 'Driver/Manager' },
+        { label: 'Phone No.', value: 'Phone No.' },
+        { label: 'Vehicle Number', value: 'Vehicle Number' },
+        { label: 'Odo Meter', value: 'Odo Meter' },
+        { label: 'Qty Type', value: 'Qty Type' },
+        { label: 'Fuel Qty', value: 'Fuel Qty' },
+        { label: 'Verified', value: 'Verified' },
+        { label: 'Posted', value: 'Posted' }
+      ];
 
-      const response = await axios.get(`${BASE_URL}/listDispenses/export/excel`, {
-        params: {
-          bowserNumber: filter.bowserNumber,
-          driverName: filter.driverName,
-          tripSheetId: filter.tripSheetId,
-          sortBy,
-          order,
-          limit,
+      const data = records.map((record, index) => ({
+        'S.No': index + 1,
+        'Trip Sheet Id': record.tripSheetId,
+        'Category': record.category,
+        'Party/Vendor': record.party,
+        'Fueling Time': formatDate(record.fuelingDateTime),
+        'Bowser No.': record.bowser.regNo,
+        'Bowser Location': record.location,
+        'Driver/Manager': record.driverName,
+        'Phone No.': record.driverMobile,
+        'Vehicle Number': record.vehicleNumber,
+        'Odo Meter': record.odometer,
+        'Qty Type': record.quantityType,
+        'Fuel Qty': record.fuelQuantity,
+        'Verified': record.verified ? 'Yes' : 'No',
+        'Posted': record.posted?.status ? 'Yes' : 'No'
+      }));
+
+      const sheetData = [
+        {
+          sheet: "Dispense Records",
+          columns,
+          content: data,
         },
-        responseType: "blob",
-      });
+      ];
 
-      // Create a URL for the Blob and trigger the download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", filename); // Use the generated filename
-      document.body.appendChild(link);
-      link.click();
-      link.remove(); // Clean up the link element
+      downloadExcel(sheetData, filename);
     } catch (error) {
       console.error("Error exporting data:", error);
       alert("Error exporting data.");
@@ -155,7 +168,6 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
     }
   };
 
-  // Function to toggle selection of a row
   const toggleRowSelection = (id: string) => {
     setSelectedRows((prev) => {
       const newSelectedRows = new Set(prev);
