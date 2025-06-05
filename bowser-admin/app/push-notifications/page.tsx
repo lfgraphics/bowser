@@ -30,6 +30,7 @@ import { Label } from "@/components/ui/label";
 
 import OnlyAllowed from "@/components/OnlyAllowed";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 type Vehicle = {
     VehicleNo: string;
@@ -37,7 +38,7 @@ type Vehicle = {
     name: string;
     tripDetails: {
         _id: string;
-        driver: { name: string; mobile: string };
+        driver: { name: string; mobile: string, isRegistered: boolean };
     };
 };
 type BowserDriver = {
@@ -141,7 +142,7 @@ export default function PushNotificationsPage() {
             } else {
                 const errorCount = data.errors?.length || 0;
                 const successCount = data.results?.length || 0;
-                toast({ 
+                toast({
                     variant: errorCount > 0 ? "destructive" : "default",
                     description: `${successCount} notifications sent, ${errorCount} failed.`
                 });
@@ -165,10 +166,10 @@ export default function PushNotificationsPage() {
                             <TableHead>Vehicle</TableHead>
                             <TableHead>Driver</TableHead>
                             <TableHead>Phone</TableHead>
+                            <TableHead>Registered</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-
                         {vehicles?.length > 0 && vehicles?.map((v, index) => (
                             <TableRow key={v._id}>
                                 <TableCell>{index + 1}</TableCell>
@@ -188,6 +189,11 @@ export default function PushNotificationsPage() {
                                 <TableCell>{v.VehicleNo}</TableCell>
                                 <TableCell>{v?.tripDetails?.driver?.name}</TableCell>
                                 <TableCell>{v?.tripDetails?.driver?.mobile}</TableCell>
+                                <TableCell>
+                                    <Badge variant={v?.tripDetails?.driver?.isRegistered ? "succes" : "destructive"}>
+                                        {v?.tripDetails?.driver?.isRegistered? "Yes" : "No"}
+                                    </Badge>
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

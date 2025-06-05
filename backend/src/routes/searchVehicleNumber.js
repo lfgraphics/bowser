@@ -94,7 +94,7 @@ router.get('/managed/:userId', async (req, res) => {
 
                 // Fetch driver details from the drivers collection using the extracted ITPL number
                 const driver = await Driver.findOne({
-                    Name: { $regex: itplNumber, $options: 'i' }
+                    Name: `${vehicle.tripDetails.driver}`
                 });
 
                 if (driver && driver.MobileNo && Array.isArray(driver.MobileNo)) {
@@ -104,13 +104,15 @@ router.get('/managed/:userId', async (req, res) => {
                         lastUsedMobileNo = lastUsedMobile.MobileNo;
                     }
                 }
+                const isRegistered = driver?.password ? true : false;
 
                 // Reformat tripDetails.driver with updated structure
                 const updatedTripDetails = {
                     ...vehicle.tripDetails,
                     driver: {
                         name: driverName,
-                        mobile: lastUsedMobileNo
+                        mobile: lastUsedMobileNo,
+                        isRegistered
                     }
                 };
 
