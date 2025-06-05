@@ -114,7 +114,7 @@ export function Sidebar() {
                   </li>
                 </OnlyAllowed>
                 <OnlyAllowed
-                  allowedRoles={["Diesel Control Center Staff", "Admin"]}
+                  allowedRoles={["Diesel Control Center Staff", "Admin", "BCC Authorized Officer"]}
                 >
                   <li onClick={toggleSidebar}>
                     <Link href="/push-notifications">
