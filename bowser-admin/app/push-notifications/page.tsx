@@ -114,7 +114,6 @@ const createExcelData = ({
 
 export default function PushNotificationsPage() {
     const { toast } = useToast();
-    const [loadings, setLoadings] = useState(true);
     const [user, setUser] = useState<User | null>(null);
     const [role, setRole] = useState<Role>("admin");
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -126,7 +125,7 @@ export default function PushNotificationsPage() {
     const [title, setTitle] = useState("");
     const [message, setMessage] = useState("");
     const [tab, setTab] = useState<Role>("diesel");
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
@@ -135,7 +134,7 @@ export default function PushNotificationsPage() {
     useEffect(() => {
         const stored = localStorage.getItem("adminUser");
         try {
-            setLoadings(true);
+            setLoading(true);
             if (stored) {
                 const u = JSON.parse(stored);
                 setUser(u);
@@ -145,13 +144,13 @@ export default function PushNotificationsPage() {
                 else if (u.roles?.includes("Bowser")) setRole("bowser");
                 console.log("detecrted roles: ", u.roles);
                 setTab(
-                    u.roles?.includes("Bowser Control Center Staff") ? "bowser" : u.roles?.includes("Diesel Control Center Staff") ? "diesel" : u.roles?.includes("Admin") ? "admin" : "diesel"
+                    u.roles?.includes("BCC Authorized Officer") ? "bowser" : u.roles?.includes("Diesel Control Center Staff") ? "diesel" : u.roles?.includes("Admin") ? "admin" : "diesel"
                 );
             }
         } catch (e) {
             console.error("Failed to parse user data from localStorage", e);
         } finally {
-            setLoadings(false);
+            setLoading(false);
         }
     }, []);
 
@@ -375,49 +374,6 @@ export default function PushNotificationsPage() {
                 </OnlyAllowed>
             );
         }
-        // Admin: show users and vehicles in tabs
-        // return (
-        //     <OnlyAllowed allowedRoles={["Admin"]}>
-        //         <Tabs defaultValue="vehicles" className="w-full">
-        //             <TabsList>
-        //                 <TabsTrigger value="users">Users</TabsTrigger>
-        //                 <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
-        //             </TabsList>
-        //             <TabsContent value="users">
-        //                 <Table>
-        //                     <TableHeader>
-        //                         <TableRow>
-        //                             <TableHead>SN</TableHead>
-        //                             <TableHead>Select</TableHead>
-        //                             <TableHead>Name</TableHead>
-        //                             <TableHead>Phone</TableHead>
-        //                         </TableRow>
-        //                     </TableHeader>
-        //                     <TableBody>
-        //                         {users.map((u, index) => (
-        //                             <TableRow key={u.userId}>
-        //                                 <TableCell>{index + 1}</TableCell>
-        //                                 <TableCell>
-        //                                     <input
-        //                                         type="checkbox"
-        //                                         checked={selected.includes(u.phoneNumber)}
-        //                                         onChange={(e) => {
-        //                                             setSelected((sel) =>
-        //                                                 e.target.checked
-        //                                                     ? [...sel, u.phoneNumber]
-        //                                                     : sel.filter((id) => id !== u.phoneNumber)
-        //                                             );
-        //                                         }}
-        //                                     />
-        //                                 </TableCell>
-        //                                 <TableCell>{u.name}</TableCell>
-        //                                 <TableCell>{u.phoneNumber}</TableCell>
-        //                             </TableRow>
-        //                         ))}
-        //                     </TableBody>
-        //                 </Table>
-        //             </TabsContent>
-        //             <TabsContent value="vehicles">
     }
 
     return (
