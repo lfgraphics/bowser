@@ -403,16 +403,89 @@ export default function PushNotificationsPage() {
                         </OnlyAllowed>
                     }
                 </TabsList>
-                <Button onClick={() => {
-                    const filename = `${tab}-data-${new Date().toISOString().split('T')[0]}`;
-                    downloadExcel(createExcelData({
-                        vehicles: tab === "diesel" ? vehicles : [],
-                        bowserDrivers: tab === "bowser" ? bowserDrivers : [],
-                        users: tab === "admin" ? users : []
-                    }), filename);
-                }}>
-                    Download as Excel
-                </Button>
+                <div className="action-buttons flex gap-2 items-center">
+                    {tab === "diesel" && (
+                        <Button
+                            onClick={() => {
+                                const registeredMobiles = vehicles
+                                    .filter(v => v?.tripDetails?.driver?.isRegistered && v?.tripDetails?.driver?.mobile)
+                                    .map(v => v.tripDetails.driver.mobile);
+
+                                // If all registered are already selected, unselect them; otherwise, select all registered
+                                const allRegisteredSelected = registeredMobiles.every(mobile => selected.includes(mobile));
+                                if (allRegisteredSelected) {
+                                    setSelected(selected.filter(mobile => !registeredMobiles.includes(mobile)));
+                                } else {
+                                    setSelected([
+                                        ...selected.filter(mobile => !registeredMobiles.includes(mobile)),
+                                        ...registeredMobiles.filter(mobile => !selected.includes(mobile)),
+                                    ]);
+                                }
+                            }}
+                        >
+                            {vehicles.filter(v => v?.tripDetails?.driver?.isRegistered && v?.tripDetails?.driver?.mobile)
+                                .every(v => selected.includes(v.tripDetails.driver.mobile))
+                                ? "Unselect Registered"
+                                : "Select Registered"}
+                        </Button>
+                    )}
+                    {tab === "bowser" && (
+                        <Button
+                            onClick={() => {
+                                const driverMobiles = bowserDrivers
+                                    .filter(d => d.roles?.some(role => role.name === "Bowser Driver"))
+                                    .map(d => d.phoneNumber);
+
+                                const allSelected = driverMobiles.every(mobile => selected.includes(mobile));
+                                if (allSelected) {
+                                    setSelected(selected.filter(mobile => !driverMobiles.includes(mobile)));
+                                } else {
+                                    setSelected([
+                                        ...selected.filter(mobile => !driverMobiles.includes(mobile)),
+                                        ...driverMobiles.filter(mobile => !selected.includes(mobile)),
+                                    ]);
+                                }
+                            }}
+                        >
+                            {bowserDrivers.filter(d => d.roles?.some(role => role.name === "Bowser Driver"))
+                                .every(d => selected.includes(d.phoneNumber))
+                                ? "Unselect All"
+                                : "Select All"}
+                        </Button>
+                    )}
+                    {tab === "admin" && (
+                        <Button
+                            onClick={() => {
+                                const userMobiles = users
+                                    .map(u => u.phoneNumber);
+
+                                const allSelected = userMobiles.every(mobile => selected.includes(mobile));
+                                if (allSelected) {
+                                    setSelected(selected.filter(mobile => !userMobiles.includes(mobile)));
+                                } else {
+                                    setSelected([
+                                        ...selected.filter(mobile => !userMobiles.includes(mobile)),
+                                        ...userMobiles.filter(mobile => !selected.includes(mobile)),
+                                    ]);
+                                }
+                            }}
+                        >
+                            {users.every(u => selected.includes(u.phoneNumber))
+                                ? "Unselect All"
+                                : "Select All"}
+                        </Button>
+                    )}
+                    <Button onClick={() => {
+                        const filename = `${tab}-data-${new Date().toISOString().split('T')[0]}`;
+                        downloadExcel(createExcelData({
+                            vehicles: tab === "diesel" ? vehicles : [],
+                            bowserDrivers: tab === "bowser" ? bowserDrivers : [],
+                            users: tab === "admin" ? users : []
+                        }), filename);
+                    }}>
+                        Download as Excel
+                    </Button>
+                </div>
             </Tabs>
             <div className="mb-4">{renderSelection()}</div>
             <div className="flex gap-2 mb-4">
