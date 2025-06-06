@@ -116,39 +116,39 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
       const filename = `Dispenses_data ${filterDescription} ${records.length}record${records.length > 1 ? "s" : ""}, downloaded at ${timestamp}`;
 
       const columns = [
-        { label: 'S.No', value: 'S.No' },
-        { label: 'Trip Sheet Id', value: 'Trip Sheet Id' },
-        { label: 'Category', value: 'Category' },
-        { label: 'Party/Vendor', value: 'Party/Vendor' },
-        { label: 'Fueling Time', value: 'Fueling Time' },
-        { label: 'Bowser No.', value: 'Bowser No.' },
-        { label: 'Bowser Location', value: 'Bowser Location' },
-        { label: 'Driver/Manager', value: 'Driver/Manager' },
-        { label: 'Phone No.', value: 'Phone No.' },
-        { label: 'Vehicle Number', value: 'Vehicle Number' },
-        { label: 'Odo Meter', value: 'Odo Meter' },
-        { label: 'Qty Type', value: 'Qty Type' },
-        { label: 'Fuel Qty', value: 'Fuel Qty' },
-        { label: 'Verified', value: 'Verified' },
-        { label: 'Posted', value: 'Posted' }
+        { label: 'S.No', value: 'sNo' },
+        { label: 'Trip Sheet Id', value: 'tripSheetId' },
+        { label: 'Category', value: 'category' },
+        { label: 'Party/Vendor', value: 'partyVendor' },
+        { label: 'Fueling Time', value: 'fuelingTime' },
+        { label: 'Bowser No.', value: 'bowserNo' },
+        { label: 'Bowser Location', value: 'bowserLocation' },
+        { label: 'Driver/Manager', value: 'driverManager' },
+        { label: 'Phone No.', value: 'phoneNo' },
+        { label: 'Vehicle Number', value: 'vehicleNumber' },
+        { label: 'Odo Meter', value: 'odoMeter' },
+        { label: 'Qty Type', value: 'qtyType' },
+        { label: 'Fuel Qty', value: 'fuelQty' },
+        { label: 'Verified', value: 'verified' },
+        { label: 'Posted', value: 'posted' }
       ];
 
       const data = records.map((record, index) => ({
-        'S.No': index + 1,
-        'Trip Sheet Id': record.tripSheetId,
-        'Category': record.category,
-        'Party/Vendor': record.party,
-        'Fueling Time': formatDate(record.fuelingDateTime),
-        'Bowser No.': record.bowser.regNo,
-        'Bowser Location': record.location,
-        'Driver/Manager': record.driverName,
-        'Phone No.': record.driverMobile,
-        'Vehicle Number': record.vehicleNumber,
-        'Odo Meter': record.odometer,
-        'Qty Type': record.quantityType,
-        'Fuel Qty': record.fuelQuantity,
-        'Verified': record.verified ? 'Yes' : 'No',
-        'Posted': record.posted?.status ? 'Yes' : 'No'
+        sNo: index + 1,
+        tripSheetId: record.tripSheetId,
+        category: record.category,
+        partyVendor: record.party,
+        fuelingTime: formatDate(record.fuelingDateTime),
+        bowserNo: record.bowser.regNo,
+        bowserLocation: record.location,
+        driverManager: record.driverName,
+        phoneNo: record.driverMobile,
+        vehicleNumber: record.vehicleNumber,
+        odoMeter: record.odometer,
+        qtyType: record.quantityType,
+        fuelQty: record.fuelQuantity,
+        verified: record.verified ? 'Yes' : 'No',
+        posted: record.posted?.status ? 'Yes' : 'No'
       }));
 
       const sheetData = [
