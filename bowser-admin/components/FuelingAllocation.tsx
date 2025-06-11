@@ -393,13 +393,18 @@ const FuelingAllocation = ({ searchParams }: { searchParams: SearchParams }) => 
             category: fueling,
             party: partyName,
             vehicleNumber,
-            odometer: paramsOdoMeter || '0',
-            tripId: paramsTripId,
+            ...(paramsOdoMeter && paramsOdoMeter.trim() !== '') && { odometer: paramsOdoMeter },
+            ...(paramsTripId && paramsTripId.trim() !== '' && { tripId: paramsTripId }),
             driverId,
             driverName,
             driverMobile,
             quantityType,
             fuelQuantity,
+            ...(allocationType === "external" && {
+                pumpAllocationType,
+                fuelProvider,
+                petrolPump,
+            }),
             bowser: {
                 regNo: bowserRegNo,
                 driver: {
@@ -407,9 +412,6 @@ const FuelingAllocation = ({ searchParams }: { searchParams: SearchParams }) => 
                     phoneNo: bowserDriverMobile
                 }
             },
-            pumpAllocationType,
-            fuelProvider,
-            petrolPump,
             allocationAdmin: {
                 name: currentUser.name,
                 id: currentUser.userId,
