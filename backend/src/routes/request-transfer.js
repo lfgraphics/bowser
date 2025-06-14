@@ -220,7 +220,7 @@ router.patch('/:id', async (req, res) => {
             await sendWebPushNotification({
                 userId: to,
                 message: `The request transfer has been updated.`,
-                options: { title: "Transfer Request Updated", url: `/fuel-request` }
+                options: { title: "Transfer Request Updated", url: `/manage-requests` }
             });
         }
 
@@ -232,22 +232,22 @@ router.patch('/:id', async (req, res) => {
 });
 
 router.post('/create', async (req, res) => {
-    const { by, to, transferReason } = req.body;
+    const { by, to, transferReason, isAdmin = false } = req.body;
     if (!by || !to) {
         return res.status(400).json({ error: "'by' and 'to' are required" });
     }
     try {
-        const requestTransfer = new RequestTransfer({ by, to, transferReason });
+        const requestTransfer = new RequestTransfer({ by, to, transferReason, accepted: isAdmin });
         await requestTransfer.save();
 
         // Send notification to the "to" user
         await sendWebPushNotification({
             userId: to,
             message: `You have received a new Fuel requests transfer - accept request\nBy: ${by}\nReason: ${transferReason}`,
-            options: { title: "New Request Transfer", url: `/fuel-request` }
+            options: { title: "New Request Transfer", url: `/manage-requests` }
         });
 
-        return res.status(201).json(requestTransfer);
+        return res.status(200).json(requestTransfer);
     } catch (error) {
         console.error('Error creating request transfer:', error);
         return res.status(500).json({ error: 'Failed to create request transfer', details: error });
@@ -270,7 +270,7 @@ router.patch('/accept/:id', async (req, res) => {
         await sendWebPushNotification({
             userId: requestTransfer.by,
             message: `Your transfer request has been accepted.`,
-            options: { title: "Transfer Request Accepted", url: `/fuel-request` }
+            options: { title: "Transfer Request Accepted", url: `/manage-requests` }
         });
 
         return res.status(200).json(requestTransfer);
@@ -297,7 +297,7 @@ router.patch('/reject/:id', async (req, res) => {
         await sendWebPushNotification({
             userId: requestTransfer.by,
             message: `Your transfer request has been rejected.\nReason: ${reason}`,
-            options: { title: "Transfer Request Rejected", url: `/fuel-request` }
+            options: { title: "Transfer Request Rejected", url: `/manage-requests` }
         });
 
         return res.status(200).json(requestTransfer);
@@ -323,7 +323,7 @@ router.delete('/:id', async (req, res) => {
         await sendWebPushNotification({
             userId: requestTransfer.to,
             message: `A transfer request has been deleted.\nwas Requested By: ${requestTransfer.by}\nDate: ${requestTransfer.generationTime}`,
-            options: { title: "Transfer Request Deleted", url: `/fuel-request` }
+            options: { title: "Transfer Request Deleted", url: `/manage-requests` }
         });
 
         return res.status(200).json(requestTransfer);
