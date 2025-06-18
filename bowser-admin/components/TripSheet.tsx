@@ -15,7 +15,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { Toaster } from "@/components/ui/toaster"
 import { useRouter } from 'next/navigation';
-import { Eye, X } from 'lucide-react';
+import { Eye, RefreshCcw, X } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { TripSheet, WholeTripSheet } from '@/types/index';
@@ -118,10 +118,39 @@ const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
         }
     };
 
-    // const openDeleteDialogue = (sheetId: string) => {
-    //     setDeletingSheetId(sheetId)
-    //     setShowDeleteDialog(true)
-    // }
+    const refreshStatus = (tripSheetId: number) => async () => {
+        setLoading(true);
+        try {
+            const removeExtraResponse = await fetch(`${BASE_URL}/listDispenses/remove-extra/?tripSheetId=${tripSheetId}`, {
+                method: 'POST'
+            });
+            if (!removeExtraResponse.ok) {
+                throw new Error('Failed to refresh status');
+            } else {
+                const verificationResponse = await fetch(`${BASE_URL}/listDispenses/sync-verification/?tripSheetId=${tripSheetId}`, {
+                    method: 'POST'
+                });
+                if (!verificationResponse.ok) {
+                    throw new Error('Failed to refresh status');
+                } else {
+                    const data = await verificationResponse.json();
+                    if (data.updatedDispenses) {
+                        toast({ title: 'Success', description: 'Status refreshed successfully', variant: "success" });
+                    } else {
+                        toast({ title: 'Error', description: 'Failed to refresh status', variant: "destructive" });
+                    }
+                }
+            }
+
+        } catch (error) {
+            console.error('Error refreshing status:', error);
+            toast({ title: 'Error', description: 'Failed to refresh status', variant: "destructive" });
+        }
+        finally {
+            setLoading(false);
+            loadSheets();
+        }
+    }
 
     return (
         <div className="bg-background p-6 text-foreground">
@@ -170,7 +199,7 @@ const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
                         <TableHead>Dispenses</TableHead>
                         <TableHead>Sold</TableHead>
                         <TableHead>Balance</TableHead>
-                        <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
+                        <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer", "Data Entry"]}>
                             <TableHead className='text-center'>Actions</TableHead>
                         </OnlyAllowed>
                         <TableHead>Verified</TableHead>
@@ -205,7 +234,7 @@ const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
                                 <TableCell>{sheet.saleQty?.toFixed(2)}</TableCell>
                                 <TableCell>{(Number((sheet.totalLoadQuantityBySlip || 0) + (sheet.totalAdditionQty || 0)) - Number(sheet.saleQty?.toFixed(2))).toFixed(2)}</TableCell>
                                 <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
-                                    <TableCell className="flex justify-center gap-2 w-full">
+                                    <TableCell className="flex justify-center gap-2 w-full items-center">
                                         {sheet.settelment?.dateTime == undefined &&
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -260,6 +289,9 @@ const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
                                                 <Button variant="secondary" onClick={() => { setSummaryId(sheet._id!); setShowSummaryDialog(true) }}>Summary</Button>
                                             </div>
                                         }
+                                        <Button variant="secondary" size="icon" onClick={refreshStatus(sheet.tripSheetId)}>
+                                            <RefreshCcw />
+                                        </Button>
                                     </TableCell>
                                 </OnlyAllowed>
                                 <TableCell>{sheet.dispenses?.length > 0 ? sheet.dispenses.every(d => d.posted) ? <span className="text-gray-500">Posted</span> : sheet.dispenses.every(d => d.verified?.status === true && d.verified.by) ? <Link href={`/tripsheets/post/${sheet._id}`}><Button variant="default">Post</Button></Link> : <X className="text-red-500 block mx-auto" /> : null}</TableCell>

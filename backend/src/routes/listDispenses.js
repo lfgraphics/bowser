@@ -481,4 +481,58 @@ router.post('/sync-verification', async (req, res) => {
     }
 });
 
+router.post('/remove-extra', async (req, res) => {
+    const { tripSheetId } = req.query
+    const allTransactions = await FuelingTransaction.find({ tripSheetId: tripSheetId })
+    const tripSheet = await TripSheet.findOne({ tripSheetId })
+    if (!tripSheet) {
+        return res.status(404).json({ message: 'Trip sheet not found' });
+    }
+    if (!allTransactions || allTransactions.length === 0) {
+        return res.status(404).json({ message: 'No transactions found for this trip sheet' });
+    }
+    try {
+        const removedDispenses = [];
+        const remainingDispenses = [];
+
+        // Filter out dispenses that don't have matching transactions
+        // Create a map to track seen transaction IDs
+        const seenIds = new Map();
+
+        tripSheet.dispenses = tripSheet.dispenses.filter(dispense => {
+            const dispenseId = dispense._id.toString();
+            const matchingTransaction = allTransactions.find(transaction =>
+                transaction._id.toString() === dispenseId
+            );
+
+            if (matchingTransaction) {
+                // If we've already seen this ID, remove the duplicate
+                if (seenIds.has(dispenseId)) {
+                    removedDispenses.push(dispenseId);
+                    return false;
+                }
+
+                // Mark this ID as seen and keep the dispense
+                seenIds.set(dispenseId, true);
+                remainingDispenses.push(dispenseId);
+                return true;
+            } else {
+                removedDispenses.push(dispenseId);
+                return false;
+            }
+        });
+
+        await tripSheet.save();
+
+        return res.status(200).json({
+            message: 'Extra dispenses removed successfully',
+            removedCount: removedDispenses.length,
+            remainingCount: remainingDispenses.length,
+        });
+    } catch (error) {
+        console.error('Error removing extra dispenses:', error);
+        return res.status(500).json({ message: 'Error removing extra dispenses', error: error.message });
+    }
+});
+
 module.exports = router;
