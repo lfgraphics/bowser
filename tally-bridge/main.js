@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
-import { join, dirname, resolve } from 'path';
+import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import isDev from 'electron-is-dev';
 import { checkTallyStatus } from './server/tallyStatus.js';
@@ -23,7 +23,7 @@ let autoSyncInterval = null;
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 900,
-    height: 700,
+    height: 800,
     icon: join(__dirname, 'assets', 'icon.ico'),
     webPreferences: {
       nodeIntegration: true,
@@ -113,6 +113,38 @@ ipcMain.handle('stop-sync-interval', async () => {
   stopSyncScheduler();
   setNextSyncTime('Stopped');
   return 'Auto sync disabled';
+});
+
+const envFilePath = isDev ? join(__dirname, '.env') : join(process.resourcesPath, 'env.production');
+
+ipcMain.handle('get-local-uri', async () => {
+  try {
+    const envContent = fs.readFileSync(envFilePath, 'utf-8');
+    const match = envContent.match(/localUri\s*=\s*["']?([^"\r\n]*)["']?/);
+    return match ? match[1] : "mongodb://192.168.165.72:27017";
+  } catch {
+    return "mongodb://192.168.165.72:27017";
+  }
+});
+
+ipcMain.handle('set-local-uri', async (event, newUri) => {
+  try {
+    let envContent = fs.readFileSync(envFilePath, 'utf-8');
+    if (envContent.match(/localUri\s*=/)) {
+      envContent = envContent.replace(/localUri\s*=\s*["']?([^"\r\n]*)["']?/, `localUri = "${newUri}"`);
+    } else {
+      envContent = `localUri = "${newUri}"\n` + envContent;
+    }
+    fs.writeFileSync(envFilePath, envContent, 'utf-8');
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('reload-app', () => {
+  app.relaunch();
+  app.exit();
 });
 
 // ========== App Ready Setup ==========

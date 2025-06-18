@@ -18,7 +18,9 @@ const atlasTripCollectionName = "VehiclesCollection";
 
 const now = new Date();
 const past30Days = new Date(now);
+const past6Months = new Date(now);
 past30Days.setDate(now.getDate() - 65);
+past6Months.setMonth(now.getMonth() - 6);
 
 const localTripFilter = {
     $or: [
@@ -276,7 +278,7 @@ async function syncTripData() {
     const atlasCollection = atlasClient.db(atlasTransportDbName).collection(atlasTripCollectionName);
 
     addLog("---------------------------------------");
-    addLog("Syncing Trip Data...");
+    addLog("Syncing Vehicles Data...");
 
     const openedTrips = [];
     const updatedTrips = [];
@@ -370,6 +372,87 @@ async function syncTripData() {
     console.log(`${noUpdatesNeeded} vehicles required no updates.`);
     // addLog(`${noUpdatesNeeded} vehicles required no updates.`);
 
+    addLog("Vehicles Data Sync Completed.");
+    addLog("---------------------------------------");
+}
+
+async function syncTrips() {
+    const localCollection = localClient.db(localDbName).collection(localTripCollectionName);
+    const atlasCollection = atlasClient.db(atlasTransportDbName).collection('TankersTrips');
+
+    addLog("---------------------------------------");
+    addLog("Syncing Trips Data...");
+
+    const openedTrips = [];
+    const updatedTrips = [];
+    const deletedTrips = [];
+    let noUpdatesNeeded = 0;
+
+    // Step 1: Fetch data from Local and Atlas
+    const [atlasTrips, localTrips] = await Promise.all([
+        atlasCollection.find().toArray(),
+        localCollection.find({ "TallyLoadDetail.LoadingDate": { $gte: past6Months, $lte: now } }).toArray(),
+    ]);
+
+    console.log(`Fetched ${atlasTrips.length} trips from Atlas.`);
+    console.log(`Fetched ${localTrips.length} trips from Local.`);
+
+    // Create maps for quick lookup
+    const localTripsMap = new Map(localTrips.map(trip => [trip._id.toString(), trip]));
+    const atlasTripsMap = new Map(atlasTrips.map(trip => [trip._id.toString(), trip]));
+
+    // Step 2: Prepare bulk operations for MongoDB Atlas
+    const bulkOps = [];
+
+    // Sync local changes to cloud (update or insert)
+    for (const localTrip of localTrips) {
+        const atlasTrip = atlasTripsMap.get(localTrip._id.toString());
+        if (!atlasTrip) {
+            // Not in Atlas, insert
+            bulkOps.push({
+                insertOne: { document: localTrip }
+            });
+            openedTrips.push(localTrip._id);
+        } else {
+            // Exists in both, check for changes
+            // You can do a deep comparison or just compare relevant fields
+            // For brevity, let's assume you want to update if not deeply equal
+            if (JSON.stringify(localTrip) !== JSON.stringify(atlasTrip)) {
+                bulkOps.push({
+                    updateOne: {
+                        filter: { _id: localTrip._id },
+                        update: { $set: localTrip }
+                    }
+                });
+                updatedTrips.push(localTrip._id);
+            } else {
+                noUpdatesNeeded++;
+            }
+        }
+    }
+
+    // Remove from cloud if missing in local (within range)
+    for (const atlasTrip of atlasTrips) {
+        if (!localTripsMap.has(atlasTrip._id.toString())) {
+            bulkOps.push({
+                deleteOne: { filter: { _id: atlasTrip._id } }
+            });
+            deletedTrips.push(atlasTrip._id);
+            addLog(`Deleted trip from Atlas: ${atlasTrip._id}`);
+        }
+    }
+
+    // Step 3: Execute bulk operations
+    if (bulkOps.length > 0) {
+        const result = await atlasCollection.bulkWrite(bulkOps);
+        console.log(`Bulk sync result: ${result.modifiedCount || 0} updated, ${result.insertedCount || 0} inserted, ${result.deletedCount || 0} deleted.`);
+    }
+
+    // Step 4: Log summary
+    addLog(`${openedTrips.length} trips inserted to Atlas.`);
+    addLog(`${updatedTrips.length} trips updated in Atlas.`);
+    addLog(`${deletedTrips.length} trips deleted from Atlas.`);
+    addLog(`${noUpdatesNeeded} trips required no updates.`);
     addLog("Trip Data Sync Completed.");
     addLog("---------------------------------------");
 }
@@ -382,6 +465,7 @@ export async function runSync(logger) {
         await syncVechiclesData();
         await syncAttachedVechicles();
         await syncTripData();
+        await syncTrips();
     } catch (error) {
         addLog("Error during sync: " + error.message, 'ERROR');
         console.error("Error during sync: ", error);

@@ -64,6 +64,13 @@
 
   <hr>
 
+  <div style="margin-bottom: 8px; display: flex; gap: 8px; justify-content: space-between; align-items: last baseline;">
+    <label for="localUriInput"><b>Connection URI:</b></label>
+    <input id="localUriInput" type="text" style="width: 60%; height: auto;" />
+    <button onclick="saveLocalUri()"><i data-lucide="save"></i> Save & Reload</button>
+  </div>
+  <span id="uriSaveMsg" style="color: green; margin-left: 10px;"></span>
+
   <h2>Cloud and Local data Sync</h2>
   <div id="nextSync">Fetching sync status...</div>
   <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
@@ -164,6 +171,27 @@
       refreshLogs();
     }
 
+    async function loadLocalUri() {
+      const uri = await ipcRenderer.invoke('get-local-uri');
+      document.getElementById('localUriInput').value = uri;
+    }
+
+    async function saveLocalUri() {
+      const newUri = document.getElementById('localUriInput').value.trim();
+      if (!newUri) return;
+      const result = await ipcRenderer.invoke('set-local-uri', newUri);
+      if (result.success) {
+        document.getElementById('uriSaveMsg').textContent = "Saved! Reloading...";
+        setTimeout(() => {
+          ipcRenderer.invoke('reload-app');
+        }, 1000);
+      } else {
+        document.getElementById('uriSaveMsg').textContent = "Error: " + result.error;
+        document.getElementById('uriSaveMsg').style.color = "red";
+      }
+    }
+
+    loadLocalUri();
     refreshStatus();
     refreshLogs();
   </script>
