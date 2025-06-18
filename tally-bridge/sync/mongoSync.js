@@ -457,6 +457,67 @@ async function syncTrips() {
     addLog("---------------------------------------");
 }
 
+async function syncTransAppUsers() {
+    const localCollection = localClient.db(localDbName).collection('UserCollection');
+    const atlasCollection = atlasClient.db(atlasTransportDbName).collection('TransAppUsers');
+    addLog("---------------------------------------");
+    addLog("Syncing TransApp Users Data...");
+
+    // 1. Fetch all users from both local and Atlas
+    const [localUsers, atlasUsers] = await Promise.all([
+        localCollection.find().toArray(),
+        atlasCollection.find().toArray()
+    ]);
+    const atlasMap = new Map(atlasUsers.map(u => [u._id.toString(), u]));
+
+    // 2. Prepare bulk operations
+    const inserts = [];
+    const updates = [];
+
+    for (const localUser of localUsers) {
+        const atlasUser = atlasMap.get(localUser._id.toString());
+        if (!atlasUser) {
+            // Not in Atlas, insert
+            inserts.push(localUser);
+        } else {
+            // Exists in both, check for changes (compare relevant fields)
+            // You can customize which fields to compare
+            if (
+                localUser.UserName !== atlasUser.UserName ||
+                localUser.Password !== atlasUser.Password ||
+                localUser.Division !== atlasUser.Division ||
+                JSON.stringify(localUser.myVehicles) !== JSON.stringify(atlasUser.myVehicles)
+            ) {
+                updates.push({
+                    updateOne: {
+                        filter: { _id: localUser._id },
+                        update: { $set: localUser }
+                    }
+                });
+            }
+        }
+    }
+
+    // 3. Insert new users to Atlas
+    if (inserts.length > 0) {
+        await atlasCollection.insertMany(inserts);
+        addLog(`Inserted ${inserts.length} new users to Atlas.`);
+    } else {
+        addLog('No new users to insert.');
+    }
+
+    // 4. Update changed users in Atlas
+    if (updates.length > 0) {
+        await atlasCollection.bulkWrite(updates);
+        addLog(`Updated ${updates.length} users in Atlas.`);
+    } else {
+        addLog('No users to update.');
+    }
+
+    addLog("TransApp Users Data Sync Completed.");
+    addLog("---------------------------------------");
+}
+
 export async function runSync(logger) {
     try {
         await connectToDatabases();
@@ -466,6 +527,7 @@ export async function runSync(logger) {
         await syncAttachedVechicles();
         await syncTripData();
         await syncTrips();
+        await syncTransAppUsers();
     } catch (error) {
         addLog("Error during sync: " + error.message, 'ERROR');
         console.error("Error during sync: ", error);
