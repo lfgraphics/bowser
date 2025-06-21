@@ -95,8 +95,6 @@ const page = ({ params }: { params: { id: string } }) => {
             body: JSON.stringify({ record: postRecord, variables }),
         }).then(res => res.json());
 
-        console.log(xml)
-
         try {
             const response = await fetch('http://localhost:4000/tally', {
                 method: 'POST',
@@ -222,7 +220,7 @@ const page = ({ params }: { params: { id: string } }) => {
             {loading && <Loading />}
             {postProgress !== null &&
                 <div className="z-50 fixed inset-0 flex justify-center items-center bg-black bg-opacity-25">
-                    < Progress value={Math.min(100, Math.floor((postProgress.current / postProgress.total) * 100))} />
+                    < Progress className='w-[80%]' value={Math.min(100, Math.floor((postProgress.current / postProgress.total) * 100))} />
                 </div>
             }
             <div className="mx-auto py-4">

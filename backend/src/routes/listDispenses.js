@@ -535,4 +535,68 @@ router.post('/remove-extra', async (req, res) => {
     }
 });
 
+router.post('/recalculate-cost', async (req, res) => {
+    const { tripSheetId } = req.query
+    const tripSheet = await TripSheet.findOne({ tripSheetId })
+    let dispenses = tripSheet.dispenses
+
+    if (!tripSheet) {
+        return res.status(404).json({ message: 'Trip sheet not found' });
+    }
+
+    try {
+        for (let dispense of dispenses) {
+            dispense.cost = (dispense.fuelQuantity * tripSheet.hsdRate).toFixed(2)
+        }
+
+        tripSheet.dispenses = dispenses
+
+        await tripSheet.save();
+
+        return res.status(200).json({
+            message: 'Costs updated successfully', dispenses: tripSheet.dispenses
+        });
+    } catch (error) {
+        console.error('Error removing extra dispenses:', error);
+        return res.status(500).json({ message: 'Error removing extra dispenses', error: error.message });
+    }
+});
+
+router.post('/refresh-post-status', async (req, res) => {
+    const { tripSheetId } = req.query
+    const allTransactions = await FuelingTransaction.find({ tripSheetId: tripSheetId })
+    const tripSheet = await TripSheet.findOne({ tripSheetId })
+    if (!tripSheet) {
+        return res.status(404).json({ message: 'Trip sheet not found' });
+    }
+    if (!allTransactions || allTransactions.length === 0) {
+        return res.status(404).json({ message: 'No transactions found for this trip sheet' });
+    }
+    try {
+        const updatedDispenses = [];
+
+        for (const transaction of allTransactions) {
+            const matchingDispense = tripSheet.dispenses.find(dispense => dispense._id.toString() === transaction._id.toString());
+            if (matchingDispense) {
+                matchingDispense.posted = transaction.posted;
+                updatedDispenses.push({
+                    'Updated dispense for': transaction._id,
+                });
+            }
+        }
+
+        if (updatedDispenses.length > 0) {
+            await tripSheet.save();
+        }
+
+        return res.status(200).json({
+            message: 'TripSheet dispenses synced successfully',
+            updatedDispenses
+        });
+    } catch (error) {
+        console.error('Error syncing dispenses:', error);
+        return res.status(500).json({ message: 'Error syncing dispenses', error: error.message });
+    }
+});
+
 module.exports = router;

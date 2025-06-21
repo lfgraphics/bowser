@@ -213,6 +213,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
   }
 
   const verifyMultiple = async () => {
+    setLoading(true)
     if (selectedRows.size === 0) {
       return;
     }
@@ -243,6 +244,8 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
       } else {
         toast({ title: "Error", description: "An unknown error occurred", variant: "destructive" });
       }
+    } finally {
+      setLoading(false)
     }
   };
 

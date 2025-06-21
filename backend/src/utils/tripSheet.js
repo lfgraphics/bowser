@@ -46,8 +46,8 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
                 console.error(`No dispense found for the specified _id: ${post?._id}`);
                 return { success: false, message: "No dispense found" };
             } else {
-                tripSheet.dispenses[existingDispenseIndex] = post;
-                tripSheet.dispenses[existingDispenseIndex].cost = Number((tripSheet.hsdRate * updatedDispense.fuelQuantity).toFixed(2));
+                tripSheet.dispenses[existingDispenseIndex].posted = post.posted;
+                tripSheet.dispenses[existingDispenseIndex].cost = Number((tripSheet.hsdRate * post.fuelQuantity).toFixed(2));
                 await tripSheet.save()
                 return { success: true, message: "TripSheet updated successfully", tripSheet };
             }

@@ -61,7 +61,6 @@ const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
         try {
             const response = await axios.get(`${BASE_URL}/tripsheet/summary/get/${summaryId}`);
             setSummaryData(response.data);
-            console.log('summary: ', response.data);
         } catch (error) {
             toast({ title: 'Error', description: 'Failed to load summary', variant: "destructive" });
         } finally {
@@ -121,304 +120,314 @@ const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
     const refreshStatus = (tripSheetId: number) => async () => {
         setLoading(true);
         try {
-            const removeExtraResponse = await fetch(`${BASE_URL}/listDispenses/remove-extra/?tripSheetId=${tripSheetId}`, {
-                method: 'POST'
-            });
-            if (!removeExtraResponse.ok) {
-                throw new Error('Failed to refresh status');
-            } else {
-                const verificationResponse = await fetch(`${BASE_URL}/listDispenses/sync-verification/?tripSheetId=${tripSheetId}`, {
-                    method: 'POST'
-                });
-                if (!verificationResponse.ok) {
-                    throw new Error('Failed to refresh status');
-                } else {
-                    const data = await verificationResponse.json();
-                    if (data.updatedDispenses) {
-                        toast({ title: 'Success', description: 'Status refreshed successfully', variant: "success" });
-                    } else {
-                        toast({ title: 'Error', description: 'Failed to refresh status', variant: "destructive" });
-                    }
+            // Helper to POST and check
+            const postAndCheck = async (url: string) => {
+                const res = await fetch(url, { method: 'POST' });
+                if (!res.ok) {
+                    const err = await res.text();
+                    throw new Error(err || 'Failed to refresh status');
                 }
-            }
+                return res;
+            };
 
-        } catch (error) {
+            await postAndCheck(`${BASE_URL}/listDispenses/remove-extra/?tripSheetId=${tripSheetId}`);
+            const verificationResponse = await postAndCheck(`${BASE_URL}/listDispenses/sync-verification/?tripSheetId=${tripSheetId}`);
+            await postAndCheck(`${BASE_URL}/listDispenses/recalculate-cost/?tripSheetId=${tripSheetId}`);
+            await postAndCheck(`${BASE_URL}/listDispenses/refresh-post-status/?tripSheetId=${tripSheetId}`);
+
+            const data = await verificationResponse.json();
+
+            if (data.updatedDispenses) {
+                toast({ title: 'Success', description: 'Status refreshed successfully', variant: "success" });
+                return { success: true, data };
+            } else {
+                toast({ title: 'Error', description: 'Failed to refresh status', variant: "destructive" });
+                return { success: false, data };
+            }
+        } catch (error: any) {
             console.error('Error refreshing status:', error);
-            toast({ title: 'Error', description: 'Failed to refresh status', variant: "destructive" });
-        }
-        finally {
+            toast({ title: 'Error', description: error.message || 'Failed to refresh status', variant: "destructive" });
+            return { success: false, error: error.message || error };
+        } finally {
             setLoading(false);
             loadSheets();
         }
     }
 
     return (
-        <div className="bg-background p-6 text-foreground">
-            <div className="flex justify-between items-start">
-                <h1 className="mb-4 font-bold text-2xl">Trip Sheets</h1>
-            </div>
+        <>
+            {loading && <Loading />}
             <Toaster />
-            <div className="flex space-x-4 mb-4">
-                <Input type='string' placeholder='Search...' value={searchParam} onChange={(e) => setSearchParam(e.target.value)} />
-                <Select onValueChange={(value) => setSettlment(value === 'true')}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectGroup>
-                            <SelectItem value="false">All</SelectItem>
-                            <SelectItem value="true">Unsettled</SelectItem>
-                        </SelectGroup>
-                    </SelectContent>
-                </Select>
-            </div>
-            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Are you sure you want to delete this trip sheet? This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogAction onClick={() => handleDelete()}>Delete</AlertDialogAction>
-                    <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>Cancel</AlertDialogCancel>
-                </AlertDialogContent>
-            </AlertDialog>
-            <Table className="w-max min-w-full">
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>SN</TableHead>
-                        <TableHead>Trip Sheet ID</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Created on</TableHead>
-                        <TableHead>Settled on</TableHead>
-                        <TableHead>Bowser No.</TableHead>
-                        <TableHead>Driver Name</TableHead>
-                        <TableHead>Driver Mobile</TableHead>
-                        <TableHead>Loaded</TableHead>
-                        <TableHead>Dispenses</TableHead>
-                        <TableHead>Sold</TableHead>
-                        <TableHead>Balance</TableHead>
-                        <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer", "Data Entry"]}>
-                            <TableHead className='text-center'>Actions</TableHead>
-                        </OnlyAllowed>
-                        <TableHead>Verified</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {loading ? (
+            <div className="bg-background p-6 text-foreground">
+                <div className="flex justify-between items-start">
+                    <h1 className="mb-4 font-bold text-2xl">Trip Sheets</h1>
+                </div>
+                <div className="flex space-x-4 mb-4">
+                    <Input type='string' placeholder='Search...' value={searchParam} onChange={(e) => setSearchParam(e.target.value)} />
+                    <Select onValueChange={(value) => setSettlment(value === 'true')}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectItem value="false">All</SelectItem>
+                                <SelectItem value="true">Unsettled</SelectItem>
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to delete this trip sheet? This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogAction onClick={() => handleDelete()}>Delete</AlertDialogAction>
+                        <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>Cancel</AlertDialogCancel>
+                    </AlertDialogContent>
+                </AlertDialog>
+                <Table className="w-max min-w-full">
+                    <TableHeader>
                         <TableRow>
-                            <TableCell colSpan={11} className="text-center">Loading...</TableCell>
+                            <TableHead>SN</TableHead>
+                            <TableHead>Trip Sheet ID</TableHead>
+                            <TableHead>Location</TableHead>
+                            <TableHead>Created on</TableHead>
+                            <TableHead>Settled on</TableHead>
+                            <TableHead>Bowser No.</TableHead>
+                            <TableHead>Driver Name</TableHead>
+                            <TableHead>Driver Mobile</TableHead>
+                            <TableHead>Loaded</TableHead>
+                            <TableHead>Dispenses</TableHead>
+                            <TableHead>Sold</TableHead>
+                            <TableHead>Balance</TableHead>
+                            <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer", "Data Entry"]}>
+                                <TableHead className='text-center'>Actions</TableHead>
+                            </OnlyAllowed>
+                            <TableHead>Verified</TableHead>
                         </TableRow>
-                    ) : sheets.length === 0 ? (
-                        <TableRow>
-                            <TableCell colSpan={11} className="text-center">No records found</TableCell>
-                        </TableRow>
-                    ) : (
-                        sheets.map((sheet, index) => (
-                            <TableRow key={sheet._id}>
-                                <TableCell>{index + 1}</TableCell>
-                                <TableCell className='text-center'>
-                                    <Link href={`/dispense-records?tripNumber=${sheet.tripSheetId}`} className='text-blue-500 underline'>
-                                        {sheet.tripSheetId}
-                                    </Link>
-                                </TableCell>
-                                <TableCell>{sheet.fuelingAreaDestination}</TableCell>
-                                <TableCell>{`${formatDate(sheet.createdAt)}`}</TableCell>
-                                <TableCell>{`${sheet.settelment?.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : ""}`}</TableCell>
-                                <TableCell><Link className='text-blue-500 underline' href={`/tripsheets/bowser/${sheet.bowser.regNo}`}>{sheet.bowser.regNo}</Link></TableCell>
-                                <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.name : ""}</TableCell>
-                                <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.phoneNo : ""}</TableCell>
-                                <TableCell>{(sheet.totalLoadQuantityBySlip || 0) + (sheet.totalAdditionQty || 0)}</TableCell>
-                                <TableCell className='text-center' >{sheet.dispenses?.length || "0"}</TableCell>
-                                <TableCell>{sheet.saleQty?.toFixed(2)}</TableCell>
-                                <TableCell>{(Number((sheet.totalLoadQuantityBySlip || 0) + (sheet.totalAdditionQty || 0)) - Number(sheet.saleQty?.toFixed(2))).toFixed(2)}</TableCell>
-                                <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
-                                    <TableCell className="flex justify-center gap-2 w-full items-center">
-                                        {sheet.settelment?.dateTime == undefined &&
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="default" size="sm" className='p-2 px-4 my-1 h-10 text-center '>
-                                                        Update
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent className='bg-card text-center'>
-                                                    <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/add-record/?tripSheetId=${sheet.tripSheetId}&bowser=${sheet.bowser.regNo}` : ``}>
-                                                        <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
-                                                            Add Record
-                                                        </DropdownMenuItem>
-                                                    </Link>
-                                                    <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/settle/${sheet._id}` : ``}>
-                                                        <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
-                                                            Settle
-                                                        </DropdownMenuItem>
-                                                    </Link>
-                                                    <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/close/${sheet._id}` : ``}>
-                                                        <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
-                                                            Close
-                                                        </DropdownMenuItem>
-                                                    </Link>
-                                                    <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/addition/${sheet._id}?tripSheetId=${sheet.tripSheetId}` : ``}>
-                                                        <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
-                                                            Reload (+)
-                                                        </DropdownMenuItem>
-                                                    </Link>
-                                                    <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/add-driver/${sheet._id}` : ``}>
-                                                        <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
-                                                            Add Driver
-                                                        </DropdownMenuItem>
-                                                    </Link>
-                                                    <Link className='items-center w-full text-center' href={`/tripsheets/${sheet._id}`}>
-                                                        <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
-                                                            <Eye />
-                                                        </DropdownMenuItem>
-                                                    </Link>
-                                                    <DropdownMenuItem disabled={sheet.settelment?.dateTime == undefined && sheet.dispenses?.length > 0 && sheet.dispenses.every(dispense => dispense.verified?.status) ? false : true} className='p-4 w-full h-10 text-center' onClick={() => postDispenses(sheet._id!)}>
-                                                        Post
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        }
-                                        {sheet.settelment?.dateTime !== undefined &&
-                                            <div className='flex flex-row items-center justify-center gap-2'>
-                                                <Link href={`/tripsheets/${sheet._id}`} className='my-1'>
-                                                    <Button variant="secondary" size="default">
-                                                        <Eye />
-                                                    </Button>
-                                                </Link>
-                                                <Button variant="secondary" onClick={() => { setSummaryId(sheet._id!); setShowSummaryDialog(true) }}>Summary</Button>
-                                            </div>
-                                        }
-                                        <Button variant="secondary" size="icon" onClick={refreshStatus(sheet.tripSheetId)}>
-                                            <RefreshCcw />
-                                        </Button>
-                                    </TableCell>
-                                </OnlyAllowed>
-                                <TableCell>{sheet.dispenses?.length > 0 ? sheet.dispenses.every(d => d.posted) ? <span className="text-gray-500">Posted</span> : sheet.dispenses.every(d => d.verified?.status === true && d.verified.by) ? <Link href={`/tripsheets/post/${sheet._id}`}><Button variant="default">Post</Button></Link> : <X className="text-red-500 block mx-auto" /> : null}</TableCell>
+                    </TableHeader>
+                    <TableBody>
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={11} className="text-center">Loading...</TableCell>
                             </TableRow>
-                        ))
-                    )}
-                </TableBody>
-            </Table>
-            {
-                showSuccessAlert && (
-                    <AlertDialog open={showSuccessAlert} onOpenChange={setShowSuccessAlert}>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Success!</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Operation completed successfully.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogAction onClick={() => setShowSuccessAlert(false)}>Close</AlertDialogAction>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                )
-            }
-
-            {showSummaryDialog && <AlertDialog open={showSummaryDialog} onOpenChange={setShowSummaryDialog}>
-                <AlertDialogContent className='w-[800px]'>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Summary</AlertDialogTitle>
-                        <AlertDialogDescription className='text-foreground'>
-                            {summaryLoading ? (
-                                <Loading />
-                            ) : summaryData ? (
-                                <div className="flex flex-col space-y-4">
-                                    {summaryData.closure && summaryData.closure.details && (
-                                        <Stamp text={summaryData.closure.details.reason} color="red-600" />
-                                    )}
-                                    {(() => {
-                                        const ch1Openingqty = Number(summaryData.loading.sheetId?.chamberwiseDipListBefore?.find((chamber) => chamber.chamberId === "Chamber-1")?.qty.toFixed(2)) || 0;
-                                        const ch2Openingqty = Number(summaryData.loading.sheetId?.chamberwiseDipListBefore.find((chamber) => chamber.chamberId === "Chamber-2")?.qty.toFixed(2)) || 0;
-                                        const totalOpeningQty = Number((ch1Openingqty + ch2Openingqty).toFixed(2));
-                                        const loadQty = Number(summaryData.loading.quantityBySlip?.toFixed(2)) || 0;
-                                        const addition = summaryData.totalAdditionQty || 0;
-                                        const ch1qty = summaryData.settelment?.details.chamberwiseDipList.find((chamber) => chamber.chamberId === "Chamber-1")?.qty || 0;
-                                        const ch2qty = summaryData.settelment?.details.chamberwiseDipList.find((chamber) => chamber.chamberId === "Chamber-2")?.qty || 0;
-                                        const totalLoadQty = totalOpeningQty + loadQty + addition;
-                                        const totalClosingQty = Number((ch1qty + ch2qty).toFixed(2));
-                                        const saleAsPerDriver = summaryData.saleQty || 0;
-                                        const saleAsPerLoad = totalLoadQty - totalClosingQty;
-                                        const unload = summaryData.settelment?.details.extras?.unload || 0;
-                                        const shortExcess = Number((saleAsPerDriver - saleAsPerLoad + unload).toFixed(2));
-
-                                        return (
-                                            <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
-                                                <h2 className="text-lg font-bold col-span-2">Trip Sheet ID: {summaryData.tripSheetId}</h2>
-
-                                                <div className="grid grid-cols-2 gap-2 col-span-2">
-                                                    <div className="bg-muted p-2 rounded">
-                                                        <span className="font-semibold">Opening Qty:</span>
-                                                        <span className="float-right">{totalOpeningQty.toFixed(2)}</span>
+                        ) : sheets.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={11} className="text-center">No records found</TableCell>
+                            </TableRow>
+                        ) : (
+                            sheets.map((sheet, index) => (
+                                <TableRow key={sheet._id}>
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell className='text-center'>
+                                        <Link href={`/dispense-records?tripNumber=${sheet.tripSheetId}`} className='text-blue-500 underline'>
+                                            {sheet.tripSheetId}
+                                        </Link>
+                                    </TableCell>
+                                    <TableCell>{sheet.fuelingAreaDestination}</TableCell>
+                                    <TableCell>{`${formatDate(sheet.createdAt)}`}</TableCell>
+                                    <TableCell>{`${sheet.settelment?.dateTime !== undefined ? formatDate(sheet.settelment.dateTime) : ""}`}</TableCell>
+                                    <TableCell><Link className='text-blue-500 underline' href={`/tripsheets/bowser/${sheet.bowser.regNo}`}>{sheet.bowser.regNo}</Link></TableCell>
+                                    <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.name : ""}</TableCell>
+                                    <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.phoneNo : ""}</TableCell>
+                                    <TableCell>{(sheet.totalLoadQuantityBySlip || 0) + (sheet.totalAdditionQty || 0)}</TableCell>
+                                    <TableCell className='text-center' >{sheet.dispenses?.length || "0"}</TableCell>
+                                    <TableCell>{sheet.saleQty?.toFixed(2)}</TableCell>
+                                    <TableCell>{(Number((sheet.totalLoadQuantityBySlip || 0) + (sheet.totalAdditionQty || 0)) - Number(sheet.saleQty?.toFixed(2))).toFixed(2)}</TableCell>
+                                    <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer", "Data Entry"]}>
+                                        <TableCell className="flex justify-center gap-2 w-full items-center">
+                                            <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
+                                                {sheet.settelment?.dateTime == undefined &&
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="default" size="sm" className='p-2 px-4 my-1 h-10 text-center '>
+                                                                Update
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent className='bg-card text-center'>
+                                                            <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/add-record/?tripSheetId=${sheet.tripSheetId}&bowser=${sheet.bowser.regNo}` : ``}>
+                                                                <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
+                                                                    Add Record
+                                                                </DropdownMenuItem>
+                                                            </Link>
+                                                            <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/settle/${sheet._id}` : ``}>
+                                                                <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
+                                                                    Settle
+                                                                </DropdownMenuItem>
+                                                            </Link>
+                                                            <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/close/${sheet._id}` : ``}>
+                                                                <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
+                                                                    Close
+                                                                </DropdownMenuItem>
+                                                            </Link>
+                                                            <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/addition/${sheet._id}?tripSheetId=${sheet.tripSheetId}` : ``}>
+                                                                <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
+                                                                    Reload (+)
+                                                                </DropdownMenuItem>
+                                                            </Link>
+                                                            <Link className='items-center w-full text-center' href={sheet.settelment?.dateTime == undefined ? `/tripsheets/add-driver/${sheet._id}` : ``}>
+                                                                <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
+                                                                    Add Driver
+                                                                </DropdownMenuItem>
+                                                            </Link>
+                                                            <Link className='items-center w-full text-center' href={`/tripsheets/${sheet._id}`}>
+                                                                <DropdownMenuItem disabled={sheet.settelment?.dateTime !== undefined} className='items-center p-4 w-full h-10'>
+                                                                    <Eye />
+                                                                </DropdownMenuItem>
+                                                            </Link>
+                                                            <DropdownMenuItem disabled={sheet.settelment?.dateTime == undefined && sheet.dispenses?.length > 0 && sheet.dispenses.every(dispense => dispense.verified?.status) ? false : true} className='p-4 w-full h-10 text-center' onClick={() => postDispenses(sheet._id!)}>
+                                                                Post
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                }
+                                                {sheet.settelment?.dateTime !== undefined &&
+                                                    <div className='flex flex-row items-center justify-center gap-2'>
+                                                        <Link href={`/tripsheets/${sheet._id}`} className='my-1'>
+                                                            <Button variant="secondary" size="default">
+                                                                <Eye />
+                                                            </Button>
+                                                        </Link>
+                                                        <Button variant="secondary" onClick={() => { setSummaryId(sheet._id!); setShowSummaryDialog(true) }}>Summary</Button>
                                                     </div>
+                                                }
+                                            </OnlyAllowed>
+                                            <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer", "Data Entry"]}>
+                                                <Button variant="secondary" size="icon" onClick={refreshStatus(sheet.tripSheetId)}>
+                                                    <RefreshCcw />
+                                                </Button>
+                                            </OnlyAllowed>
+                                        </TableCell>
+                                    </OnlyAllowed>
+                                    <TableCell>{sheet.dispenses?.length > 0 ? sheet.dispenses.every(d => d.posted) ? <span className="text-gray-500">Posted</span> : sheet.dispenses.every(d => d.verified?.status === true && d.verified.by) ? <Link href={`/tripsheets/post/${sheet._id}`}><Button variant="default">Post</Button></Link> : <X className="text-red-500 block mx-auto" /> : null}</TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+                {
+                    showSuccessAlert && (
+                        <AlertDialog open={showSuccessAlert} onOpenChange={setShowSuccessAlert}>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Success!</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Operation completed successfully.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogAction onClick={() => setShowSuccessAlert(false)}>Close</AlertDialogAction>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )
+                }
 
-                                                    <div className="bg-muted p-2 rounded">
-                                                        <span className="font-semibold">Closing Qty:</span>
-                                                        <span className="float-right">{totalClosingQty.toFixed(2)}</span>
-                                                    </div>
+                {showSummaryDialog && <AlertDialog open={showSummaryDialog} onOpenChange={setShowSummaryDialog}>
+                    <AlertDialogContent className='w-[800px]'>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Summary</AlertDialogTitle>
+                            <AlertDialogDescription className='text-foreground'>
+                                {summaryLoading ? (
+                                    <Loading />
+                                ) : summaryData ? (
+                                    <div className="flex flex-col space-y-4">
+                                        {summaryData.closure && summaryData.closure.details && (
+                                            <Stamp text={summaryData.closure.details.reason} color="red-600" />
+                                        )}
+                                        {(() => {
+                                            const ch1Openingqty = Number(summaryData.loading.sheetId?.chamberwiseDipListBefore?.find((chamber) => chamber.chamberId === "Chamber-1")?.qty.toFixed(2)) || 0;
+                                            const ch2Openingqty = Number(summaryData.loading.sheetId?.chamberwiseDipListBefore.find((chamber) => chamber.chamberId === "Chamber-2")?.qty.toFixed(2)) || 0;
+                                            const totalOpeningQty = Number((ch1Openingqty + ch2Openingqty).toFixed(2));
+                                            const loadQty = Number(summaryData.loading.quantityBySlip?.toFixed(2)) || 0;
+                                            const addition = summaryData.totalAdditionQty || 0;
+                                            const ch1qty = summaryData.settelment?.details.chamberwiseDipList.find((chamber) => chamber.chamberId === "Chamber-1")?.qty || 0;
+                                            const ch2qty = summaryData.settelment?.details.chamberwiseDipList.find((chamber) => chamber.chamberId === "Chamber-2")?.qty || 0;
+                                            const totalLoadQty = totalOpeningQty + loadQty + addition;
+                                            const totalClosingQty = Number((ch1qty + ch2qty).toFixed(2));
+                                            const saleAsPerDriver = summaryData.saleQty || 0;
+                                            const saleAsPerLoad = totalLoadQty - totalClosingQty;
+                                            const unload = summaryData.settelment?.details.extras?.unload || 0;
+                                            const shortExcess = Number((saleAsPerDriver - saleAsPerLoad + unload).toFixed(2));
 
-                                                    <div className="bg-muted p-2 rounded">
-                                                        <span className="font-semibold">Total Load Quantity:</span>
-                                                        <span className="float-right">{totalLoadQty}</span>
-                                                    </div>
+                                            return (
+                                                <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
+                                                    <h2 className="text-lg font-bold col-span-2">Trip Sheet ID: {summaryData.tripSheetId}</h2>
 
-                                                    <div className="bg-muted p-2 rounded">
-                                                        <span className="font-semibold">Total Dispenses:</span>
-                                                        <span className="float-right">{summaryData.dispenses.length}</span>
-                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2 col-span-2">
+                                                        <div className="bg-muted p-2 rounded">
+                                                            <span className="font-semibold">Opening Qty:</span>
+                                                            <span className="float-right">{totalOpeningQty.toFixed(2)}</span>
+                                                        </div>
 
-                                                    <div className="bg-muted p-2 rounded">
-                                                        <span className="font-semibold">Total Sale Quantity:</span>
-                                                        <span className="float-right">{summaryData.saleQty?.toFixed(2)}</span>
-                                                    </div>
+                                                        <div className="bg-muted p-2 rounded">
+                                                            <span className="font-semibold">Closing Qty:</span>
+                                                            <span className="float-right">{totalClosingQty.toFixed(2)}</span>
+                                                        </div>
 
-                                                    <div className="bg-muted p-2 rounded">
-                                                        <span className="font-semibold">Total Balance:</span>
-                                                        <span className="float-right">{(totalLoadQty - Number(summaryData.saleQty)).toFixed(2)}</span>
-                                                    </div>
+                                                        <div className="bg-muted p-2 rounded">
+                                                            <span className="font-semibold">Total Load Quantity:</span>
+                                                            <span className="float-right">{totalLoadQty}</span>
+                                                        </div>
 
-                                                    {summaryData.settelment && (
-                                                        <>
-                                                            {/* <div className="bg-muted p-2 rounded">
+                                                        <div className="bg-muted p-2 rounded">
+                                                            <span className="font-semibold">Total Dispenses:</span>
+                                                            <span className="float-right">{summaryData.dispenses.length}</span>
+                                                        </div>
+
+                                                        <div className="bg-muted p-2 rounded">
+                                                            <span className="font-semibold">Total Sale Quantity:</span>
+                                                            <span className="float-right">{summaryData.saleQty?.toFixed(2)}</span>
+                                                        </div>
+
+                                                        <div className="bg-muted p-2 rounded">
+                                                            <span className="font-semibold">Total Balance:</span>
+                                                            <span className="float-right">{(totalLoadQty - Number(summaryData.saleQty)).toFixed(2)}</span>
+                                                        </div>
+
+                                                        {summaryData.settelment && (
+                                                            <>
+                                                                {/* <div className="bg-muted p-2 rounded">
                                                                 <span className="font-semibold">Dip Quantity after settelment:</span>
                                                                 <span className="float-right">{totalClosingQty}</span>
                                                             </div> */}
 
-                                                            <div className="bg-muted p-2 rounded">
-                                                                <span className="font-semibold">Short/(Excess):</span>
-                                                                <span className="float-right">{shortExcess} Lt.</span>
-                                                            </div>
-                                                        </>
+                                                                <div className="bg-muted p-2 rounded">
+                                                                    <span className="font-semibold">Short/(Excess):</span>
+                                                                    <span className="float-right">{shortExcess} Lt.</span>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+
+                                                    {typeof summaryData.loading.sheetId !== 'string' && summaryData.loading.sheetId.changeInOpeningDip && (
+                                                        <div className="col-span-2 bg-muted p-2 rounded">
+                                                            <span className="font-semibold">Cause of change in opening Dip: </span>
+                                                            <span>{`${summaryData.loading.sheetId.changeInOpeningDip.reason}${summaryData.loading.sheetId.changeInOpeningDip.remarks ? `: ${summaryData.loading.sheetId.changeInOpeningDip.remarks}` : ''}`}</span>
+                                                        </div>
+                                                    )}
+
+                                                    {summaryData.closure && summaryData.closure.details && (
+                                                        <div className="col-span-2 bg-muted p-2 rounded">
+                                                            <span className="font-semibold">Reason of closure: </span>
+                                                            <span>{`${summaryData.closure.details.reason} ${summaryData.closure.details.remarks ? ': ' + summaryData.closure.details.remarks : ''}`}</span>
+                                                        </div>
                                                     )}
                                                 </div>
-
-                                                {typeof summaryData.loading.sheetId !== 'string' && summaryData.loading.sheetId.changeInOpeningDip && (
-                                                    <div className="col-span-2 bg-muted p-2 rounded">
-                                                        <span className="font-semibold">Cause of change in opening Dip: </span>
-                                                        <span>{`${summaryData.loading.sheetId.changeInOpeningDip.reason}${summaryData.loading.sheetId.changeInOpeningDip.remarks ? `: ${summaryData.loading.sheetId.changeInOpeningDip.remarks}` : ''}`}</span>
-                                                    </div>
-                                                )}
-
-                                                {summaryData.closure && summaryData.closure.details && (
-                                                    <div className="col-span-2 bg-muted p-2 rounded">
-                                                        <span className="font-semibold">Reason of closure: </span>
-                                                        <span>{`${summaryData.closure.details.reason} ${summaryData.closure.details.remarks ? ': ' + summaryData.closure.details.remarks : ''}`}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })()}
-                                </div>
-                            ) : (
-                                <div className="text-center">No summary data available.</div>
-                            )}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogAction onClick={() => { setShowSummaryDialog(false); setSummaryId(undefined) }}>Close</AlertDialogAction>
-                </AlertDialogContent>
-            </AlertDialog>}
-        </div >
+                                            );
+                                        })()}
+                                    </div>
+                                ) : (
+                                    <div className="text-center">No summary data available.</div>
+                                )}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogAction onClick={() => { setShowSummaryDialog(false); setSummaryId(undefined) }}>Close</AlertDialogAction>
+                    </AlertDialogContent>
+                </AlertDialog>}
+            </div >
+        </>
     );
 };
 
