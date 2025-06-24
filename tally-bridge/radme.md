@@ -53,6 +53,9 @@ git push origin v1.9.0
 
 # Upload .exe and .yml file
 gh release create v1.9.0 "./dist/Tally Bridge Setup 1.9.0.exe" "./dist/latest.yml" --title "Tally Bridge v1.9.0" --notes "DB connection IP updated"
+
+gh release upload exe "./tally-bridge/dist/TallyBridge setup 1.8.0.exe"  --clobber
+gh release edit exe --title "Android Build v64" --notes "Bug fixes and performance improvements"
 ```
 > This command creates a release under the exe tag, uploads your .exe file, and sets the title and changelog accordingly.
 

@@ -81,17 +81,34 @@ async function syncDriversData() {
     addLog("Syncing Drivers Data...");
 
     // Step 1: Fetch all data from Atlas and Local
-    const atlasData = await atlasCollection.find(
+    let atlasData = await atlasCollection.find(
         { Name: { $regex: 'ITPL', $options: 'i' } },
         { projection: { _id: 1, Name: 1, ITPLID: 1, MobileNo: 1 } }
     ).toArray();
+    let localData = await localCollection.find(
+        { Name: { $regex: 'ITPL', $options: 'i' } },
+        { projection: { _id: 1, Name: 1, ITPLID: 1, MobileNo: 1 } }
+    ).toArray();
+
+    // Deduplicate by ITPLID (or change to another unique field if needed)
+    function deduplicateByKey(arr, key) {
+        const seen = new Map();
+        for (const doc of arr) {
+            if (doc[key] && !seen.has(doc[key])) {
+                seen.set(doc[key], doc);
+            }
+        }
+        return Array.from(seen.values());
+    }
+
+    atlasData = deduplicateByKey(atlasData, 'Name');
+    localData = deduplicateByKey(localData, 'Name');
+
     console.log("Fetched drivers data from Atlas: " + atlasData.length + " documents.");
+    console.log("Fetched drivers data from Local:" + localData.length + " documents.");
+
     const atlasDataMap = new Map(atlasData.map(doc => [doc._id.toString(), doc]));
 
-    const localData = await localCollection.find({ Name: { $regex: 'ITPL', $options: 'i' } }, { projection: { _id: 1, Name: 1, ITPLID: 1, MobileNo: 1 } }).toArray();
-    console.log("Fetched drivers data from Local:" + localData.length, "documents.");
-
-    // Step 2: Prepare data for insertion and updates
     const newDocumentsToAtlas = [];
     const updateMobileInLocal = [];
     const updateMobileInAtlas = [];
@@ -414,9 +431,6 @@ async function syncTrips() {
             });
             openedTrips.push(localTrip._id);
         } else {
-            // Exists in both, check for changes
-            // You can do a deep comparison or just compare relevant fields
-            // For brevity, let's assume you want to update if not deeply equal
             if (JSON.stringify(localTrip) !== JSON.stringify(atlasTrip)) {
                 bulkOps.push({
                     updateOne: {
@@ -438,7 +452,6 @@ async function syncTrips() {
                 deleteOne: { filter: { _id: atlasTrip._id } }
             });
             deletedTrips.push(atlasTrip._id);
-            addLog(`Deleted trip from Atlas: ${atlasTrip._id}`);
         }
     }
 
