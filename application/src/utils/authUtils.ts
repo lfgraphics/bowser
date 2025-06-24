@@ -137,6 +137,11 @@ export const signupUser = async (email: string, password: string): Promise<void>
 
 export const logoutUser = async (): Promise<void> => {
   // Remove push token from AsyncStorage on logout
+  const userData = await AsyncStorage.getItem('userData');
+  if (userData) {
+    const { PhoneNo } = JSON.parse(userData);
+    await unregisterNativePushSubscription(PhoneNo);
+  }
   await AsyncStorage.removeItem('pushToken');
   await AsyncStorage.removeItem('userData');
   router.replace('/auth');
@@ -200,5 +205,20 @@ export async function checkAndRegisterDevice(phoneNumber: string) {
   } catch (error) {
     // Handle any errors
     Alert.alert("Errors registering push notifications", `${error instanceof Error ? error.message : error}`);
+  }
+}
+
+export async function unregisterNativePushSubscription(mobileNumber: string) {
+  try {
+      const { data: pushToken } = await Notifications.getExpoPushTokenAsync();
+      const response = await fetch(`${baseUrl}/notifications/unregister`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mobileNumber, platform: "native", pushToken }),
+      });
+      return await response.json();
+  } catch (error) {
+      console.error('Error unregistering native push subscription:', error);
+      return { success: false, error: 'Network or server error' };
   }
 }
