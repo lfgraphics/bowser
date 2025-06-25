@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListCollapse, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideGitPullRequestDraft, LucideSquareArrowOutUpRight, Star, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List, Bell } from 'lucide-react'
+import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideSquareArrowOutUpRight, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List, Bell, FileUp, FileDown, AudioWaveform } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 import ThemeChanger from '../ThemeChanger'
@@ -72,7 +72,7 @@ export function Sidebar() {
   return (
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetTrigger id="menuIcon" className="top-4 left-4 z-30 fixed">
+        <SheetTrigger id="menuIcon" className="top-4 left-4 z-30 sticky">
           {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </SheetTrigger>
         <SheetContent
@@ -97,6 +97,34 @@ export function Sidebar() {
                       <Button variant="ghost" className="justify-start w-full">
                         <LucideSquareArrowOutUpRight className="mr-2 w-4 h-4" />
                         Allocate
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed
+                  allowedRoles={["Trans App"]}
+                >
+                  <li onClick={toggleSidebar}>
+                    <Link href="/trans-app/unloading-tracker">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <FileDown className="mr-2 w-4 h-4" />
+                        Unloading Tracker
+                      </Button>
+                    </Link>
+                  </li>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/trans-app/loading-planner">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <FileUp className="mr-2 w-4 h-4" />
+                        Loading Planner
+                      </Button>
+                    </Link>
+                  </li>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/trans-app/loading-tracker">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <AudioWaveform className="mr-2 w-4 h-4" />
+                        Loading Tracker
                       </Button>
                     </Link>
                   </li>

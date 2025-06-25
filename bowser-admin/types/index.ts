@@ -25,7 +25,6 @@ export interface TransferRequest {
   generationTime: string
 }
 
-// Define the BowserResponse interface
 export interface BowserResponse {
   regNo: string
   bowserDriver: ResponseBowser
@@ -422,6 +421,7 @@ export interface VehicleWithTrip {
   }
   GoodsCategory: string
 }
+
 export interface AttachedVehicle {
   VehicleNo: string
   TransportPartenName: string
@@ -626,5 +626,75 @@ export interface BowserTrips {
   __v: number;
 }
 
-
 export type FuelingTypes = 'Own' | 'Attatch' | 'Bulk Sale'
+
+export interface TransAppUser {
+  _id: string,
+  name: string,
+  userId: string,
+  Photo: {
+    type: string,
+    data: [number]
+  },
+  vehicles: [string]
+}
+
+export interface TankersTrip {
+  _id: string;
+  TallyLoadDetail: {
+    BillingPartyName: string;
+    BillingRoute: string;
+    BooksOf: string;
+    Consignee: string;
+    Consignor: string;
+    DieselRoute: string;
+    DriverLicenseNo: string;
+    DriverLicenseValidityDate: string;
+    DriverName: string;
+    EndOdometer: number;
+    FinancialyClose: number;
+    FinancialyCloseDate: string;
+    Goods: string;
+    GRNo: string;
+    GUID: string;
+    KMbyDieseRoute: number;
+    KMbyRoute: number;
+    LoadingDate: string;
+    LoadingQty: number;
+    MasterId: number;
+    OperationalyClose: number;
+    PartyLedger: string;
+    PersistedView: string;
+    ReportedDate: string;
+    ShortageQty: number;
+    StartOdometer: number;
+    SyncDateTime: string;
+    TripId: string;
+    UnloadingDate: string;
+    UnloadingQty: number;
+    UnloadingTime: number;
+    VehicleMode: string;
+    VehicleNo: string;
+    VoucherDate: string;
+    VoucherKey: number;
+    VoucherNo: string;
+    VoucherType: string;
+  };
+  EndTo: string;
+  LoadStatus: number;
+  StartDate: string;
+  StartDriver: string;
+  StartFrom: string;
+  LoadTripDetail: {
+    LoadDate: string;
+    SupplyFrom: string;
+    ShipTo: string;
+    NameOfGoods: string;
+    LoadDetail: {
+      LoadQty: number;
+      UnloadQty: number;
+      ShortQty: number;
+    };
+  };
+  VehicleNo: string;
+}

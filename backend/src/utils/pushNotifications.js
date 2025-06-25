@@ -21,11 +21,7 @@ async function registerSubscription({ mobileNumber, userId, subscription, platfo
         }
 
         console.log(`Checking database for existing subscription or inserting a new one...`);
-        const updatedSubscription = await PushSubscription.findOneAndUpdate(
-            { mobileNumber, platform },
-            { mobileNumber, userId, subscription, groups, platform },
-            { upsert: true, new: true }
-        );
+        const updatedSubscription = await PushSubscription.create({ mobileNumber, userId, subscription, groups, platform });
 
         if (!updatedSubscription) {
             console.error(`Failed to register subscription in the database.`);
@@ -80,28 +76,21 @@ async function registerSubscription({ mobileNumber, userId, subscription, platfo
  * @returns {Promise<object>} - A promise that resolves with the result of the notification sending.
  */
 async function sendWebPushNotification({ mobileNumber, userId, message, options = {} }) {
-    // Ensure at least one of mobileNumber or userId is provided
     if (!mobileNumber && !userId) {
         return { success: false, message: 'Either mobileNumber or userId must be provided.' };
     }
 
-    console.log('sending web push notification to: ', userId, mobileNumber, message);
     try {
-        const subscriptionData = await PushSubscription.findOne({
+        // Find ALL subscriptions for this user/mobile/platform
+        const subscriptions = await PushSubscription.find({
             $or: [
                 { userId, platform: 'web' },
                 { mobileNumber, platform: 'web' }
             ]
         });
 
-        if (!subscriptionData || !subscriptionData.subscription) {
-            return { success: false, message: 'No web subscription found for the provided userId or mobile number.' };
-        }
-
-        const subscription = subscriptionData.subscription;
-
-        if (!subscription || !subscription.endpoint) {
-            return { success: false, message: 'Invalid subscription object' };
+        if (!subscriptions.length) {
+            return { success: false, message: 'No web subscriptions found for the provided userId or mobile number.' };
         }
 
         const payload = JSON.stringify({
@@ -112,13 +101,17 @@ async function sendWebPushNotification({ mobileNumber, userId, message, options 
             id: options.id,
         });
 
-        try {
-            await webpush.sendNotification(subscription, payload);
-            return { success: true, message: 'Web notification sent successfully.' };
-        } catch (error) {
-            console.error('Failed to send web notification:', error);
-            return { success: false, message: 'Failed to send web notification.' };
+        let results = [];
+        for (const sub of subscriptions) {
+            try {
+                await webpush.sendNotification(sub.subscription, payload);
+                results.push({ success: true, subscription: sub });
+            } catch (error) {
+                console.error('Failed to send web notification:', error);
+                results.push({ success: false, error: error.message, subscription: sub });
+            }
         }
+        return { success: true, results };
     } catch (error) {
         console.error('Error sending web push notification:', error.message);
         return { success: false, error };
@@ -133,29 +126,38 @@ async function sendWebPushNotification({ mobileNumber, userId, message, options 
  */
 async function sendNativePushNotification({ mobileNumber, message, options = {} }) {
     try {
-        const subscriptionData = await PushSubscription.findOne({ mobileNumber, platform: 'native' });
+        // Find ALL native subscriptions for this mobile number
+        const subscriptions = await PushSubscription.find({ mobileNumber, platform: 'native' });
 
-        if (!subscriptionData || !subscriptionData.subscription.pushToken) {
-            throw new Error('No native subscription found for this mobile number.');
+        if (!subscriptions.length) {
+            throw new Error('No native subscriptions found for this mobile number.');
         }
 
-        const pushToken = subscriptionData.subscription.pushToken;
+        let results = [];
+        for (const sub of subscriptions) {
+            const pushToken = sub.subscription.pushToken;
+            if (!Expo.isExpoPushToken(pushToken)) {
+                results.push({ success: false, error: 'Invalid Expo push token.', subscription: sub });
+                continue;
+            }
 
-        if (!Expo.isExpoPushToken(pushToken)) {
-            throw new Error('Invalid Expo push token.');
+            const notification = {
+                to: pushToken,
+                sound: 'default',
+                title: options.title || 'Notification',
+                body: message,
+                categoryId: "fuelingActions",
+                data: options.data || {},
+            };
+
+            try {
+                const response = await expo.sendPushNotificationsAsync([notification]);
+                results.push({ success: true, response, subscription: sub });
+            } catch (error) {
+                results.push({ success: false, error: error.message, subscription: sub });
+            }
         }
-
-        const notification = {
-            to: pushToken,
-            sound: 'default',
-            title: options.title || 'Notification',
-            body: message,
-            categoryId: "fuelingActions",
-            data: options.data || {},
-        };
-
-        const response = await expo.sendPushNotificationsAsync([notification]);
-        return { success: true, message: 'Native notification sent successfully.', response };
+        return { success: true, results };
     } catch (error) {
         console.error('Error sending native push notification:', error.message);
         return { success: false, error: error.message };

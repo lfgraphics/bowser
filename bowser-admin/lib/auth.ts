@@ -6,7 +6,7 @@ import {
 } from '@/utils/pushNotifications'
 import { BASE_URL } from './api'
 
-export async function signup (userData: {
+export async function signup(userData: {
   userId: string
   password: string
   name: string
@@ -28,7 +28,7 @@ export async function signup (userData: {
   }
 }
 
-export async function login (
+export async function login(
   userId: string,
   password: string
 ): Promise<LoginResponse> {
@@ -64,8 +64,46 @@ export async function login (
     throw error
   }
 }
+export async function TransAppLogin(
+  userId: string,
+  password: string
+): Promise<LoginResponse> {
+  try {
+    console.log('TransApp Login data:', userId, password)
+    const response = await axios.post<LoginResponse>(
+      `${BASE_URL}/trans-app/login`,
+      {
+        userId,
+        password,
+        appName: 'Bowser Admin'
+      },
+      { withCredentials: true }
+    )
+    console.log('TransApp Login response:', response)
+    if (response.data.token) {
+      localStorage.setItem('adminToken', response.data.token)
+      localStorage.setItem('adminUser', JSON.stringify(response.data.user))
+      localStorage.setItem('isLoggedIn', 'true')
 
-export async function logout (): Promise<void> {
+      if (response.data.user.phoneNumber) {
+
+        let groups = response.data.user.roles
+        groups.push(response.data.user.department)
+        await registerPushSubscription(
+          response.data.user.phoneNumber || 'No phone number',
+          response.data.user.userId,
+          groups
+        )
+      }
+      return response.data
+    }
+    throw new Error('Login failed')
+  } catch (error) {
+    throw error
+  }
+}
+
+export async function logout(): Promise<void> {
   try {
     const userData = localStorage.getItem('adminUser')
     if (!userData) {
@@ -76,10 +114,13 @@ export async function logout (): Promise<void> {
     const jsonData = JSON.parse(userData)
     const mobileNo = jsonData.phoneNumber
 
-    const unregisterResponse = await unregisterPushSubscription(mobileNo)
+    let unregisterResponse = { success: true }
+    if (mobileNo) {
+      unregisterResponse = await unregisterPushSubscription(mobileNo)
+    }
 
-    if (unregisterResponse && unregisterResponse.success) {
-      console.log('Push subscription unregistered successfully.')
+    if (unregisterResponse.success) {
+      console.log('Logout process continuing...')
 
       localStorage.removeItem('adminToken')
       localStorage.removeItem('adminUser')
@@ -88,8 +129,7 @@ export async function logout (): Promise<void> {
       window.location.href = '/login'
     } else {
       console.error(
-        'Failed to unregister push subscription:',
-        unregisterResponse?.error
+        'Failed to unregister push subscription'
       )
       alert('Failed to unregister push notifications. Logout aborted.')
     }
@@ -99,14 +139,14 @@ export async function logout (): Promise<void> {
   }
 }
 
-export function isAuthenticated (): boolean {
+export function isAuthenticated(): boolean {
   if (typeof window !== 'undefined') {
     return localStorage.getItem('isLoggedIn') === 'true'
   }
   return false
 }
 
-export function getCurrentUser (): User | null {
+export function getCurrentUser(): User | null {
   if (typeof window !== 'undefined') {
     const userData = localStorage.getItem('adminUser')
     return userData ? JSON.parse(userData) : null
@@ -114,7 +154,7 @@ export function getCurrentUser (): User | null {
   return null
 }
 
-export async function verifyToken () {
+export async function verifyToken() {
   try {
     const response = await axios.post(
       `${BASE_URL}/auth/admin/verify-token`,

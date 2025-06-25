@@ -28,11 +28,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           disableTransitionOnChange
         >
           {isAuth && <Sidebar />}
-          <div className={`min-h-full`}>
-            <main className="md:px-8 p-4 md:pb-8">
+          <div className={`h-[96svh]`}>
               {children}
               <SpeedInsights />
-            </main>
           </div>
         </ThemeProvider>
       </body>
