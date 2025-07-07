@@ -23,7 +23,7 @@ let autoSyncInterval = null;
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 900,
-    height: 800,
+    height: 700,
     icon: join(__dirname, 'assets', 'icon.ico'),
     webPreferences: {
       nodeIntegration: true,
