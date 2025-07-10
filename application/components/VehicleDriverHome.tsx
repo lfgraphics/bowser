@@ -326,7 +326,10 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
 
     return (
         <>
-            <View style={[styles.container, { backgroundColor: colors.background, alignItems: "center", justifyContent: "center" }]}>
+            <ScrollView
+                style={[{marginTop:5 ,backgroundColor: colors.background }]}
+                contentContainerStyle={{ alignItems: "center", justifyContent: "center" }}
+            >
                 <TouchableOpacity
                     style={styles.profileButton}
                     onPress={() => setProfileModalVisible(true)}
@@ -334,7 +337,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                     <Ionicons name="person-circle-outline" size={32} color="#0a7ea4" />
                 </TouchableOpacity>
 
-                <View style={{ flexDirection: "column", gap: 8, alignItems: "center", marginBottom: 20 }}>
+                <View style={{ flexDirection: "column", gap: 8, alignItems: "center", marginTop: 100, marginBottom: 20 }}>
                     <TouchableOpacity
                         style={[styles.requestButton, { display: 'none' }]}
                         onPress={handleLoadingReport}
@@ -440,7 +443,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                     </View>
                 </Modal>
 
-            </View >
+            </ScrollView >
             {loading && <View style={styles.loaderBg}>
                 <ActivityIndicator size="large" color="#0000ff" />
             </View>}

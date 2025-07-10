@@ -210,15 +210,37 @@ export async function checkAndRegisterDevice(phoneNumber: string) {
 
 export async function unregisterNativePushSubscription(mobileNumber: string) {
   try {
-      const { data: pushToken } = await Notifications.getExpoPushTokenAsync();
-      const response = await fetch(`${baseUrl}/notifications/unregister`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mobileNumber, platform: "native", pushToken }),
-      });
-      return await response.json();
+    const { data: pushToken } = await Notifications.getExpoPushTokenAsync();
+    const response = await fetch(`${baseUrl}/notifications/unregister`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mobileNumber, platform: "native", pushToken }),
+    });
+    return await response.json();
   } catch (error) {
-      console.error('Error unregistering native push subscription:', error);
-      return { success: false, error: 'Network or server error' };
+    console.error('Error unregistering native push subscription:', error);
+    return { success: false, error: 'Network or server error' };
+  }
+}
+
+export async function verifyTrip(tripSheetId: number): Promise<boolean> {
+  try {
+    const response = await fetch(`${baseUrl}//tripSheet/verify-opening`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ tripSheetId: tripSheetId }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to verify trip');
+    }
+
+    const data = await response.json();
+    return data.isSetteled;
+  } catch (error) {
+    console.error('Error verifying trip:', error);
+    throw error;
   }
 }

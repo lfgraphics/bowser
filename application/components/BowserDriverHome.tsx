@@ -3,7 +3,7 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Modal, Alert, ScrollView, Image } from 'react-native';
 import { Link, useRouter } from 'expo-router';
-import { checkUserLoggedIn } from '../src/utils/authUtils';
+import { checkUserLoggedIn, logoutUser, verifyTrip } from '../src/utils/authUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -29,6 +29,7 @@ export default function BowserDriverHome() {
     const [offlineData, setOfflineData] = useState<FormData[]>([]);
     const [isOfflineDataModalVisible, setOfflineDataModalVisible] = useState(false);
     const [isOfflineDataLoading, setIsOfflineDataLoading] = useState(false);
+    const [tripSheetId, setTripSheetId] = useState<number>(0);
     const { colors } = useTheme();
     const appVersion = 65;
     const [appurl, setAppUrl] = useState<string | null>(null);
@@ -40,6 +41,17 @@ export default function BowserDriverHome() {
             setAppUrl(latesApp.url)
         }
     }
+
+    const getUserTripSheetId = async () => {
+        try {
+            const userDataString = await AsyncStorage.getItem("userData");
+            const userData = userDataString ? JSON.parse(userDataString) : null;
+            const tripSheetId = userData ? userData["Trip Sheet Id"] : null;
+            setTripSheetId(Number(tripSheetId));
+        } catch (error) {
+            console.error("आप का डाटा नहीं मिल रहा कृपया दोबारा लॉग इन करें:", error);
+        }
+    };
 
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener(state => {
@@ -71,6 +83,22 @@ export default function BowserDriverHome() {
         };
         initializeApp();
     }, []);
+
+    useEffect(() => {
+        const checkTripValidity = async () => {
+            await getUserTripSheetId();
+
+            if (tripSheetId) {
+                const isValidTrip = await verifyTrip(tripSheetId);
+                if (!isValidTrip) {
+                    Alert.alert("एरर", "आप की ट्रिप बंद कर दी गई है");
+                    logoutUser();
+                }
+            }
+        };
+
+        checkTripValidity();
+    }, [tripSheetId]);
 
     const syncOfflineData = async () => {
         if (isOnline) {
@@ -431,7 +459,10 @@ export default function BowserDriverHome() {
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScrollView
+            style={[{ marginTop: 5, backgroundColor: colors.background }]}
+            contentContainerStyle={{ alignItems: "center", justifyContent: "center" }}
+        >
             <TouchableOpacity
                 style={styles.profileButton}
                 onPress={() => setProfileModalVisible(true)}
@@ -439,7 +470,9 @@ export default function BowserDriverHome() {
                 <Ionicons name="person-circle-outline" size={32} color="#0a7ea4" />
             </TouchableOpacity>
             {
-                isOnline && <FuelingRecords />
+                <View style={{ marginTop: 100 }}>
+                    isOnline && <FuelingRecords />
+                </View>
             }
             <Link style={styles.button} href={'/tripsheet'}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
@@ -538,7 +571,7 @@ export default function BowserDriverHome() {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </ScrollView>
     );
 };
 

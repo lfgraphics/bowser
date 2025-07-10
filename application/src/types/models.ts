@@ -228,7 +228,7 @@ export interface AppUpdates {
 }
 
 export interface FormData {
-  tripId:string;
+  tripId?:string;
   category: FuelingTypes;
   party: string;
   odometer: Number | null;
