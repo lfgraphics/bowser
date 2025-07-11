@@ -234,6 +234,8 @@ export async function verifyTrip(tripSheetId: number): Promise<boolean> {
     });
 
     if (!response.ok) {
+      // const data = await response.json();
+      console.error('Failed to verify trip:', response);
       throw new Error('Failed to verify trip');
     }
 
