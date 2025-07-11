@@ -361,7 +361,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                         style={styles.requestButton}
                         onPress={handleRequestFuel}
                     >
-                        <Text style={styles.requestButtonText}>ईंधन अनुरोध</Text>
+                        <Text style={styles.requestButtonText}>CNG/ डीज़ल अनुरोध</Text>
                     </TouchableOpacity>
                 </View>
 
