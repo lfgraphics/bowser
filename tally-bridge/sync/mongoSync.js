@@ -406,16 +406,22 @@ async function syncTrips() {
     // Step 1: Fetch data from Local and Atlas
     const [atlasTrips, localTrips] = await Promise.all([
         atlasCollection.find().toArray(),
-        localCollection.find({ "TallyLoadDetail.LoadingDate": { $gte: past6Months, $lte: now } }).toArray(),
+        localCollection.find({ StartDate: { $gte: past6Months, $lte: now } }).toArray(),
     ]);
 
+    
     console.log(`Fetched ${atlasTrips.length} trips from Atlas.`);
     console.log(`Fetched ${localTrips.length} trips from Local.`);
-
+    
     // Create maps for quick lookup
     const localTripsMap = new Map(localTrips.map(trip => [trip._id.toString(), trip]));
     const atlasTripsMap = new Map(atlasTrips.map(trip => [trip._id.toString(), trip]));
-
+    
+    const loadStatusZeroCount = localTrips.filter(trip => trip.LoadStatus === 0).length;
+    console.log(`Local trips with LoadStatus: 0: ${loadStatusZeroCount}`);
+    const missingInAtlas = localTrips.filter(trip => trip.LoadStatus === 0 && !atlasTripsMap.has(trip._id.toString()));
+    console.log(`Missing in Atlas (LoadStatus: 0): ${missingInAtlas.length}`);
+    
     // Step 2: Prepare bulk operations for MongoDB Atlas
     const bulkOps = [];
 
