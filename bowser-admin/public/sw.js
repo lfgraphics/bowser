@@ -20,20 +20,6 @@ self.addEventListener('push', function (event) {
   event.waitUntil(
     (async () => {
       try {
-        // Send delivery acknowledgment to backend
-        if (data?.id) {
-          const response = await fetch('http://localhost:5000/notification-update/request-delivered', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: data.id }),
-          });
-
-          const result = await response.text();
-          console.log('[SW] Delivery response:', result);
-        } else {
-          console.warn('[SW] No ID provided in push data');
-        }
-
         // Show the notification
         await self.registration.showNotification(data.title, options);
       } catch (err) {

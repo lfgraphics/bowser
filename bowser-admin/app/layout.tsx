@@ -29,8 +29,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           {isAuth && <Sidebar />}
           <div className={`h-[96svh]`}>
-              {children}
-              <SpeedInsights />
+            {children}
+            <SpeedInsights />
           </div>
         </ThemeProvider>
       </body>
