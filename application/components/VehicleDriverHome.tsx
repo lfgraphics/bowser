@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView, ActivityIndicator, TextInput } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView, ActivityIndicator } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { AppUpdates, DriverData, UserData } from '../src/types/models';
+import { DriverData, UserData } from '../src/types/models';
 import { logoutUser } from "@/src/utils/authUtils";
-import { baseUrl, getAppUpdate } from "@/src/utils/helpers";
+import { baseUrl } from "@/src/utils/helpers";
 import DriversRequestStatus from "./DriversRequestStatus";
 import OdometerModal from "./OdometerModal";
 
@@ -25,7 +25,6 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
     const [isGPSEnabled, setIsGPSEnabled] = useState(false);
     const [loading, setLoading] = useState(false);
     const [vehicleNumbers, setVehicleNumbers] = useState<string[]>([]);
-    const [appurl, setAppUrl] = useState<string | null>(null);
     const [odometerModalVisible, setOdometerModalVisible] = useState(false);
     const [vehicleSelectionModalVisible, setVehicleSelectionModalVisible] = useState(false);
     const [odometerValue, setOdometerValue] = useState('');
@@ -327,7 +326,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
     return (
         <>
             <ScrollView
-                style={[{marginTop:5 ,backgroundColor: colors.background }]}
+                style={[{ marginTop: 5, backgroundColor: colors.background }]}
                 contentContainerStyle={{ alignItems: "center", justifyContent: "center" }}
             >
                 <TouchableOpacity
@@ -497,6 +496,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 18,
         fontWeight: 'bold',
+        textAlign: "center"
     },
     loadingText: {
         fontSize: 18,
