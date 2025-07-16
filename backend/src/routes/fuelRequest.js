@@ -184,6 +184,20 @@ router.put('/bulk-delete', async (req, res) => {
     }
 });
 
+router.post('/hold-message/:id', async (req, res) => {
+    const { message } = req.body;
+    try {
+        const fuelRequest = await FuelRequest.findByIdAndUpdate(req.params.id, { message: message }, { new: true });
+        if (!fuelRequest) {
+            return res.status(404).json({ message: 'Fuel request not found' });
+        }
+        res.status(200).json({ message: 'Fuel request deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting fuel request:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+});
+
 router.delete('/:id', async (req, res) => {
     const { message } = req.body;
     try {

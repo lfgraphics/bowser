@@ -23,6 +23,9 @@ const page = ({ params }: { params: { manager: string } }) => {
     const [error, setError] = useState<string | null>(null);
     const [deleteMessage, setDeleteMessage] = useState<string>('');
     const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
+    const [haltingRequestId, setHaltingRequestId] = useState<string>('');
+    const [haltMessage, setHaltMessage] = useState<string>('');
+    const [showHaltDialog, setShowHaltDialog] = useState<boolean>(false);
     const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false);
     const [showErrorAlert, setShowErrorAlert] = useState<boolean>(false);
     const [user, setUser] = useState<User>()
@@ -90,6 +93,12 @@ const page = ({ params }: { params: { manager: string } }) => {
         setDeletingRequestId(sheetId)
         setShowDeleteDialog(true)
     }
+
+    const openHaltDialogue = (sheetId: string) => {
+        setHaltingRequestId(sheetId)
+        setShowHaltDialog(true)
+    }
+
     const handleDelete = async (message: string) => {
         try {
             let response = await fetch(`${BASE_URL}/fuel-request/${deletingRequestId}`, {
@@ -104,6 +113,29 @@ const page = ({ params }: { params: { manager: string } }) => {
             }
             setShowSuccessAlert(true);
             setData(data.filter(request => request._id !== deletingRequestId));
+        } catch (error) {
+            console.error(error);
+            setError(String(error));
+            setShowErrorAlert(true);
+        } finally {
+            setShowDeleteDialog(false);
+        }
+    };
+
+    const handleHalt = async (message: string) => {
+        try {
+            let response = await fetch(`${BASE_URL}/fuel-request/${haltingRequestId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message })
+            });
+            if (!response.ok) {
+                throw new Error('Failed to delete');
+            }
+            setShowSuccessAlert(true);
+            setData(data.filter(request => request._id !== haltingRequestId));
         } catch (error) {
             console.error(error);
             setError(String(error));
@@ -175,8 +207,9 @@ const page = ({ params }: { params: { manager: string } }) => {
                             Location:  <span className='inline-flex gap-1 justify-end'><MapPin size={20} /> <Link className='text-blue-500' href={`https://www.google.com/maps?q=${request.location}`}>{request.location}</Link></span>
                         </CardContent>
                         <CardFooter>
-                            <div className='flex flex-row justify-between items-center w-full'>
+                            <div className='flex flex-row flex-wrap justify-between items-center w-full'>
                                 <Button variant="destructive" size="lg" onClick={() => openDeleteDialogue(request._id!)}>Reject</Button>
+                                <Button size="lg" onClick={() => openHaltDialogue(request._id!)}>Halt</Button>
                                 <DropdownMenu >
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="default" size="lg" className='p-4 h-10 text-center'>
@@ -250,6 +283,19 @@ const page = ({ params }: { params: { manager: string } }) => {
                     </AlertDialogHeader>
                     <AlertDialogAction onClick={() => handleDelete(deleteMessage)} disabled={deleteMessage?.length < 5}>Reject</AlertDialogAction>
                     <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>Cancel</AlertDialogCancel>
+                </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog open={showHaltDialog} onOpenChange={setShowHaltDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Helt/ Hold</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Enter the message to notify the driver/ halt reason
+                            <Input value={haltMessage} type="text" onChange={(e) => setHaltMessage(e.target.value)} placeholder='Enter reason for Hold/Halt.' className='mt-3 text-foreground placeholder:text-gray-400' />
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogAction onClick={() => handleHalt(haltMessage)} disabled={deleteMessage?.length < 5}>Submit</AlertDialogAction>
+                    <AlertDialogCancel onClick={() => setShowHaltDialog(false)}>Cancel</AlertDialogCancel>
                 </AlertDialogContent>
             </AlertDialog>
             {

@@ -118,6 +118,10 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'आईडी मोजूद नहीं है|' });
         }
 
+        if (!user.verified) {
+            return res.status(400).json({ message: 'आप को लॉग इन करने की अनुमति नहीं है' })
+        }
+
         const isPasswordValid = await argon2.verify(user.password, password);
 
         if (!isPasswordValid) {

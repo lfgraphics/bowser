@@ -30,29 +30,6 @@ async function registerSubscription({ mobileNumber, userId, subscription, platfo
 
         console.log(`Subscription registered successfully in the database:`, updatedSubscription);
 
-        if (platform === "web") {
-            console.log(`Sending web push notification...`);
-            await sendWebPushNotification({
-                userId,
-                message: "You will now receive necessary notifications on this device",
-                options: {
-                    title: "Notification Subscription Successful",
-                    url: `/`
-                }
-            });
-            console.log(`Web push notification sent successfully.`);
-        }
-
-        if (platform === "native") {
-            console.log(`Sending native push notification...`);
-            await sendNativePushNotification({
-                mobileNumber,
-                message: "You will now receive necessary notifications on this device",
-                options: { title: "Notification Subscription Successful" }
-            });
-            console.log(`Native push notification sent successfully.`);
-        }
-
         return updatedSubscription;
     } catch (error) {
         console.error(`Error during subscription registration: ${error.message}`, {
