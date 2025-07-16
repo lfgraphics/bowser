@@ -3,7 +3,8 @@ const router = express.Router();
 const FuelRequest = require('../models/FuelRequest');
 require('../models/fuelingOrders');
 const { sendWebPushNotification, sendBulkNotifications, getActiveTransferTargetUserId } = require('../utils/pushNotifications');
-const Vehicle = require('../models/vehicle')
+const Vehicle = require('../models/vehicle');
+const Driver = require('../models/driver');
 
 router.post('/', async (req, res) => {
     const { driverId, driverName, driverMobile, location, vehicleNumber, odometer } = req.body;
@@ -28,7 +29,7 @@ router.post('/', async (req, res) => {
             driverMobile,
             location, trip: `${requestVehicle.tripDetails.from} - ${requestVehicle.tripDetails.to}`,
             startDate: requestVehicle.tripDetails.startedOn,
-            manager: managers,
+            manager: managers || 'none',
             tripStatus: `${requestVehicle.tripDetails.open ? 'Open' : 'Closed'}`,
             tripId: requestVehicle.tripDetails.id
         });
@@ -136,12 +137,17 @@ router.get('/', async (req, res) => {
 router.get('/driver', async (req, res) => {
     const { driverId } = req.query;
     try {
-        const driversVehicles = await Vehicle.find({ 'tripDetails.driver': { $regex: driverId } });
-        if (!driversVehicles || driversVehicles.length === 0) {
-            return res.status(404).json({ message: 'No vehicles found for this driver' });
+        const driver = await Driver.findOne({ Name: { $regex: driverId } }).lean()
+        if (!driver.verified) {
+            return res.status(400).json('आप को ऐप चलने की अनुमति नहीं है')
+        } else {
+            const driversVehicles = await Vehicle.find({ 'tripDetails.driver': { $regex: driverId } });
+            if (!driversVehicles || driversVehicles.length === 0) {
+                return res.status(404).json({ message: 'No vehicles found for this driver' });
+            }
+            const vehicleNumbers = driversVehicles.map(vehicle => `${vehicle.VehicleNo} - मेनेजर: ${vehicle.manager || 'कोई नहीं'}`);
+            return res.status(200).json(vehicleNumbers);
         }
-        const vehicleNumbers = driversVehicles.map(vehicle => `${vehicle.VehicleNo} - मेनेजर: ${vehicle.manager || 'कोई नहीं'}`);
-        return res.status(200).json(vehicleNumbers);
     } catch (err) {
         console.error('Error fetching vehicles for driver:', err);
         return res.status(500).json({ message: 'Server error', error: err.message });
