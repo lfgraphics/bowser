@@ -130,7 +130,7 @@ const Allocations = ({ searchParams }: { searchParams: { tripNumber?: number, al
             {loading && <Loading />}
             <Toaster />
             <div className="flex justify-between items-start pt-8">
-                <h1 className="mb-4 font-bold text-2xl">Bowser Allocations</h1>
+                <h1 className="mb-4 font-bold text-2xl">All Allocations</h1>
             </div>
             <div className="flex gap-4 mb-4">
                 {/* Allocator Filter */}

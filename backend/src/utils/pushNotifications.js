@@ -101,6 +101,9 @@ async function sendWebPushNotification({ mobileNumber, userId, message, options 
             id: options.id,
         });
 
+        console.log("Payload length:", Buffer.byteLength(payload, 'utf8'), payload);
+
+
         let results = [];
         for (const sub of subscriptions) {
             try {

@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideSquareArrowOutUpRight, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List, Bell, FileUp, FileDown, AudioWaveform } from 'lucide-react'
+import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideSquareArrowOutUpRight, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List, Bell, FileUp, FileDown, AudioWaveform, Home, UserCogIcon } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 import ThemeChanger from '../ThemeChanger'
@@ -77,7 +77,7 @@ export function Sidebar() {
         </SheetTrigger>
         <SheetContent
           side="left"
-          className="top-0 left-0 z-50 fixed bg-background shadow w-max h-full"
+          className="top-0 left-0 z-50 fixed bg-background shadow w-max"
         >
           <SheetHeader>
             <SheetTitle>Hii {user?.name}</SheetTitle>
@@ -104,7 +104,19 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>
+                {/* Trans App navs start */}
                 <OnlyAllowed allowedRoles={["Trans App"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/trans-app">
+                      <Button
+                        variant="ghost"
+                        className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/trans-app" ? "bg-primary text-primary-foreground" : ""}`}
+                      >
+                        <Home className="mr-2 w-4 h-4" />
+                        Home
+                      </Button>
+                    </Link>
+                  </li>
                   <li onClick={toggleSidebar}>
                     <Link href="/trans-app/unloading-tracker">
                       <Button
@@ -139,6 +151,7 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>
+                {/* Trans App navs end */}
                 <OnlyAllowed allowedRoles={["Diesel Control Center Staff", "Admin"]}>
                   <li onClick={toggleSidebar}>
                     <Link href="/manage-vehicles">
@@ -148,6 +161,17 @@ export function Sidebar() {
                       >
                         <CaravanIcon className="mr-2 w-4 h-4" />
                         Manage Vehicles
+                      </Button>
+                    </Link>
+                  </li>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/manage-drivers">
+                      <Button
+                        variant="ghost"
+                        className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/manage-drivers" ? "bg-primary text-primary-foreground" : ""}`}
+                      >
+                        <UserCogIcon className="mr-2 w-4 h-4" />
+                        Manage Drivers
                       </Button>
                     </Link>
                   </li>
@@ -191,7 +215,6 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>
-                {/* Dynamica access Routes starts here ................ */}
                 <OnlyAllowed allowedRoles={["Admin", "Diesel Control Center Staff"]}>
                   <li onClick={toggleSidebar}>
                     <Link href={`/my-allocation?allocator=${user?.userId}`}>
@@ -207,7 +230,7 @@ export function Sidebar() {
                 </OnlyAllowed>
                 <OnlyAllowed allowedRoles={["Admin"]}>
                   <li onClick={toggleSidebar}>
-                    <Link href='fuel-allocations'>
+                    <Link href='/fuel-allocations'>
                       <Button
                         variant="ghost"
                         className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/fuel-allocations" ? "bg-primary text-primary-foreground" : ""}`}
@@ -220,7 +243,7 @@ export function Sidebar() {
                 </OnlyAllowed>
                 <OnlyAllowed allowedRoles={["Admin"]}>
                   <li onClick={toggleSidebar}>
-                    <Link href='fuel-requests'>
+                    <Link href='/fuel-requests'>
                       <Button
                         variant="ghost"
                         className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/fuel-requests" ? "bg-primary text-primary-foreground" : ""}`}

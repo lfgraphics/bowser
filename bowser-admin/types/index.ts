@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 
 export interface Driver {
+  _id: string
   Name: string
   ITPLId: string | null
   MobileNo?: Array<{
@@ -8,6 +9,11 @@ export interface Driver {
     IsDefaultNumber: boolean
     LastUsed: boolean
   }>
+  password: string
+  generationTime: string
+  verified: boolean
+  keypad: boolean
+  isRegistered: boolean
 }
 
 export interface TransferRequest {
@@ -636,6 +642,7 @@ export interface TransAppUser {
     type: string,
     data: [number]
   },
+  Division: string,
   vehicles: [string]
 }
 
@@ -680,10 +687,23 @@ export interface TankersTrip {
     VoucherNo: string;
     VoucherType: string;
   };
+  EmptyTripDetail: {
+    VehicleNo: string;
+    ProposedDate: string;
+    ReportDate: string;
+    EndDate: string;
+    StartOdometer: number;
+    EndOdometer: number;
+    PreviousTripId: string;
+    PreviousTripIdNew: string;
+    Division: number;
+  },
   EndTo: string;
   LoadStatus: number;
   StartDate: string;
+  targetTime: string;
   StartDriver: string;
+  StartDriverMobile: string;
   StartFrom: string;
   LoadTripDetail: {
     LoadDate: string;
@@ -696,5 +716,12 @@ export interface TankersTrip {
       ShortQty: number;
     };
   };
+  TravelHistory: {
+    TrackUpdateDate: Date;
+    LocationOnTrackUpdate: string;
+    OdometerOnTrackUpdate: number;
+    ManagerComment: string;
+    Driver: string;
+  }[];
   VehicleNo: string;
 }

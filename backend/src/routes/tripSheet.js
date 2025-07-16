@@ -549,7 +549,7 @@ router.post('/addition/:id', async (req, res) => {
     }
 })
 
-router.delete('delete-dispense', async (req, res) => {
+router.delete('/delete-dispense', async (req, res) => {
     const id = req.query.id
     const sheetId = req.query.tripSheetId
 
@@ -568,5 +568,30 @@ router.delete('delete-dispense', async (req, res) => {
     // Update the tripSheet in the database
     await tripSheet.save();
 })
+
+router.post('/verify-opening', async (req, res) => {
+    const { tripSheetId } = req.body;
+    console.log('tripSheetId:', tripSheetId);
+    try {
+        if (!tripSheetId) {
+            console.error('TripSheet ID is required.');
+            return res.status(400).json({ message: 'TripSheet ID is required.' });
+        }
+        const trip = await TripSheet.find({ tripSheetId }).select('settelment');
+        console.log('trip:', trip);
+        if (!trip) {
+            console.error('TripSheet not found for ID:', tripSheetId);
+            return res.status(404).json({ message: 'TripSheet not found.' });
+        }
+        return res.status(200).json({
+            message: 'TripSheet found',
+            trip: trip[0],
+            isSetteled: trip[0].settelment && trip[0].settelment.settled === true ? true : false
+        });
+    } catch (error) {
+        console.error('Error verifying opening:', error);
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+});
 
 module.exports = router;

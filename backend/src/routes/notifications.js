@@ -19,25 +19,16 @@ router.post('/register', async (req, res) => {
 
 // Unregister subscription
 router.post('/unregister', async (req, res) => {
-    const { mobileNumber, userId, platform, endpoint, pushToken } = req.body;
+    const { mobileNumber, userId, platform } = req.body;
+    console.log("unregistering", mobileNumber, userId)
 
-    if ((!userId && !mobileNumber) || !platform || (!endpoint && !pushToken)) {
-        return res.status(400).json({ error: 'Mobile number/userId, platform, and endpoint/pushToken are required.' });
+    if ((!userId && !mobileNumber) || !platform) {
+        return res.status(400).json({ error: 'Mobile number and platform are required.' });
     }
 
     try {
-        let deleteQuery = { platform };
-        if (platform === 'web' && endpoint) {
-            deleteQuery['subscription.endpoint'] = endpoint;
-        } else if (platform === 'native' && pushToken) {
-            deleteQuery['subscription.pushToken'] = pushToken;
-        } else {
-            return res.status(400).json({ error: 'Missing endpoint or pushToken for the platform.' });
-        }
-        if (mobileNumber) deleteQuery.mobileNumber = mobileNumber;
-        if (userId) deleteQuery.userId = userId;
-
-        await PushSubscription.deleteOne(deleteQuery);
+        if (mobileNumber) await PushSubscription.deleteOne({ mobileNumber, platform });
+        if (userId) await PushSubscription.deleteOne({ userId, platform });
         res.status(200).json({ success: true, message: 'Subscription unregistered successfully.' });
     } catch (error) {
         console.error('Error unregistering subscription:', error);
