@@ -52,7 +52,10 @@ export default function AuthScreen() {
       });
 
       const endpoint = isLogin ? 'login' : 'signup';
-      const response = await fetch(`${baseUrl}/auth${authNav == "vehicleDriver" ? "/driver" : ""}/${endpoint}`, {
+
+      const url = `${baseUrl}/auth${authNav == "vehicleDriver" ? "/driver" : ""}/${endpoint}${(authNav == "vehicleDriver" && endpoint == "signup") ? "-request" : ""}`
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -61,8 +64,6 @@ export default function AuthScreen() {
       });
 
       const data = await response.json();
-      console.log('url: ' + `${baseUrl}/auth${authNav == "vehicleDriver" ? "/driver" : ""}/${endpoint}`)
-      console.log("response", data);
 
       if (!response.ok) {
         Alert.alert(
@@ -164,17 +165,17 @@ export default function AuthScreen() {
   };
 
   const validateInputs = () => {
-    if (!password) {
+    if (!password && authNav == "bowserDriver") {
       alert("पासवर्ड आवश्यक है।");
       passwordInputRef.current?.focus();
       return false;
     }
-    if (!isLogin) {
-      if (!phoneNumber) {
-        alert("फ़ोन नंबर आवश्यक है।");
-        phoneNumberInputRef.current?.focus();
-        return false;
-      }
+    if (!phoneNumber) {
+      alert("फ़ोन नंबर आवश्यक है।");
+      phoneNumberInputRef.current?.focus();
+      return false;
+    }
+    if (!isLogin && authNav == "bowserDriver") {
       if (!name) {
         alert("नाम आवश्यक है।");
         nameInputRef.current?.focus();
@@ -245,7 +246,7 @@ export default function AuthScreen() {
           </View>
 
           <View style={styles.section}>
-            {!isLogin && (
+            {!isLogin && authNav == "bowserDriver" && (
               <View style={styles.inputContainer}>
                 <Text style={{ color: colors.text }}>{authNav == "bowserDriver" ? "नाम" : "ITPLId"}:</Text>
                 <TextInput
@@ -276,33 +277,36 @@ export default function AuthScreen() {
                 blurOnSubmit={false}
               />
             </View>
-            <View style={styles.inputContainer}>
-              <Text style={{ color: colors.text }}>{isLogin ? "पासवर्ड" : "नया पासवर्ड बनाएँ"}:</Text>
-              <View style={styles.passwordContainer}>
-                <TextInput
-                  ref={passwordInputRef}
-                  style={[styles.input, styles.passwordInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                  placeholder="पासवर्ड दर्ज करें"
-                  placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  returnKeyType={isLogin ? "done" : "next"}
-                  onSubmitEditing={() => handleAuth()}
-                  blurOnSubmit={isLogin}
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-off' : 'eye'}
-                    size={24}
-                    color={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+            {
+              ((authNav == "bowserDriver") || (authNav == "vehicleDriver" && isLogin)) &&
+              <View style={styles.inputContainer}>
+                <Text style={{ color: colors.text }}>{isLogin ? "पासवर्ड" : "नया पासवर्ड बनाएँ"}:</Text>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    ref={passwordInputRef}
+                    style={[styles.input, styles.passwordInput, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
+                    placeholder="पासवर्ड दर्ज करें"
+                    placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    returnKeyType={isLogin ? "done" : "next"}
+                    onSubmitEditing={() => handleAuth()}
+                    blurOnSubmit={isLogin}
                   />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <Ionicons
+                      name={showPassword ? 'eye-off' : 'eye'}
+                      size={24}
+                      color={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            }
           </View>
 
           <TouchableOpacity
