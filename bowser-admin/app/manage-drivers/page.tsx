@@ -1,6 +1,6 @@
 "use client"
 import { BASE_URL } from "@/lib/api";
-import { Driver } from "@/types"
+import { Driver, SignUpRequests } from "@/types"
 import { useCallback, useEffect, useState } from "react"
 import Loading from "../loading";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
@@ -10,12 +10,15 @@ import { Button } from "@/components/ui/button";
 import { toast, Toaster } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
+import { formatDate } from "@/lib/utils";
 
 const page = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [data, setData] = useState<Driver[]>();
+    const [signupRequests, setSignupRequests] = useState<SignUpRequests[]>();
     const [updateDriverId, setUpdateDriverId] = useState<string>('');
-    const [updateType, setUpdateType] = useState<'Reset Password' | 'Change Phone No.' | ''>('');
+    const [driverId, setDriverId] = useState<string>('');
+    const [updateType, setUpdateType] = useState<'Reset Password' | 'Change Phone No.' | 'Create Account' | ''>('');
     const [updateValue, setUpdateValue] = useState<string>('');
     const [params, setParams] = useState<string>('');
     const [updateDialogOpen, setUpdateDialogOpen] = useState<boolean>(false);
@@ -23,13 +26,15 @@ const page = () => {
     const fetchData = async () => {
         setLoading(true)
         try {
+            const signupRequests = await fetch(`${BASE_URL}/auth/driver/signup-requests?searchParam=${params}`)
+            const requestsData = await signupRequests.json()
+            setSignupRequests(requestsData);
             const response = await fetch(`${BASE_URL}/tanker-drivers?params=${params}`)
             const responseData = await response.json()
             const manipulatedData = responseData?.map((driver: Driver) => ({
                 ...driver,
                 isRegistered: !!driver.password
             }));
-            console.log(manipulatedData)
             setData(manipulatedData)
         } catch (err) {
             console.log(err)
@@ -212,6 +217,47 @@ const page = () => {
         }
     }
 
+    const deleteSignupRequest = async (id: string) => {
+
+    }
+
+    const createDriverAccount = async () => {
+        setLoading(true)
+        const bodyData = {
+            password: updateValue,
+            name: driverId,
+            deviceUUID: signupRequests?.find((req) => req._id == updateDriverId)?.deviceUUID,
+            phoneNumber: signupRequests?.find((req) => req._id == updateDriverId)?.phoneNumber,
+            pushToken: signupRequests?.find((req) => req._id == updateDriverId)?.pushToken,
+        }
+        try {
+            const response = await fetch(`${BASE_URL}/auth/driver/signup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bodyData),
+            });
+            const responseData = await response.json();
+
+            if (!response.ok) {
+                toast.error("Error!", {
+                    description: responseData.message,
+                    richColors: true
+                })
+            } else {
+                toast.success("Success", { description: responseData.message, richColors: true })
+            }
+        } catch (err) {
+            toast.error("An error occured", {
+                description: typeof err === "object" && err !== null && "code" in err ? String((err as { code?: unknown }).code) : String(err),
+                richColors: true
+            })
+        } finally {
+            setLoading(false)
+        }
+    }
+
     return (
         <>
             {loading && <Loading />}
@@ -226,6 +272,25 @@ const page = () => {
                     onChange={(e) => setParams(e.target.value)}
                 />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+                    {signupRequests && signupRequests.length > 0 && signupRequests.map(requst => (
+                        <Card key={requst._id}>
+                            <CardContent>
+                                <CardHeader>{requst.phoneNumber}</CardHeader>
+                                <CardDescription className="flex flex-col gap-4">
+                                    <span>
+                                        <strong>Device Id: </strong>{requst.deviceUUID}
+                                    </span>
+                                    <span>
+                                        <strong>Created at: </strong>{formatDate(requst.generationTime)}
+                                    </span>
+                                </CardDescription>
+                                <CardFooter className="mt-4 grid grid-cols-2 gap-2">
+                                    <Button onClick={() => { setUpdateDriverId(requst._id); setUpdateType('Create Account'); setUpdateDialogOpen(true); }}>Create Account</Button>
+                                    <Button variant="destructive" onClick={() => { const response = confirm("Do you really wish to delete this driver Id? This action can't be undone"); if (response) deleteSignupRequest(requst._id) }}>Delete</Button>
+                                </CardFooter>
+                            </CardContent>
+                        </Card>
+                    ))}
                     {data && data.map(card => (
                         <Card key={card._id}>
                             <CardContent>
@@ -262,19 +327,24 @@ const page = () => {
             </div >
             <AlertDialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
                 <AlertDialogContent>
-                    <AlertDialogTitle>{updateType} for {data?.find((card) => card._id == updateDriverId)?.Name}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        <Label htmlFor="updateValue"></Label>
+                    <AlertDialogTitle>{updateType} {updateType !== "Create Account" ? "for" + data?.find((card) => card._id == updateDriverId)?.Name : "for " + signupRequests?.find((request) => request._id == updateDriverId)?.phoneNumber}</AlertDialogTitle>
+                    <AlertDialogDescription className="flex flex-col gap-2">
+                        {updateType == "Create Account" &&
+                            <Input
+                                placeholder="Enter Driver Id eg.: 00245"
+                                value={driverId}
+                                onChange={(e) => setDriverId(e.target.value)}
+                            />
+                        }
                         <Input
-                            id="updateValue"
-                            placeholder={"Enter " + updateType.split(" ")[1] + " to update"}
+                            placeholder={updateType !== "Create Account" ? "Enter " + updateType.split(" ")[1] + " to update" : "Enter Password"}
                             value={updateValue}
                             onChange={(e) => setUpdateValue(e.target.value)}
                         />
                     </AlertDialogDescription>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setUpdateDialogOpen(false)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => { updateDriverDetail(); }}>Update</AlertDialogAction>
+                        <AlertDialogAction onClick={() => { updateType !== "Create Account" ? updateDriverDetail() : createDriverAccount() }}>{updateType == "Create Account" ? "Create" : "Update"}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

@@ -8,10 +8,11 @@ const argon2 = require('argon2');
 // const Role = require('../models/role');
 const moment = require('moment-timezone');
 const vehicle = require('../models/vehicle');
+const SignupRequest = require('../models/SignupRequest');
 
 router.post('/signup', async (req, res) => {
     try {
-        const { password, phoneNumber, name, deviceUUID } = req.body;
+        const { password, phoneNumber, name, deviceUUID, requestId } = req.body;
 
         const driver = await Driver.find({ Name: { $regex: name, $options: 'i' } });
 
@@ -57,8 +58,13 @@ router.post('/signup', async (req, res) => {
         );
 
         const token = jwt.sign({ user: updatedDriver }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        if (requestId && requestId !== undefined) {
+            await SignupRequest.deleteOne(requestId);
+        }
+
         return res.status(201).json({
-            message: `सफलतापूर्वक आईडी बन गई${id}\n${phoneNumber} फ़ोन नम्बर और पस्वेड दर्ज क्र के लॉग इन करें`,
+            message: `Id has been created successfully by ${id}`,
             token,
             verified: false
         });
@@ -220,6 +226,51 @@ router.post('/verify-token', async (req, res) => {
     } catch (error) {
         console.error('Token verification error:', error);
         res.status(500).json({ valid: false, message: 'Internal server error', error: error.message });
+    }
+});
+
+router.post('/signup-request', async (req, res) => {
+    try {
+        const { phoneNumber, deviceUUID, pushToken } = req.body;
+
+        const newSignupRequest = new SignupRequest({
+            phoneNumber,
+            deviceUUID,
+            pushToken,
+            generationTime: moment().tz("Asia/Kolkata").toDate()
+        })
+        await newSignupRequest.save()
+
+        return res.status(201).json({ message: `सफलतापूर्वक आईडी बनाने का अनुरोध कर दिया गया है` });
+    } catch (error) {
+        console.error('Signup error:', error);
+        return res.status(500).json({ message: 'सर्वर एरर', error: error.message });
+    }
+});
+
+router.get('/signup-requests', async (req, res) => {
+    const { searchParam } = req.query;
+    try {
+        const signupRequests = await SignupRequest.find({ phoneNumber: { $regex: searchParam } });
+        return res.status(200).json(signupRequests);
+    } catch (err) {
+        console.error(err)
+        return res.status(500).json({ message: "Server Error!", err })
+    }
+});
+
+router.delete('/signup-request/:id', async (req, res) => {
+    const id = req.params
+    try {
+        const deletedRequest = SignupRequest.findOneAndDelete({ _id: id });
+        if (!deletedRequest) {
+            return res.status(400).json({ message: "Request not found." })
+        } else {
+            return res.status(200).json(deletedRequest);
+        }
+    } catch (err) {
+        console.error(err)
+        res.status(500).json({ message: "Server Error!", err })
     }
 });
 
