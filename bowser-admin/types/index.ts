@@ -16,6 +16,14 @@ export interface Driver {
   isRegistered: boolean
 }
 
+export interface SignUpRequests {
+  _id: string;
+  phoneNumber: string;
+  deviceUUID: string;
+  pushToken: string;
+  generationTime: string;
+}
+
 export interface TransferRequest {
   _id: string
   by: string

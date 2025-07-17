@@ -67,8 +67,6 @@ export function Sidebar() {
     });
   }
 
-  // add event listener for window.back and set the isopen false if it is tue 
-
   return (
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -164,6 +162,8 @@ export function Sidebar() {
                       </Button>
                     </Link>
                   </li>
+                </OnlyAllowed>
+                <OnlyAllowed allowedRoles={["Diesel Control Center Staff", "Admin", "Trans App"]}>
                   <li onClick={toggleSidebar}>
                     <Link href="/manage-drivers">
                       <Button

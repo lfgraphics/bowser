@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 interface SearchModalProps<T> {
@@ -27,7 +27,7 @@ export function SearchModal<T>({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-2 mt-4 max-h-[70svh] overflow-y-auto">
+        <DialogDescription className="space-y-2 mt-4 max-h-[70svh] overflow-y-auto text-foreground">
           {items.map((item) => (
             <Button
               key={keyExtractor(item)}
@@ -38,7 +38,7 @@ export function SearchModal<T>({
               {renderItem(item)}
             </Button>
           ))}
-        </div>
+        </DialogDescription>
       </DialogContent>
     </Dialog>
   );

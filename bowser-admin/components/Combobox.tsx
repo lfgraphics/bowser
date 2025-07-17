@@ -54,8 +54,6 @@ const Combobox = ({
     const actualOpen = isControlled ? open : internalOpen
     const setOpen = isControlled ? onOpenChange! : setInternalOpen
 
-    console.log(options)
-
     return (
         <Popover open={actualOpen} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -66,7 +64,7 @@ const Combobox = ({
                     className={cn(width, "justify-between", className)}
                 >
                     {value
-                        ? options.find((item) => item.value === value)?.label
+                        ? options.find((item) => item?.value === value)?.label
                         : placeholder}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -79,24 +77,34 @@ const Combobox = ({
                     <CommandList>
                         <CommandEmpty>No option found.</CommandEmpty>
                         <CommandGroup>
-                            {options.map((item) => (
-                                <CommandItem
-                                    key={item.value}
-                                    value={item.value}
-                                    onSelect={(currentValue) => {
-                                        onChange(currentValue === value ? "" : currentValue)
-                                        setOpen(false)
-                                    }}
-                                >
-                                    <Check
-                                        className={cn(
-                                            "mr-2 h-4 w-4",
-                                            value === item.value ? "opacity-100" : "opacity-0"
-                                        )}
-                                    />
-                                    {item.label}
-                                </CommandItem>
-                            ))}
+                            {options
+                                .filter((item) => {
+                                    const label = String(item?.label || '').toLowerCase().trim();
+                                    const search = searchTerm.toLowerCase().trim();
+                                    return label.includes(search);
+                                })
+                                .map((item) => (
+                                    <CommandItem
+                                        key={item.value}
+                                        onSelect={() => {
+                                            onChange(item.value === value ? "" : item.value);
+                                            setOpen(false);
+                                        }}
+                                    >
+                                        <Check
+                                            className={cn(
+                                                "mr-2 h-4 w-4",
+                                                value === item.value ? "opacity-100" : "opacity-0"
+                                            )}
+                                        />
+                                        <span dangerouslySetInnerHTML={{
+                                            __html: item.label.replace(
+                                                new RegExp(`(${searchTerm})`, 'ig'),
+                                                '<strong>$1</strong>'
+                                            )
+                                        }} />
+                                    </CommandItem>
+                                ))}
                         </CommandGroup>
                     </CommandList>
                 </Command>

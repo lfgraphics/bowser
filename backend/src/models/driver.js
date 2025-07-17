@@ -15,6 +15,7 @@ const driverSchema = new mongoose.Schema({
     resetTokenExpiry: Date,
     roles: [String],
     verified: Boolean,
+    inActive: { type: Boolean, default: false },
     pushToken: String,
     generationTime: { type: Date },
 });

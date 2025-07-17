@@ -8,4 +8,4 @@ const signupRequestSchema = new mongoose.Schema({
     generationTime: { type: Date },
 });
 
-module.exports = transportDatabaseConnection.model('SignupRequest', signupRequestSchema, 'DriversCollection');
+module.exports = transportDatabaseConnection.model('SignupRequest', signupRequestSchema, 'SignupRequeests');

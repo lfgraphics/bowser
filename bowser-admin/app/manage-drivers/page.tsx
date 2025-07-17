@@ -11,6 +11,9 @@ import { toast, Toaster } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { formatDate } from "@/lib/utils";
+import { searchItems } from "@/utils/searchUtils";
+import { SearchModal } from "@/components/SearchModal";
+import { Badge } from "@/components/ui/badge";
 
 const page = () => {
     const [loading, setLoading] = useState<boolean>(false);
@@ -22,6 +25,22 @@ const page = () => {
     const [updateValue, setUpdateValue] = useState<string>('');
     const [params, setParams] = useState<string>('');
     const [updateDialogOpen, setUpdateDialogOpen] = useState<boolean>(false);
+    const [alreadyRegistered, setAlreadyRegistered] = useState<boolean>(false);
+    const [searchModalConfig, setSearchModalConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        items: any[];
+        onSelect: (item: any) => void;
+        renderItem: (item: any) => React.ReactNode;
+        keyExtractor: (item: any) => string;
+    }>({
+        isOpen: false,
+        title: "",
+        items: [],
+        onSelect: () => { },
+        renderItem: () => null,
+        keyExtractor: () => "",
+    });
 
     const fetchData = async () => {
         setLoading(true)
@@ -76,7 +95,7 @@ const page = () => {
 
     const updateDriverDetail = async () => {
         setLoading(true)
-        const updatingDriverId = data?.find((driver) => driver._id == updateDriverId)?.Name
+        const updatingDriverId = data?.find((driver) => driver.Name == updateDriverId)?.Name
         if (updateType == "Change Phone No.") {
             try {
                 await updateDriverMobile(updatingDriverId!, updateValue);
@@ -110,7 +129,7 @@ const page = () => {
                 } else {
                     setData(prevData =>
                         prevData?.map(driver =>
-                            driver._id === updateDriverId ? { ...driver, ...jsonResponse.updateDriver } : driver
+                            driver.Name === updateDriverId ? { ...driver, ...jsonResponse.updateDriver } : driver
                         )
                     )
                     toast.success(jsonResponse.message, { richColors: true });
@@ -141,7 +160,7 @@ const page = () => {
             } else {
                 setData(prevData =>
                     prevData?.map(driver =>
-                        driver._id === updateDriverId ? { ...driver, ...data.updateDriver } : driver
+                        driver.Name === updateDriverId ? { ...driver, ...data.updateDriver } : driver
                     )
                 )
                 toast.success(data.message, { richColors: true })
@@ -172,7 +191,7 @@ const page = () => {
             } else {
                 setData(prevData =>
                     prevData?.map(driver =>
-                        driver._id === updateDriverId ? { ...driver, ...data.updateDriver } : driver
+                        driver.Name === updateDriverId ? { ...driver, ...data.updateDriver } : driver
                     )
                 )
                 toast.success(data.message, { richColors: true })
@@ -203,7 +222,7 @@ const page = () => {
             } else {
                 setData(prevData =>
                     prevData?.map(driver =>
-                        driver._id === updateDriverId ? { ...driver, ...data.updateDriver } : driver
+                        driver.Name === updateDriverId ? { ...driver, ...data.updateDriver } : driver
                     )
                 )
                 toast.success(data.message, { richColors: true })
@@ -218,7 +237,31 @@ const page = () => {
     }
 
     const deleteSignupRequest = async (id: string) => {
+        try {
+            const response = await fetch(`${BASE_URL}/auth/driver/signup-request/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            const responseData = await response.json();
 
+            if (!response.ok) {
+                toast.error("Error!", {
+                    description: responseData.message,
+                    richColors: true
+                })
+            } else {
+                toast.success("Success", { description: responseData.message, richColors: true })
+            }
+        } catch (err) {
+            toast.error("An error occured", {
+                description: typeof err === "object" && err !== null && "code" in err ? String((err as { code?: unknown }).code) : String(err),
+                richColors: true
+            })
+        } finally {
+            setLoading(false)
+        }
     }
 
     const createDriverAccount = async () => {
@@ -229,6 +272,7 @@ const page = () => {
             deviceUUID: signupRequests?.find((req) => req._id == updateDriverId)?.deviceUUID,
             phoneNumber: signupRequests?.find((req) => req._id == updateDriverId)?.phoneNumber,
             pushToken: signupRequests?.find((req) => req._id == updateDriverId)?.pushToken,
+            requestId: signupRequests?.find((req) => req._id == updateDriverId)?._id,
         }
         try {
             const response = await fetch(`${BASE_URL}/auth/driver/signup`, {
@@ -256,6 +300,51 @@ const page = () => {
         } finally {
             setLoading(false)
         }
+    }
+
+    const searchDriver = async (idNumber: string) => {
+        setLoading(true);
+        try {
+            const drivers = await searchItems<Driver>({
+                url: `${BASE_URL}/searchDriver`,
+                searchTerm: idNumber,
+                errorMessage: 'No driver found with the given ID'
+            });
+            if (drivers.length > 0) {
+                setSearchModalConfig({
+                    isOpen: true,
+                    title: "Select a Driver",
+                    items: drivers,
+                    onSelect: handleDriverSelection,
+                    renderItem: (driver) => `${driver.Name}, ${driver.MobileNo.find((num: { LastUsed: boolean }) => num.LastUsed)?.MobileNo || "No Last Used Mobile No."}`,
+                    keyExtractor: (driver) => driver.ITPLId || driver.Name,
+                });
+            }
+        } catch (error) {
+            console.error('Error searching for driver:', error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const handleDriverSelection = (driver: Driver) => {
+        setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
+
+        if (driver) {
+            setDriverId(driver.Name);
+            if (driver.password) {
+                setAlreadyRegistered(true)
+            }
+        }
+    }
+
+    const redirectToChangePassword = () => {
+        console.log('updateDriverID: ', updateDriverId)
+        setUpdateDriverId(driverId);
+        setParams(driverId);
+        console.log('driverId: ', driverId)
+        setUpdateType('Reset Password');
+        setAlreadyRegistered(false)
     }
 
     return (
@@ -313,12 +402,12 @@ const page = () => {
                                     }
                                 </CardDescription>
                                 <CardFooter className="mt-4 grid grid-cols-2 gap-2">
-                                    {card.isRegistered && <Button onClick={() => { setUpdateDriverId(card._id); setUpdateType('Reset Password'); setUpdateDialogOpen(true); }}>Reset Password</Button>}
-                                    {!card.isRegistered && !card.keypad && <Button onClick={() => { markAsKeypadUser(card._id) }}>Set as keypad</Button>}
-                                    {card.verified && <Button onClick={() => blockDriver(card._id)}>Block Driver</Button>}
-                                    <Button onClick={() => { setUpdateDriverId(card._id); setUpdateType('Change Phone No.'); setUpdateDialogOpen(true); }}>Change Phone No.</Button>
-                                    {!card.verified && card.isRegistered && <Button onClick={() => unBlockDriver(card._id)}>UnBlock</Button>}
-                                    <Button variant="destructive" onClick={() => { const response = confirm("Do you really wish to delete this driver Id? This action can't be undone"); if (response) deleteDriver(card._id) }}>Delete</Button>
+                                    {card.isRegistered && <Button onClick={() => { setUpdateDriverId(card.Name); setUpdateType('Reset Password'); setUpdateDialogOpen(true); }}>Reset Password</Button>}
+                                    {!card.isRegistered && !card.keypad && <Button onClick={() => { markAsKeypadUser(card.Name) }}>Set as keypad</Button>}
+                                    {card.verified && <Button onClick={() => blockDriver(card.Name)}>Block Driver</Button>}
+                                    <Button onClick={() => { setUpdateDriverId(card.Name); setUpdateType('Change Phone No.'); setUpdateDialogOpen(true); }}>Change Phone No.</Button>
+                                    {!card.verified && card.isRegistered && <Button onClick={() => unBlockDriver(card.Name)}>UnBlock</Button>}
+                                    <Button variant="destructive" onClick={() => { const response = confirm("Do you really wish to delete this driver Id? This action can't be undone"); if (response) deleteDriver(card.Name) }}>Delete</Button>
                                 </CardFooter>
                             </CardContent>
                         </Card>
@@ -327,16 +416,41 @@ const page = () => {
             </div >
             <AlertDialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
                 <AlertDialogContent>
-                    <AlertDialogTitle>{updateType} {updateType !== "Create Account" ? "for" + data?.find((card) => card._id == updateDriverId)?.Name : "for " + signupRequests?.find((request) => request._id == updateDriverId)?.phoneNumber}</AlertDialogTitle>
+                    <AlertDialogTitle>{updateType} {updateType !== "Create Account" ? "for " + data?.find((card) => card.Name == updateDriverId)?.Name : "for " + signupRequests?.find((request) => request._id == updateDriverId)?.phoneNumber}</AlertDialogTitle>
                     <AlertDialogDescription className="flex flex-col gap-2">
+                        {alreadyRegistered &&
+                            <>
+                                <span className="text-red-500">Already Registered</span>
+                                <Button onClick={() => redirectToChangePassword()}>Change Password</Button>
+                            </>
+                        }
                         {updateType == "Create Account" &&
                             <Input
+                                className="text-foreground"
                                 placeholder="Enter Driver Id eg.: 00245"
                                 value={driverId}
-                                onChange={(e) => setDriverId(e.target.value)}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setDriverId(value);
+                                    const nativeEvent = e.nativeEvent as InputEvent;
+                                    if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
+                                        searchDriver(value);
+                                    }
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Backspace") {
+                                        return;
+                                    }
+                                    if (e.key === 'Enter' && driverId.length > 3) {
+                                        e.preventDefault();
+                                        searchDriver(driverId);
+                                    }
+                                }}
+                            // onChange={(e) => setDriverId(e.target.value)}
                             />
                         }
                         <Input
+                            className="text-foreground"
                             placeholder={updateType !== "Create Account" ? "Enter " + updateType.split(" ")[1] + " to update" : "Enter Password"}
                             value={updateValue}
                             onChange={(e) => setUpdateValue(e.target.value)}
@@ -348,6 +462,15 @@ const page = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            <SearchModal
+                isOpen={searchModalConfig.isOpen}
+                onClose={() => setSearchModalConfig((prev) => ({ ...prev, isOpen: false }))}
+                title={searchModalConfig.title}
+                items={searchModalConfig.items}
+                onSelect={searchModalConfig.onSelect}
+                renderItem={searchModalConfig.renderItem}
+                keyExtractor={searchModalConfig.keyExtractor}
+            />
         </>
     )
 }

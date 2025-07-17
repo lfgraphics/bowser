@@ -6,7 +6,17 @@ const argon2 = require('argon2');
 router.get('/', async (req, res) => {
     const { params } = req.query;
     try {
-        const drivers = await Driver.find({ $or: [{ Name: { $regex: params, $options: 'i' } }, { 'MobileNo.MobileNo': { $regex: params } }] }).sort({ _id: -1 }).limit(20).lean();
+        const drivers = await Driver.find({
+            $and: [
+                { $or: [{ Name: { $regex: params, $options: 'i' } }, { 'MobileNo.MobileNo': { $regex: params } }] },
+                {
+                    $or: [
+                        { isActive: { $exists: false } },
+                        { isActive: true }
+                    ]
+                }
+            ]
+        }).sort({ _id: -1 }).limit(20).lean();
         if (!drivers) {
             console.log('nothing found with the params: ', params);
             return res.status(400).json({ message: "No data found with the given params" })
@@ -21,7 +31,7 @@ router.get('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     const id = req.params.id;
     try {
-        const deletedDriver = await Driver.deleteOne({ _id: id });
+        const deletedDriver = await Driver.findOneAndUpdate({ inActive: true });
         if (!deletedDriver) {
             return res.status(400).json({ message: "can't find the driver" });
         }

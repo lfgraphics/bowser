@@ -14,7 +14,14 @@ router.post('/signup', async (req, res) => {
     try {
         const { password, phoneNumber, name, deviceUUID, requestId } = req.body;
 
-        const driver = await Driver.find({ Name: { $regex: name, $options: 'i' } });
+        const driver = await Driver.find({
+            $and: [{ Name: { $regex: name, $options: 'i' } }, {
+                $or: [
+                    { isActive: { $exists: false } },
+                    { isActive: true }
+                ]
+            }]
+        });
 
         if (driver.length === 0) {
             return res.status(404).json({ message: "आप की आईडी डेटाबेस में मोजूद नहीं है, कृपया डीज़ल डिपार्टमेंट में संपर्क करें" });
@@ -57,10 +64,12 @@ router.post('/signup', async (req, res) => {
             { new: true, upsert: true }
         );
 
+        console.log(JSON.stringify(updatedDriver))
+
         const token = jwt.sign({ user: updatedDriver }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
         if (requestId && requestId !== undefined) {
-            await SignupRequest.deleteOne(requestId);
+            await SignupRequest.deleteOne({ _id: requestId });
         }
 
         return res.status(201).json({
@@ -251,7 +260,7 @@ router.post('/signup-request', async (req, res) => {
 router.get('/signup-requests', async (req, res) => {
     const { searchParam } = req.query;
     try {
-        const signupRequests = await SignupRequest.find({ phoneNumber: { $regex: searchParam } });
+        const signupRequests = await SignupRequest.find({ phoneNumber: { $regex: searchParam } }).sort({ _id: -1 }).lean();
         return res.status(200).json(signupRequests);
     } catch (err) {
         console.error(err)
@@ -260,13 +269,13 @@ router.get('/signup-requests', async (req, res) => {
 });
 
 router.delete('/signup-request/:id', async (req, res) => {
-    const id = req.params
+    const id = req.params.id;
     try {
-        const deletedRequest = SignupRequest.findOneAndDelete({ _id: id });
+        const deletedRequest = await SignupRequest.findOneAndDelete({ _id: id });
         if (!deletedRequest) {
             return res.status(400).json({ message: "Request not found." })
         } else {
-            return res.status(200).json(deletedRequest);
+            return res.status(200).json({ message: "Deleted Successfully", deletedRequest });
         }
     } catch (err) {
         console.error(err)
