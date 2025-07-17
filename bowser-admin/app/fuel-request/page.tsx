@@ -294,7 +294,7 @@ const page = ({ params }: { params: { manager: string } }) => {
                             <Input value={haltMessage} type="text" onChange={(e) => setHaltMessage(e.target.value)} placeholder='Enter reason for Hold/Halt.' className='mt-3 text-foreground placeholder:text-gray-400' />
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogAction onClick={() => handleHalt(haltMessage)} disabled={deleteMessage?.length < 5}>Submit</AlertDialogAction>
+                    <AlertDialogAction onClick={() => handleHalt(haltMessage)} disabled={haltMessage?.length < 3}>Submit</AlertDialogAction>
                     <AlertDialogCancel onClick={() => setShowHaltDialog(false)}>Cancel</AlertDialogCancel>
                 </AlertDialogContent>
             </AlertDialog>
