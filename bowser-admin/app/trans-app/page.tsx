@@ -2,7 +2,7 @@
 import FilterableTable, { ColumnConfig } from '@/components/FilterableTable'
 import ImageFromBufferObject from '@/components/ImageFromBuffer'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import React, { useContext } from 'react'
+import React, { useContext, useEffect } from 'react'
 import { TransAppContext } from "./layout"; 
 
 type Row = {
@@ -17,6 +17,10 @@ export default function Page() {
     { key: 'sn', label: 'SN', filterable: false, sortable: false },
     { key: 'vehicle', label: 'Vehicle', filterable: true, sortable: true },
   ];
+
+  useEffect(() => {
+    console.log("User:", user);
+  }, [user]);
 
   const data: Row[] = user?.vehicles.map((vehicle, index) => ({
     sn: (index + 1).toString(),

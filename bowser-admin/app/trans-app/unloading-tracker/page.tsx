@@ -1,55 +1,15 @@
 "use client"
-import { isAuthenticated } from '@/lib/auth'
-import { TankersTrip, TransAppUser } from '@/types'
+import { TankersTrip } from '@/types'
 import { fetchLoadedButUnloadedTrips } from '@/utils/transApp'
-import { useRouter } from 'next/navigation'
-import React, { useEffect, useMemo, useState } from 'react'
-import FilterableTable, { ColumnConfig } from '@/components/FilterableTable'
-
-function flattenKeys(
-  obj: any,
-  prefix = ""
-): Array<{ key: string; label: string; render?: (row: any) => any }> {
-  let keys: Array<{ key: string; label: string; render?: (row: any) => any }> = [];
-  for (const k in obj) {
-    const value = obj[k];
-    const fullKey = prefix ? `${prefix}.${k}` : k;
-    if (
-      value !== null &&
-      typeof value === "object" &&
-      !Array.isArray(value)
-    ) {
-      // Recursively flatten nested objects
-      keys.push(
-        ...flattenKeys(value, fullKey)
-      );
-    } else {
-      keys.push({
-        key: fullKey,
-        label: fullKey,
-        render: (row: any) => {
-          // Traverse the path to get the value
-          return fullKey.split('.').reduce((acc, curr) => acc?.[curr], row);
-        }
-      });
-    }
-  }
-  return keys;
-}
+import React, { useEffect, useState, useContext } from 'react'
+import { TransAppContext } from "../layout";
+import LoadVehicleTracker from '@/components/LoadVehicleTracker'
+import Loading from '@/app/loading';
 
 const UnloadingTracker = () => {
-  const router = useRouter()
-  const [user, setUser] = useState<TransAppUser>()
+  const [loading, setLoading] = useState<boolean>(true)
+  const { user } = useContext(TransAppContext);
   const [data, setData] = useState<TankersTrip[]>([])
-
-  useEffect(() => {
-    if (isAuthenticated()) {
-      const storedUser = JSON.parse(localStorage.getItem('adminUser')!);
-      setUser(storedUser);
-    } else {
-      router.push('/login');
-    }
-  }, [])
 
   useEffect(() => {
     if (!user) return
@@ -59,22 +19,29 @@ const UnloadingTracker = () => {
 
   const fetchData = async () => {
     if (!user) return
-    let result = await fetchLoadedButUnloadedTrips(user._id)
-    // Ensure result is an array
-    setData(Array.isArray(result) ? result : [result])
-    console.log(result)
+    try {
+      setLoading(true)
+      let result = await fetchLoadedButUnloadedTrips(user._id)
+      // Ensure result is an array
+      setData(Array.isArray(result) ? result : [result])
+      console.log(result)
+    } catch (error) {
+      console.error("Error fetching data:", error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const columns: ColumnConfig<TankersTrip>[] = useMemo(() => {
-    if (!data || data.length === 0) return []
-    return flattenKeys(data[0])
-  }, [data])
-
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Unloading Tracker</h2>
-      {/* <FilterableTable<TankersTrip> data={data} columns={columns} /> */}
-    </div>
+    <>
+      {loading && <Loading />}
+      <div className="flex flex-col gap-4">
+        <div className="actions">
+          {!loading && data && <LoadVehicleTracker tripsData={data} />}
+        </div>
+        {/* <FilterableTable<TankersTrip> data={data} columns={columns} /> */}
+      </div>
+    </>
   )
 }
 

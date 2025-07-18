@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 interface ImageFromBufferObjectProps {
     bufferObject?: {
-        type: string; // always "Buffer"
+        type: string;
         data: number[];
     };
     mimeType?: string;
@@ -16,16 +16,22 @@ const ImageFromBufferObject: React.FC<ImageFromBufferObjectProps> = ({
     alt = "Image",
     className = ""
 }) => {
-    if (!bufferObject || !Array.isArray(bufferObject.data)) return null;
-    const uint8Array = new Uint8Array(bufferObject.data);
-    const base64String = btoa(String.fromCharCode(...uint8Array));
-    const src = `data:${mimeType};base64,${base64String}`;
+    const [src, setSrc] = useState<string | null>(null);
 
-    return (
-        <>
-            <img src={src} alt={alt} className={className} />
-        </>
-    );
+    useEffect(() => {
+        if (!bufferObject || !Array.isArray(bufferObject.data)) return;
+
+        const blob = new Blob([new Uint8Array(bufferObject.data)], { type: mimeType });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setSrc(reader.result as string);
+        };
+        reader.readAsDataURL(blob);
+    }, [bufferObject, mimeType]);
+
+    if (!src) return null;
+
+    return <img src={src} alt={alt} className={className} />;
 };
 
 export default ImageFromBufferObject;

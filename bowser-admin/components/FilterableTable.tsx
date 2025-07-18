@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import {
     Table,
     TableBody,
+    TableCaption,
     TableCell,
     TableHead,
     TableHeader,
@@ -12,6 +13,11 @@ import {
 import ColumnFilterPopover from "@/components/ColumnFilterPopover"
 import { cn, formatDate } from "@/lib/utils"
 import ImageFromBufferObject from "./ImageFromBuffer"
+import { Button } from "./ui/button"
+
+function getNestedValue<T>(obj: T, path: string): any {
+    return path.split(".").reduce((acc, part) => (acc as any)?.[part], obj)
+}
 
 export type ColumnConfig<T> = {
     key: keyof T | string
@@ -20,8 +26,8 @@ export type ColumnConfig<T> = {
     sortable?: boolean
     type?: "string" | "number" | "boolean" | "date" | "image"
     render?: (row: T) => React.ReactNode
+    getValue?: (row: T) => any
 }
-
 
 interface FilterableTableProps<T> {
     data: T[]
@@ -38,6 +44,7 @@ export default function FilterableTable<T extends Record<string, any>>({
     const [filteredData, setFilteredData] = useState<T[]>(data)
     const [activeFilters, setActiveFilters] = useState<{ [key in keyof T]?: string[] }>({})
     const [sortConfig, setSortConfig] = useState<{ column: keyof T; direction: "asc" | "desc" | null } | null>(null)
+
     useEffect(() => {
         setRawData(data)
         setFilteredData(data)
@@ -46,19 +53,21 @@ export default function FilterableTable<T extends Record<string, any>>({
     useEffect(() => {
         let updated = [...rawData]
 
-
-        // Apply filters
         Object.entries(activeFilters).forEach(([key, values]) => {
-            if (values && values.length > 0) {
-                updated = updated.filter(row => values.includes(String(row[key as keyof T])))
-            }
+            const col = columns.find(c => c.key === key)
+            if (!col || !values?.length) return
+
+            updated = updated.filter(row => {
+                const value = col.getValue ? col.getValue(row) : row[col.key as keyof T]
+                return values.includes(String(value))
+            })
         })
 
-        // Apply sorting
         if (sortConfig?.direction && sortConfig.column) {
+            const col = columns.find(c => c.key === sortConfig.column)
             updated.sort((a, b) => {
-                const valA = a[sortConfig.column]
-                const valB = b[sortConfig.column]
+                const valA = col?.getValue ? col.getValue(a) : a[sortConfig.column]
+                const valB = col?.getValue ? col.getValue(b) : b[sortConfig.column]
 
                 if (!isNaN(Number(valA)) && !isNaN(Number(valB))) {
                     return sortConfig.direction === "asc"
@@ -78,6 +87,11 @@ export default function FilterableTable<T extends Record<string, any>>({
     useEffect(() => {
         setFilteredData(data)
     }, [data])
+
+    // const resetAll = () => {
+    //     setActiveFilters({})
+    //     setSortConfig(null)
+    // }
 
     const handleFilter = (column: keyof T, values: string[], sort: "asc" | "desc" | null) => {
         setActiveFilters(prev => ({ ...prev, [column]: values }))
@@ -103,7 +117,9 @@ export default function FilterableTable<T extends Record<string, any>>({
                             {col.filterable ? (
                                 <ColumnFilterPopover
                                     columnName={col.label}
-                                    data={rawData.map(row => String(row[col.key]))}
+                                    data={rawData.map(row =>
+                                        String(col.getValue ? col.getValue(row) : row[col.key as keyof typeof row])
+                                    )}
                                     onApply={(values, sort) => handleFilter(col.key, values, sort)}
                                     defaultSelected={activeFilters[col.key] || []}
                                     defaultSort={sortConfig?.column === col.key ? sortConfig.direction : null}
@@ -124,19 +140,19 @@ export default function FilterableTable<T extends Record<string, any>>({
                                     col.render(row)
                                 ) : col.key in row ? (
                                     col.type === "boolean" ? (
-                                        <input type="checkbox" checked={Boolean(row[col.key as keyof T])} disabled />
+                                        <input type="checkbox" checked={Boolean(getNestedValue(row, String(col.key)))} disabled />
                                     ) : col.type === "number" ? (
-                                        <span className="text-right block">{row[col.key as keyof T]}</span>
+                                        <span className="text-right block">{getNestedValue(row, String(col.key))}</span>
                                     ) : col.type === "date" ? (
-                                        <span>{formatDate(row[col.key as keyof T] as string)}</span>
+                                        <span>{formatDate(getNestedValue(row, String(col.key)) as string)}</span>
                                     ) : col.type === "image" ? (
                                         typeof row[col.key as keyof T] === "object" ? (
                                             <ImageFromBufferObject bufferObject={row[col.key as keyof T]} className="h-8 w-8 rounded-full" />
                                         ) : (
-                                            <img src={row[col.key as keyof T] as string} className="h-8 w-8 rounded-full" />
+                                            <img src={getNestedValue(row, String(col.key)) as string} className="h-8 w-8 rounded-full" />
                                         )
                                     ) : (
-                                        String(row[col.key as keyof T] ?? "")
+                                        String(getNestedValue(row, String(col.key)) ?? "")
                                     )
                                 ) : (
                                     ""

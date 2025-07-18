@@ -16,8 +16,8 @@ interface ColumnFilterProps {
     columnName: string
     data: string[]
     onApply: (filterValues: string[], sort: "asc" | "desc" | null) => void
-    defaultSelected?: string[] // <- NEW (for keeping previous filter memory)
-    defaultSort?: "asc" | "desc" | null // <- NEW
+    defaultSelected?: string[]
+    defaultSort?: "asc" | "desc" | null
 }
 
 export default function ColumnFilterPopover({
@@ -32,21 +32,25 @@ export default function ColumnFilterPopover({
     const [search, setSearch] = useState("")
     const [tempSelected, setTempSelected] = useState<string[]>([])
     const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(defaultSort)
-    const [open, setOpen] = useState(false) // <- used to control popover close
+    const [open, setOpen] = useState(false)
+    const [isFilterOrSortApplied, setIsFilterOrSortApplied] = useState(false)
 
     useEffect(() => {
         if (open) {
             setTempSelected(defaultSelected && defaultSelected.length > 0 ? defaultSelected : uniqueValues)
             setSortOrder(defaultSort)
+            setSearch("")
         }
     }, [open])
 
+    useEffect(() => {
+        const isApplied = tempSelected.length !== uniqueValues.length || sortOrder !== null || search !== ""
+        setIsFilterOrSortApplied(isApplied)
+    }, [tempSelected, sortOrder, search])
 
     const toggleSelection = (value: string) => {
         setTempSelected(prev =>
-            prev.includes(value)
-                ? prev.filter(v => v !== value)
-                : [...prev, value]
+            prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]
         )
     }
 
@@ -77,11 +81,13 @@ export default function ColumnFilterPopover({
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild className="w-full flex items-center justify-between">
                 <div>
-                    {columnName}<Button variant="ghost" size="sm"><Filter className={tempSelected.length === uniqueValues.length && sortOrder === null && search === "" ? "" : "fill-foreground"} /> </Button>
+                    {columnName}
+                    <Button variant="ghost" size="sm">
+                        <Filter className={isFilterOrSortApplied ? "fill-foreground" : ""} />
+                    </Button>
                 </div>
             </PopoverTrigger>
             <PopoverContent className="w-64 p-4 space-y-2">
-                {/* Sort Buttons */}
                 <div className="flex justify-between gap-2">
                     <Button
                         variant={sortOrder === "asc" ? "default" : "outline"}
@@ -99,14 +105,12 @@ export default function ColumnFilterPopover({
                     </Button>
                 </div>
 
-                {/* Text Filter */}
                 <Input
                     placeholder="Search values..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
 
-                {/* Checkbox List */}
                 <div className="max-h-40 overflow-y-auto border rounded px-2 py-1 space-y-1">
                     <div className="flex items-center gap-2">
                         <Checkbox
@@ -134,7 +138,6 @@ export default function ColumnFilterPopover({
                     })}
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex justify-between gap-2 pt-2 items-center">
                     <div>
                         <Button

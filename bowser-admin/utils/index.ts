@@ -44,6 +44,11 @@ export const updateTripDriver = async (vehicleNo: string, driver: string) => {
     }
 }
 
+export const getLocalDateTimeString = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 16);
+};
 
 export const debounce = (func: (...args: any[]) => void, delay: number) => {
     let timer: NodeJS.Timeout;

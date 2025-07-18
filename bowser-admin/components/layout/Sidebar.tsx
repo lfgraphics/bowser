@@ -104,7 +104,7 @@ export function Sidebar() {
                 </OnlyAllowed>
                 {/* Trans App navs start */}
                 <OnlyAllowed allowedRoles={["Trans App"]}>
-                  <li onClick={toggleSidebar}>
+                  <li className='hidden' onClick={toggleSidebar}>
                     <Link href="/trans-app">
                       <Button
                         variant="ghost"
@@ -115,7 +115,7 @@ export function Sidebar() {
                       </Button>
                     </Link>
                   </li>
-                  <li onClick={toggleSidebar}>
+                  <li className='hidden' onClick={toggleSidebar}>
                     <Link href="/trans-app/unloading-tracker">
                       <Button
                         variant="ghost"
@@ -126,7 +126,7 @@ export function Sidebar() {
                       </Button>
                     </Link>
                   </li>
-                  <li onClick={toggleSidebar}>
+                  <li className='hidden' onClick={toggleSidebar}>
                     <Link href="/trans-app/loading-planner">
                       <Button
                         variant="ghost"
@@ -137,7 +137,7 @@ export function Sidebar() {
                       </Button>
                     </Link>
                   </li>
-                  <li onClick={toggleSidebar}>
+                  <li className='hidden' onClick={toggleSidebar}>
                     <Link href="/trans-app/loading-tracker">
                       <Button
                         variant="ghost"

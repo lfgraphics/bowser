@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const TransUser = require('../../models/TransUser');
+const {division} = require('./utils');
 
 router.post('/', async (req, res) => {
     const { userId, password } = req.body;
@@ -42,6 +43,7 @@ router.post('/', async (req, res) => {
             userId: user.UserName,
             name: user.UserName,
             Photo: user.Photo,
+            Division: division[user.Division],
             vehicles: user.myVehicles,
             roles: ["Trans App"],
             verified: true
