@@ -75,7 +75,6 @@ export default function TransAppLayout({
                     {navItems.map(({ href, label, icon }) => (
                         <Link key={href} href={href}>
                             <Button
-                                disabled
                                 variant={pathname === href ? "default" : "ghost"}
                                 className="rounded-none px-4"
                             >

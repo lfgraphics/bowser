@@ -50,7 +50,7 @@ router.post('/change-password/:id', async (req, res) => {
     try {
         const hashedPassword = await argon2.hash(password);
         const updatedDriver = await Driver.findOneAndUpdate(
-            { _id: id },
+            { Name: id },
             { password: hashedPassword },
             { new: true }
         );

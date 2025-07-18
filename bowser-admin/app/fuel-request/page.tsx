@@ -124,7 +124,7 @@ const page = ({ params }: { params: { manager: string } }) => {
 
     const handleHalt = async (message: string) => {
         try {
-            let response = await fetch(`${BASE_URL}/fuel-request/${haltingRequestId}`, {
+            let response = await fetch(`${BASE_URL}/fuel-request/hold-message/${haltingRequestId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -135,7 +135,7 @@ const page = ({ params }: { params: { manager: string } }) => {
                 throw new Error('Failed to delete');
             }
             setShowSuccessAlert(true);
-            setData(data.filter(request => request._id !== haltingRequestId));
+            // setData(data.filter(request => request._id !== haltingRequestId));
         } catch (error) {
             console.error(error);
             setError(String(error));
