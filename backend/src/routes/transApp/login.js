@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const TransUser = require('../../models/TransUser');
-const {division} = require('./utils');
+const { division } = require('./utils');
 
 router.post('/', async (req, res) => {
     const { userId, password } = req.body;
@@ -10,7 +10,7 @@ router.post('/', async (req, res) => {
     if (!userId || !password) {
         return res.status(400).json({ error: 'User ID and password are required.' });
     }
-    const user = await TransUser.findOne({ UserName: { $regex: `^${userId}$`, $options: 'i' }, Password: { $regex: `^${password}$`, $options: 'i' } });
+    const user = await TransUser.findOne({ UserName: { $regex: userId, $options: 'i' }, Password: { $regex: password, $options: 'i' } });
     if (!user) {
         return res.status(401).json({ error: 'Invalid user ID or password.' });
     }
@@ -21,12 +21,12 @@ router.post('/', async (req, res) => {
         { expiresIn: '7d' }
     );
 
-    res.cookie('token', token, {
-        httpOnly: true,
-        sameSite: 'None',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        path: '/'
-    });
+    // res.cookie('token', token, {
+    //     httpOnly: true,
+    //     sameSite: 'None',
+    //     maxAge: 7 * 24 * 60 * 60 * 1000,
+    //     path: '/'
+    // });
 
     res.cookie('user_roles', JSON.stringify(["Trans App"]), {
         httpOnly: false,
