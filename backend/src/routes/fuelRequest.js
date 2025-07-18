@@ -138,7 +138,7 @@ router.get('/driver', async (req, res) => {
     const { driverId } = req.query;
     try {
         const driver = await Driver.findOne({ Name: { $regex: driverId } }).lean()
-        if (!driver.verified) {
+        if (driver && typeof driver.verified !== 'undefined' && !driver.verified) {
             return res.status(400).json('आप को ऐप चलने की अनुमति नहीं है')
         } else {
             const driversVehicles = await Vehicle.find({ 'tripDetails.driver': { $regex: driverId } });
