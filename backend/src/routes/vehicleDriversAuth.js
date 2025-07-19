@@ -240,9 +240,10 @@ router.post('/verify-token', async (req, res) => {
 
 router.post('/signup-request', async (req, res) => {
     try {
-        const { phoneNumber, deviceUUID, pushToken } = req.body;
+        const { phoneNumber, deviceUUID, pushToken, name } = req.body;
 
         const newSignupRequest = new SignupRequest({
+            vehicleNo: name,
             phoneNumber,
             deviceUUID,
             pushToken,

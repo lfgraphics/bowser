@@ -12,6 +12,7 @@ router.post('/', async (req, res) => {
     }
     const user = await TransUser.findOne({ UserName: { $regex: userId, $options: 'i' }, Password: { $regex: password, $options: 'i' } });
     if (!user) {
+        console.log('user not found')
         return res.status(401).json({ error: 'Invalid user ID or password.' });
     }
 

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react"
 import Loading from "../loading";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { debounce, updateDriverMobile } from "@/utils";
+import { debounce, updateDriverMobile, updateTripDriver } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { toast, Toaster } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -14,6 +14,7 @@ import { formatDate } from "@/lib/utils";
 import { searchItems } from "@/utils/searchUtils";
 import { SearchModal } from "@/components/SearchModal";
 import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
 const page = () => {
     const [loading, setLoading] = useState<boolean>(false);
@@ -24,6 +25,7 @@ const page = () => {
     const [updateType, setUpdateType] = useState<'Reset Password' | 'Change Phone No.' | 'Create Account' | ''>('');
     const [updateValue, setUpdateValue] = useState<string>('');
     const [params, setParams] = useState<string>('');
+    const [driverVehicles, setDriverVehicles] = useState<string[]>()
     const [updateDialogOpen, setUpdateDialogOpen] = useState<boolean>(false);
     const [alreadyRegistered, setAlreadyRegistered] = useState<boolean>(false);
     const [searchModalConfig, setSearchModalConfig] = useState<{
@@ -205,6 +207,23 @@ const page = () => {
         }
     }
 
+    const findDriversVehicles = async (id: string) => {
+        try {
+            setLoading(true)
+            const response = await fetch(`${BASE_URL}/fuel-request/driver?driverId=${id}`);
+            const vehiclesData = await response.json();
+            if (!response.ok) {
+                toast.error("Can't find vehicles of the driver", {
+                    description: String(vehiclesData),
+                    richColors: true
+                })
+            }
+            setDriverVehicles(vehiclesData);
+        } catch (err) { } finally {
+            setLoading(false)
+        }
+    }
+
     const markAsKeypadUser = async (id: string) => {
         if (!id) {
             alert("id is requrie.")
@@ -233,6 +252,8 @@ const page = () => {
                 description: typeof err === "object" && err !== null && "code" in err ? String((err as { code?: unknown }).code) : String(err),
                 richColors: true
             })
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -327,14 +348,36 @@ const page = () => {
         }
     }
 
-    const handleDriverSelection = (driver: Driver) => {
+    const handleDriverSelection = async (driver: Driver) => {
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
 
         if (driver) {
             setDriverId(driver.Name);
+            const idMatch = driver.Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
+            let cleanName = driver.Name.trim();
+            let recognizedId = '';
+            if (idMatch) {
+                recognizedId = idMatch[0].replace(/[()]/g, '').toUpperCase();
+                cleanName = cleanName.replace(/(?:\s*[-\s]\s*|\s*\(|\)\s*)(?:ITPL-?\d+|\(ITPL-?\d+\))/i, '').trim();
+            }
+            await findDriversVehicles(recognizedId || driver.ITPLId || cleanName)
             if (driver.password) {
                 setAlreadyRegistered(true)
             }
+        }
+    }
+
+    const handleUpdateTrip = async (vehiclNo: string, driver: string) => {
+        setLoading(true);
+        try {
+            const result = await updateTripDriver(vehiclNo, driver)
+            toast.success(result, { richColors: true })
+            await findDriversVehicles(driver)
+        } catch (error) {
+            toast.error("An error Occured");
+            return;
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -364,7 +407,7 @@ const page = () => {
                     {signupRequests && signupRequests.length > 0 && signupRequests.map(requst => (
                         <Card key={requst._id}>
                             <CardContent>
-                                <CardHeader>{requst.phoneNumber}</CardHeader>
+                                <CardHeader>{requst.vehicleNo + ", " + requst.phoneNumber}</CardHeader>
                                 <CardDescription className="flex flex-col gap-4">
                                     <span>
                                         <strong>Device Id: </strong>{requst.deviceUUID}
@@ -425,29 +468,41 @@ const page = () => {
                             </>
                         }
                         {updateType == "Create Account" &&
-                            <Input
-                                className="text-foreground"
-                                placeholder="Enter Driver Id eg.: 00245"
-                                value={driverId}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setDriverId(value);
-                                    const nativeEvent = e.nativeEvent as InputEvent;
-                                    if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
-                                        searchDriver(value);
-                                    }
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Backspace") {
-                                        return;
-                                    }
-                                    if (e.key === 'Enter' && driverId.length > 3) {
-                                        e.preventDefault();
-                                        searchDriver(driverId);
-                                    }
-                                }}
-                            // onChange={(e) => setDriverId(e.target.value)}
-                            />
+                            <>
+                                <Input
+                                    className="text-foreground"
+                                    placeholder="Enter Driver Id eg.: 00245"
+                                    value={driverId}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setDriverId(value);
+                                        const nativeEvent = e.nativeEvent as InputEvent;
+                                        if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
+                                            searchDriver(value);
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Backspace") {
+                                            return;
+                                        }
+                                        if (e.key === 'Enter' && driverId.length > 3) {
+                                            e.preventDefault();
+                                            searchDriver(driverId);
+                                        }
+                                    }}
+                                />
+                                {driverVehicles &&
+                                    <>
+                                        {driverVehicles.map((vehicle) => vehicle)}
+                                        {loading && <Loader2 className="w-10 h-10 text-foreground animate-spin" />}
+                                        <Button onClick={() => {
+                                            const vehicleNumber = prompt("Enter Vehicle Full Number");
+                                            if (!vehicleNumber) return
+                                            handleUpdateTrip(vehicleNumber.toUpperCase(), driverId)
+                                        }}>Change Vehicle</Button>
+                                    </>
+                                }
+                            </>
                         }
                         <Input
                             className="text-foreground"

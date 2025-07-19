@@ -107,8 +107,8 @@ router.get('/mark-as-keypd/:id', async (req, res) => {
     if (!id) return res.status(401).json({ message: "id is required!" });
     try {
         const updatedDriver = await Driver.findOneAndUpdate(
-            { _id: id },
-            { keypad: true },
+            { Name: id },
+            { $set: { keypad: true } },
             { new: true }
         );
         if (!updatedDriver) {

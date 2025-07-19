@@ -34,10 +34,10 @@ export const updateTripDriver = async (vehicleNo: string, driver: string) => {
 
         if (!response.ok) {
             throw new Error(`Failed to update trip details: ${response.status}`);
+        } else {
+            const result = await response.json();
+            return result.message;
         }
-
-        const result = await response.json();
-        return result.message;
     } catch (error) {
         console.error('Error trip details:', error);
         throw error;

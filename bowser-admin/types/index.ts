@@ -19,6 +19,7 @@ export interface Driver {
 export interface SignUpRequests {
   _id: string;
   phoneNumber: string;
+  vehicleNo: string;
   deviceUUID: string;
   pushToken: string;
   generationTime: string;

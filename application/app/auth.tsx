@@ -246,13 +246,13 @@ export default function AuthScreen() {
           </View>
 
           <View style={styles.section}>
-            {!isLogin && authNav == "bowserDriver" && (
+            {!isLogin && (
               <View style={styles.inputContainer}>
-                <Text style={{ color: colors.text }}>{authNav == "bowserDriver" ? "नाम" : "ITPLId"}:</Text>
+                <Text style={{ color: colors.text }}>{authNav == "bowserDriver" ? "नाम" : "गाड़ी नंबर"}:</Text>
                 <TextInput
                   ref={nameInputRef}
                   style={[styles.input, { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' }]}
-                  placeholder={"अपना" + `${authNav == "bowserDriver" ? " नाम" : " ITPLId"} दर्ज करें`}
+                  placeholder={"अपना" + `${authNav == "bowserDriver" ? " नाम" : " गाड़ी नंबर"} दर्ज करें`}
                   placeholderTextColor={colorScheme === 'dark' ? '#9BA1A6' : '#687076'}
                   value={name}
                   onChangeText={setName}
