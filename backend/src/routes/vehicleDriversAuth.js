@@ -249,9 +249,17 @@ router.post('/signup-request', async (req, res) => {
             pushToken,
             generationTime: moment().tz("Asia/Kolkata").toDate()
         })
-        await newSignupRequest.save()
+        const existingRequest = await SignupRequest.findOne({
+            vehicleNo: name,
+            phoneNumber,
+        });
+        if(!existingRequest){
+            await newSignupRequest.save()
+            return res.status(201).json({ message: `सफलतापूर्वक आईडी बनाने का अनुरोध कर दिया गया है` });
+        }else{
+            return res.status(201).json({ message: `आईडी बनाने का अनुरोध पहले ही किया जा चुका है` });
+        }
 
-        return res.status(201).json({ message: `सफलतापूर्वक आईडी बनाने का अनुरोध कर दिया गया है` });
     } catch (error) {
         console.error('Signup error:', error);
         return res.status(500).json({ message: 'सर्वर एरर', error: error.message });

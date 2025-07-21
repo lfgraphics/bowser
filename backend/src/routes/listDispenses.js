@@ -2,9 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { FuelingTransaction } = require('../models/Transaction');
 const { TripSheet } = require('../models/TripSheets')
-const XLSX = require('xlsx');
-const path = require('path');
-const fs = require('fs');
 const { updateTripSheet } = require('../utils/tripSheet')
 const { mongoose } = require('mongoose');
 
@@ -93,91 +90,6 @@ router.get('/', async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching fueling records:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
-
-// Route to export fueling records to Excel
-router.get('/export/excel', async (req, res) => {
-    const { bowserNumber, driverName, tripSheetId, sortBy = 'fuelingDateTime', order = 'desc', limit, verified } = req.query;
-    let filter = {};
-
-    if (verified === 'true') {
-        filter.verified = true;
-    } else if (verified === 'false') {
-        filter.verified = { $in: [false, null] };
-    }
-    if (bowserNumber) {
-        filter['bowser.regNo'] = bowserNumber;
-    }
-
-    if (driverName) {
-        filter['driverName'] = { $regex: driverName, $options: 'i' };
-    }
-    if (tripSheetId) {
-        const numericTripSheetId = Number(tripSheetId);
-        if (!isNaN(numericTripSheetId)) {
-            filter['tripSheetId'] = numericTripSheetId;
-        } else {
-            console.error('Invalid tripSheetId format. Expected a number.');
-            return res.status(400).json({ message: 'Invalid tripSheetId format. Expected a number.' });
-        }
-    }
-
-    const sortOrder = order === 'asc' ? 1 : -1;
-    const recordLimit = limit ? parseInt(limit, 10) : undefined;
-
-    try {
-        const records = await FuelingTransaction.find(filter, {
-            fuelingDateTime: 1,
-            tripSheetId: 1,
-            bowser: 1,
-            gpsLocation: 1,
-            location: 1,
-            driverName: 1,
-            driverMobile: 1,
-            vehicleNumber: 1,
-            fuelQuantity: 1,
-            quantityType: 1,
-            verified: 1
-        }).sort({ [sortBy]: sortOrder }).limit(recordLimit);
-
-        const formattedRecords = records.map(record => ({
-            'Trip Sheet Number': record.tripSheetId,
-            'Fueling Time': record.fuelingDateTime,
-            'Fueling Location': record.location,
-            'Bowser Number': record.bowser.regNo,
-            'Bowser Driver': record.bowser.driver.name,
-            'Bowser Driver Ph No.': record.bowser.driver.phoneNo,
-            'Vehicle Number': record.vehicleNumber,
-            'Vehicle Driver Name': record.driverName,
-            'Vehicle Driver Mobile': record.driverMobile,
-            'Fueling Type': record.quantityType,
-            'Quantity': record.fuelQuantity,
-            'Cordinates location': record.gpsLocation,
-        }));
-
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filterDescription = `${bowserNumber ? `Bowser-${bowserNumber}_` : ''}${driverName ? `Driver-${driverName}_` : ''}`;
-        const fileName = `dispenses_data_${filterDescription}Count-${formattedRecords.length}_${timestamp}.xlsx`;
-
-        const worksheet = XLSX.utils.json_to_sheet(formattedRecords);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Dispenses Data');
-
-        const filePath = path.join(__dirname, fileName);
-        XLSX.writeFile(workbook, filePath);
-
-        res.download(filePath, fileName, err => {
-            if (err) {
-                console.error('Error sending file:', err);
-                res.status(500).json({ message: 'Error downloading file', err });
-            }
-
-            fs.unlinkSync(filePath);
-        });
-    } catch (error) {
-        console.error('Error exporting data:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });

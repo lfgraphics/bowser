@@ -27,26 +27,13 @@
     "mongodb": "^6.9.0",
     "mongoose": "^8.7.1",
     "mongoose-sequence": "^6.0.1",
-    "sharp": "^0.33.5",
-    "tesseract.js": "^5.1.1",
     "web-push": "^3.6.7",
-    "ws": "^8.18.1",
-    "xlsx": "^0.18.5"
+    "ws": "^8.18.1"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.7",
     "nodemon": "^3.1.9"
-  },
-  "pnpm": {
-    "ignoredBuiltDependencies": [
-      "sharp"
-    ],
-    "onlyBuiltDependencies": [
-      "argon2",
-      "protobufjs",
-      "tesseract.js"
-    ]
   }
 }
