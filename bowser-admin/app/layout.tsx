@@ -7,6 +7,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { isAuthenticated } from '@/lib/auth';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { usePathname } from 'next/navigation';
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           {isAuth && <Sidebar />}
           <div className={`h-[96svh]`}>
+            <Toaster />
             {children}
             <SpeedInsights />
           </div>
