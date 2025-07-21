@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/co
 import { Input } from "@/components/ui/input";
 import { debounce, updateDriverMobile, updateTripDriver } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { formatDate } from "@/lib/utils";
@@ -214,7 +214,7 @@ const page = () => {
             const vehiclesData = await response.json();
             if (!response.ok) {
                 toast.error("Can't find vehicles of the driver", {
-                    description: String(vehiclesData),
+                    description: String(vehiclesData.message),
                     richColors: true
                 })
             }
@@ -393,7 +393,6 @@ const page = () => {
     return (
         <>
             {loading && <Loading />}
-            <Toaster />
             <div className="p-4 flex flex-col gap-2">
                 <h1 className="text-lg font-semibold">Manage Drivers</h1>
                 <Input
@@ -491,17 +490,21 @@ const page = () => {
                                         }
                                     }}
                                 />
-                                {driverVehicles &&
-                                    <>
-                                        {driverVehicles.map((vehicle) => vehicle)}
-                                        {loading && <Loader2 className="w-10 h-10 text-foreground animate-spin" />}
-                                        <Button onClick={() => {
-                                            const vehicleNumber = prompt("Enter Vehicle Full Number");
-                                            if (!vehicleNumber) return
-                                            handleUpdateTrip(vehicleNumber.toUpperCase(), driverId)
-                                        }}>Change Vehicle</Button>
-                                    </>
-                                }
+                                <span className="flex flex-row justify-between w-full">
+                                    {driverVehicles && driverVehicles.length &&
+                                        <span className="flex flex-col gap-1">
+                                            {loading ? <Loader2 className="w-10 h-10 text-foreground animate-spin" />
+                                                :
+                                                driverVehicles?.map((vehicle) => vehicle)
+                                            }
+                                        </span>
+                                    }
+                                    {driverVehicles && <Button onClick={() => {
+                                        const vehicleNumber = prompt("Enter Full Vehicle Number");
+                                        if (!vehicleNumber) return
+                                        handleUpdateTrip(vehicleNumber.toUpperCase(), driverId)
+                                    }}>{driverVehicles.length ? "Change Vehicle" : "Add vehicle"}</Button>}
+                                </span>
                             </>
                         }
                         <Input
