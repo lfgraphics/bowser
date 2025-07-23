@@ -1,4 +1,5 @@
 import { BASE_URL } from "@/lib/api";
+import { useRef, useEffect } from "react";
 
 export const updateDriverMobile = async (driverId: string, driverMobile: string) => {
     try {
@@ -50,10 +51,37 @@ export const getLocalDateTimeString = () => {
     return now.toISOString().slice(0, 16);
 };
 
-export const debounce = (func: (...args: any[]) => void, delay: number) => {
-    let timer: NodeJS.Timeout;
-    return (...args: any[]) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => func(...args), delay);
-    };
+/**
+ * React hook for debouncing a callback when dependencies change.
+ * @param callback Function to debounce.
+ * @param delay Delay in milliseconds.
+ * @param deps Dependency array.
+ */
+export const useDebounceEffect = (
+    callback: () => void,
+    delay: number,
+    deps: React.DependencyList
+) => {
+    const callbackRef = useRef(callback);
+
+    // Always keep the latest callback
+    useEffect(() => {
+        callbackRef.current = callback;
+    }, [callback]);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            callbackRef.current();
+        }, delay);
+
+        return () => clearTimeout(handler);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [...deps, delay]);
 };
+// function debounce(func, timeout = 300) {
+//     let timer;
+//     return (...args) => {
+//         clearTimeout(timer);
+//         timer = setTimeout(() => { func.apply(this, args); }, timeout);
+//     };
+// }

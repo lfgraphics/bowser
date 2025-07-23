@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react"
 import Loading from "../loading";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { debounce, updateDriverMobile, updateTripDriver } from "@/utils";
+import { useDebounceEffect, updateDriverMobile, updateTripDriver } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -69,11 +69,7 @@ const page = () => {
         fetchData()
     }, [])
 
-    const debouncedDrivers = useCallback(debounce(fetchData, 3000), [params]);
-
-    useEffect(() => {
-        debouncedDrivers()
-    }, [params])
+    useDebounceEffect(() => { fetchData(); }, 1500, [params])
 
     const deleteDriver = async (id: string) => {
         setLoading(true)
@@ -84,9 +80,10 @@ const page = () => {
             const jsonResponse = await response.json();
             if (!response.ok) {
                 console.log(jsonResponse)
-                toast.error(String(jsonResponse))
+                toast.error(String(jsonResponse.message))
+            }else{
+                toast.success("Deleted Successfully");
             }
-            toast.success("Deleted Successfully");
         } catch (err) {
             console.log(err);
             toast.error("failed to delted, got some error");
@@ -449,7 +446,7 @@ const page = () => {
                                     {card.verified && <Button onClick={() => blockDriver(card.Name)}>Block Driver</Button>}
                                     <Button onClick={() => { setUpdateDriverId(card.Name); setUpdateType('Change Phone No.'); setUpdateDialogOpen(true); }}>Change Phone No.</Button>
                                     {!card.verified && card.isRegistered && <Button onClick={() => unBlockDriver(card.Name)}>UnBlock</Button>}
-                                    <Button variant="destructive" onClick={() => { const response = confirm("Do you really wish to delete this driver Id? This action can't be undone"); if (response) deleteDriver(card.Name) }}>Delete</Button>
+                                    <Button variant="destructive" onClick={() => { const response = confirm("Do you really wish to delete this driver Id? This action can't be undone"); if (response) deleteDriver(card._id) }}>Delete</Button>
                                 </CardFooter>
                             </CardContent>
                         </Card>

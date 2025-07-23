@@ -25,7 +25,7 @@ import { formatDate } from '@/lib/utils';
 import { AlertDialog, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel, AlertDialogContent } from '@/components/ui/alert-dialog';
 import { AlertDialogHeader } from './ui/alert-dialog';
 import OnlyAllowed from './OnlyAllowed';
-import { debounce } from '@/utils';
+import { useDebounceEffect } from '@/utils';
 import Loading from '@/app/loading';
 import Stamp from './Stamp';
 
@@ -89,16 +89,16 @@ const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
         }
     };
 
-    const debouncedLoadSheets = useCallback(debounce(loadSheets, 2000), [searchParam, settlment]);
-
     useEffect(() => {
         const params = new URLSearchParams();
         if (searchParam) params.set('searchParam', searchParam);
         params.set('settlment', settlment.toString());
         router.push(`?${params.toString()}`);
+    }, [searchParam, settlment]);
 
-        debouncedLoadSheets();
-    }, [searchParam, settlment, debouncedLoadSheets]);
+    useDebounceEffect(() => {
+        loadSheets();
+    }, 1500, [searchParam, settlment]);
 
     const postDispenses = async (sheetId: string) => {
         alert('This Funcitonality is nor avaliable for now')

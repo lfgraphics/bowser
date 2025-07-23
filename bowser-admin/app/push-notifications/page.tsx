@@ -33,6 +33,7 @@ import OnlyAllowed from "@/components/OnlyAllowed";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import Loading from "../loading";
+import { useDebounceEffect } from "@/utils";
 
 type Vehicle = {
     VehicleNo: string;
@@ -155,7 +156,7 @@ export default function PushNotificationsPage() {
     }, []);
 
     // Fetch data for each tab
-    useEffect(() => {
+    useDebounceEffect(() => {
         setSelected([]);
         if (tab === "diesel") {
             if (!user || !user.userId) return;
@@ -181,7 +182,7 @@ export default function PushNotificationsPage() {
                 .then((data) => setUsers(data))
                 .catch(() => toast({ variant: "destructive", description: "Failed to fetch users" }));
         }
-    }, [tab, user, page, limit]);
+    }, 1500, [tab, user, page, limit]);
 
     // Handle send notification
     const handleSend = async () => {

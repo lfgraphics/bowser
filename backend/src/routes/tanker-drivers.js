@@ -11,8 +11,8 @@ router.get('/', async (req, res) => {
                 { $or: [{ Name: { $regex: params, $options: 'i' } }, { 'MobileNo.MobileNo': { $regex: params } }] },
                 {
                     $or: [
-                        { isActive: { $exists: false } },
-                        { isActive: true }
+                        { inActive: { $exists: false } },
+                        { inActive: false }
                     ]
                 }
             ]
@@ -31,7 +31,11 @@ router.get('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     const id = req.params.id;
     try {
-        const deletedDriver = await Driver.findOneAndUpdate({ inActive: true });
+        const deletedDriver = await Driver.findOneAndUpdate(
+            { _id: id },
+            { $set: { inActive: true } },
+            { new: true }
+        );
         if (!deletedDriver) {
             return res.status(400).json({ message: "can't find the driver" });
         }
