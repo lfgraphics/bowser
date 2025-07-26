@@ -89,43 +89,7 @@ router.post('/login', async (req, res) => {
         const { phoneNumber, password, deviceUUID } = req.body;
 
         const user = await Driver.findOne({
-            $expr: {
-                $gt: [
-                    {
-                        $size: {
-                            $filter: {
-                                input: {
-                                    $cond: [
-                                        { $eq: [{ $type: "$MobileNo" }, "object"] },
-                                        {
-                                            $map: {
-                                                input: { $objectToArray: "$MobileNo" },
-                                                as: "entry",
-                                                in: "$$entry.v"
-                                            }
-                                        },
-                                        {
-                                            $cond: [
-                                                { $eq: [{ $type: "$MobileNo" }, "array"] },
-                                                "$MobileNo",
-                                                [] // fallback if neither object nor array
-                                            ]
-                                        }
-                                    ]
-                                },
-                                as: "mobile",
-                                cond: {
-                                    $and: [
-                                        { $eq: ["$$mobile.MobileNo", phoneNumber] },
-                                        { $eq: ["$$mobile.LastUsed", true] }
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    0
-                ]
-            },
+            "MobileNo.MobileNo": phoneNumber,
             password: { $exists: true }
         });
 
@@ -253,10 +217,10 @@ router.post('/signup-request', async (req, res) => {
             vehicleNo: name,
             phoneNumber,
         });
-        if(!existingRequest){
+        if (!existingRequest) {
             await newSignupRequest.save()
             return res.status(201).json({ message: `सफलतापूर्वक आईडी बनाने का अनुरोध कर दिया गया है` });
-        }else{
+        } else {
             return res.status(201).json({ message: `आईडी बनाने का अनुरोध पहले ही किया जा चुका है` });
         }
 
