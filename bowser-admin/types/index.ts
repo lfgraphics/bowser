@@ -437,6 +437,17 @@ export interface VehicleWithTrip {
   GoodsCategory: string
 }
 
+export interface InactiveVehicles {
+  UserInfo: {
+    Created: string,
+    CreatedBy: string,
+    Modified: string,
+    ModifiedBy: string,
+  }
+  VehicleNo: string,
+  _id: string
+}
+
 export interface AttachedVehicle {
   VehicleNo: string
   TransportPartenName: string
@@ -699,6 +710,7 @@ export interface TankersTrip {
   EmptyTripDetail: {
     VehicleNo: string;
     ProposedDate: string;
+    ProposedDestination: string;
     ReportDate: string;
     EndDate: string;
     StartOdometer: number;

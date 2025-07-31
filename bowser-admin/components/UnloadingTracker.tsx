@@ -3,7 +3,6 @@
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardHeader } from "./ui/card"
@@ -13,7 +12,6 @@ import { getLocalDateTimeString } from "@/utils"
 import { BASE_URL } from "@/lib/api"
 import { toast } from "sonner"
 import Loading from "@/app/loading"
-import { Toaster } from "@/components/ui/sonner"
 import { formatDate } from "@/lib/utils"
 import { Accordion } from "@radix-ui/react-accordion"
 import { AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
@@ -80,26 +78,36 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
 
     const validateData = () => {
         if (!tripId) {
-            toast.error("Please select a vehicle.");
+            toast.error("Please select a vehicle.", {
+                richColors: true
+            });
             return false;
         }
         if (!TrackUpdateDate) {
-            toast.error("Please select a date and time.");
+            toast.error("Please select a date and time.", {
+                richColors: true
+            });
             window.location.hash = "dateTime";
             return false;
         }
         if (OdometerOnTrackUpdate === undefined || OdometerOnTrackUpdate < 0) {
-            toast.error("Please enter a valid odometer reading.");
+            toast.error("Please enter a valid odometer reading.", {
+                richColors: true
+            });
             window.location.hash = "odometer";
             return false;
         }
         if (!LocationRemark) {
-            toast.error("Please enter a location remark.");
+            toast.error("Please enter a location remark.", {
+                richColors: true
+            });
             window.location.hash = "locationRemark";
             return false;
         }
         if (!ManagerComment) {
-            toast.error("Please enter a valid comment/ instruction about the update.");
+            toast.error("Please enter a valid comment/ instruction about the update.", {
+                richColors: true
+            });
             window.location.hash = "comment";
             return false;
         }
@@ -116,9 +124,6 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
             ManagerComment,
             Driver
         }
-        console.log("Submitting updateData:", updateData);
-        console.log("Trip ID:", tripId);
-        console.log("at url:", url);
 
         setLoading(true);
         try {
@@ -133,9 +138,12 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
                 }),
             });
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error("Failed to submit trip update:", errorText);
-                toast.error("Failed to submit trip update: " + errorText);
+                const error = await response.json();
+                console.error("Failed to submit trip update:", error);
+                toast.error("Failed to submit trip update", {
+                    description: error.error.text(),
+                    richColors: true
+                });
                 return;
             }
             setData(prevData =>
@@ -151,7 +159,7 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
             toast.success("Trip update submitted successfully!");
         } catch (error) {
             console.error("Error submitting trip update:", error);
-            toast.error("An error occurred while submitting the trip update.");
+            toast.error("An error occurred while submitting the trip update.", {richColors:true});
         } finally {
             setLoading(false);
         }
@@ -189,10 +197,11 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
         }
     }
 
+    console.log('trips found: ', trips.length)
+
     return (
         <>
             {loading && <Loading />}
-            <Toaster />
             <div className="p-4 min-h-[80svh] flex flex-col justify-center">
                 <div className="flex flex-col gap-4 md:flex-row items-center justify-center md:flex-shrink-0 w-full md:justify-around">
                     {tripId &&

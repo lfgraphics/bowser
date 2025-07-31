@@ -1,12 +1,10 @@
 "use client"
 import { TankersTrip } from '@/types'
 import { fetchUnloadedButNotPlanned } from '@/utils/transApp'
-import React, { useEffect, useMemo, useState, useContext } from 'react'
-import FilterableTable, { ColumnConfig } from '@/components/FilterableTable'
+import React, { useEffect, useState, useContext } from 'react'
 import { TransAppContext } from "../layout";
-import { formatDate } from '@/lib/utils'
 import Loading from '@/app/loading'
-import UnloadedUnplannedVehicleTracker from '@/components/UnloadedUnplannedVehicleTracker'
+import UnloadedUnplannedVehicleTracker from '@/components/LoadingPlanner'
 
 const UnloadingTracker = () => {
   const [loading, setLoading] = useState<boolean>(true)
@@ -40,7 +38,6 @@ const UnloadingTracker = () => {
         <div className="actions">
           {!loading && data && <UnloadedUnplannedVehicleTracker tripsData={data} user={user} />}
         </div>
-        {/* <FilterableTable<TankersTrip> data={data} columns={columns} /> */}
       </div>
     </>
   )

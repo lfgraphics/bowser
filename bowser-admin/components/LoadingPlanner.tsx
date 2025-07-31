@@ -3,25 +3,25 @@
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { useEffect, useMemo, useState } from "react"
 import Combobox, { ComboboxOption } from "./Combobox"
 import { TankersTrip, Driver, TransAppUser } from "@/types"
 import { getLocalDateTimeString } from "@/utils"
 import { BASE_URL } from "@/lib/api"
-import { toast, Toaster } from "sonner"
+import { toast } from "sonner"
 import { formatDate } from "@/lib/utils"
 import { SearchModal } from "./SearchModal"
 import { searchItems } from "@/utils/searchUtils"
 import Loading from "@/app/loading"
 
-export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { tripsData: TankersTrip[], user: TransAppUser | null }) {
+export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { tripsData: TankersTrip[], user: TransAppUser | undefined }) {
     const [loading, setLoading] = useState<boolean>(false)
     const [targetTime, setTargetTime] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
     const [proposedDate, setProposedDate] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
     const [odometer, setOdometer] = useState<number | undefined>(undefined)
     const [orderedBy, setOrderedBy] = useState<string>("")
+    const [proposedBy, setProposedBy] = useState<string>("")
     const [data, setData] = useState<TankersTrip[]>(tripsData || [])
     const [driverMobile, setDriverMobile] = useState<string>("")
     const [vehicleSearch, setVehicleSearch] = useState<string>("")
@@ -112,6 +112,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
             targetTime: targetTime?.toISOString(),
             odometer,
             orderedBy,
+            proposedBy,
             previousTripId: tripId,
             StartFrom: data.find(trip => trip?._id === tripId)?.EndTo,
             division: user?.Division || "",
@@ -165,10 +166,11 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
         setDriverMobile(data.find(trip => trip?._id === tripId)?.StartDriverMobile || "")
     }, [data, tripId]);
 
+    console.log('trips found: ', data.length)
+
     return (
         <>
             {loading && <Loading />}
-            <Toaster />
             <div className="p-4 min-h-[80svh] flex flex-col justify-center">
                 <div className="flex flex-col gap-4 md:flex-row items-center justify-center md:flex-shrink-0 w-full md:justify-around">
                     {tripId &&
@@ -277,7 +279,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
                             setOdometer(value ? parseFloat(value) : undefined);
                         }}
                     />
-                    <Label>Ordered By</Label>
+                    <Label htmlFor="ordered-by">Ordered By</Label>
                     <Input
                         id="ordered-by"
                         type="text"
@@ -285,6 +287,16 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
                         onChange={(e) => {
                             const value = e.target.value;
                             setOrderedBy(value);
+                        }}
+                    />
+                    <Label htmlFor="proposed-by">Proposed By</Label>
+                    <Input
+                        id="proposed-by"
+                        type="text"
+                        value={proposedBy}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setProposedBy(value);
                         }}
                     />
                     <div className="flex gap-2 flex-row justify-between mt-2">

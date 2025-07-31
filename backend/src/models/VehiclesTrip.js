@@ -4,9 +4,9 @@ const { transportDatabaseConnection } = require('../../config/database');
 const { Schema, Types } = mongoose;
 
 const tankerTripSchema = new Schema({
+    VehicleNo: { type: String, required: true },
     StartDate: { type: Date },
     targetTime: { type: Date },
-    VehicleNo: { type: String, required: true },
     StartFrom: { type: String },
     EndTo: { type: String },
     LoadStatus: { type: Number },
@@ -28,6 +28,7 @@ const tankerTripSchema = new Schema({
     },
     EmptyTripDetail: {
         VehicleNo: { type: String, required: true },
+        ProposedDestination: { type: String },
         ProposedDate: { type: Date },
         ReportDate: { type: Date },
         EndDate: { type: Date },
@@ -35,6 +36,8 @@ const tankerTripSchema = new Schema({
         EndOdometer: { type: Number },
         PreviousTripId: { type: Types.ObjectId, ref: 'TankersTrip' },
         PreviousTripIdNew: { type: String },
+        ProposedBy: { type: String },
+        OrderedBy: { type: String },
         Division: { type: Number },
     },
     TravelHistory: [

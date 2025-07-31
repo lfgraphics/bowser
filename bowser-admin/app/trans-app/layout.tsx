@@ -1,23 +1,34 @@
-"use client";
+"use client"
 
 import { useEffect, useState, createContext, useContext } from "react";
-import { useRouter, usePathname } from "next/navigation";
+
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import {
     FileDown,
     FileUp,
     AudioWaveform,
     Home,
 } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
 import { TransAppUser } from "@/types";
 
-
 export const TransAppContext = createContext<{
-    user: TransAppUser | null;
+    user: TransAppUser | undefined;
     photo: TransAppUser["Photo"] | undefined;
 }>({
-    user: null,
+    user: {
+        _id: 'string',
+        name: 'string',
+        userId: 'string',
+        Photo: {
+            type: 'string',
+            data: [0]
+        },
+        Division: 'string',
+        vehicles: ['string']
+    },
     photo: undefined,
 });
 
@@ -28,7 +39,7 @@ export default function TransAppLayout({
 }) {
     const router = useRouter();
     const pathname = usePathname();
-    const [user, setUser] = useState<TransAppUser | null>(null);
+    const [user, setUser] = useState<TransAppUser>();
     const [photo, setPhoto] = useState<TransAppUser["Photo"] | undefined>();
 
     useEffect(() => {
@@ -71,7 +82,7 @@ export default function TransAppLayout({
         <TransAppContext.Provider value={{ user, photo }}>
             <div className="md:h-[96.5svh] flex flex-col">
                 <main className="md:flex-1 md:overflow-auto p-4">{children}</main>
-                <div className="bg-muted p-2 md:flex gap-0 border-b sticky bottom-0 hidden ">
+                {/* <div className="bg-muted p-2 md:flex gap-0 border-b sticky bottom-0 hidden ">
                     {navItems.map(({ href, label, icon }) => (
                         <Link key={href} href={href}>
                             <Button
@@ -83,7 +94,7 @@ export default function TransAppLayout({
                             </Button>
                         </Link>
                     ))}
-                </div>
+                </div> */}
             </div>
         </TransAppContext.Provider>
     );

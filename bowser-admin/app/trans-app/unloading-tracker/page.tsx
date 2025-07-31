@@ -3,7 +3,7 @@ import { TankersTrip } from '@/types'
 import { fetchLoadedButUnloadedTrips } from '@/utils/transApp'
 import React, { useEffect, useState, useContext } from 'react'
 import { TransAppContext } from "../layout";
-import LoadVehicleTracker from '@/components/LoadVehicleTracker'
+import LoadVehicleTracker from '@/components/UnloadingTracker'
 import Loading from '@/app/loading';
 
 const UnloadingTracker = () => {
@@ -39,7 +39,6 @@ const UnloadingTracker = () => {
         <div className="actions">
           {!loading && data && <LoadVehicleTracker tripsData={data} />}
         </div>
-        {/* <FilterableTable<TankersTrip> data={data} columns={columns} /> */}
       </div>
     </>
   )

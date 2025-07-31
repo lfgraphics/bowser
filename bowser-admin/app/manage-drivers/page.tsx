@@ -1,20 +1,22 @@
-"use client"
-import { BASE_URL } from "@/lib/api";
-import { Driver, SignUpRequests } from "@/types"
-import { useCallback, useEffect, useState } from "react"
-import Loading from "../loading";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { useDebounceEffect, updateDriverMobile, updateTripDriver } from "@/utils";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react"
+
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { BASE_URL } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
+import { Driver, SignUpRequests } from "@/types"
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchModal } from "@/components/SearchModal";
 import { formatDate } from "@/lib/utils";
 import { searchItems } from "@/utils/searchUtils";
-import { SearchModal } from "@/components/SearchModal";
-import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { useDebounceEffect, updateDriverMobile, updateTripDriver } from "@/utils";
+
+import Loading from "../loading";
 
 const page = () => {
     const [loading, setLoading] = useState<boolean>(false);
@@ -134,7 +136,7 @@ const page = () => {
                     toast.success(jsonResponse.message, { richColors: true });
                 }
             } catch (error) {
-                toast.error("Failed to update driver mobile number. Please try again.", { richColors: true, description: String(error) });
+                toast.error("Failed to update Password. Please try again.", { richColors: true, description: typeof error === "object" && error !== null && "message" in error ? String((error as { message?: unknown }).message) : String(error) });
             } finally {
                 setUpdateDialogOpen(false);
                 setLoading(false)

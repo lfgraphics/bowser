@@ -188,10 +188,11 @@ async function getUnloadedPlannedVehicles(userId) {
     const deactivatedVehicles = await getUsersDeactivatedVehicles(userId);
     const unplannedTrips = await getUnloadedNotPlannedVehicles(userId);
     const unplannedVehicles = unplannedTrips.map(trip => trip.VehicleNo);
+    const vehiclesToExclude = deactivatedVehicles.concat(unplannedVehicles)
 
     const latestTrips = await TankersTrip.aggregate()
         .match({
-            VehicleNo: { $in: userVehicles, $nin: [...deactivatedVehicles] },
+            VehicleNo: { $in: userVehicles, $nin: deactivatedVehicles, },
             LoadStatus: 0,
             EndDate: { $eq: null }
         }).sort({
@@ -241,18 +242,24 @@ async function createEmptyTrip(postData) {
         targetTime,
         odometer,
         orderedBy,
+        proposedBy,
         previousTripId,
         StartFrom,
         division,
         proposedDate
     } = postData;
 
-    const requiredFields = [vehicleNo, driverName, driverMobile, stackHolder, proposedDate, targetTime, odometer, orderedBy, previousTripId, StartFrom, division];
+    const requiredFields = [vehicleNo, driverName, driverMobile, stackHolder, proposedDate, targetTime, odometer, orderedBy, proposedBy, previousTripId, StartFrom, division];
     if (requiredFields.some(field => !field)) {
         throw new Error('Missing required fields');
     }
 
     const divisionNo = getDivisionKeyByValue(division);
+
+    if (typeof division == 'undefined') {
+        console.log('Devision error', division, divisionNo, getDivisionKeyByValue(division))
+        throw new Error('Error constructing division number')
+    }
 
     if (!mongoose.Types.ObjectId.isValid(previousTripId)) {
         throw new Error('Invalid previousTripId');
@@ -271,13 +278,91 @@ async function createEmptyTrip(postData) {
         EmptyTripDetail: {
             VehicleNo: vehicleNo,
             ProposedDate: proposedDate ? new Date(proposedDate) : undefined,
+            ProposedBy: proposedBy,
+            OrderedBy: orderedBy,
             Division: divisionNo,
             PreviousTripId: new mongoose.Types.ObjectId(previousTripId),
             PreviousTripIdNew: previousTripId,
-        }
+        },
+        ReportingDate: null,
+        EndDate: null
     });
 
     return await newEmptyTrip.save();
+}
+
+async function updateEmptyTrip(tripId, postData) {
+    const {
+        vehicleNo,
+        driverName,
+        driverMobile,
+        stackHolder,
+        targetTime,
+        odometer,
+        orderedBy,
+        proposedBy,
+        previousTripId,
+        StartFrom,
+        division,
+        proposedDate
+    } = postData;
+
+    // Validate required fields
+    const requiredFields = [vehicleNo, driverName, driverMobile, stackHolder, proposedDate, targetTime, odometer, orderedBy, proposedBy, previousTripId, StartFrom, division];
+    if (requiredFields.some(field => !field)) {
+        throw new Error('Missing required fields');
+    }
+
+    // Validate division
+    const divisionNo = getDivisionKeyByValue(division);
+    if (typeof division === 'undefined') {
+        console.log('Division error', division, divisionNo, getDivisionKeyByValue(division));
+        throw new Error('Error constructing division number');
+    }
+
+    // Validate ObjectIds
+    if (!mongoose.Types.ObjectId.isValid(tripId)) {
+        throw new Error('Invalid tripId');
+    }
+    if (!mongoose.Types.ObjectId.isValid(previousTripId)) {
+        throw new Error('Invalid previousTripId');
+    }
+
+    // Find and update the existing trip
+    const updatedTrip = await TankersTrip.findByIdAndUpdate(
+        tripId,
+        {
+            $set: {
+                VehicleNo: vehicleNo,
+                StartDate: new Date(),
+                EndDate: null,
+                targetTime: new Date(targetTime),
+                StartDriver: driverName,
+                StartDriverMobile: driverMobile,
+                StartFrom,
+                EndTo: stackHolder,
+                LoadStatus: 0,
+                EmptyTripDetail: {
+                    VehicleNo: vehicleNo,
+                    ProposedDate: proposedDate ? new Date(proposedDate) : undefined,
+                    ProposedBy: proposedBy,
+                    OrderedBy: orderedBy,
+                    Division: divisionNo,
+                    PreviousTripId: new mongoose.Types.ObjectId(previousTripId),
+                    PreviousTripIdNew: previousTripId,
+                },
+                ReportingDate: null,
+                EndDate: null
+            }
+        },
+        { new: true, runValidators: true } // Return updated document and run schema validators
+    );
+
+    if (!updatedTrip) {
+        throw new Error('Trip not found');
+    }
+
+    return updatedTrip;
 }
 
 
@@ -291,5 +376,6 @@ module.exports = {
     getUnloadedPlannedVehicles,
     division,
     getDivisionKeyByValue,
-    createEmptyTrip
+    createEmptyTrip,
+    updateEmptyTrip
 };
