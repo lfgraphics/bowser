@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react"
 
 import { Loader2 } from "lucide-react";
@@ -5,12 +7,10 @@ import { toast } from "sonner";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { BASE_URL } from "@/lib/api";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
 import { Driver, SignUpRequests } from "@/types"
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { SearchModal } from "@/components/SearchModal";
 import { formatDate } from "@/lib/utils";
 import { searchItems } from "@/utils/searchUtils";
@@ -83,7 +83,7 @@ const page = () => {
             if (!response.ok) {
                 console.log(jsonResponse)
                 toast.error(String(jsonResponse.message))
-            }else{
+            } else {
                 toast.success("Deleted Successfully");
             }
         } catch (err) {
