@@ -249,11 +249,6 @@ async function createEmptyTrip(postData) {
         proposedDate
     } = postData;
 
-    const requiredFields = [vehicleNo, driverName, driverMobile, stackHolder, proposedDate, targetTime, odometer, orderedBy, proposedBy, previousTripId, StartFrom, division];
-    if (requiredFields.some(field => !field)) {
-        throw new Error('Missing required fields');
-    }
-
     const divisionNo = getDivisionKeyByValue(division);
 
     if (typeof division == 'undefined') {
@@ -306,13 +301,7 @@ async function updateEmptyTrip(tripId, postData) {
         division,
         proposedDate
     } = postData;
-
-    // Validate required fields
-    const requiredFields = [vehicleNo, driverName, driverMobile, stackHolder, proposedDate, targetTime, odometer, orderedBy, proposedBy, previousTripId, StartFrom, division];
-    if (requiredFields.some(field => !field)) {
-        throw new Error('Missing required fields');
-    }
-
+    
     // Validate division
     const divisionNo = getDivisionKeyByValue(division);
     if (typeof division === 'undefined') {
