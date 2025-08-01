@@ -366,7 +366,8 @@ const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
 
                 <div className="flex gap-2 flex-row justify-between mt-2">
                     <Button className="w-full md:w-auto" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
-                    <Button className="w-full md:w-auto" type="button" onClick={() => { if (validateInputs()) setIsConfirmationDialogueOpen(true) }} >Submit</Button>
+                    {/* { if (validateInputs()) } */}
+                    <Button className="w-full md:w-auto" type="button" onClick={() => { setIsConfirmationDialogueOpen(true) }} >Submit</Button>
                 </div>
             </div>
 

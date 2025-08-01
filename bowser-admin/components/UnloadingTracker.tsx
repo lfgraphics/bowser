@@ -115,7 +115,7 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
     }
 
     const submit = async () => {
-        if (!validateData()) return;
+        // if (!validateData()) return;
         const url = `${BASE_URL}/trans-app/trip-update/${actionType}`;
         const updateData = {
             TrackUpdateDate: TrackUpdateDate || new Date(),
