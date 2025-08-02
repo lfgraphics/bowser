@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 
 import Loading from '@/app/loading'
 import { BASE_URL } from '@/lib/api'
-import { Driver, TankersTrip } from '@/types'
+import { Driver, TankersTrip, TransAppUser } from '@/types'
 import { getLocalDateTimeString } from '@/utils'
 import { searchItems } from '@/utils/searchUtils'
 
@@ -54,6 +54,12 @@ const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
     const [location, setLocation] = useState<string | undefined>("")
     const [currentLocation, setCurrentLocation] = useState<string | undefined>("")
     const [isConfirmationDialogueOpen, setIsConfirmationDialogueOpen] = useState<boolean>(false)
+
+    useEffect(() => {
+        let user = localStorage.getItem("adminUser")
+        let jsonUser: TransAppUser = JSON.parse(user!)
+        setProposedBy(jsonUser.name)
+    }, [])
 
     const handleDriverSelection = (driver: Driver) => {
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
@@ -250,6 +256,7 @@ const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
                                 searchDriver(Driver);
                             }
                         }}
+                        className={`${!Driver ? "bg-yellow-100" : ""}`}
                         required
                     />
                 </div>
@@ -263,6 +270,7 @@ const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
                             const value = e.target.value;
                             setDriverMobile(value);
                         }}
+                        className={`${!driverMobile ? "bg-yellow-100" : ""}`}
                         required
                     />
                 </div>
@@ -270,14 +278,14 @@ const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
                 {modificationCheck &&
                     <div>
                         <Label htmlFor='currentLocation'>Current Location</Label>
-                        <Input type='string' id='currentLocation' value={currentLocation} onChange={(e) => setCurrentLocation(e.target.value)}></Input>
+                        <Input type='string' id='currentLocation' value={currentLocation} onChange={(e) => setCurrentLocation(e.target.value)} className={`${!currentLocation ? "bg-yellow-100" : ""}`} />
                     </div>
                 }
 
                 <div>
                     <Label htmlFor="location">New Destination</Label>
                     <Combobox
-                        className="w-full"
+                        className={`${!stackHolder ? "bg-yellow-100" : ""} w-full`}
                         options={stackHolders}
                         value={stackHolder}
                         onChange={setStackHolder}
@@ -329,13 +337,14 @@ const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
                                 const value = e.target.value;
                                 setOdometer(value ? parseFloat(value) : undefined);
                             }}
+                            className={`${!odometer ? "bg-yellow-100" : ""}`}
                         />
                     </div>
                 }
 
                 <div>
                     <Label htmlFor="comment">Comment</Label>
-                    <Input id="comment" value={ManagerComment} onChange={(e) => setManagerComment(e.target.value)} className="" type="string" placeholder="" />
+                    <Input id="comment" value={ManagerComment} onChange={(e) => setManagerComment(e.target.value)} className={`${!ManagerComment ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
                 </div>
 
                 <div>
@@ -348,6 +357,7 @@ const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
                             const value = e.target.value;
                             setProposedBy(value);
                         }}
+                        className={`${!proposedBy ? "bg-yellow-100" : ""}`}
                     />
                 </div>
 
@@ -361,13 +371,14 @@ const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
                             const value = e.target.value;
                             setOrderedBy(value);
                         }}
+                        className={`${!orderedBy ? "bg-yellow-100" : ""}`}
                     />
                 </div>
 
                 <div className="flex gap-2 flex-row justify-between mt-2">
-                    <Button className="w-full md:w-auto" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
+                    <Button className="w-full" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
                     {/* { if (validateInputs()) } */}
-                    <Button className="w-full md:w-auto" type="button" onClick={() => { setIsConfirmationDialogueOpen(true) }} >Submit</Button>
+                    <Button className="w-full" type="button" onClick={() => { setIsConfirmationDialogueOpen(true) }} >Submit</Button>
                 </div>
             </div>
 

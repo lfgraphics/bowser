@@ -156,10 +156,10 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
                         : trip
                 )
             );
-            toast.success("Trip update submitted successfully!");
+            toast.success("Trip update submitted successfully!", { richColors: true });
         } catch (error) {
             console.error("Error submitting trip update:", error);
-            toast.error("An error occurred while submitting the trip update.", {richColors:true});
+            toast.error("An error occurred while submitting the trip update.", { richColors: true });
         } finally {
             setLoading(false);
         }
@@ -197,54 +197,52 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
         }
     }
 
-    console.log('trips found: ', trips.length)
-
     return (
         <>
             {loading && <Loading />}
-            <div className="p-4 min-h-[80svh] flex flex-col justify-center">
-                <div className="flex flex-col gap-4 md:flex-row items-center justify-center md:flex-shrink-0 w-full md:justify-around">
-                    {tripId &&
-                        <>
-                            <div className="flex flex-col gap-2 md:gap-4 w-full md:w-auto justify-start">
-                                <h4 className="text-lg font-semibold">Trip Details</h4>
-                                <div className="flex">
-                                    <strong>Started From: </strong>{data.find(trip => trip?._id === tripId)?.StartFrom || "N/A"}
-                                </div>
-                                <div className="flex">
-                                    <strong>Loading Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.StartDate))}
-                                </div>
-                                <div className="flex">
-                                    <strong>Unloading Factory: </strong> {data.find(trip => trip?._id === tripId)?.TallyLoadDetail.Consignee || "N/A"}
-                                </div>
-                                <div className="flex">
-                                    <strong>Ending Location: </strong> {data.find(trip => trip?._id === tripId)?.EndTo || "N/A"}
-                                </div>
-                                <div className="flex">
-                                    <strong>Starat Driver: </strong> {data.find(trip => trip?._id === tripId)?.StartDriver || "N/A"}
-                                </div>
+            <div className="p-4 min-h-[80svh] flex flex-col justify-center gap-4">
+                {tripId &&
+                    <>
+                        <div className="flex flex-col gap-2 md:gap-4 w-full  justify-start text-sm">
+                            <h4 className="text-lg font-semibold">Trip Details</h4>
+                            <div className="flex">
+                                <strong>Started From: </strong>{data.find(trip => trip?._id === tripId)?.StartFrom || "N/A"}
                             </div>
-                        </>
-                    }
-                    <Combobox
-                        className="w-full md:w-auto"
-                        options={trips}
-                        value={tripId}
-                        onChange={setTripId}
-                        searchTerm={vehicleSearch}
-                        onSearchTermChange={setVehicleSearch}
-                        placeholder="Select Vehicle"
-                    />
-                    {
-                        tripId && (
-                            <div className="buttons flex flex-col gap-2 md:flex-row items-center w-full">
-                                {actionType !== "update" && <Button className="w-full md:w-auto" onClick={() => setActionType("update")}>Update</Button>}
-                                {actionType !== "report" && <Button className="w-full md:w-auto" onClick={() => setActionType("report")}>Report</Button>}
-                                {actionType !== "unload" && <Button className="w-full md:w-auto" onClick={() => setActionType("unload")}>Unload</Button>}
+                            <div className="flex">
+                                <strong>Loading Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.StartDate))}
                             </div>
-                        )
-                    }
-                </div>
+                            <div className="flex">
+                                <strong>Unloading Factory: </strong> {data.find(trip => trip?._id === tripId)?.TallyLoadDetail.Consignee || "N/A"}
+                            </div>
+                            <div className="flex">
+                                <strong>Ending Location: </strong> {data.find(trip => trip?._id === tripId)?.EndTo || "N/A"}
+                            </div>
+                            <div className="flex">
+                                <strong>Starat Driver: </strong> {data.find(trip => trip?._id === tripId)?.StartDriver || "N/A"}
+                            </div>
+                        </div>
+                    </>
+                }
+                <Combobox
+                    className="w-full "
+                    options={trips}
+                    value={tripId}
+                    onChange={setTripId}
+                    searchTerm={vehicleSearch}
+                    onSearchTermChange={setVehicleSearch}
+                    placeholder="Select Vehicle"
+                />
+                {
+                    tripId && (
+                        <div className="buttons flex flex-col gap-2 items-center w-full">
+                            <Button className={`w-full ${actionType === "update" ? "bg-green-500 text-white hover:bg-green-300 hover:text-black" : ""}`} onClick={() => setActionType("update")}>Update</Button>
+                            <Button className={`w-full ${actionType === "report" ? "bg-green-500 text-white hover:bg-green-300 hover:text-black" : ""}`} onClick={() => setActionType("report")}>Report</Button>
+                            <Button className={`w-full ${actionType === "unload" ? "bg-green-500 text-white hover:bg-green-300 hover:text-black" : ""}`} onClick={() => setActionType("unload")}>Unload</Button>
+                        </div>
+                    )
+                }
+                {/* <div className="flex flex-col gap-4 md:flex-row items-center justify-center md:flex-shrink-0 w-full md:justify-around">
+                </div> */}
                 <div className={actionType == undefined ? "hidden" : ""}>
                     <Label htmlFor="dateTime">Current Date</Label>
                     <Input
@@ -262,16 +260,16 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
                         id="odometer"
                         value={OdometerOnTrackUpdate === undefined ? "" : OdometerOnTrackUpdate}
                         onChange={(e) => setOdometerOnTrackUpdate(e.target.value === "" ? undefined : Number(e.target.value))}
-                        className=""
-                        type="number"
-                        placeholder=""
+                        className={`${(!OdometerOnTrackUpdate || OdometerOnTrackUpdate <= 0) ? "bg-yellow-100" : ""} text-foreground`}
+                        type="string"
+                        placeholder="Enter Odometer"
                     />
 
                     <Label htmlFor="locationRemark">Location Remark</Label>
-                    <Input id="locationRemark" value={LocationRemark} onChange={(e) => setLocationRemark(e.target.value)} className="" type="string" placeholder="" />
+                    <Input id="locationRemark" value={LocationRemark} onChange={(e) => setLocationRemark(e.target.value)} className={`${!LocationRemark ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
 
                     <Label htmlFor="comment">Instruction/ Comment</Label>
-                    <Input id="comment" value={ManagerComment} onChange={(e) => setManagerComment(e.target.value)} className="" type="string" placeholder="" />
+                    <Input id="comment" value={ManagerComment} onChange={(e) => setManagerComment(e.target.value)} className={`${!ManagerComment ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
 
                     <Label htmlFor="driver">Driver</Label>
                     <Input
@@ -294,12 +292,13 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
                                 searchDriver(Driver);
                             }
                         }}
+                        className={`${!Driver ? "bg-yellow-100" : ""}`}
                         required
                     />
 
                     <div className="flex gap-2 flex-row justify-between mt-2">
-                        <Button className="w-full md:w-auto" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
-                        <Button className="w-full md:w-auto" type="button" onClick={() => submit()}>Submit</Button>
+                        <Button className="w-full " variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
+                        <Button className="w-full " type="button" onClick={() => submit()}>Submit</Button>
                     </div>
                 </div>
 

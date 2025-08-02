@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 
 import Loading from '@/app/loading'
 import { BASE_URL } from '@/lib/api'
-import { Driver, TankersTrip } from '@/types'
+import { Driver, TankersTrip, TransAppUser } from '@/types'
 import { getLocalDateTimeString } from '@/utils'
 import { searchItems } from '@/utils/searchUtils'
 
@@ -56,6 +56,12 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
     const [goods, setGoods] = useState<ComboboxOption[]>([])
     const [fullGoods, setFullGoods] = useState<{ _id: string, GoodsName: string, Division: number }[]>([])
     const [good, setGood] = useState<string>("")
+
+    useEffect(() => {
+        let user = localStorage.getItem("adminUser")
+        let jsonUser: TransAppUser = JSON.parse(user!)
+        setProposedBy(jsonUser.name)
+    }, [])
 
     const handleDriverSelection = (driver: Driver) => {
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
@@ -268,6 +274,7 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
                                 searchDriver(Driver);
                             }
                         }}
+                        className={`${!Driver ? "bg-yellow-100" : ""}`}
                         required
                     />
                 </div>
@@ -281,6 +288,7 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
                             const value = e.target.value;
                             setDriverMobile(value);
                         }}
+                        className={`${!driverMobile ? "bg-yellow-100" : ""}`}
                         required
                     />
                 </div>
@@ -288,7 +296,7 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
                 <div>
                     <Label htmlFor="location">Consignor</Label>
                     <Combobox
-                        className="w-full"
+                        className={`${!stackHolder ? "bg-yellow-100" : ""} w-full`}
                         options={stackHolders}
                         value={stackHolder}
                         onChange={setStackHolder}
@@ -300,7 +308,7 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
 
                 <div>
                     <Label htmlFor='location'>Location</Label>
-                    <Input type='string' id='location' readOnly onChange={(e) => setLocation(e.target.value)} value={location}></Input>
+                    <Input type='string' id='location' readOnly onChange={(e) => setLocation(e.target.value)} value={location} className={`${!location ? "bg-yellow-100" : ""}`} />
                 </div>
 
                 <div>
@@ -332,6 +340,7 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
                 <div>
                     <Label htmlFor="odometer">Odometer at loading</Label>
                     <Input
+                        className={`${!odometer ? "bg-yellow-100" : ""}`}
                         id="odometer"
                         type="string"
                         value={odometer || ""}
@@ -344,7 +353,7 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
 
                 <Label htmlFor="goods">Loaded Good</Label>
                 <Combobox
-                    className="w-full"
+                    className={`${!good ? "bg-yellow-100" : ""} w-full`}
                     options={goods}
                     value={good}
                     onChange={setGood}
@@ -368,20 +377,7 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
 
                 <div>
                     <Label htmlFor="comment">Comment</Label>
-                    <Input id="comment" value={ManagerComment} onChange={(e) => setManagerComment(e.target.value)} className="" type="string" placeholder="" />
-                </div>
-
-                <div>
-                    <Label id="proposed-by">Proposed By</Label>
-                    <Input
-                        id="proposed-by"
-                        type="text"
-                        value={proposedBy}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            setProposedBy(value);
-                        }}
-                    />
+                    <Input id="comment" value={ManagerComment} onChange={(e) => setManagerComment(e.target.value)} className={`${!ManagerComment ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
                 </div>
 
                 <div>
@@ -394,13 +390,28 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
                             const value = e.target.value;
                             setOrderedBy(value);
                         }}
+                        className={`${!orderedBy ? "bg-yellow-100" : ""}`}
+                    />
+                </div>
+
+                <div>
+                    <Label id="proposed-by">Proposed By</Label>
+                    <Input
+                        id="proposed-by"
+                        type="text"
+                        value={proposedBy}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setProposedBy(value);
+                        }}
+                        className={`${!proposedBy ? "bg-yellow-100" : ""}`}
                     />
                 </div>
 
                 <div className="flex gap-2 flex-row justify-between mt-2">
-                    <Button className="w-full md:w-auto" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
+                    <Button className="w-full" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
                     {/* {if (validateInputs()) } */}
-                    <Button className="w-full md:w-auto" type="button" onClick={() => {  setIsConfirmationDialogueOpen(true) }} >Submit</Button>
+                    <Button className="w-full" type="button" onClick={() => { setIsConfirmationDialogueOpen(true) }} >Submit</Button>
                 </div>
             </div>
 

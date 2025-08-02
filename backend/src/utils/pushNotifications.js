@@ -64,7 +64,7 @@ async function sendWebPushNotification({ mobileNumber, userId, message, options 
                 { userId, platform: 'web' },
                 { mobileNumber, platform: 'web' }
             ]
-        });
+        }).sort({ _id: -1 });
 
         if (!subscriptions.length) {
             return { success: false, message: 'No web subscriptions found for the provided userId or mobile number.' };
@@ -77,9 +77,6 @@ async function sendWebPushNotification({ mobileNumber, userId, message, options 
             icon: options.icon || '/icon-512x512.png',
             id: options.id,
         });
-
-        console.log("Payload length:", Buffer.byteLength(payload, 'utf8'), payload);
-
 
         let results = [];
         for (const sub of subscriptions) {

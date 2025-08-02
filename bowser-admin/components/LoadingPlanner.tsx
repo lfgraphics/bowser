@@ -52,6 +52,12 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
         keyExtractor: () => "",
     });
 
+    useEffect(() => {
+        let user = localStorage.getItem("adminUser")
+        let jsonUser: TransAppUser = JSON.parse(user!)
+        setProposedBy(jsonUser.name)
+    }, [])
+
     const resetForm = () => {
         setTripId("");
         setDriver("");
@@ -146,9 +152,9 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
         try {
             const response = await fetch(`${BASE_URL}/trans-app/stack-holders?params=${search}`);
             const data = await response.json();
-            const formattedData: ComboboxOption[] = data.map((item: { _id: string, InstitutionName: string }) => ({
+            const formattedData: ComboboxOption[] = data.map((item: { _id: string, InstitutionName: string, Location: string }) => ({
                 value: item._id,
-                label: item.InstitutionName
+                label: `${item.InstitutionName}: ${item.Location}`
             }));
             setStackHolders(formattedData);
         } catch (error) {
@@ -171,31 +177,31 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
     return (
         <>
             {loading && <Loading />}
-            <div className="p-4 min-h-[80svh] flex flex-col justify-center">
-                <div className="flex flex-col gap-4 md:flex-row items-center justify-center md:flex-shrink-0 w-full md:justify-around">
-                    {tripId &&
-                        <>
-                            <div className="flex flex-col gap-2 md:gap-4 w-full md:w-auto justify-start">
-                                <h4 className="text-lg font-semibold">Trip Details</h4>
-                                <div className="flex">
-                                    <strong>Started From: </strong>{data.find(trip => trip?._id === tripId)?.StartFrom || "N/A"}
-                                </div>
-                                <div className="flex">
-                                    <strong>Loading Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.StartDate))}
-                                </div>
-                                <div className="flex">
-                                    <strong>Unloading Factory: </strong> {data.find(trip => trip?._id === tripId)?.TallyLoadDetail.Consignee || "N/A"}
-                                </div>
-                                <div className="flex">
-                                    <strong>Ending Location: </strong> {data.find(trip => trip?._id === tripId)?.EndTo || "N/A"}
-                                </div>
-                                <div className="flex">
-                                    <strong>Starat Driver: </strong> {data.find(trip => trip?._id === tripId)?.StartDriver || "N/A"}
-                                </div>
+            <div className="p-4 min-h-[80svh] flex flex-col justify-center gap-4">
+                {tripId &&
+                    <>
+                        <div className="flex flex-col gap-2 md:gap-4 w-full md:w-auto justify-start text-sm">
+                            <h4 className="text-lg font-semibold">Trip Details</h4>
+                            <div className="flex">
+                                <strong>Started From: </strong>{data.find(trip => trip?._id === tripId)?.StartFrom || "N/A"}
                             </div>
-                        </>
-                    }
-                </div>
+                            <div className="flex">
+                                <strong>Loading Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.StartDate))}
+                            </div>
+                            <div className="flex">
+                                <strong>Unloading Factory: </strong> {data.find(trip => trip?._id === tripId)?.TallyLoadDetail.Consignee || "N/A"}
+                            </div>
+                            <div className="flex">
+                                <strong>Ending Location: </strong> {data.find(trip => trip?._id === tripId)?.EndTo || "N/A"}
+                            </div>
+                            <div className="flex">
+                                <strong>Starat Driver: </strong> {data.find(trip => trip?._id === tripId)?.StartDriver || "N/A"}
+                            </div>
+                        </div>
+                    </>
+                }
+                {/* <div className="flex flex-col gap-4 md:flex-row items-center justify-center md:flex-shrink-0 w-full md:justify-around">
+                </div> */}
                 <Combobox
                     className="w-full md:w-auto"
                     options={vehicles}
@@ -227,6 +233,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
                                 searchDriver(Driver);
                             }
                         }}
+                        className={`${!Driver ? "bg-yellow-100" : ""}`}
                         required
                     />
                     <Label htmlFor="driver-mobile">Mobile No</Label>
@@ -238,10 +245,11 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
                             setDriverMobile(value);
                         }}
                         required
+                        className={`${!driverMobile ? "bg-yellow-100" : ""}`}
                     />
                     <Label htmlFor="location">Destination</Label>
                     <Combobox
-                        className="w-full"
+                        className={`${!stackHolder ? "bg-yellow-100" : ""} w-full`}
                         options={stackHolders}
                         value={stackHolder}
                         onChange={setStackHolder}
@@ -272,12 +280,13 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
                     <Label htmlFor="odometer">Odometer</Label>
                     <Input
                         id="odometer"
-                        type="number"
+                        type="string"
                         value={odometer || ""}
                         onChange={(e) => {
                             const value = e.target.value;
                             setOdometer(value ? parseFloat(value) : undefined);
                         }}
+                    // className={`${!odometer || odometer < 0 ? "bg-yellow-100 text-black" : ""} text-foreground`}
                     />
                     <Label htmlFor="ordered-by">Ordered By</Label>
                     <Input
@@ -288,6 +297,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
                             const value = e.target.value;
                             setOrderedBy(value);
                         }}
+                        className={`${!orderedBy ? "bg-yellow-100" : ""}`}
                     />
                     <Label htmlFor="proposed-by">Proposed By</Label>
                     <Input
@@ -298,10 +308,11 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
                             const value = e.target.value;
                             setProposedBy(value);
                         }}
+                        readOnly
                     />
                     <div className="flex gap-2 flex-row justify-between mt-2">
-                        <Button className="w-full md:w-auto" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
-                        <Button className="w-full md:w-auto" type="button" onClick={() => submit()}>Submit</Button>
+                        <Button className="w-full" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
+                        <Button className="w-full" type="button" onClick={() => submit()}>Submit</Button>
                     </div>
                 </div>
             </div>
