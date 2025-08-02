@@ -271,6 +271,7 @@ async function createEmptyTrip(postData) {
         EndTo: stackHolder,
         LoadStatus: 0,
         EmptyTripDetail: {
+            StartOdometer: odometer,
             VehicleNo: vehicleNo,
             ProposedDate: proposedDate ? new Date(proposedDate) : undefined,
             ProposedBy: proposedBy,
@@ -301,7 +302,7 @@ async function updateEmptyTrip(tripId, postData) {
         division,
         proposedDate
     } = postData;
-    
+
     // Validate division
     const divisionNo = getDivisionKeyByValue(division);
     if (typeof division === 'undefined') {
