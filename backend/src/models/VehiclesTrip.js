@@ -27,7 +27,7 @@ const tankerTripSchema = new Schema({
         }
     },
     EmptyTripDetail: {
-        VehicleNo: { type: String, required: true },
+        VehicleNo: { type: String },
         ProposedDestination: { type: String },
         ProposedDate: { type: Date },
         ReportDate: { type: Date },
