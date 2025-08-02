@@ -65,24 +65,27 @@ export default function Page() {
           userName: user?.name
         })
       });
+
+      const response = await fetchResponse.json();
+
       if (!fetchResponse.ok) {
-        let errorResponse = await fetchResponse.json();
         toast.error('Error in request', {
-          description: errorResponse.error,
+          description: response.error,
           richColors: true
         });
       } else {
-        let response = await fetchResponse.json();
-        console.log("Response:", response);
         toast.success(response.message, {
-          description: `${vehicleNumber} hase been deleted from your profile.`,
+          description: `${vehicleNumber} has been deleted from your profile.`,
           richColors: true
         });
-        let updatedVechicles = vehicles?.filter((vehicle) => vehicle !== vehicleNumber)
-        let localuserData = JSON.parse(localStorage.getItem("adminUser")!)
-        localuserData.vehicles = updatedVechicles
-        localStorage.setItem("adminUser", (JSON.stringify(localuserData)))
-        setVehicles(prevItems => prevItems?.filter(vehicle => vehicle !== vehicleNumber));
+
+        const updatedVehicles = vehicles?.filter((v) => v !== vehicleNumber) || [];
+
+        setVehicles(updatedVehicles);
+
+        const localUserData = JSON.parse(localStorage.getItem("adminUser")!);
+        localUserData.vehicles = updatedVehicles;
+        localStorage.setItem("adminUser", JSON.stringify(localUserData));
       }
     } catch (error) {
       console.error(error);
@@ -91,7 +94,7 @@ export default function Page() {
   };
 
   const addVehicle = async (vehicleNumber: string) => {
-    console.log('deleting vehicle: ', vehicleNumber);
+    console.log('adding vehicle: ', vehicleNumber);
     try {
       const fetchResponse = await fetch(`${BASE_URL}/trans-app/manage-profile/add-vehicle`, {
         method: "POST",
@@ -101,30 +104,34 @@ export default function Page() {
           userName: user?.name
         })
       });
+
+      const response = await fetchResponse.json();
+
       if (!fetchResponse.ok) {
-        let errorResponse = await fetchResponse.json();
         toast.error('Error in request', {
-          description: errorResponse.error,
+          description: response.message,
           richColors: true
         });
       } else {
-        let response = await fetchResponse.json();
-        console.log("Response:", response);
         toast.success(response.message, {
-          description: `${vehicleNumber} hase been adde to your profile.`,
+          description: `${vehicleNumber} has been added to your profile.`,
           richColors: true
         });
-        let updatedVechicles = vehicles?.push(vehicleNumber)
-        let localuserData = JSON.parse(localStorage.getItem("adminUser")!)
-        localuserData.vehicles = updatedVechicles
-        localStorage.setItem("adminUser", (JSON.stringify(localuserData)))
-        setVehicles((prevItems) => [...(prevItems || []), vehicleNumber]);
+
+        const updatedVehicles = [...(vehicles || []), vehicleNumber];
+
+        setVehicles(updatedVehicles);
+
+        const localUserData = JSON.parse(localStorage.getItem("adminUser")!);
+        localUserData.vehicles = updatedVehicles;
+        localStorage.setItem("adminUser", JSON.stringify(localUserData));
       }
     } catch (error) {
       console.error(error);
       toast.error("An error occurred", { richColors: true, description: String(error) });
     }
   };
+
 
   const deActivateVehicle = async (vehicleNumber: string) => {
     console.log('deleting vehicle: ', vehicleNumber);

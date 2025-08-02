@@ -74,22 +74,29 @@ router.post('/delete-vehicle', async (req, res) => {
 
 router.post('/add-vehicle', async (req, res) => {
     const { vehicleNo, userName } = req.body;
+
     if (!vehicleNo || !userName) {
-        return res.status(400).json({ error: "vehicle number and userName both are required." })
+        return res.status(400).json({ message: "vehicle number and userName both are required." });
     }
+
     try {
-        await TransUser.findOneAndUpdate({ UserName: userName },
-            {
-                $push: {
-                    myVehicles: vehicleNo
-                }
-            },
-            { new: true }
-        );
-        return res.status(200).json({ message: "Request successufl." })
+        const user = await TransUser.findOne({ UserName: userName });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        if (user.myVehicles.includes(vehicleNo)) {
+            return res.status(409).json({ message: "User already has this vehicle." });
+        }
+
+        user.myVehicles.push(vehicleNo);
+        await user.save();
+
+        return res.status(200).json({ message: "Vehicle added successfully." });
     } catch (error) {
-        console.log(error);
-        return res.status(500).json({ error: error.message })
+        console.error(error);
+        return res.status(500).json({ error: error.message });
     }
 });
 
