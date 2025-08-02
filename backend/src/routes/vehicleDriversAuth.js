@@ -17,8 +17,8 @@ router.post('/signup', async (req, res) => {
         const driver = await Driver.find({
             $and: [{ Name: { $regex: name, $options: 'i' } }, {
                 $or: [
-                    { isActive: { $exists: false } },
-                    { isActive: true }
+                    { inActive: { $exists: false } },
+                    { inActive: true }
                 ]
             }]
         });
@@ -90,7 +90,11 @@ router.post('/login', async (req, res) => {
 
         const user = await Driver.findOne({
             "MobileNo.MobileNo": phoneNumber,
-            password: { $exists: true }
+            $or: [
+                { inActive: { $exists: false } },
+                { inActive: false }
+            ],
+            password: { $exists: true },
         });
 
         if (!user) {
@@ -169,7 +173,12 @@ router.post('/verify-token', async (req, res) => {
             if (!isTokenValid(decoded)) {
                 return res.status(401).json({ valid: false, message: 'Token expired' });
             }
-            const user = await Driver.findOne({ 'MobileNo.MobileNo': decoded.phoneNumber });
+            const user = await Driver.findOne({
+                'MobileNo.MobileNo': decoded.phoneNumber, $or: [
+                    { inActive: { $exists: false } },
+                    { inActive: true }
+                ]
+            });
 
             if (!user) {
                 return res.status(404).json({ valid: false, message: 'User not found' });

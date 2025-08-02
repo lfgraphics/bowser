@@ -11,7 +11,13 @@ router.get('/:searchTerm', async (req, res) => {
             $or: [
                 { Name: { $regex: searchTerm, $options: 'i' } },
                 { ITPLId: { $regex: searchTerm, $options: 'i' } },
-                { 'MobileNo.MobileNo': { $regex: searchTerm, $options: 'i' } }
+                { 'MobileNo.MobileNo': { $regex: searchTerm, $options: 'i' } },
+                {
+                    $or: [
+                        { inActive: { $exists: false } },
+                        { inActive: true }
+                    ]
+                }
             ]
         }).exec();
 
@@ -68,12 +74,17 @@ router.post('/updateDriverMobile', async (req, res) => {
         const updatedDriver = await Driver.findOneAndUpdate(
             { Name: { $regex: driverId, $options: "i" } },
             {
-            $set: {
-                MobileNo: [{
-                MobileNo: driverMobile,
-                LastUsed: true
-                }]
-            }
+                $set: {
+                    'MobileNo.LastUsed': false,
+                    'MobileNo.IsDefaultNumber': false,
+                },
+                $push: {
+                    MobileNo: [{
+                        MobileNo: driverMobile,
+                        LastUsed: true,
+                        IsDefaultNumber: true
+                    }]
+                }
             },
             { new: true, upsert: true }
         );
