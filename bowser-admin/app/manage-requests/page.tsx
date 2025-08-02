@@ -9,13 +9,12 @@ import { TransferRequest } from "@/types";
 import Loading from "@/app/loading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Toaster } from "@/components/ui/toaster";
-import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import OnlyAllowed from "@/components/OnlyAllowed";
 import DivertRequest from "@/components/DivertRequest";
+import { toast } from "sonner";
 
 export default function FuelRequestTransfer() {
     const [loading, setLoading] = useState(true);
@@ -27,7 +26,6 @@ export default function FuelRequestTransfer() {
     const [openCancellationDialog, setOpenCancellationDialog] = useState(false);
     const [cancellation, setCancellation] = useState<{ reason: string; id: string } | null>(null);
     const [user, setUser] = useState<User>()
-    const { toast } = useToast();
 
     useEffect(() => {
         const storedUser = localStorage.getItem('adminUser');
@@ -43,7 +41,7 @@ export default function FuelRequestTransfer() {
             setAllocators(response.data);
         } catch (error) {
             console.error("Error fetching allocators:", error);
-            toast({ title: 'Error fetching allocators', description: error instanceof Error ? error.message : 'An error occurred', variant: "destructive" });
+            toast.error('Error fetching allocators', { description: error instanceof Error ? error.message : 'An error occurred', richColors: true });
         }
         finally {
             setLoading(false);
@@ -52,15 +50,15 @@ export default function FuelRequestTransfer() {
     const createRequestTransferRequest = async () => {
         if (!user) return;
         if (!user.userId) {
-            toast({ title: 'Error', description: 'User not found', variant: "destructive" });
+            toast.error('User Not found', { richColors: true });
             return;
         }
         if (!selectedAllocator) {
-            toast({ title: 'Error', description: 'Please select a recipient', variant: "destructive" });
+            toast.error('Please select a recipient', { richColors: true });
             return;
         }
         if (!transferReason) {
-            toast({ title: 'Error', description: 'Please enter a reason', variant: "destructive" });
+            toast.error('Please enter a reason', { richColors: true });
             return;
         }
         setLoading(true);
@@ -71,10 +69,10 @@ export default function FuelRequestTransfer() {
                 transferReason
             });
             if (response.status !== 200) {
-                toast({ title: 'Error', description: 'Failed to create request transfer', variant: "destructive" });
+                toast.error('Failed to create request transfer', { richColors: true });
                 return;
             }
-            toast({ title: 'Success', description: 'Operation Successful, wait for the recipient to response', variant: "success" });
+            toast('Operation Successful, wait for the recipient to response', { richColors: true });
         } catch (error) {
             console.error("Error fetching allocators:", error);
         } finally {
@@ -102,7 +100,7 @@ export default function FuelRequestTransfer() {
     const cancel = async () => {
         if (!user) return;
         if (!cancellation?.reason) {
-            toast({ title: 'Error', description: 'Please enter a reason to cancel/reject this request ', variant: "destructive" });
+            toast('Please enter a reason to cancel/reject this request ', { richColors: true });
             return;
         }
         setLoading(true);
@@ -112,10 +110,11 @@ export default function FuelRequestTransfer() {
                 reason: cancellation.reason
             });
             if (response.status !== 200) {
-                toast({ title: 'Error', description: 'Failed to cancel request transfer', variant: "destructive" });
+                toast.error('Failed to cancel request transfer', { richColors: true });
                 return;
+            } else {
+                toast.success('Request cancelled');
             }
-            toast({ title: 'Success', description: 'Request cancelled', variant: "success" });
         } catch (error) {
             console.error("Error fetching allocators:", error);
         } finally {
@@ -128,10 +127,11 @@ export default function FuelRequestTransfer() {
         try {
             const response = await axios.patch(`${BASE_URL}/request-transfer/accept/${id}`);
             if (response.status !== 200) {
-                toast({ title: 'Error', description: 'Failed to accept request transfer', variant: "destructive" });
+                toast('Failed to accept request transfer', { richColors: true });
                 return;
+            } else {
+                toast(`Request accepted\nYou'll recieve all of his fuel request instead of him`, { richColors: true });
             }
-            toast({ title: 'Success', description: `Request accepted\nYou'll recieve all of his fuel request instead of him`, variant: "success" });
         } catch (error) {
             console.error("Error fetching allocators:", error);
         } finally {
@@ -144,11 +144,11 @@ export default function FuelRequestTransfer() {
         try {
             const response = await axios.get(`${BASE_URL}/request-transfer/mark-fulfilled/${id}`);
             if (response.status !== 200) {
-                toast({ title: 'Error', description: 'Failed to mark as fulfilled this request transfer', variant: "destructive" });
+                toast.error('Failed to mark as fulfilled this request transfer', { richColors: true });
                 return;
             }
             const request = [...requestsByMe, ...requestsToMe].find(r => r._id === id);
-            toast({ title: 'Success', description: `Request marked as fulfilled\nNow ${request?.by} will receive their fuel requests`, variant: "success" });
+            toast.success('Success', { description: `Request marked as fulfilled\nNow ${request?.by} will receive their fuel requests`, richColors: true });
         } catch (error) {
             console.error("Error fetching allocators:", error);
         } finally {
@@ -165,8 +165,6 @@ export default function FuelRequestTransfer() {
     return (
         <>
             {loading && <Loading />}
-            <Toaster />
-
             <OnlyAllowed allowedRoles={["Diesel Control Center Staff"]}>
                 <main className="my-6">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

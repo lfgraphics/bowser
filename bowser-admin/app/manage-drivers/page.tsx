@@ -61,7 +61,7 @@ const page = () => {
             setData(manipulatedData)
         } catch (err) {
             console.log(err)
-            toast.error(String(err))
+            toast.error(String(err), { richColors: true })
         } finally {
             setLoading(false)
         }
@@ -82,13 +82,13 @@ const page = () => {
             const jsonResponse = await response.json();
             if (!response.ok) {
                 console.log(jsonResponse)
-                toast.error(String(jsonResponse.message))
+                toast.error(String(jsonResponse.message), { richColors: true })
             } else {
-                toast.success("Deleted Successfully");
+                toast.success("Deleted Successfully", { richColors: true });
             }
         } catch (err) {
             console.log(err);
-            toast.error("failed to delted, got some error");
+            toast.error("failed to delted, got some error", { richColors: true });
         } finally {
             setLoading(false)
         }
@@ -373,7 +373,8 @@ const page = () => {
             toast.success(result, { richColors: true })
             await findDriversVehicles(driver)
         } catch (error) {
-            toast.error("An error Occured");
+            console.error('Error updating trip: ', error)
+            toast.error("An error Occured", { richColors: true, description: String(error) });
             return;
         } finally {
             setLoading(false);
