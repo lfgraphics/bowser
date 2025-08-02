@@ -11,13 +11,7 @@ router.get('/:searchTerm', async (req, res) => {
             $or: [
                 { Name: { $regex: searchTerm, $options: 'i' } },
                 { ITPLId: { $regex: searchTerm, $options: 'i' } },
-                { 'MobileNo.MobileNo': { $regex: searchTerm, $options: 'i' } },
-                {
-                    $or: [
-                        { inActive: { $exists: false } },
-                        { inActive: true }
-                    ]
-                }
+                { 'MobileNo.MobileNo': { $regex: searchTerm, $options: 'i' } }
             ]
         }).exec();
 
