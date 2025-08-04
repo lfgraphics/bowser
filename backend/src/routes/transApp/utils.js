@@ -138,13 +138,10 @@ async function getUnloadedNotPlannedVehicles(userId) {
     const vehicles = await getUserVehicles(userId);
     const vehicleNos = vehicles.map(v => v);
     const deactivatedVehicles = await getUsersDeactivatedVehicles(userId);
-    const unplanned = await getUnloadedPlannedVehicles(userId)
-    const unplannedVehicles = unplanned.map((trip) => trip.VehicleNo)
-    const toexclude = deactivatedVehicles.concat(unplannedVehicles)
     return TankersTrip.aggregate([
         {
             $match: {
-                VehicleNo: { $in: vehicleNos, $nin: toexclude },
+                VehicleNo: { $in: vehicleNos, $nin: deactivatedVehicles },
                 LoadStatus: 1,
                 "TallyLoadDetail.UnloadingDate": { $ne: null },
             }
@@ -189,9 +186,6 @@ async function getUnloadedNotPlannedVehicles(userId) {
 async function getUnloadedPlannedVehicles(userId) {
     const userVehicles = await getUserVehicles(userId);
     const deactivatedVehicles = await getUsersDeactivatedVehicles(userId);
-    const unplannedTrips = await getUnloadedNotPlannedVehicles(userId);
-    const unplannedVehicles = unplannedTrips.map(trip => trip.VehicleNo);
-    const vehiclesToExclude = deactivatedVehicles.concat(unplannedVehicles)
 
     const latestTrips = await TankersTrip.aggregate()
         .match({
@@ -207,6 +201,8 @@ async function getUnloadedPlannedVehicles(userId) {
         })
         .allowDiskUse(true)
         .exec();
+
+    console.log(latestTrips.length)
 
     return latestTrips
         .map(t => t.Trip)
