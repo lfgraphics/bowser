@@ -22,7 +22,7 @@ export const allowedRoutes: { [key: string]: [string] } = {
   "Petrol Pump Personnel": ["/loading/petrol-pump"],
   "Calibration Staff": ["/manage-bowsers"],
   "Diesel Average": ["/dispense-records"],
-  "Trans App": ["/manage-drivers"],
+  "Trans App": ["/trans-app"],
 };
 
 export default function Login() {

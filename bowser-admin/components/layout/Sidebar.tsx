@@ -421,18 +421,20 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>
+                <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer", "Diesel Control Center Staff", "Data Entry", "Loading Incharge", "Petrol Pump Personnel", "Calibration Staff", "Diesel Average"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/profile">
+                      <Button
+                        variant="ghost"
+                        className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/profile" ? "bg-primary text-primary-foreground" : ""}`}
+                      >
+                        <User2 className="mr-2 w-4 h-4" />
+                        Profile
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
                 {/* Dynamica access Routes ends here ................ */}
-                <li onClick={toggleSidebar}>
-                  <Link href="/profile">
-                    <Button
-                      variant="ghost"
-                      className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/profile" ? "bg-primary text-primary-foreground" : ""}`}
-                    >
-                      <User2 className="mr-2 w-4 h-4" />
-                      Profile
-                    </Button>
-                  </Link>
-                </li>
                 <li onClick={toggleSidebar}>
                   <Link href="/download">
                     <Button

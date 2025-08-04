@@ -405,8 +405,8 @@ async function syncTrips() {
 
     // Step 1: Fetch data from Local and Atlas
     const [atlasTrips, localTrips] = await Promise.all([
-        atlasCollection.find().toArray(),
-        localCollection.find({ StartDate: { $gte: past6Months, $lte: now } }).toArray(),
+        atlasCollection.find({ LoadStatus: 1 }).toArray(),
+        localCollection.find({ StartDate: { $gte: past6Months, $lte: now }, LoadStatus: 1 }).toArray(),
     ]);
 
 
