@@ -63,12 +63,20 @@ router.post('/delete-vehicle', async (req, res) => {
     }
     try {
         let user = await TransUser.findOne({ UserName: userName });
-        user.myVehicles = user.myVehicles.filter((vehicle) => vehicle !== vehicleNo)
+        if (!user) {
+            return res.status(404).json({ error: "User not found." });
+        }
+
+        if (!user.myVehicles.includes(vehicleNo)) {
+            return res.status(404).json({ message: "Vehicle not found for this user." });
+        }
+
+        user.myVehicles = user.myVehicles.filter((vehicle) => vehicle !== vehicleNo);
         await user.save();
-        return res.status(200).json({ message: "Request successufl." })
+        return res.status(200).json({ message: "Request successful." });
     } catch (error) {
         console.log(error);
-        return res.status(500).json({ error: error.message })
+        return res.status(500).json({ error: error.message });
     }
 });
 
@@ -84,6 +92,10 @@ router.post('/add-vehicle', async (req, res) => {
 
         if (!user) {
             return res.status(404).json({ message: "User not found." });
+        }
+
+        if (!user.myVehicles) {
+            user.myVehicles = [];
         }
 
         if (user.myVehicles.includes(vehicleNo)) {
