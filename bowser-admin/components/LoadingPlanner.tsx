@@ -180,6 +180,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
             <div className="p-4 min-h-[80svh] flex flex-col justify-center gap-4">
                 {tripId &&
                     <>
+                        id: {tripId}
                         <div className="flex flex-col gap-2 md:gap-4 w-full md:w-auto justify-start text-sm">
                             <h4 className="text-lg font-semibold">Trip Details</h4>
                             <div className="flex">
