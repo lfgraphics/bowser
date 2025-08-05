@@ -502,8 +502,7 @@ async function syncTransAppUsers() {
             if (
                 localUser.UserName !== atlasUser.UserName ||
                 localUser.Password !== atlasUser.Password ||
-                localUser.Division !== atlasUser.Division ||
-                JSON.stringify(localUser.myVehicles) !== JSON.stringify(atlasUser.myVehicles)
+                localUser.Division !== atlasUser.Division
             ) {
                 updates.push({
                     updateOne: {
