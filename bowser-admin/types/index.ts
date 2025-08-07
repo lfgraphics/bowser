@@ -746,3 +746,30 @@ export interface TankersTrip {
   }[];
   VehicleNo: string;
 }
+
+export interface TripsSummary {
+  empty: {
+    onWay: {
+      count: number,
+      trips: TankersTrip[]
+    },
+    reported: {
+      count: number,
+      trips: TankersTrip[]
+    },
+    standing: {
+      count: number,
+      trips: TankersTrip[]
+    }
+  },
+  loaded: {
+    onWay: {
+      count: number,
+      trips: TankersTrip[]
+    },
+    reported: {
+      count: number,
+      trips: TankersTrip[]
+    },
+  }
+}

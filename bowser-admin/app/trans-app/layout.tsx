@@ -80,9 +80,10 @@ export default function TransAppLayout({
 
     return (
         <TransAppContext.Provider value={{ user, photo }}>
-            <div className="md:h-[96.5svh] flex flex-col">
-                <main className="md:flex-1 md:overflow-auto p-4">{children}</main>
-                {/* <div className="bg-muted p-2 md:flex gap-0 border-b sticky bottom-0 hidden ">
+            {children}
+            {/* <div className="md:h-[96.5svh] flex flex-col">
+                <main className="md:flex-1 md:overflow-auto p-4">{children}</main> */}
+            {/* <div className="bg-muted p-2 md:flex gap-0 border-b sticky bottom-0 hidden ">
                     {navItems.map(({ href, label, icon }) => (
                         <Link key={href} href={href}>
                             <Button
@@ -95,7 +96,7 @@ export default function TransAppLayout({
                         </Link>
                     ))}
                 </div> */}
-            </div>
+            {/* </div> */}
         </TransAppContext.Provider>
     );
 }

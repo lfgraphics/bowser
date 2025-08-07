@@ -21,8 +21,9 @@ import { Tabs, TabsList } from '@radix-ui/react-tabs'
 import { TabsTrigger } from '@/components/ui/tabs'
 import { formatDate } from '@/lib/utils'
 import { SearchModal } from '@/components/SearchModal'
+import VehiclesSummary from '@/components/transappComponents/VehiclesSummary'
 
-type Tabslist = "Vehicles" | "Inactive Vehicles"
+type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary"
 
 export default function Page() {
   const { user, photo } = useContext(TransAppContext);
@@ -132,7 +133,6 @@ export default function Page() {
     }
   };
 
-
   const deActivateVehicle = async (vehicleNumber: string) => {
     console.log('deleting vehicle: ', vehicleNumber);
     try {
@@ -232,7 +232,7 @@ export default function Page() {
   return (
     <>
       {loading && <Loading />}
-      <div className='ml-4 mt-4 flex flex-col gap-4'>
+      <div className='mx-4 mt-4 flex flex-col gap-4'>
         <Card className='w-fit'>
           <CardContent>
             <CardHeader className='font-semibold'>User Profile</CardHeader>
@@ -249,6 +249,7 @@ export default function Page() {
           <TabsList>
             <TabsTrigger value="Vehicles">My Vehicles</TabsTrigger>
             <TabsTrigger value="Inactive Vehicles">Inactive Vehicles</TabsTrigger>
+            <TabsTrigger value="Summary">Vehicles Summary</TabsTrigger>
           </TabsList>
           <Button onClick={() => setIsVehicleAdditionDialogvisible(true)}>Add Vehicle</Button>
         </Tabs>
@@ -312,6 +313,10 @@ export default function Page() {
               )}
             </TableBody>
           </Table>
+        }
+        {
+          tab === "Summary" &&
+          <VehiclesSummary />
         }
       </div>
       <SearchModal

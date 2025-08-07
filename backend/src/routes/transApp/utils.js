@@ -217,6 +217,51 @@ async function getUnloadedPlannedVehicles(userId) {
         });
 }
 
+async function getSummary(userId) {
+    try {
+        const loadedVehicles = await getLoadedNotUnloadedVehicles(userId);
+
+        const loadedOnway = loadedVehicles.filter(trip => typeof trip.ReportedDate == null || trip.ReportedDate == undefined);
+        const loadedReported = loadedVehicles.filter(trip => typeof trip.ReportedDate !== null || typeof trip.TallyLoadDetail.UnloadingDate !== null);
+
+        const emptyStanding = await getUnloadedNotPlannedVehicles(userId);
+
+        const emptyVehicles = await getUnloadedPlannedVehicles(userId);
+
+        const emptyOnWay = emptyVehicles.filter(trip => !trip.ReportingDate);
+        const emptyReported = emptyVehicles.filter(trip => trip.ReportingDate);
+
+        return {
+            loaded: {
+                onWay: {
+                    count: loadedOnway.length,
+                    trips: loadedOnway
+                },
+                reported: {
+                    count: loadedReported.length,
+                    trips: loadedReported
+                }
+            },
+            empty: {
+                onWay: {
+                    count: emptyOnWay.length,
+                    trips: emptyOnWay
+                },
+                standing: {
+                    count: emptyStanding.length,
+                    trips: emptyStanding
+                },
+                reported: {
+                    count: emptyReported.length,
+                    trips: emptyReported
+                }
+            }
+        };
+    } catch (error) {
+        throw new Error(error);
+    }
+}
+
 const division = {
     "0": "Ethanol",
     "1": "Molasses",
@@ -368,5 +413,6 @@ module.exports = {
     division,
     getDivisionKeyByValue,
     createEmptyTrip,
-    updateEmptyTrip
+    updateEmptyTrip,
+    getSummary
 };

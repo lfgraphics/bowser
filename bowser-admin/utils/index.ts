@@ -78,10 +78,26 @@ export const useDebounceEffect = (
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [...deps, delay]);
 };
-// function debounce(func, timeout = 300) {
-//     let timer;
-//     return (...args) => {
-//         clearTimeout(timer);
-//         timer = setTimeout(() => { func.apply(this, args); }, timeout);
-//     };
-// }
+
+export async function getLocation(): Promise<string | { error: string }> {
+    if (!navigator.geolocation) {
+        return { error: "Geolocation is not supported by this browser." };
+    }
+
+    try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0,
+            });
+        });
+
+        const { latitude, longitude } = position.coords;
+        const coordinates = `${latitude}, ${longitude}`;
+        return coordinates;
+    } catch (error) {
+        console.error("Error getting location:", error);
+        return { error: "Unable to retrieve location. Please check permissions or internet connection." };
+    }
+}

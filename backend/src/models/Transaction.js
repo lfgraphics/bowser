@@ -37,7 +37,6 @@ const fuelingTransactionSchema = new mongoose.Schema({
     fuelQuantity: { type: Number, required: false },
     cost: { type: Number },
     gpsLocation: { type: String, required: false },
-    gpsLocation: { type: String, required: false },
     location: { type: String, required: false },
     fuelingDateTime: { type: Date, required: false },
     bowser: {

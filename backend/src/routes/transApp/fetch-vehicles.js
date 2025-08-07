@@ -4,7 +4,8 @@ const {
     getUserVehicles,
     getLoadedNotUnloadedVehicles,
     getUnloadedNotPlannedVehicles,
-    getUnloadedPlannedVehicles
+    getUnloadedPlannedVehicles,
+    getSummary
 } = require('./utils');
 
 router.get('/', async (req, res) => {
@@ -69,6 +70,17 @@ router.get('/unloaded-planned', async (req, res) => {
     } catch (error) {
         console.error("Error in GetEmptyVehicles:", error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.get('/get-summary/:userId', async (req, res) => {
+    const userId = req.params.userId;
+    try {
+        const summary = await getSummary(userId);
+        return res.status(200).json(summary);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json(error);
     }
 });
 

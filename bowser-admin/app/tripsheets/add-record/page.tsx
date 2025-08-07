@@ -11,6 +11,7 @@ import { BASE_URL } from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
 import { User } from '@/types/auth';
 import Loading from '@/app/loading';
+import { getLocation } from '@/utils';
 
 const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number, bowser: string } }) => {
     const [loading, setLoading] = useState<boolean>()
@@ -33,6 +34,7 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
         quantityType: 'Full',
         fuelQuantity: 0,
         gpsLocation: '',
+        location: '',
         fuelingDateTime: new Date().toISOString().split('T')[0],
         bowser: {
             regNo: searchParams.bowser,
@@ -62,6 +64,7 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
                 driverMobile: '',
                 fuelQuantity: 0,
                 gpsLocation: '',
+                location: '',
                 quantityType: "Full",
                 fuelingDateTime: new Date().toISOString().split('T')[0],
                 bowser: {
@@ -84,9 +87,14 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
 
     const handleSubmit = async () => {
         setLoading(true)
+        const locationResult = await getLocation();
+        const gpsLocation = typeof locationResult === "string" ? locationResult : "";
+
         const preparedRecords = records.map(record => ({
             ...record,
             vehicleNumberPlateImage: "",
+            gpsLocation,
+            location: `ITPL Bio-Diesel Pump-${String(location).toUpperCase()}`,
             fuelMeterImage: "",
             bowser: {
                 regNo: searchParams.bowser,
@@ -99,7 +107,7 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
 
         try {
             const response = await axios.post(`${BASE_URL}/addFuelingTransaction/bulk`, preparedRecords);
-            toast({ title: 'Success', description: response.data.message, variant:"success" });
+            toast({ title: 'Success', description: response.data.message, variant: "success" });
         } catch (error) {
             toast({ title: 'Error', description: 'Failed to submit records', variant: "destructive" });
         } finally {
@@ -261,10 +269,10 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
                                 <TableCell>
                                     <Input
                                         type="text"
-                                        value={record.gpsLocation}
+                                        value={record.location}
                                         onChange={(e) => {
                                             const newRecords = [...records];
-                                            newRecords[index].gpsLocation = e.target.value;
+                                            newRecords[index].location = e.target.value;
                                             setRecords(newRecords);
                                         }}
                                     />
