@@ -219,15 +219,47 @@ async function getUnloadedPlannedVehicles(userId) {
 
 async function getSummary(userId) {
     try {
-        const loadedVehicles = await getLoadedNotUnloadedVehicles(userId);
+        let loadedVehicles = await getLoadedNotUnloadedVehicles(userId);
+        let emptyVehicles = await getUnloadedPlannedVehicles(userId);
+        let emptyStanding = await getUnloadedNotPlannedVehicles(userId);
 
-        const loadedOnway = loadedVehicles.filter(trip => typeof trip.ReportedDate == null || trip.ReportedDate == undefined);
-        const loadedReported = loadedVehicles.filter(trip => typeof trip.ReportedDate !== null || typeof trip.TallyLoadDetail.UnloadingDate !== null);
+        // const seenVehicleNos = new Set();
 
-        const emptyStanding = await getUnloadedNotPlannedVehicles(userId);
+        // // Keep loadedVehicles as is, mark them as seen
+        // loadedVehicles = loadedVehicles.filter(item => {
+        //     if (!seenVehicleNos.has(item.VehicleNo)) {
+        //         seenVehicleNos.add(item.VehicleNo);
+        //         return true;
+        //     }
+        //     return false;
+        // });
 
-        const emptyVehicles = await getUnloadedPlannedVehicles(userId);
+        // // From emptyVehicles, remove if already seen
+        // emptyVehicles = emptyVehicles.filter(item => {
+        //     if (!seenVehicleNos.has(item.VehicleNo)) {
+        //         seenVehicleNos.add(item.VehicleNo);
+        //         return true;
+        //     }
+        //     return false;
+        // });
 
+        // // From emptyStanding, remove if already seen
+        // emptyStanding = emptyStanding.filter(item => {
+        //     if (!seenVehicleNos.has(item.VehicleNo)) {
+        //         seenVehicleNos.add(item.VehicleNo);
+        //         return true;
+        //     }
+        //     return false;
+        // });
+
+        // console.log({
+        //     loadedVehiclesCount: loadedVehicles.length,
+        //     emptyVehiclesCount: emptyVehicles.length,
+        //     emptyStandingCount: emptyStanding.length
+        // });
+
+        const loadedOnway = loadedVehicles;
+        const loadedReported = loadedVehicles.filter(trip => trip.TallyLoadDetail.ReportedDate !== null)
         const emptyOnWay = emptyVehicles.filter(trip => !trip.ReportingDate);
         const emptyReported = emptyVehicles.filter(trip => trip.ReportingDate);
 

@@ -265,7 +265,7 @@ export default function Page() {
             </TableHeader>
             <TableBody>
               {vehicles.map((vehicle, index) =>
-                <TableRow className={`${inactiveVehicles?.findIndex((inactive) => inactive.VehicleNo == vehicle) !== -1 ? "bg-red-300" : ""}`}>
+                <TableRow key={index} className={`${inactiveVehicles?.findIndex((inactive) => inactive.VehicleNo == vehicle) !== -1 ? "bg-red-300" : ""}`}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{vehicle}</TableCell>
                   <TableCell>
@@ -297,7 +297,7 @@ export default function Page() {
             </TableHeader>
             <TableBody>
               {inactiveVehicles && inactiveVehicles.map((vehicle, index) =>
-                <TableRow>
+                <TableRow key={index}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{vehicle.VehicleNo}</TableCell>
                   <TableCell>{vehicle.UserInfo.CreatedBy}</TableCell>

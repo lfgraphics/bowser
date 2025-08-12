@@ -669,6 +669,7 @@ export interface TransAppUser {
 export interface TankersTrip {
   _id: string;
   TallyLoadDetail: {
+    LockNo: string;
     BillingPartyName: string;
     BillingRoute: string;
     BooksOf: string;
@@ -708,6 +709,7 @@ export interface TankersTrip {
     VoucherType: string;
   };
   EmptyTripDetail: {
+    LockNo: string;
     VehicleNo: string;
     ProposedDate: string;
     ProposedDestination: string;
@@ -745,6 +747,7 @@ export interface TankersTrip {
     Driver: string;
   }[];
   VehicleNo: string;
+  superwiser?: string;
 }
 
 export interface TripsSummary {
