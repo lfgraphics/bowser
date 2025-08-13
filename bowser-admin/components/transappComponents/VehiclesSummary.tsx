@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { formatDate } from '@/lib/utils';
 import { generateTripsReport } from "@/utils/excel";
 import { Button } from '../ui/button';
+import { toast } from 'sonner';
 
 const VehiclesSummary = () => {
     const [user, setUser] = useState<TransAppUser>();
@@ -26,12 +27,13 @@ const VehiclesSummary = () => {
         if (!user?._id) return
         try {
             setLoading(true)
-            const url = `${BASE_URL}/trans-app/vehicles/get-summary/${user?._id}`
+            const url = `${BASE_URL}/trans-app/vehicles/get-summary/${user?._id}?isAdmin${user?.Division === "EthanolAdmin"}`
             const summary = await fetch(url);
             const jsonSummary = await summary.json()
             setData(jsonSummary);
         } catch (error) {
             console.error(error)
+            toast.error("Error", { description: String(error), richColors: true })
         } finally {
             setLoading(false)
         }
@@ -77,25 +79,25 @@ const VehiclesSummary = () => {
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
                         <Card>
                             <CardHeader>
-                                <CardTitle>Loaded Vehicles {data.loaded.onWay.count + data.loaded.reported.count}</CardTitle>
+                                <CardTitle>Loaded Vehicles {data?.loaded?.onWay.count + data?.loaded?.reported.count}</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <strong>On Way: </strong>{data.loaded.onWay.count}
+                                <strong>On Way: </strong>{data?.loaded?.onWay.count}
                                 <br />
-                                <strong>Reported: </strong> {data.loaded.reported.count}
+                                <strong>Reported: </strong> {data?.loaded?.reported.count}
                             </CardContent>
                             <CardFooter></CardFooter>
                         </Card>
                         <Card>
                             <CardHeader>
-                                <CardTitle>Empty Vehicles {data.empty.onWay.count + data.empty.reported.count + data.empty.standing.count}</CardTitle>
+                                <CardTitle>Empty Vehicles {data?.empty?.onWay.count + data?.empty?.reported.count + data?.empty?.standing.count}</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <strong>On Way: </strong>{data.empty.onWay.count}
+                                <strong>On Way: </strong>{data?.empty?.onWay.count}
                                 <br />
-                                <strong>Standing: </strong>{data.empty.standing.count}
+                                <strong>Standing: </strong>{data?.empty?.standing.count}
                                 <br />
-                                <strong>Reported: </strong> {data.empty.reported.count}
+                                <strong>Reported: </strong> {data?.empty?.reported.count}
                             </CardContent>
                             <CardFooter></CardFooter>
                         </Card>
@@ -103,7 +105,7 @@ const VehiclesSummary = () => {
                     <div className='my-4'>
                         <Accordion type="single" collapsible defaultValue='loadedOnWay' className="mb-2 p-4 w-full">
                             <h1 className='text-lg font-semibold my-4'>Loaded Vehicles</h1>
-                            {data.loaded.onWay.count > 0 &&
+                            {data?.loaded?.onWay.count > 0 &&
                                 <AccordionItem value="loadedOnWay">
                                     <AccordionTrigger className="mb-2 w-full text-left">On Way</AccordionTrigger>
                                     <AccordionContent>
@@ -116,7 +118,7 @@ const VehiclesSummary = () => {
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {data.loaded.onWay.trips.map((trip, index) =>
+                                                {data?.loaded?.onWay.trips.map((trip, index) =>
                                                     <TableRow onClick={() => setSelectedTripId(trip._id)} key={index}>
                                                         <TableCell>{index + 1}</TableCell>
                                                         <TableCell>{trip.VehicleNo}</TableCell>
@@ -128,7 +130,7 @@ const VehiclesSummary = () => {
                                     </AccordionContent>
                                 </AccordionItem>
                             }
-                            {data.loaded.reported.count > 0 &&
+                            {data?.loaded?.reported.count > 0 &&
                                 <AccordionItem value="loadedReported">
                                     <AccordionTrigger className="mb-2 w-full text-left">Reported</AccordionTrigger>
                                     <AccordionContent>
@@ -142,7 +144,7 @@ const VehiclesSummary = () => {
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {data.loaded.reported.trips.map((trip, index) =>
+                                                {data?.loaded?.reported.trips.map((trip, index) =>
                                                     <TableRow onClick={() => setSelectedTripId(trip._id)} key={index}>
                                                         <TableCell>{index + 1}</TableCell>
                                                         <TableCell>{trip.VehicleNo}</TableCell>
@@ -156,7 +158,7 @@ const VehiclesSummary = () => {
                                 </AccordionItem>
                             }
                             <h1 className='text-lg font-semibold'>Empty Vehicles</h1>
-                            {data.empty.onWay.count > 0 &&
+                            {data?.empty?.onWay.count > 0 &&
                                 <AccordionItem value="emptyOnway">
                                     <AccordionTrigger className="mb-2 w-full text-left">On Way</AccordionTrigger>
                                     <AccordionContent>
@@ -169,7 +171,7 @@ const VehiclesSummary = () => {
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {data.empty.onWay.trips.map((trip, index) =>
+                                                {data?.empty?.onWay.trips.map((trip, index) =>
                                                     <TableRow onClick={() => setSelectedTripId(trip._id)} key={index}>
                                                         <TableCell>{index + 1}</TableCell>
                                                         <TableCell>{trip.VehicleNo}</TableCell>
@@ -181,7 +183,7 @@ const VehiclesSummary = () => {
                                     </AccordionContent>
                                 </AccordionItem>
                             }
-                            {data.empty.standing.count > 0 &&
+                            {data?.empty?.standing.count > 0 &&
                                 <AccordionItem value="emptyStanding">
                                     <AccordionTrigger className="mb-2 w-full text-left">Standing</AccordionTrigger>
                                     <AccordionContent>
@@ -194,7 +196,7 @@ const VehiclesSummary = () => {
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {data.empty.standing.trips.map((trip, index) =>
+                                                {data?.empty?.standing.trips.map((trip, index) =>
                                                     <TableRow onClick={() => setSelectedTripId(trip._id)} key={index}>
                                                         <TableCell>{index + 1}</TableCell>
                                                         <TableCell>{trip.VehicleNo}</TableCell>
@@ -206,7 +208,7 @@ const VehiclesSummary = () => {
                                     </AccordionContent>
                                 </AccordionItem>
                             }
-                            {data.empty.reported.count > 0 &&
+                            {data?.empty?.reported.count > 0 &&
                                 <AccordionItem value="emptyReported">
                                     <AccordionTrigger className="mb-2 w-full text-left">Reported</AccordionTrigger>
                                     <AccordionContent>
@@ -220,7 +222,7 @@ const VehiclesSummary = () => {
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {data.empty.reported.trips.map((trip, index) =>
+                                                {data?.empty?.reported.trips.map((trip, index) =>
                                                     <TableRow onClick={() => setSelectedTripId(trip._id)} key={index}>
                                                         <TableCell>{index + 1}</TableCell>
                                                         <TableCell>{trip.VehicleNo}</TableCell>

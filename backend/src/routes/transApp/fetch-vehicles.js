@@ -75,8 +75,9 @@ router.get('/unloaded-planned', async (req, res) => {
 
 router.get('/get-summary/:userId', async (req, res) => {
     const userId = req.params.userId;
+    const isAdmin = req.query;
     try {
-        const summary = await getSummary(userId);
+        const summary = await getSummary(userId, isAdmin);
         return res.status(200).json(summary);
     } catch (error) {
         console.error(error);

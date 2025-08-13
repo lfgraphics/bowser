@@ -217,51 +217,65 @@ async function getUnloadedPlannedVehicles(userId) {
         });
 }
 
-async function getSummary(userId) {
+async function getSummary(userId, isAdmin) {
     try {
         let loadedVehicles = await getLoadedNotUnloadedVehicles(userId);
         let emptyVehicles = await getUnloadedPlannedVehicles(userId);
         let emptyStanding = await getUnloadedNotPlannedVehicles(userId);
 
-        // const seenVehicleNos = new Set();
+        let loadedOnway = loadedVehicles;
+        let loadedReported = loadedVehicles.filter(trip => trip.TallyLoadDetail.ReportedDate !== null)
+        let emptyOnWay = emptyVehicles.filter(trip => !trip.ReportingDate);
+        let emptyReported = emptyVehicles.filter(trip => trip.ReportingDate);
 
-        // // Keep loadedVehicles as is, mark them as seen
-        // loadedVehicles = loadedVehicles.filter(item => {
-        //     if (!seenVehicleNos.has(item.VehicleNo)) {
-        //         seenVehicleNos.add(item.VehicleNo);
-        //         return true;
-        //     }
-        //     return false;
-        // });
+        if (isAdmin) {
+            const loadedVehiclesArray = loadedVehicles.map((trip) => trip.VehicleNo)
+            const emptyVehiclesArray = emptyVehicles.map((trip) => trip.VehicleNo)
+            const emptyStandingVehiclesArray = emptyStanding.map((trip) => trip.VehicleNo)
+            const allvehiclesArray = [...loadedVehiclesArray, ...emptyVehiclesArray, ...emptyStandingVehiclesArray];
 
-        // // From emptyVehicles, remove if already seen
-        // emptyVehicles = emptyVehicles.filter(item => {
-        //     if (!seenVehicleNos.has(item.VehicleNo)) {
-        //         seenVehicleNos.add(item.VehicleNo);
-        //         return true;
-        //     }
-        //     return false;
-        // });
+            const users = await TransUser
+                .find(
+                    { Division: { $in: [0, 1, 2, 3] }, myVehicles: { $in: allvehiclesArray } },
+                    { UserName: 1, myVehicles: 1, Division: 1 }
+                )
+                .lean();
 
-        // // From emptyStanding, remove if already seen
-        // emptyStanding = emptyStanding.filter(item => {
-        //     if (!seenVehicleNos.has(item.VehicleNo)) {
-        //         seenVehicleNos.add(item.VehicleNo);
-        //         return true;
-        //     }
-        //     return false;
-        // });
+            loadedOnway.forEach((trip) => {
+                trip.superwiser = users
+                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
+                    .map((user) => user.UserName)
+                    .join(", ") || "Not found";
+            });
 
-        // console.log({
-        //     loadedVehiclesCount: loadedVehicles.length,
-        //     emptyVehiclesCount: emptyVehicles.length,
-        //     emptyStandingCount: emptyStanding.length
-        // });
+            loadedReported.forEach((trip) => {
+                trip.superwiser = users
+                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
+                    .map((user) => user.UserName)
+                    .join(", ") || "Not found";
+            });
 
-        const loadedOnway = loadedVehicles;
-        const loadedReported = loadedVehicles.filter(trip => trip.TallyLoadDetail.ReportedDate !== null)
-        const emptyOnWay = emptyVehicles.filter(trip => !trip.ReportingDate);
-        const emptyReported = emptyVehicles.filter(trip => trip.ReportingDate);
+            emptyOnWay.forEach((trip) => {
+                trip.superwiser = users
+                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
+                    .map((user) => user.UserName)
+                    .join(", ") || "Not found";
+            });
+
+            emptyReported.forEach((trip) => {
+                trip.superwiser = users
+                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
+                    .map((user) => user.UserName)
+                    .join(", ") || "Not found";
+            });
+
+            emptyStanding.forEach((trip) => {
+                trip.superwiser = users
+                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
+                    .map((user) => user.UserName)
+                    .join(", ") || "Not found";
+            });
+        }
 
         return {
             loaded: {
