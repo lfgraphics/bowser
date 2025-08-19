@@ -72,5 +72,7 @@ application/google-services.json
 todo.txt
 /external
 
+/dumpedData
+
 #Ignore vscode AI rules
 .github\copilot-instructions.md

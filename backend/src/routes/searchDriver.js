@@ -65,29 +65,43 @@ router.post('/updateDriverMobile', async (req, res) => {
     }
 
     try {
-        const updatedDriver = await Driver.findOneAndUpdate(
-            { Name: { $regex: driverId, $options: "i" } },
-            {
-                $set: {
-                    'MobileNo.LastUsed': false,
-                    'MobileNo.IsDefaultNumber': false,
-                },
-                $push: {
-                    MobileNo: [{
-                        MobileNo: driverMobile,
-                        LastUsed: true,
-                        IsDefaultNumber: true
-                    }]
-                }
-            },
-            { new: true, upsert: true }
-        );
+        // Step 1: Find the driver by Name (case-insensitive match)
+        const driver = await Driver.findOne({ Name: { $regex: driverId, $options: 'i' } });
 
-        if (!updatedDriver) {
+        if (!driver) {
             return res.status(404).json({ message: 'Driver not found.' });
         }
 
-        res.status(200).json({ message: 'Driver mobile number updated successfully.', driver: updatedDriver });
+        // Step 2: Update all existing MobileNo entries to mark LastUsed and IsDefaultNumber as false
+        await Driver.updateOne(
+            { _id: driver._id },
+            {
+                $set: {
+                    'MobileNo.$[].LastUsed': false,
+                    'MobileNo.$[].IsDefaultNumber': false
+                }
+            }
+        );
+
+        // Step 3: Push the new mobile number
+        const updatedDriver = await Driver.findOneAndUpdate(
+            { _id: driver._id },
+            {
+                $push: {
+                    MobileNo: {
+                        MobileNo: driverMobile,
+                        LastUsed: true,
+                        IsDefaultNumber: true
+                    }
+                }
+            },
+            { new: true }
+        );
+
+        res.status(200).json({
+            message: 'Driver mobile number updated successfully.',
+            driver: updatedDriver
+        });
     } catch (error) {
         console.error('Error updating driver mobile number:', error);
         res.status(500).json({ message: 'Internal server error.' });

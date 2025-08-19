@@ -494,7 +494,7 @@ export default function PushNotificationsPage() {
                     disabled={selected.length === 0}
                     onClick={() => setOpenDialog(true)}
                 >
-                    Notify Selected
+                    Notify Selected ({selected?.length})
                 </Button>
                 <Input
                     type="text"

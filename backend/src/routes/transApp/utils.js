@@ -1,7 +1,25 @@
 const TransUser = require('../../models/TransUser');
 const TankersTrip = require('../../models/VehiclesTrip');
 const DeactivatedVehicle = require('../../models/DeactivatedVehicles');
+const Vehicle = require('../../models/vehicle');
 const { mongoose } = require('mongoose');
+
+const division = {
+    "0": "Ethanol",
+    "1": "Molasses",
+    "2": "Petroleum",
+    "3": "BMDivision",
+    "4": "Management",
+    "-1": "Unknown",
+    "10": "EthanolAdmin",
+    "11": "MolassesAdmin",
+    "12": "PetroleumAdmin",
+    "13": "BMDivisionAdmin",
+    "14": "RTODivision",
+}
+function getDivisionKeyByValue(value) {
+    return Object.keys(division).find(key => division[key] === value);
+}
 
 /**
  * Retrieves the most recent trip for a given vehicle number.
@@ -54,9 +72,22 @@ const getAllTrips = async (vehicleNumber) => {
  */
 async function getUserVehicles(userId) {
     try {
-        const user = await TransUser.findOne({ _id: userId }, 'myVehicles');
+        const user = await TransUser.findOne({ _id: userId });
         if (!user) throw new Error('User not found');
-        return user.myVehicles || [];
+        if (user.Division == 4) {
+            const divisionVehicles = await Vehicle.find({}, 'VehicleNo');
+            const vehiclesArray = divisionVehicles.map((vehicle) => vehicle.VehicleNo)
+            return vehiclesArray || []
+        } else if (user.Division >= 10) {
+            let adminDivisionName = division[user.Division]
+            let divisionName = adminDivisionName?.replace('Admin', "")
+            let divisionKey = getDivisionKeyByValue(divisionName)
+            const divisionUsers = await TransUser.find({ Division: divisionKey }, 'myVehicles')
+            const vehiclesArray = divisionUsers.map(user => user.myVehicles || []).flat();
+            return vehiclesArray || []
+        } else {
+            return user.myVehicles || [];
+        }
     } catch (error) {
         console.error('Error fetching user vehicles:', error);
         throw error;
@@ -138,10 +169,14 @@ async function getUnloadedNotPlannedVehicles(userId) {
     const vehicles = await getUserVehicles(userId);
     const vehicleNos = vehicles.map(v => v);
     const deactivatedVehicles = await getUsersDeactivatedVehicles(userId);
+    const planned = await getUnloadedPlannedVehicles(userId)
+    const plannedVehicles = planned.map((trip) => trip.VehicleNo)
+    const toExclude = deactivatedVehicles.concat(plannedVehicles)
+
     return TankersTrip.aggregate([
         {
             $match: {
-                VehicleNo: { $in: vehicleNos, $nin: deactivatedVehicles },
+                VehicleNo: { $in: vehicleNos, $nin: toExclude },
                 LoadStatus: 1,
                 "TallyLoadDetail.UnloadingDate": { $ne: null },
             }
@@ -213,21 +248,95 @@ async function getUnloadedPlannedVehicles(userId) {
         });
 }
 
-const division = {
-    "0": "Ethanol",
-    "1": "Molasses",
-    "2": "Petroleum",
-    "3": "BMDivision",
-    "4": "Management",
-    "-1": "Unknown",
-    "10": "EthanolAdmin",
-    "11": "MolassesAdmin",
-    "12": "PetroleumAdmin",
-    "13": "BMDivisionAdmin",
-    "14": "RTODivision",
-}
-function getDivisionKeyByValue(value) {
-    return Object.keys(division).find(key => division[key] === value);
+async function getSummary(userId, isAdmin) {
+    try {
+        let loadedVehicles = await getLoadedNotUnloadedVehicles(userId);
+        let emptyVehicles = await getUnloadedPlannedVehicles(userId);
+        let emptyStanding = await getUnloadedNotPlannedVehicles(userId);
+
+        let loadedOnway = loadedVehicles;
+        let loadedReported = loadedVehicles.filter(trip => trip.TallyLoadDetail.ReportedDate !== null)
+        let emptyOnWay = emptyVehicles.filter(trip => !trip.ReportingDate);
+        let emptyReported = emptyVehicles.filter(trip => trip.ReportingDate);
+
+        if (isAdmin) {
+            const loadedVehiclesArray = loadedVehicles.map((trip) => trip.VehicleNo)
+            const emptyVehiclesArray = emptyVehicles.map((trip) => trip.VehicleNo)
+            const emptyStandingVehiclesArray = emptyStanding.map((trip) => trip.VehicleNo)
+            const allvehiclesArray = [...loadedVehiclesArray, ...emptyVehiclesArray, ...emptyStandingVehiclesArray];
+
+            const users = await TransUser
+                .find(
+                    { Division: { $in: [0, 1, 2, 3] }, myVehicles: { $in: allvehiclesArray } },
+                    { UserName: 1, myVehicles: 1, Division: 1 }
+                )
+                .lean();
+
+            loadedOnway.forEach((trip) => {
+                trip.superwiser = users
+                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
+                    .map((user) => user.UserName)
+                    .join(", ") || "Not found";
+            });
+
+            loadedReported.forEach((trip) => {
+                trip.superwiser = users
+                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
+                    .map((user) => user.UserName)
+                    .join(", ") || "Not found";
+            });
+
+            emptyOnWay.forEach((trip) => {
+                trip.superwiser = users
+                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
+                    .map((user) => user.UserName)
+                    .join(", ") || "Not found";
+            });
+
+            emptyReported.forEach((trip) => {
+                trip.superwiser = users
+                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
+                    .map((user) => user.UserName)
+                    .join(", ") || "Not found";
+            });
+
+            emptyStanding.forEach((trip) => {
+                trip.superwiser = users
+                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
+                    .map((user) => user.UserName)
+                    .join(", ") || "Not found";
+            });
+        }
+
+        return {
+            loaded: {
+                onWay: {
+                    count: loadedOnway.length,
+                    trips: loadedOnway
+                },
+                reported: {
+                    count: loadedReported.length,
+                    trips: loadedReported
+                }
+            },
+            empty: {
+                onWay: {
+                    count: emptyOnWay.length,
+                    trips: emptyOnWay
+                },
+                standing: {
+                    count: emptyStanding.length,
+                    trips: emptyStanding
+                },
+                reported: {
+                    count: emptyReported.length,
+                    trips: emptyReported
+                }
+            }
+        };
+    } catch (error) {
+        throw new Error(error);
+    }
 }
 
 async function createEmptyTrip(postData) {
@@ -364,5 +473,6 @@ module.exports = {
     division,
     getDivisionKeyByValue,
     createEmptyTrip,
-    updateEmptyTrip
+    updateEmptyTrip,
+    getSummary
 };

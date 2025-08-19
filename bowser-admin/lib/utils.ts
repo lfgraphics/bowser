@@ -9,8 +9,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const formatDate = (dateInput: string | Date): string => {
-  const date = moment(dateInput);
+export const formatDate = (dateInput: string | Date | null): string => {
+  if (dateInput == null) return ""
+    const date = moment(dateInput);
   return `${date.format('DD-MM-YY')}, ${date.format('hh:mm A')}`;
 };
 

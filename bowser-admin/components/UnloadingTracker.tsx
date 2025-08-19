@@ -204,6 +204,7 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
                 {tripId &&
                     <>
                         <div className="flex flex-col gap-2 md:gap-4 w-full  justify-start text-sm">
+                            id: {tripId}
                             <h4 className="text-lg font-semibold">Trip Details</h4>
                             <div className="flex">
                                 <strong>Started From: </strong>{data.find(trip => trip?._id === tripId)?.StartFrom || "N/A"}
@@ -321,8 +322,8 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
                                     <Card key={index} className="mb-4">
                                         <CardHeader>
                                             <div className="flex flex-col items-start">
-                                                <span className="font-semibold">{formatDate(history.TrackUpdateDate)}</span>
-                                                <span className="text-sm text-muted-foreground">{history.Driver}</span>
+                                                <span className="font-semibold">{(history.ManagerComment.match(/#(\w+)/) || [])[1] + " on " + formatDate(history.TrackUpdateDate)}</span>
+                                                <span className="text-sm text-muted-foreground"><strong>Driver: </strong> {history.Driver}</span>
                                             </div>
                                         </CardHeader>
                                         <CardContent>

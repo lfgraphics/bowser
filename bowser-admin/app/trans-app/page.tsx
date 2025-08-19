@@ -17,17 +17,17 @@ import { Input } from '@/components/ui/input'
 import Loading from '../loading'
 import { searchItems } from '@/utils/searchUtils'
 import { InactiveVehicles, Vehicle, VehicleWithTrip } from '@/types'
-import { Tabs, TabsList } from '@radix-ui/react-tabs'
-import { TabsTrigger } from '@/components/ui/tabs'
+import { TabsTrigger, Tabs, TabsList } from '@/components/ui/tabs'
 import { formatDate } from '@/lib/utils'
 import { SearchModal } from '@/components/SearchModal'
+import VehiclesSummary from '@/components/transappComponents/VehiclesSummary'
 
-type Tabslist = "Vehicles" | "Inactive Vehicles"
+type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary"
 
 export default function Page() {
   const { user, photo } = useContext(TransAppContext);
   const [loading, setLoading] = useState(false)
-  const [tab, setTab] = useState<Tabslist>("Vehicles")
+  const [tab, setTab] = useState<Tabslist>("Summary")
   const [vehicles, setVehicles] = useState<string[]>()
   const [vehicleNumber, setVehicleNumber] = useState<string>()
   const [isVehicleAdditionDialogvisible, setIsVehicleAdditionDialogvisible] = useState(false)
@@ -132,7 +132,6 @@ export default function Page() {
     }
   };
 
-
   const deActivateVehicle = async (vehicleNumber: string) => {
     console.log('deleting vehicle: ', vehicleNumber);
     try {
@@ -232,7 +231,7 @@ export default function Page() {
   return (
     <>
       {loading && <Loading />}
-      <div className='ml-4 mt-4 flex flex-col gap-4'>
+      <div className='mx-4 mt-4 flex flex-col gap-4'>
         <Card className='w-fit'>
           <CardContent>
             <CardHeader className='font-semibold'>User Profile</CardHeader>
@@ -249,6 +248,7 @@ export default function Page() {
           <TabsList>
             <TabsTrigger value="Vehicles">My Vehicles</TabsTrigger>
             <TabsTrigger value="Inactive Vehicles">Inactive Vehicles</TabsTrigger>
+            <TabsTrigger value="Summary">Vehicles Summary</TabsTrigger>
           </TabsList>
           <Button onClick={() => setIsVehicleAdditionDialogvisible(true)}>Add Vehicle</Button>
         </Tabs>
@@ -264,7 +264,7 @@ export default function Page() {
             </TableHeader>
             <TableBody>
               {vehicles.map((vehicle, index) =>
-                <TableRow className={`${inactiveVehicles?.findIndex((inactive) => inactive.VehicleNo == vehicle) !== -1 ? "bg-red-300" : ""}`}>
+                <TableRow key={index} className={`${inactiveVehicles?.findIndex((inactive) => inactive.VehicleNo == vehicle) !== -1 ? "bg-red-300" : ""}`}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{vehicle}</TableCell>
                   <TableCell>
@@ -296,7 +296,7 @@ export default function Page() {
             </TableHeader>
             <TableBody>
               {inactiveVehicles && inactiveVehicles.map((vehicle, index) =>
-                <TableRow>
+                <TableRow key={index}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{vehicle.VehicleNo}</TableCell>
                   <TableCell>{vehicle.UserInfo.CreatedBy}</TableCell>
@@ -312,6 +312,10 @@ export default function Page() {
               )}
             </TableBody>
           </Table>
+        }
+        {
+          tab === "Summary" &&
+          <VehiclesSummary />
         }
       </div>
       <SearchModal
