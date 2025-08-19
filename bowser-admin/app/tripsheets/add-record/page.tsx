@@ -12,7 +12,6 @@ import { getCurrentUser } from '@/lib/auth';
 import { User } from '@/types/auth';
 import Loading from '@/app/loading';
 import { getLocation } from '@/utils';
-import { getLocation } from '@/utils';
 
 const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number, bowser: string } }) => {
     const [loading, setLoading] = useState<boolean>()
@@ -88,9 +87,6 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
 
     const handleSubmit = async () => {
         setLoading(true)
-        const locationResult = await getLocation();
-        const gpsLocation = typeof locationResult === "string" ? locationResult : "";
-
         const locationResult = await getLocation();
         const gpsLocation = typeof locationResult === "string" ? locationResult : "";
 
