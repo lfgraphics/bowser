@@ -12,6 +12,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { User } from '@/types/auth';
 import Loading from '@/app/loading';
 import { getLocation } from '@/utils';
+import { getLocation } from '@/utils';
 
 const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number, bowser: string } }) => {
     const [loading, setLoading] = useState<boolean>()
@@ -90,6 +91,9 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
         const locationResult = await getLocation();
         const gpsLocation = typeof locationResult === "string" ? locationResult : "";
 
+        const locationResult = await getLocation();
+        const gpsLocation = typeof locationResult === "string" ? locationResult : "";
+
         const preparedRecords = records.map(record => ({
             ...record,
             vehicleNumberPlateImage: "",
@@ -107,6 +111,7 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
 
         try {
             const response = await axios.post(`${BASE_URL}/addFuelingTransaction/bulk`, preparedRecords);
+            toast({ title: 'Success', description: response.data.message, variant: "success" });
             toast({ title: 'Success', description: response.data.message, variant: "success" });
         } catch (error) {
             toast({ title: 'Error', description: 'Failed to submit records', variant: "destructive" });
