@@ -13,6 +13,7 @@ import { useRouter, usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { TransAppUser } from "@/types";
+import ManualBreadcrumb from "@/components/ManualBreadCrumb";
 
 export const TransAppContext = createContext<{
     user: TransAppUser | undefined;
@@ -80,6 +81,7 @@ export default function TransAppLayout({
 
     return (
         <TransAppContext.Provider value={{ user, photo }}>
+            <ManualBreadcrumb />
             {children}
             {/* <div className="md:h-[96.5svh] flex flex-col">
                 <main className="md:flex-1 md:overflow-auto p-4">{children}</main> */}

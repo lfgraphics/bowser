@@ -39,7 +39,7 @@ const Combobox = ({
     const filteredOptions = React.useMemo(() => {
         const search = searchTerm.toLowerCase().trim();
         return options.filter((item) =>
-            item.label.toLowerCase().includes(search)
+            item?.label?.toLowerCase().includes(search)
         );
     }, [options, searchTerm]);
 
