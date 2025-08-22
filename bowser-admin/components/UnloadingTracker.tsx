@@ -66,7 +66,7 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
         if (actionType === "update") {
             setTrackUpdateDate(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined);
             setLocationRemark("");
-            setManagerComment("");
+            setManagerComment("#UPDATE ");
         }
         console.log(data.find(trip => trip?._id === tripId)?.TravelHistory, "Travel History for tripId:", tripId);
     }, [actionType, tripId, data]);

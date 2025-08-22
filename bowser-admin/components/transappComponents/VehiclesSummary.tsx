@@ -10,10 +10,34 @@ import { generateTripsReport } from "@/utils/excel";
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import { TabsTrigger, Tabs, TabsList } from '@/components/ui/tabs'
 
 type TripBase = {
     _id: string;
+    LoadStatus: number;
+    StartDate: string;
+    targetTime: string;
+    StartDriver: string;
+    StartDriverMobile: string;
+    LoadTripDetail: {
+        LoadDate: string;
+        SupplyFrom: string;
+        ShipTo: string;
+        NameOfGoods: string;
+        LoadDetail: {
+            LoadQty: number;
+            UnloadQty: number;
+            ShortQty: number;
+        };
+        UnloadDate: string
+        ReportDate: string
+    };
+    TravelHistory: {
+        TrackUpdateDate: Date;
+        LocationOnTrackUpdate: string;
+        OdometerOnTrackUpdate: number;
+        ManagerComment: string;
+        Driver: string;
+    }[];
     VehicleNo: string;
     StartFrom?: string;
     EndTo: string;
@@ -227,7 +251,7 @@ const VehiclesSummary = () => {
                                                             <TableHead>Vehicle No</TableHead>
                                                             <TableHead>Status</TableHead>
                                                             <TableHead>Superviser</TableHead>
-                                                            <TableHead>Action</TableHead>
+                                                            {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
@@ -236,7 +260,7 @@ const VehiclesSummary = () => {
                                                                 <TableCell>{trip.VehicleNo}</TableCell>
                                                                 <TableCell>{trip.status}</TableCell>
                                                                 <TableCell>{trip.superwiser}</TableCell>
-                                                                <TableCell>
+                                                                {user?.Division.includes('Admin') && <TableCell>
                                                                     <DropdownMenu>
                                                                         <DropdownMenuTrigger asChild>
                                                                             <Button disabled variant="outline" size="sm">
@@ -251,7 +275,7 @@ const VehiclesSummary = () => {
                                                                             ))}
                                                                         </DropdownMenuContent>
                                                                     </DropdownMenu>
-                                                                </TableCell>
+                                                                </TableCell>}
                                                             </TableRow>
                                                         ))}
                                                     </TableBody>
@@ -276,7 +300,7 @@ const VehiclesSummary = () => {
                                                             <TableHead>Vehicle No</TableHead>
                                                             <TableHead>Status</TableHead>
                                                             <TableHead>Superviser</TableHead>
-                                                            <TableHead>Action</TableHead>
+                                                            {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
@@ -285,7 +309,7 @@ const VehiclesSummary = () => {
                                                                 <TableCell>{trip.VehicleNo}</TableCell>
                                                                 <TableCell>{trip.status === "Standing" ? "Not Programmed" : trip.status}</TableCell>
                                                                 <TableCell>{trip.superwiser}</TableCell>
-                                                                <TableCell>
+                                                                {user?.Division.includes('Admin') && <TableCell>
                                                                     <DropdownMenu>
                                                                         <DropdownMenuTrigger asChild>
                                                                             <Button disabled variant="outline" size="sm">
@@ -300,7 +324,7 @@ const VehiclesSummary = () => {
                                                                             ))}
                                                                         </DropdownMenuContent>
                                                                     </DropdownMenu>
-                                                                </TableCell>
+                                                                </TableCell>}
                                                             </TableRow>
                                                         ))}
                                                     </TableBody>
