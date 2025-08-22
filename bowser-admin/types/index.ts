@@ -738,6 +738,8 @@ export interface TankersTrip {
       UnloadQty: number;
       ShortQty: number;
     };
+    UnloadDate: string
+    ReportDate: string
   };
   TravelHistory: {
     TrackUpdateDate: Date;
