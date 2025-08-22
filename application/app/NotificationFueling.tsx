@@ -390,6 +390,10 @@ const NotificationFuelingScreen = () => {
       alert("Fuel meter image is required.");
       return false;
     }
+    if (!mLocation) {
+      alert("Fueling location is required.");
+      return false;
+    }
     return true;
   };
 

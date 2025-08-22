@@ -471,25 +471,25 @@ export default function BowserDriverHome() {
             </TouchableOpacity>
             {
                 <View style={{ marginTop: 100 }}>
-                    isOnline && <FuelingRecords />
+                    {isOnline && <FuelingRecords />}
                 </View>
             }
-            <Link style={styles.button} href={'/tripsheet'}>
+            {/* <Link style={styles.button} href={'/tripsheet'}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                     <ThemedText style={{ color: 'white' }}>
                         ट्रिप शीट डीटेल्स
                     </ThemedText>
                     <MaterialIcons name="table-chart" size={24} color="white" style={{ marginHorizontal: 10 }} />
                 </View>
-            </Link>
-            <Link style={styles.button} href={'/fueling'}>
+            </Link> */}
+            {/* <Link style={styles.button} href={'/fueling'}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={{ color: 'white' }}>
                         गाड़ी को तेल दें
                     </Text>
                     <MaterialIcons name="local-gas-station" size={24} color="white" style={{ marginHorizontal: 10 }} />
                 </View>
-            </Link>
+            </Link> */}
             <Link style={styles.button} href={'/notifications'}>
                 {/* disabled */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
