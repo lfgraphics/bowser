@@ -207,7 +207,7 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
                             id: {tripId}
                             <h4 className="text-lg font-semibold">Trip Details</h4>
                             <div className="flex">
-                                <strong>Started From: </strong>{data.find(trip => trip?._id === tripId)?.StartFrom || "N/A"}
+                                <strong>Loaded From: </strong>{data.find(trip => trip?._id === tripId)?.StartFrom || "N/A"}
                             </div>
                             <div className="flex">
                                 <strong>Loading Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.StartDate))}
@@ -245,7 +245,7 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
                 {/* <div className="flex flex-col gap-4 md:flex-row items-center justify-center md:flex-shrink-0 w-full md:justify-around">
                 </div> */}
                 <div className={actionType == undefined ? "hidden" : ""}>
-                    <Label htmlFor="dateTime">Current Date</Label>
+                    <Label htmlFor="dateTime">{actionType?.toUpperCase().replace('e','') + 'ING'} Date</Label>
                     <Input
                         id="dateTime"
                         type="datetime-local"
