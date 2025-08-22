@@ -139,7 +139,7 @@ async function getLoadedNotUnloadedVehicles(userId) {
             $match: {
                 VehicleNo: { $in: vehicleNos, $nin: deactivatedVehicles },
                 LoadStatus: 1,
-                "TallyLoadDetail.UnloadingDate": null
+                "LoadTripDetail.UnloadDate": { $exists: false }
             }
         },
         { $sort: { StartDate: -1 } },
