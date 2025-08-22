@@ -16,14 +16,13 @@ const fuelingTransactionSchema = new mongoose.Schema({
     },
     party: { type: String, require: true, default: "Own" },
     odometer: { type: Number },
-    tripSheetId: { type: Number },
-    vehicleNumberPlateImage: { type: String, required: false },
-    vehicleNumber: { type: String, required: false },
-    driverId: { type: String, required: false },
-    driverName: { type: String, required: false },
-    driverMobile: { type: String, required: false },
-    fuelMeterImage: { type: [String], _id: false, required: false },
-    fuelMeterImage: { type: [String], _id: false, required: false },
+    tripSheetId: { type: Number, require: true },
+    vehicleNumberPlateImage: { type: String, required: true },
+    vehicleNumber: { type: String, required: true },
+    driverId: { type: String, required: true },
+    driverName: { type: String, required: true },
+    driverMobile: { type: String, required: true },
+    fuelMeterImage: { type: [String], _id: false, required: true },
     quantityType: {
         type: String,
         required: false,
@@ -34,13 +33,13 @@ const fuelingTransactionSchema = new mongoose.Schema({
             message: 'Quantity type must be either Full or Part'
         }
     },
-    fuelQuantity: { type: Number, required: false },
+    fuelQuantity: { type: Number, required: true },
     cost: { type: Number },
     gpsLocation: { type: String, required: false },
-    location: { type: String, required: false },
-    fuelingDateTime: { type: Date, required: false },
+    location: { type: String, required: true },
+    fuelingDateTime: { type: Date, required: true },
     bowser: {
-        regNo: { type: String, require: false },
+        regNo: { type: String, require: true },
         driver: {
             name: { type: String, required: false },
             phoneNo: { type: String, required: false }
