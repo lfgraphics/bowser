@@ -257,58 +257,55 @@ async function getSummary(userId, isAdmin) {
         let emptyVehicles = await getUnloadedPlannedVehicles(userId);
         let emptyStanding = await getUnloadedNotPlannedVehicles(userId);
 
-        let loadedOnway = loadedVehicles;
-        let loadedReported = loadedVehicles.filter(trip => trip.TallyLoadDetail.ReportedDate !== null)
-        let emptyOnWay = emptyVehicles.filter(trip => !trip.ReportingDate);
-        let emptyReported = emptyVehicles.filter(trip => trip.ReportingDate);
+        // Deduplication helper
+        const uniqueByVehicle = (arr) =>
+            arr.filter((v, i, self) => i === self.findIndex(t => t.VehicleNo === v.VehicleNo));
+
+        // Split cleanly into 5 exclusive buckets
+        let loadedOnway = uniqueByVehicle(
+            loadedVehicles.filter(trip => !trip.TallyLoadDetail?.ReportedDate)
+        );
+
+        let loadedReported = uniqueByVehicle(
+            loadedVehicles.filter(trip => trip.TallyLoadDetail?.ReportedDate)
+        );
+
+        let emptyOnWay = uniqueByVehicle(
+            emptyVehicles.filter(trip => !trip.ReportingDate)
+        );
+
+        let emptyReported = uniqueByVehicle(
+            emptyVehicles.filter(trip => trip.ReportingDate)
+        );
+
+        let emptyStandingUnique = uniqueByVehicle(emptyStanding);
 
         if (isAdmin) {
-            const loadedVehiclesArray = loadedVehicles.map((trip) => trip.VehicleNo)
-            const emptyVehiclesArray = emptyVehicles.map((trip) => trip.VehicleNo)
-            const emptyStandingVehiclesArray = emptyStanding.map((trip) => trip.VehicleNo)
-            const allvehiclesArray = [...loadedVehiclesArray, ...emptyVehiclesArray, ...emptyStandingVehiclesArray];
+            const allvehiclesArray = [
+                ...loadedOnway.map((t) => t.VehicleNo),
+                ...loadedReported.map((t) => t.VehicleNo),
+                ...emptyOnWay.map((t) => t.VehicleNo),
+                ...emptyReported.map((t) => t.VehicleNo),
+                ...emptyStandingUnique.map((t) => t.VehicleNo)
+            ];
 
-            const users = await TransUser
-                .find(
-                    { Division: { $in: [0, 1, 2, 3] }, myVehicles: { $in: allvehiclesArray } },
-                    { UserName: 1, myVehicles: 1, Division: 1 }
-                )
-                .lean();
+            const users = await TransUser.find(
+                { Division: { $in: [0, 1, 2, 3] }, myVehicles: { $in: allvehiclesArray } },
+                { UserName: 1, myVehicles: 1, Division: 1 }
+            ).lean();
 
-            loadedOnway.forEach((trip) => {
-                trip.superwiser = users
-                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
-                    .map((user) => user.UserName)
-                    .join(", ") || "Not found";
-            });
+            const attachSuperviser = (trips) => {
+                trips.forEach((trip) => {
+                    const matchedUsers = users.filter((u) => u.myVehicles.includes(trip.VehicleNo));
+                    trip.superwiser = matchedUsers.map((u) => u.UserName).join(", ") || "Not found";
+                });
+            };
 
-            loadedReported.forEach((trip) => {
-                trip.superwiser = users
-                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
-                    .map((user) => user.UserName)
-                    .join(", ") || "Not found";
-            });
-
-            emptyOnWay.forEach((trip) => {
-                trip.superwiser = users
-                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
-                    .map((user) => user.UserName)
-                    .join(", ") || "Not found";
-            });
-
-            emptyReported.forEach((trip) => {
-                trip.superwiser = users
-                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
-                    .map((user) => user.UserName)
-                    .join(", ") || "Not found";
-            });
-
-            emptyStanding.forEach((trip) => {
-                trip.superwiser = users
-                    .filter((user) => user.myVehicles.includes(trip.VehicleNo))
-                    .map((user) => user.UserName)
-                    .join(", ") || "Not found";
-            });
+            attachSuperviser(loadedOnway);
+            attachSuperviser(loadedReported);
+            attachSuperviser(emptyOnWay);
+            attachSuperviser(emptyReported);
+            attachSuperviser(emptyStandingUnique);
         }
 
         return {
@@ -328,8 +325,8 @@ async function getSummary(userId, isAdmin) {
                     trips: emptyOnWay
                 },
                 standing: {
-                    count: emptyStanding.length,
-                    trips: emptyStanding
+                    count: emptyStandingUnique.length,
+                    trips: emptyStandingUnique
                 },
                 reported: {
                     count: emptyReported.length,
@@ -340,6 +337,147 @@ async function getSummary(userId, isAdmin) {
     } catch (error) {
         throw new Error(error);
     }
+}
+
+async function getNewSummary(userId, isAdmin) {
+    try {
+        const vehicles = await getUserVehicles(userId);
+        const deactivatedVehicles = await getUsersDeactivatedVehicles(userId);
+        const vehicleNos = vehicles.map(v => v);
+        const activeVehicleNos = vehicleNos.filter(v => !deactivatedVehicles.includes(v));
+
+        // Aggregate all latest trips per vehicle and facet them
+        const result = await TankersTrip.aggregate([
+            {
+                $match: {
+                    VehicleNo: { $in: activeVehicleNos }
+                }
+            },
+            { $sort: { StartDate: -1 } },
+            {
+                $group: {
+                    _id: "$VehicleNo",
+                    LatestTrip: { $first: "$$ROOT" }
+                }
+            },
+            { $replaceRoot: { newRoot: "$LatestTrip" } },
+            {
+                $facet: {
+                    loadedOnWay: [
+                        {
+                            $match: {
+                                LoadStatus: 1,
+                                "TallyLoadDetail.UnloadingDate": null,
+                                "TallyLoadDetail.ReportedDate": null
+                            }
+                        }
+                    ],
+                    loadedReported: [
+                        {
+                            $match: {
+                                LoadStatus: 1,
+                                "TallyLoadDetail.UnloadingDate": null,
+                                "TallyLoadDetail.ReportedDate": { $ne: null }
+                            }
+                        }
+                    ],
+                    emptyOnWay: [
+                        {
+                            $match: {
+                                LoadStatus: 0,
+                                ReportingDate: { $exists: false }
+                            }
+                        }
+                    ],
+                    emptyReported: [
+                        {
+                            $match: {
+                                LoadStatus: 0,
+                                ReportingDate: { $exists: true }
+                            }
+                        }
+                    ],
+                    unloadedNotPlanned: [
+                        {
+                            $match: {
+                                LoadStatus: 1,
+                                "TallyLoadDetail.UnloadingDate": { $ne: null }
+                            }
+                        }
+                    ]
+                }
+            }
+        ]).allowDiskUse(true);
+
+        const {
+            loadedOnWay = [],
+            loadedReported = [],
+            emptyOnWay = [],
+            emptyReported = [],
+            unloadedNotPlanned = []
+        } = result[0] || {};
+
+        if (isAdmin) {
+            const allVehicleNos = [
+                ...loadedOnWay.map(t => t.VehicleNo),
+                ...loadedReported.map(t => t.VehicleNo),
+                ...emptyOnWay.map(t => t.VehicleNo),
+                ...emptyReported.map(t => t.VehicleNo),
+                ...unloadedNotPlanned.map(t => t.VehicleNo)
+            ];
+
+            const users = await TransUser.find(
+                {
+                    Division: { $in: [0, 1, 2, 3] },
+                    myVehicles: { $in: allVehicleNos }
+                },
+                { UserName: 1, myVehicles: 1, Division: 1 }
+            ).lean();
+
+            const attachSuperviser = (trips) => {
+                trips.forEach((trip) => {
+                    const matchedUsers = users.filter(u => u.myVehicles.includes(trip.VehicleNo));
+                    trip.superwiser = matchedUsers.map(u => u.UserName).join(", ") || "Not found";
+                });
+            };
+
+            attachSuperviser(loadedOnWay);
+            attachSuperviser(loadedReported);
+            attachSuperviser(emptyOnWay);
+            attachSuperviser(emptyReported);
+            attachSuperviser(unloadedNotPlanned);
+        }
+
+        return {
+            loaded: {
+                onWay: {
+                    count: loadedOnWay.length,
+                    trips: loadedOnWay
+                },
+                reported: {
+                    count: loadedReported.length,
+                    trips: loadedReported
+                }
+            },
+            empty: {
+                onWay: {
+                    count: emptyOnWay.length,
+                    trips: emptyOnWay
+                },
+                standing: {
+                    count: unloadedNotPlanned.length,
+                    trips: unloadedNotPlanned
+                },
+                reported: {
+                    count: emptyReported.length,
+                    trips: emptyReported
+                }
+            }
+        };
+    } catch (error) {
+        throw new Error(error);
+    }
+
 }
 
 async function createEmptyTrip(postData) {
@@ -477,5 +615,6 @@ module.exports = {
     getDivisionKeyByValue,
     createEmptyTrip,
     updateEmptyTrip,
-    getSummary
+    getSummary,
+    getNewSummary
 };

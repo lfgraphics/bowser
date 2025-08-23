@@ -107,6 +107,7 @@ const VehiclesSummary = () => {
             const summary = await fetch(url);
             const jsonSummary = await summary.json()
             setData(jsonSummary);
+            console.log(jsonSummary);
         } catch (error) {
             console.error(error)
             toast.error("Error", { description: String(error), richColors: true })

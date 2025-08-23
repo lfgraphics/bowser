@@ -5,7 +5,7 @@ const {
     getLoadedNotUnloadedVehicles,
     getUnloadedNotPlannedVehicles,
     getUnloadedPlannedVehicles,
-    getSummary
+    getNewSummary
 } = require('./utils');
 
 router.get('/', async (req, res) => {
@@ -77,7 +77,7 @@ router.get('/get-summary/:userId', async (req, res) => {
     const userId = req.params.userId;
     const isAdmin = req.query;
     try {
-        const summary = await getSummary(userId, isAdmin);
+        const summary = await getNewSummary(userId, isAdmin);
         return res.status(200).json(summary);
     } catch (error) {
         console.error(error);
