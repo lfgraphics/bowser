@@ -2,7 +2,7 @@ import Loading from '@/app/loading';
 import { BASE_URL } from '@/lib/api'
 import { TankersTrip, TransAppUser, TripsSummary, TripStatusUpdateEnums, tripStatusUpdateVars } from '@/types'
 import React, { useEffect, useState } from 'react'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { formatDate } from '@/lib/utils';
@@ -13,7 +13,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader } from '../ui/alert-dialog';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { comment } from 'postcss';
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '../ui/drawer';
+import { Eye } from 'lucide-react';
 
 type TripBase = {
     _id: string;
@@ -46,6 +47,15 @@ type TripBase = {
     StartFrom?: string;
     EndTo: string;
     superwiser?: string;
+    statusUpdate: {
+        dateTime: string;
+        user: {
+            _id: string;
+            name: string
+        },
+        status: TripStatusUpdateEnums;
+        comment?: string
+    }[]
 };
 
 type LoadedTrip = TripBase & {
@@ -90,9 +100,32 @@ const VehiclesSummary = () => {
     const [data, setData] = useState<TripsSummary>();
     const [statusUpdate, setStatusUpdate] = useState<{ tripId: string, status: TripStatusUpdateEnums, comment?: string } | null>(null)
     const [filter, setFilter] = useState<'all' | 'loadedOnWay' | 'loadedReported' | 'emptyOnWay' | 'emptyReported' | 'emptyStanding'>('all')
-    const [selectedTripId, setSelectedTripId] = useState<string>()
-    const [selectedTrip, setSelectedTrip] = useState<TankersTrip>()
+    const [viewingTrip, setViewingTrip] = useState<string | null>(null)
 
+    useEffect(() => {
+        if (viewingTrip == null) return
+
+        // Push a fake state when drawer/trip is opened
+        const state = { drawer: true }
+        window.history.pushState(state, "")
+
+        const handlePopState = (event: PopStateEvent) => {
+            if (event.state && event.state.drawer) {
+                // Instead of navigating, just close the drawer
+                setViewingTrip(null)
+            }
+        }
+
+        window.addEventListener("popstate", handlePopState)
+
+        return () => {
+            window.removeEventListener("popstate", handlePopState)
+            // Optional: when closing manually, clean up one fake state
+            if (window.history.state?.drawer) {
+                window.history.back()
+            }
+        }
+    }, [viewingTrip])
 
     useEffect(() => {
         let user = localStorage.getItem("adminUser")
@@ -129,7 +162,7 @@ const VehiclesSummary = () => {
         });
     };
 
-    const findTripById = () => {
+    const findTripById = (tripId: string): TankersTrip => {
         const allTrips = [
             ...(data?.loaded?.onWay?.trips ?? []),
             ...(data?.loaded?.reported?.trips ?? []),
@@ -138,13 +171,8 @@ const VehiclesSummary = () => {
             ...(data?.empty?.reported?.trips ?? [])
         ];
 
-        const trip = allTrips.find(trip => trip._id === selectedTripId);
-        setSelectedTrip(trip)
+        return allTrips.find(trip => trip._id === tripId)!;
     }
-
-    useEffect(() => {
-        findTripById()
-    }, [selectedTripId])
 
     function groupTripsByEndTo(data: TripData | undefined, type: "loaded" | "empty") {
         const grouped: Record<string, GroupedTrip[]> = {};
@@ -292,7 +320,7 @@ const VehiclesSummary = () => {
                             </CardContent>
                             <CardFooter></CardFooter>
                         </Card>
-                        <Button variant="outline" className='w-max' onClick={() => setFilter('all')}>View All Vehicles</Button>
+                        <Button variant="outline" className='w-max my-4' onClick={() => setFilter('all')}>View All Vehicles</Button>
                     </div>
                     {
                         filter !== 'all' &&
@@ -304,20 +332,20 @@ const VehiclesSummary = () => {
                                     <TableHead>Last Updated Location</TableHead>
                                     <TableHead>Current Status</TableHead>
                                     {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
-                                    {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
+                                    <TableHead>Action</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filter == 'loadedOnWay' &&
                                     data.loaded.onWay.trips.map((trip, index) =>
-                                        <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""} onClick={() => setSelectedTripId(trip._id)}>
+                                        <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip.VehicleNo}</TableCell>
                                             <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate || trip.StartFrom}</TableCell>
                                             <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
-                                            {user?.Division.includes('Admin') && <TableCell>
-                                                <DropdownMenu>
+                                            <TableCell className='flex gap-2'>
+                                                {user?.Division.includes('Admin') && <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="outline" size="sm">
                                                             Update
@@ -330,8 +358,131 @@ const VehiclesSummary = () => {
                                                             </DropdownMenuItem>
                                                         ))}
                                                     </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>}
+                                                </DropdownMenu>}
+                                                <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
+                                                    <Eye />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                }
+                                {filter == 'loadedReported' &&
+                                    data.loaded.reported.trips.map((trip, index) =>
+                                        <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                            <TableCell>{index + 1}</TableCell>
+                                            <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate || trip.StartFrom}</TableCell>
+                                            <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
+                                            {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
+                                            <TableCell className='flex gap-2'>
+                                                {user?.Division.includes('Admin') && <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline" size="sm">
+                                                            Update
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent>
+                                                        {tripStatusUpdateVars.map((statupOpetion) => (
+                                                            <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
+                                                                {statupOpetion}
+                                                            </DropdownMenuItem>
+                                                        ))}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>}
+                                                <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
+                                                    <Eye />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                }
+                                {filter == 'emptyOnWay' &&
+                                    data.empty.onWay.trips.map((trip, index) =>
+                                        <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                            <TableCell>{index + 1}</TableCell>
+                                            <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate || trip.StartFrom}</TableCell>
+                                            <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
+                                            {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
+                                            <TableCell className='flex gap-2'>
+                                                {user?.Division.includes('Admin') && <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline" size="sm">
+                                                            Update
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent>
+                                                        {tripStatusUpdateVars.map((statupOpetion) => (
+                                                            <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
+                                                                {statupOpetion}
+                                                            </DropdownMenuItem>
+                                                        ))}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>}
+                                                <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
+                                                    <Eye />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                }
+                                {filter == 'emptyReported' &&
+                                    data.empty.reported.trips.map((trip, index) =>
+                                        <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                            <TableCell>{index + 1}</TableCell>
+                                            <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate || trip.StartFrom}</TableCell>
+                                            <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
+                                            {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
+                                            <TableCell className='flex gap-2'>
+                                                {user?.Division.includes('Admin') && <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline" size="sm">
+                                                            Update
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent>
+                                                        {tripStatusUpdateVars.map((statupOpetion) => (
+                                                            <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
+                                                                {statupOpetion}
+                                                            </DropdownMenuItem>
+                                                        ))}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>}
+                                                <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
+                                                    <Eye />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                }
+                                {filter == 'emptyStanding' &&
+                                    data.empty.standing.trips.map((trip, index) =>
+                                        <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                            <TableCell>{index + 1}</TableCell>
+                                            <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate || trip.StartFrom}</TableCell>
+                                            <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
+                                            {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
+                                            <TableCell className='flex gap-2'>
+                                                {user?.Division.includes('Admin') && <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline" size="sm">
+                                                            Update
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent>
+                                                        {tripStatusUpdateVars.map((statupOpetion) => (
+                                                            <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
+                                                                {statupOpetion}
+                                                            </DropdownMenuItem>
+                                                        ))}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>}
+                                                <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
+                                                    <Eye />
+                                                </Button>
+                                            </TableCell>
                                         </TableRow>
                                     )
                                 }
@@ -353,32 +504,37 @@ const VehiclesSummary = () => {
                                                         <TableRow>
                                                             <TableHead>Vehicle No</TableHead>
                                                             <TableHead>Status</TableHead>
+                                                            <TableHead>Update</TableHead>
                                                             {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
-                                                            {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
+                                                            <TableHead>Action</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
                                                         {trips.map((trip) => (
-                                                            <TableRow className={selectedTripId === trip._id ? "bg-green-300" : ""} key={trip._id} onClick={() => setSelectedTripId(trip._id)}>
+                                                            <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                                                 <TableCell>{trip.VehicleNo}</TableCell>
                                                                 <TableCell>{trip.status}</TableCell>
+                                                                <TableCell>{trip.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
                                                                 <TableCell>{trip.superwiser}</TableCell>
-                                                                {user?.Division.includes('Admin') && <TableCell>
-                                                                    <DropdownMenu>
+                                                                <TableCell className='flex gap-2'>
+                                                                    {user?.Division.includes('Admin') && <DropdownMenu>
                                                                         <DropdownMenuTrigger asChild>
-                                                                            <Button disabled variant="outline" size="sm">
+                                                                            <Button variant="outline" size="sm">
                                                                                 Update
                                                                             </Button>
                                                                         </DropdownMenuTrigger>
                                                                         <DropdownMenuContent>
-                                                                            {getStatusOptions("loaded", trip.status).map((statusOption) => (
-                                                                                <DropdownMenuItem key={statusOption}>
-                                                                                    {statusOption}
+                                                                            {tripStatusUpdateVars.map((statupOpetion) => (
+                                                                                <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
+                                                                                    {statupOpetion}
                                                                                 </DropdownMenuItem>
                                                                             ))}
                                                                         </DropdownMenuContent>
-                                                                    </DropdownMenu>
-                                                                </TableCell>}
+                                                                    </DropdownMenu>}
+                                                                    <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
+                                                                        <Eye />
+                                                                    </Button>
+                                                                </TableCell>
                                                             </TableRow>
                                                         ))}
                                                     </TableBody>
@@ -402,32 +558,37 @@ const VehiclesSummary = () => {
                                                         <TableRow>
                                                             <TableHead>Vehicle No</TableHead>
                                                             <TableHead>Status</TableHead>
+                                                            <TableHead>Update</TableHead>
                                                             {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
                                                             {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
                                                         {trips.map((trip) => (
-                                                            <TableRow className={selectedTripId === trip._id ? "bg-green-300" : ""} key={trip._id} onClick={() => setSelectedTripId(trip._id)}>
+                                                            <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                                                 <TableCell>{trip.VehicleNo}</TableCell>
                                                                 <TableCell>{trip.status === "Standing" ? "Not Programmed" : trip.status}</TableCell>
+                                                                <TableCell>{trip.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
                                                                 {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
-                                                                {user?.Division.includes('Admin') && <TableCell>
-                                                                    <DropdownMenu>
+                                                                <TableCell className='flex gap-2'>
+                                                                    {user?.Division.includes('Admin') && <DropdownMenu>
                                                                         <DropdownMenuTrigger asChild>
-                                                                            <Button disabled variant="outline" size="sm">
+                                                                            <Button variant="outline" size="sm">
                                                                                 Update
                                                                             </Button>
                                                                         </DropdownMenuTrigger>
                                                                         <DropdownMenuContent>
-                                                                            {getStatusOptions("empty", trip.status).map((statusOption) => (
-                                                                                <DropdownMenuItem key={statusOption}>
-                                                                                    {statusOption}
+                                                                            {tripStatusUpdateVars.map((statupOpetion) => (
+                                                                                <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
+                                                                                    {statupOpetion}
                                                                                 </DropdownMenuItem>
                                                                             ))}
                                                                         </DropdownMenuContent>
-                                                                    </DropdownMenu>
-                                                                </TableCell>}
+                                                                    </DropdownMenu>}
+                                                                    <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
+                                                                        <Eye />
+                                                                    </Button>
+                                                                </TableCell>
                                                             </TableRow>
                                                         ))}
                                                     </TableBody>
@@ -460,6 +621,62 @@ const VehiclesSummary = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>}
+            <Drawer open={viewingTrip !== null} onOpenChange={() => setViewingTrip(null)}>
+                {viewingTrip &&
+                    <DrawerContent className="mx-auto w-full max-w-lg px-4">
+                        <DrawerHeader className="text-left">
+                            <DrawerTitle>{findTripById(viewingTrip).VehicleNo + ": " + findTripById(viewingTrip).StartFrom + " - " + findTripById(viewingTrip).EndTo}</DrawerTitle>
+                            <DrawerDescription>{viewingTrip}</DrawerDescription>
+                        </DrawerHeader>
+                        <div className='flex flex-col gap-1 mb-4'>
+                            <div className='flex gap-2'>
+                                <strong>Route: </strong> {findTripById(viewingTrip).StartFrom} to {findTripById(viewingTrip).EndTo}
+                            </div>
+                            <div className='flex gap-2'>
+                                <strong>Started at: </strong> {formatDate(findTripById(viewingTrip).StartDate)}
+                            </div>
+                        </div>
+                        {findTripById(viewingTrip)?.TravelHistory && <h4 className='font-semibold mt-4 mb-2'>Travel History</h4>}
+                        {findTripById(viewingTrip)?.TravelHistory
+                            ?.sort((a, b) => new Date(a.TrackUpdateDate).getTime() - new Date(b.TrackUpdateDate).getTime())
+                            .map((history, index) => (
+                                <Card key={index} className="mb-2">
+                                    <CardHeader>
+                                        <CardTitle className="text-md font-semibold">{formatDate(history.TrackUpdateDate)}</CardTitle>
+                                        <CardDescription>
+                                            {history.LocationOnTrackUpdate && <div><strong>Location on Track Update:</strong> {history.LocationOnTrackUpdate}</div>}
+                                            {typeof history.OdometerOnTrackUpdate === "number" && <div><strong>Odometer:</strong> {history.OdometerOnTrackUpdate} km</div>}
+                                            {history.ManagerComment && <div><strong>Manager Comment:</strong> {history.ManagerComment}</div>}
+                                            {history.Driver && <div><strong>Driver:</strong> {history.Driver}</div>}
+                                        </CardDescription>
+                                    </CardHeader>
+                                </Card>
+                            ))
+                        }
+                        {findTripById(viewingTrip)?.statusUpdate && <h4 className='font-semibold mt-4 mb-2'>Status Updates</h4>}
+                        {findTripById(viewingTrip)?.statusUpdate
+                            ?.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
+                            .map((history, index) => (
+                                <Card key={index} className="mb-2">
+                                    <CardHeader>
+                                        <CardTitle className="text-md font-semibold">{formatDate(history.dateTime)}</CardTitle>
+                                        <CardDescription className='text-foreground'>
+                                            {history.status && <div><strong>Status:</strong> {history.status}</div>}
+                                            {history.comment && <div><strong>Comment:</strong> {history.comment}</div>}
+                                        </CardDescription>
+                                        <CardFooter>{history.user.name}</CardFooter>
+                                    </CardHeader>
+                                </Card>
+                            ))
+                        }
+                        <DrawerFooter className="pt-2">
+                            <DrawerClose asChild>
+                                <Button variant="outline">Close</Button>
+                            </DrawerClose>
+                        </DrawerFooter>
+                    </DrawerContent>
+                }
+            </Drawer>
         </>
     )
 }

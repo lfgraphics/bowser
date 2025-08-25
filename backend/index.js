@@ -23,7 +23,7 @@ app.use(hpp());
 
 const allowedOrigins = [
   "http://localhost:3001",
-  "http://192.168.137.1:3001",
+  "http://192.168.88.165:3001",
   "https://itpl-bowser-admin.vercel.app"
 ];
 
@@ -32,7 +32,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error("Not allowed by CORS" + " " + origin));
     }
   },
   credentials: true,
