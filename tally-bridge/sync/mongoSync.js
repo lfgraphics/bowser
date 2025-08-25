@@ -428,6 +428,11 @@ async function syncTrips() {
     // Sync local changes to cloud (update or insert)
     for (const localTrip of localTrips) {
         const atlasTrip = atlasTripsMap.get(localTrip._id.toString());
+        if (atlasTrip && atlasTrip.OpretionallyModified === true) {
+            // Skip update if OpretionallyModified is true in Atlas
+            noUpdatesNeeded++;
+            continue;
+        }
         if (!atlasTrip) {
             // Not in Atlas, insert
             bulkOps.push({
