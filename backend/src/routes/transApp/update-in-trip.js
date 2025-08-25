@@ -289,4 +289,28 @@ router.post('/create-empty-trip', async (req, res) => {
     }
 });
 
+router.post('/update-trip-status/:tripId', async (req, res) => {
+    const { tripId } = req.params;
+    const { statusUpdate } = req.body;
+    console.log('Status update request received:', { tripId, statusUpdate });
+    try {
+        if (!statusUpdate || !statusUpdate.status || !statusUpdate.dateTime || !statusUpdate.user || !statusUpdate.user._id || !statusUpdate.user.name) {
+            return res.status(400).json({ error: 'Invalid status update data.' });
+        }
+        const trip = await TankersTrip.findById(tripId);
+        if (!trip) {
+            return res.status(404).json({ error: 'Trip not found.' });
+        }
+        if (!Array.isArray(trip.statusUpdate)) {
+            trip.statusUpdate = [];
+        }
+        trip.statusUpdate.push(statusUpdate);
+        await trip.save();
+        return res.status(200).json({ message: 'Trip status updated successfully.', trip });
+    } catch (error) {
+        console.error('Error updating trip status:', error);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
 module.exports = router;

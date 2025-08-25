@@ -193,7 +193,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
                                 <strong>Unloading Factory: </strong> {data.find(trip => trip?._id === tripId)?.TallyLoadDetail.Consignee || "N/A"}
                             </div>
                             <div className="flex">
-                                <strong>Unloading Date: </strong> {formatDate(data.find(trip => trip?._id === tripId)?.LoadTripDetail.UnloadDate!)}
+                            <strong>Unloading Date: </strong> {formatDate(data.find(trip => trip?._id === tripId)?.TallyLoadDetail.UnloadingDate!)}
                             </div>
                             <div className="flex">
                                 <strong>Ending Location: </strong> {data.find(trip => trip?._id === tripId)?.EndTo || "N/A"}

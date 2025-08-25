@@ -1,6 +1,6 @@
 import Loading from '@/app/loading';
 import { BASE_URL } from '@/lib/api'
-import { TankersTrip, TransAppUser, TripsSummary } from '@/types'
+import { TankersTrip, TransAppUser, TripsSummary, TripStatusUpdateEnums, tripStatusUpdateVars } from '@/types'
 import React, { useEffect, useState } from 'react'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
@@ -10,6 +10,10 @@ import { generateTripsReport } from "@/utils/excel";
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader } from '../ui/alert-dialog';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { comment } from 'postcss';
 
 type TripBase = {
     _id: string;
@@ -84,14 +88,11 @@ const VehiclesSummary = () => {
     const [user, setUser] = useState<TransAppUser>();
     const [loading, setLoading] = useState<boolean>(true)
     const [data, setData] = useState<TripsSummary>();
-    const [visibleData, setVisibleData] = useState<TripsSummary>();
+    const [statusUpdate, setStatusUpdate] = useState<{ tripId: string, status: TripStatusUpdateEnums, comment?: string } | null>(null)
     const [filter, setFilter] = useState<'all' | 'loadedOnWay' | 'loadedReported' | 'emptyOnWay' | 'emptyReported' | 'emptyStanding'>('all')
     const [selectedTripId, setSelectedTripId] = useState<string>()
     const [selectedTrip, setSelectedTrip] = useState<TankersTrip>()
 
-    useEffect(() => {
-        setVisibleData(data)
-    }, [data])
 
     useEffect(() => {
         let user = localStorage.getItem("adminUser")
@@ -194,6 +195,63 @@ const VehiclesSummary = () => {
         return statusMap[type].filter((status) => status !== currentStatus);
     }
 
+    const updateTripStatus = async () => {
+        if (!statusUpdate) return
+        const obj = {
+            dateTime: new Date(),
+            user: {
+                _id: user?._id,
+                name: user?.name
+            },
+            status: statusUpdate.status,
+            comment: statusUpdate.comment
+        }
+        try {
+            const url = `${BASE_URL}/trans-app/trip-update/update-trip-status/${statusUpdate.tripId}`
+            const res = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ statusUpdate: obj }),
+            })
+            if (!res.ok) throw new Error('Network Request Failed');
+            else {
+                toast.success("Trip status updated successfully", { richColors: true })
+                setStatusUpdate(null)
+                // Find and update the trip in the data variable with the new status update
+                const allTrips = [
+                    ...(data?.loaded?.onWay?.trips ?? []),
+                    ...(data?.loaded?.reported?.trips ?? []),
+                    ...(data?.empty?.onWay?.trips ?? []),
+                    ...(data?.empty?.standing?.trips ?? []),
+                    ...(data?.empty?.reported?.trips ?? [])
+                ];
+
+                const trip = allTrips.find(trip => trip._id === statusUpdate.tripId);
+                if (trip) {
+                    if (!trip.statusUpdate) trip.statusUpdate = [];
+                    trip.statusUpdate.push({
+                        dateTime: obj.dateTime.toString(),
+                        user: {
+                            _id: obj.user._id!,
+                            name: obj.user.name!
+                        },
+                        status: obj.status,
+                        comment: obj.comment
+                    });
+                }
+                // Force state update to reflect the change in UI
+                if (data && data.loaded && data.empty) {
+                    setData({ loaded: data.loaded, empty: data.empty });
+                }
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error("Error", { description: String(error), richColors: true })
+        }
+    }
+
     return (
         <>
             {loading && <Loading />}
@@ -236,6 +294,50 @@ const VehiclesSummary = () => {
                         </Card>
                         <Button variant="outline" className='w-max' onClick={() => setFilter('all')}>View All Vehicles</Button>
                     </div>
+                    {
+                        filter !== 'all' &&
+                        <Table className='w-full'>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>SR No</TableHead>
+                                    <TableHead>Vehicle No</TableHead>
+                                    <TableHead>Last Updated Location</TableHead>
+                                    <TableHead>Current Status</TableHead>
+                                    {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
+                                    {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filter == 'loadedOnWay' &&
+                                    data.loaded.onWay.trips.map((trip, index) =>
+                                        <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""} onClick={() => setSelectedTripId(trip._id)}>
+                                            <TableCell>{index + 1}</TableCell>
+                                            <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate || trip.StartFrom}</TableCell>
+                                            <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
+                                            {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
+                                            {user?.Division.includes('Admin') && <TableCell>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline" size="sm">
+                                                            Update
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent>
+                                                        {tripStatusUpdateVars.map((statupOpetion) => (
+                                                            <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
+                                                                {statupOpetion}
+                                                            </DropdownMenuItem>
+                                                        ))}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>}
+                                        </TableRow>
+                                    )
+                                }
+                            </TableBody>
+                        </Table>
+                    }
                     <div className='my-4'>
                         <Accordion type="single" collapsible defaultValue="loaded" className="mb-2 p-4 w-full">
                             {/* Loaded Vehicles */}
@@ -251,7 +353,7 @@ const VehiclesSummary = () => {
                                                         <TableRow>
                                                             <TableHead>Vehicle No</TableHead>
                                                             <TableHead>Status</TableHead>
-                                                            <TableHead>Superviser</TableHead>
+                                                            {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
                                                             {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
                                                         </TableRow>
                                                     </TableHeader>
@@ -300,7 +402,7 @@ const VehiclesSummary = () => {
                                                         <TableRow>
                                                             <TableHead>Vehicle No</TableHead>
                                                             <TableHead>Status</TableHead>
-                                                            <TableHead>Superviser</TableHead>
+                                                            {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
                                                             {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
                                                         </TableRow>
                                                     </TableHeader>
@@ -309,7 +411,7 @@ const VehiclesSummary = () => {
                                                             <TableRow className={selectedTripId === trip._id ? "bg-green-300" : ""} key={trip._id} onClick={() => setSelectedTripId(trip._id)}>
                                                                 <TableCell>{trip.VehicleNo}</TableCell>
                                                                 <TableCell>{trip.status === "Standing" ? "Not Programmed" : trip.status}</TableCell>
-                                                                <TableCell>{trip.superwiser}</TableCell>
+                                                                {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
                                                                 {user?.Division.includes('Admin') && <TableCell>
                                                                     <DropdownMenu>
                                                                         <DropdownMenuTrigger asChild>
@@ -339,6 +441,25 @@ const VehiclesSummary = () => {
                     </div>
                 </div >
             }
+            {<AlertDialog open={Boolean(statusUpdate)} onOpenChange={() => setStatusUpdate(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        Update the trip status to {statusUpdate?.status}
+                    </AlertDialogHeader>
+                    <AlertDialogDescription className='text-foreground'>
+                        <Label htmlFor='tripstatusUpdateComment'>Comment</Label>
+                        <Input
+                            id='tripstatusUpdateComment'
+                            value={statusUpdate?.comment} onChange={(e) => setStatusUpdate(prev => prev ? { ...prev, comment: e.target.value } : null)}
+                            placeholder='Add a comment (optional)'
+                        />
+                    </AlertDialogDescription>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => updateTripStatus()}>Update</AlertDialogAction>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>}
         </>
     )
 }

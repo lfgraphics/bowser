@@ -213,6 +213,9 @@ export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTr
                                 <strong>Loading Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.StartDate))}
                             </div>
                             <div className="flex">
+                            <strong>Reporting Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.ReportingDate))}
+                            </div>
+                            <div className="flex">
                                 <strong>Unloading Factory: </strong> {data.find(trip => trip?._id === tripId)?.TallyLoadDetail.Consignee || "N/A"}
                             </div>
                             <div className="flex">

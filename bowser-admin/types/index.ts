@@ -724,6 +724,7 @@ export interface TankersTrip {
   EndTo: string;
   LoadStatus: number;
   StartDate: string;
+  ReportingDate: string;
   targetTime: string;
   StartDriver: string;
   StartDriverMobile: string;
@@ -750,6 +751,15 @@ export interface TankersTrip {
   }[];
   VehicleNo: string;
   superwiser?: string;
+  statusUpdate: {
+    dateTime: string;
+    user: {
+      _id: string;
+      name: string
+    },
+    status: TripStatusUpdateEnums;
+    comment?: string
+  }[]
 }
 
 export interface TripsSummary {
@@ -778,3 +788,6 @@ export interface TripsSummary {
     },
   }
 }
+
+export type TripStatusUpdateEnums = "In Distelary" | "Accident" | "Returning" | 'Head Quarter'
+export const tripStatusUpdateVars = ["In Distelary", "Accident", "Returning", 'Head Quarter']

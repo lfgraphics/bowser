@@ -367,8 +367,10 @@ async function getNewSummary(userId, isAdmin) {
                         {
                             $match: {
                                 LoadStatus: 1,
-                                "TallyLoadDetail.UnloadingDate": null,
-                                "TallyLoadDetail.ReportedDate": null
+                                $or: [
+                                    { "TallyLoadDetail.ReportedDate": null },
+                                    { "TallyLoadDetail.UnloadingDate": null }
+                                ]
                             }
                         }
                     ],
@@ -376,8 +378,10 @@ async function getNewSummary(userId, isAdmin) {
                         {
                             $match: {
                                 LoadStatus: 1,
-                                "TallyLoadDetail.UnloadingDate": null,
-                                "TallyLoadDetail.ReportedDate": { $ne: null }
+                                $or: [
+                                    { "TallyLoadDetail.UnloadingDate": null },
+                                    { "LoadTripDetail.UnloadDate": { $exists: true } }
+                                ]
                             }
                         }
                     ],
@@ -401,7 +405,10 @@ async function getNewSummary(userId, isAdmin) {
                         {
                             $match: {
                                 LoadStatus: 1,
-                                "TallyLoadDetail.UnloadingDate": { $ne: null }
+                                $and: [
+                                    { "TallyLoadDetail.UnloadingDate": { $ne: null } },
+                                    { "LoadTripDetail.UnloadDate": { $exists: true } }
+                                ]
                             }
                         }
                     ]

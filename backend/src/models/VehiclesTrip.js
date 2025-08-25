@@ -1,9 +1,8 @@
 const mongoose = require('mongoose');
+const TransAppUser = require('./TransUser');
 const { transportDatabaseConnection } = require('../../config/database');
 
-const { Schema, Types } = mongoose;
-
-const tankerTripSchema = new Schema({
+const tankerTripSchema = new mongoose.Schema({
     VehicleNo: { type: String, required: true },
     StartDate: { type: Date },
     targetTime: { type: Date },
@@ -34,14 +33,14 @@ const tankerTripSchema = new Schema({
         EndDate: { type: Date },
         StartOdometer: { type: Number },
         EndOdometer: { type: Number },
-        PreviousTripId: { type: Types.ObjectId, ref: 'TankersTrip' },
+        PreviousTripId: { type: mongoose.Types.ObjectId, ref: 'TankersTrip' },
         PreviousTripIdNew: { type: String },
         ProposedBy: { type: String },
         OrderedBy: { type: String },
         Division: { type: Number },
     },
     TravelHistory: [
-        new Schema({
+        new mongoose.Schema({
             TrackUpdateDate: { type: Date },
             LocationOnTrackUpdate: { type: String },
             OdometerOnTrackUpdate: { type: Number },
@@ -93,6 +92,21 @@ const tankerTripSchema = new Schema({
     ReportingDate: { type: Date },
     EndDate: { type: Date },
     LastSyncDate: { type: Date },
+    statusUpdate: [
+        {
+            dateTime: { type: Date, required: true },
+            user: {
+                _id: { type: mongoose.Types.ObjectId, ref: 'TransAppUser' },
+                name: String
+            },
+            status: {
+                type: String,
+                enum: ["In Distelary", "Accident", "Returning", 'Head Quarter'],
+                required: true
+            },
+            comment: { type: String, required: false }
+        }
+    ]
 }, { versionKey: false });
 
 module.exports = transportDatabaseConnection.model('TankersTrip', tankerTripSchema, 'TankersTrips');
