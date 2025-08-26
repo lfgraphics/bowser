@@ -243,14 +243,14 @@ export default function Page() {
         <Tabs
           value={tab}
           onValueChange={(v) => setTab(v as Tabslist)}
-          className="mb-4 flex flex-col md:flex-row items-start md:items-center justify-between"
+          className="sm:mb-2 flex flex-col md:flex-row items-start md:items-center justify-between"
         >
           <TabsList>
             <TabsTrigger value="Vehicles">My Vehicles</TabsTrigger>
             <TabsTrigger value="Inactive Vehicles">Inactive Vehicles</TabsTrigger>
             <TabsTrigger value="Summary">Vehicles Summary</TabsTrigger>
           </TabsList>
-          <Button onClick={() => setIsVehicleAdditionDialogvisible(true)}>Add Vehicle</Button>
+          <Button className='my-2 sm:my-0' onClick={() => setIsVehicleAdditionDialogvisible(true)}>Add Vehicle</Button>
         </Tabs>
         {
           tab == "Vehicles" && vehicles &&

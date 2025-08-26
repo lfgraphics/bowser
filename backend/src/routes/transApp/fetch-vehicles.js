@@ -5,7 +5,8 @@ const {
     getLoadedNotUnloadedVehicles,
     getUnloadedNotPlannedVehicles,
     getUnloadedPlannedVehicles,
-    getNewSummary
+    getNewSummary,
+    getTripById
 } = require('./utils');
 
 router.get('/', async (req, res) => {
@@ -22,6 +23,21 @@ router.get('/', async (req, res) => {
     } catch (error) {
         console.error('Error fetching vehicles:', error);
         return res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+router.get('/get-trip-by-id/:tripId', async (req, res) => {
+    const { tripId } = req.params;
+    try {
+        const trip = await getTripById(tripId);
+        if (!trip) {
+            console.log('trip not found with the id: ', tripId)
+            return res.status(404).json({ error: 'Trip not found.' });
+        }
+        return res.status(200).json(trip);
+    } catch (error) {
+        console.error('Error fetching trip by ID:', error);
+        return res.status(500).json({ error })
     }
 });
 

@@ -61,6 +61,19 @@ const getAllTrips = async (vehicleNumber) => {
     }
 }
 
+const getTripById = async (tripId) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(tripId)) {
+            throw new Error('Invalid tripId');
+        }
+        const trip = await TankersTrip.findById(tripId);
+        return trip;
+    } catch (error) {
+        console.error('Error fetching trip by ID:', error);
+        throw new Error('Failed to fetch trip by ID');
+    }
+}
+
 /**
  * The above functions are used to fetch and process data related to user vehicles, including loaded
  * and unloaded trips, deactivated vehicles, and planned and unplanned trips.
@@ -623,5 +636,6 @@ module.exports = {
     createEmptyTrip,
     updateEmptyTrip,
     getSummary,
-    getNewSummary
+    getNewSummary,
+    getTripById
 };

@@ -739,8 +739,9 @@ export interface TankersTrip {
       UnloadQty: number;
       ShortQty: number;
     };
-    UnloadDate: string
-    ReportDate: string
+    UnloadDate: string | Date | null;
+    EndOdometer: number | null;
+    ReportDate: string | Date | null
   };
   TravelHistory: {
     TrackUpdateDate: Date;
@@ -759,7 +760,8 @@ export interface TankersTrip {
     },
     status: TripStatusUpdateEnums;
     comment?: string
-  }[]
+  }[];
+  OpretionallyModified?: boolean;
 }
 
 export interface TripsSummary {

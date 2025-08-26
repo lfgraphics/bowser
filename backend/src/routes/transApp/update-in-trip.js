@@ -313,4 +313,24 @@ router.post('/update-trip-status/:tripId', async (req, res) => {
     }
 });
 
+router.post('/update-trip/:tripId', async (req, res) => {
+    const { tripId } = req.params;
+    const updateData = req.body;
+    try {
+        if (!updateData || typeof updateData !== 'object') {
+            return res.status(400).json({ error: 'Invalid update data.' });
+        }
+        const trip = await TankersTrip.findByIdAndUpdate(tripId, {
+            $set: updateData
+        }, { new: true });
+        if (!trip) {
+            return res.status(404).json({ error: 'Trip not found.' });
+        }
+        return res.status(200).json({ message: 'Trip updated successfully.', trip });
+    } catch (error) {
+        console.error('Error updating trip:', error);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
 module.exports = router;

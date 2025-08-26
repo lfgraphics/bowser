@@ -14,7 +14,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '../ui/drawer';
-import { Eye } from 'lucide-react';
+import { Eye, Pen } from 'lucide-react';
+import Link from 'next/link';
 
 type TripBase = {
     _id: string;
@@ -33,8 +34,8 @@ type TripBase = {
             UnloadQty: number;
             ShortQty: number;
         };
-        UnloadDate: string
-        ReportDate: string
+        UnloadDate: string | Date | null;
+        ReportDate: string | Date | null;
     };
     TravelHistory: {
         TrackUpdateDate: Date;
@@ -66,7 +67,7 @@ type LoadedTrip = TripBase & {
 };
 
 type EmptyTrip = TripBase & {
-    EmptyTripDetail?: {
+    EmptyTripDetail: {
         ReportDate: string;
     };
 };
@@ -284,7 +285,7 @@ const VehiclesSummary = () => {
         <>
             {loading && <Loading />}
             {data &&
-                <div className='my-8'>
+                <div className='mb-4'>
                     <div className='w-full flex justify-end mb-3'>
                         <Button onClick={() => handleDownload()}>Download Report</Button>
                     </div>
@@ -320,7 +321,7 @@ const VehiclesSummary = () => {
                             </CardContent>
                             <CardFooter></CardFooter>
                         </Card>
-                        <Button variant="outline" className='w-max my-4' onClick={() => setFilter('all')}>View All Vehicles</Button>
+                        {filter !== 'all' && <Button variant="outline" className='w-max my-4' onClick={() => setFilter('all')}>View All Vehicles</Button>}
                     </div>
                     {
                         filter !== 'all' &&
@@ -362,6 +363,11 @@ const VehiclesSummary = () => {
                                                 <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
                                                     <Eye />
                                                 </Button>
+                                                <Button variant="outline" size="sm">
+                                                    <Link href={`/trans-app/trip-update/${trip._id}`}>
+                                                        <Pen />
+                                                    </Link>
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     )
@@ -391,6 +397,11 @@ const VehiclesSummary = () => {
                                                 </DropdownMenu>}
                                                 <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
                                                     <Eye />
+                                                </Button>
+                                                <Button variant="outline" size="sm">
+                                                    <Link href={`/trans-app/trip-update/${trip._id}`}>
+                                                        <Pen />
+                                                    </Link>
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
@@ -422,6 +433,11 @@ const VehiclesSummary = () => {
                                                 <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
                                                     <Eye />
                                                 </Button>
+                                                <Button variant="outline" size="sm">
+                                                    <Link href={`/trans-app/trip-update/${trip._id}`}>
+                                                        <Pen />
+                                                    </Link>
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     )
@@ -451,6 +467,11 @@ const VehiclesSummary = () => {
                                                 </DropdownMenu>}
                                                 <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
                                                     <Eye />
+                                                </Button>
+                                                <Button variant="outline" size="sm">
+                                                    <Link href={`/trans-app/trip-update/${trip._id}`}>
+                                                        <Pen />
+                                                    </Link>
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
@@ -482,6 +503,11 @@ const VehiclesSummary = () => {
                                                 <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
                                                     <Eye />
                                                 </Button>
+                                                <Button variant="outline" size="sm">
+                                                    <Link href={`/trans-app/trip-update/${trip._id}`}>
+                                                        <Pen />
+                                                    </Link>
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     )
@@ -490,7 +516,7 @@ const VehiclesSummary = () => {
                         </Table>
                     }
                     <div className='my-4'>
-                        <Accordion type="single" collapsible defaultValue="loaded" className="mb-2 p-4 w-full">
+                        <Accordion type="single" collapsible className="mb-2 p-4 w-full">
                             {/* Loaded Vehicles */}
                             <AccordionItem value="loaded">
                                 <AccordionTrigger className="text-lg font-semibold">Loaded Vehicles</AccordionTrigger>
@@ -515,7 +541,7 @@ const VehiclesSummary = () => {
                                                                 <TableCell>{trip.VehicleNo}</TableCell>
                                                                 <TableCell>{trip.status}</TableCell>
                                                                 <TableCell>{trip.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
-                                                                <TableCell>{trip.superwiser}</TableCell>
+                                                                {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
                                                                 <TableCell className='flex gap-2'>
                                                                     {user?.Division.includes('Admin') && <DropdownMenu>
                                                                         <DropdownMenuTrigger asChild>
@@ -533,6 +559,11 @@ const VehiclesSummary = () => {
                                                                     </DropdownMenu>}
                                                                     <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
                                                                         <Eye />
+                                                                    </Button>
+                                                                    <Button variant="outline" size="sm">
+                                                                        <Link href={`/trans-app/trip-update/${trip._id}`}>
+                                                                            <Pen />
+                                                                        </Link>
                                                                     </Button>
                                                                 </TableCell>
                                                             </TableRow>
@@ -588,6 +619,11 @@ const VehiclesSummary = () => {
                                                                     <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
                                                                         <Eye />
                                                                     </Button>
+                                                                    <Button variant="outline" size="sm">
+                                                                        <Link href={`/trans-app/trip-update/${trip._id}`}>
+                                                                            <Pen />
+                                                                        </Link>
+                                                                    </Button>
                                                                 </TableCell>
                                                             </TableRow>
                                                         ))}
@@ -602,25 +638,27 @@ const VehiclesSummary = () => {
                     </div>
                 </div >
             }
-            {<AlertDialog open={Boolean(statusUpdate)} onOpenChange={() => setStatusUpdate(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        Update the trip status to {statusUpdate?.status}
-                    </AlertDialogHeader>
-                    <AlertDialogDescription className='text-foreground'>
-                        <Label htmlFor='tripstatusUpdateComment'>Comment</Label>
-                        <Input
-                            id='tripstatusUpdateComment'
-                            value={statusUpdate?.comment} onChange={(e) => setStatusUpdate(prev => prev ? { ...prev, comment: e.target.value } : null)}
-                            placeholder='Add a comment (optional)'
-                        />
-                    </AlertDialogDescription>
-                    <AlertDialogFooter>
-                        <AlertDialogAction onClick={() => updateTripStatus()}>Update</AlertDialogAction>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>}
+            {
+                <AlertDialog open={Boolean(statusUpdate)} onOpenChange={() => setStatusUpdate(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            Update the trip status to {statusUpdate?.status}
+                        </AlertDialogHeader>
+                        <AlertDialogDescription className='text-foreground'>
+                            <Label htmlFor='tripstatusUpdateComment'>Comment</Label>
+                            <Input
+                                id='tripstatusUpdateComment'
+                                value={statusUpdate?.comment} onChange={(e) => setStatusUpdate(prev => prev ? { ...prev, comment: e.target.value } : null)}
+                                placeholder='Add a comment (optional)'
+                            />
+                        </AlertDialogDescription>
+                        <AlertDialogFooter>
+                            <AlertDialogAction onClick={() => updateTripStatus()}>Update</AlertDialogAction>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            }
             <Drawer open={viewingTrip !== null} onOpenChange={() => setViewingTrip(null)}>
                 {viewingTrip &&
                     <DrawerContent className="mx-auto w-full max-w-lg px-4">
