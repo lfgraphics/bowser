@@ -97,7 +97,7 @@ router.put('/update-details/:vehicle', async (req, res) => {
 });
 
 router.put('/update-details', async (req, res) => {
-    const {vehicles} = req.body;
+    const vehicles = req.body;
     try {
         // Validate input
         if (!vehicles || !Array.isArray(vehicles) || vehicles.length === 0) {
@@ -109,7 +109,7 @@ router.put('/update-details', async (req, res) => {
             updateOne: {
                 filter: { VehicleNo: vehicle.VehicleNo },
                 update: { $set: vehicle },
-                upsert: false
+                upsert: true
             }
         }));
 
