@@ -753,6 +753,7 @@ export interface TankersTrip {
     Driver: string;
   }[];
   VehicleNo: string;
+  capacity: string;
   superwiser?: string;
   statusUpdate: {
     dateTime: string;

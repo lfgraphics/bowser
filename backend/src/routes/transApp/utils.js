@@ -454,6 +454,15 @@ async function getNewSummary(userId, isAdmin) {
                 { UserName: 1, myVehicles: 1, Division: 1 }
             ).lean();
 
+            const veicleWiseCapacity = await Vehicle.find(
+                { VehicleNo: { $in: allVehicleNos } },
+                { VehicleNo: 1, capacity: 1 }
+            ).lean();
+            const capacityMap = {};
+            veicleWiseCapacity.forEach(v => {
+                capacityMap[v.VehicleNo] = v.capacity;
+            });
+
             const attachSuperviser = (trips) => {
                 trips.forEach((trip) => {
                     const matchedUsers = users.filter(u => u.myVehicles.includes(trip.VehicleNo));
@@ -461,6 +470,18 @@ async function getNewSummary(userId, isAdmin) {
                 });
             };
 
+            const attachCapacity = (trips) => {
+                trips.forEach(trip => {
+                    trip.capacity = capacityMap[trip.VehicleNo] || 'N/A';
+                });
+            };
+
+
+            attachCapacity(loadedOnWay);
+            attachCapacity(loadedReported);
+            attachCapacity(emptyOnWay);
+            attachCapacity(emptyReported);
+            attachCapacity(unloadedNotPlanned);
             attachSuperviser(loadedOnWay);
             attachSuperviser(loadedReported);
             attachSuperviser(emptyOnWay);

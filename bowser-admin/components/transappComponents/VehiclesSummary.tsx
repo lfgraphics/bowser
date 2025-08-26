@@ -45,6 +45,7 @@ type TripBase = {
         Driver: string;
     }[];
     VehicleNo: string;
+    capacity: string;
     StartFrom?: string;
     EndTo: string;
     superwiser?: string;
@@ -330,6 +331,7 @@ const VehiclesSummary = () => {
                                 <TableRow>
                                     <TableHead>SR No</TableHead>
                                     <TableHead>Vehicle No</TableHead>
+                                    <TableHead>Type/Capacity</TableHead>
                                     <TableHead>Last Updated Location</TableHead>
                                     <TableHead>Current Status</TableHead>
                                     {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
@@ -342,6 +344,7 @@ const VehiclesSummary = () => {
                                         <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip.capacity}</TableCell>
                                             <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate || trip.StartFrom}</TableCell>
                                             <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
@@ -377,6 +380,7 @@ const VehiclesSummary = () => {
                                         <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip.capacity}</TableCell>
                                             <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate || trip.StartFrom}</TableCell>
                                             <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
@@ -412,6 +416,7 @@ const VehiclesSummary = () => {
                                         <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip.capacity}</TableCell>
                                             <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate || trip.StartFrom}</TableCell>
                                             <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
@@ -447,6 +452,7 @@ const VehiclesSummary = () => {
                                         <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip.capacity}</TableCell>
                                             <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate || trip.StartFrom}</TableCell>
                                             <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
@@ -482,6 +488,7 @@ const VehiclesSummary = () => {
                                         <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip.capacity}</TableCell>
                                             <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate || trip.StartFrom}</TableCell>
                                             <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
@@ -529,6 +536,7 @@ const VehiclesSummary = () => {
                                                     <TableHeader>
                                                         <TableRow>
                                                             <TableHead>Vehicle No</TableHead>
+                                                            <TableHead>Type/Capacity</TableHead>
                                                             <TableHead>Status</TableHead>
                                                             <TableHead>Update</TableHead>
                                                             {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
@@ -539,6 +547,7 @@ const VehiclesSummary = () => {
                                                         {trips.map((trip) => (
                                                             <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                                                 <TableCell>{trip.VehicleNo}</TableCell>
+                                                                <TableCell>{trip.capacity}</TableCell>
                                                                 <TableCell>{trip.status}</TableCell>
                                                                 <TableCell>{trip.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
                                                                 {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
@@ -588,6 +597,7 @@ const VehiclesSummary = () => {
                                                     <TableHeader>
                                                         <TableRow>
                                                             <TableHead>Vehicle No</TableHead>
+                                                            <TableHead>Type/Capacity</TableHead>
                                                             <TableHead>Status</TableHead>
                                                             <TableHead>Update</TableHead>
                                                             {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
@@ -598,6 +608,7 @@ const VehiclesSummary = () => {
                                                         {trips.map((trip) => (
                                                             <TableRow key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                                                 <TableCell>{trip.VehicleNo}</TableCell>
+                                                                <TableCell>{trip.capacity}</TableCell>
                                                                 <TableCell>{trip.status === "Standing" ? "Not Programmed" : trip.status}</TableCell>
                                                                 <TableCell>{trip.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
                                                                 {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
