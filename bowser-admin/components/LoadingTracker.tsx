@@ -185,7 +185,7 @@ export default function UnloadedPlannedVehicleTracker({ tripsData }: { tripsData
                             <Button className={`w-full ${actionType === "destinationChange" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("destinationChange")}>Destination Change</Button>
                             <Button className={`w-full ${actionType === "update" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("update")}>Update</Button>
                             <Button className={`w-full ${actionType === "report" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("report")}>Report</Button>
-                            <Button className={`w-full ${actionType === "loaded" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("loaded")}>Loaded</Button>
+                            <Button disabled className={`w-full ${actionType === "loaded" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("loaded")}>Loaded</Button>
                         </div>
                     )
                 }

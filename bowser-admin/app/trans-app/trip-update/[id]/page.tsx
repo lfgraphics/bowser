@@ -27,18 +27,32 @@ const page = ({ params }: { params: { id: string } }) => {
     const handleSave = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
         if (!trip) return;
-
+        setLoading(true);
         trip.OpretionallyModified = true;
         const url = `${BASE_URL}/trans-app/trip-update/update-trip/${trip._id}`;
 
         try {
+            const updatedTrip = {
+                ...(trip as any),
+                OpretionallyModified: true,
+                LoadTripDetail: {
+                    ...((trip?.LoadTripDetail && !isEnded) ? 
+                        // If not ended, remove UnloadDate field
+                        Object.fromEntries(Object.entries(trip.LoadTripDetail).filter(([key]) => key !== 'UnloadDate')) 
+                        : trip?.LoadTripDetail || {}),
+                    ...(isReported ? { ReportDate: trip?.LoadTripDetail?.ReportDate } : { ReportDate: null }),
+                    ...(isEnded ? { UnloadDate: trip?.LoadTripDetail?.UnloadDate } : {}),
+                },
+            } as unknown as TankersTrip;
+
             const response = await fetch(url, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(trip),
+                body: JSON.stringify(updatedTrip),
             });
+
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error("Failed to submit trip update:", errorText);
@@ -49,12 +63,14 @@ const page = ({ params }: { params: { id: string } }) => {
         } catch (error) {
             console.error("Error submitting trip update:", error);
             toast.error("An error occurred while submitting the trip update.", { richColors: true });
+        } finally {
+            setLoading(false)
         }
-        console.log('Trip updated:', trip);
     };
 
     React.useEffect(() => {
         const fetchRecord = async () => {
+            setLoading(true)
             try {
                 const request = await fetch(`${BASE_URL}/trans-app/vehicles/get-trip-by-id/${params.id}`);
                 if (!request.ok) {
@@ -66,6 +82,8 @@ const page = ({ params }: { params: { id: string } }) => {
                 console.log(response)
             } catch (error) {
                 console.error('Error fetching records:', error);
+            } finally {
+                setLoading(false)
             }
         };
         fetchRecord();
@@ -74,6 +92,7 @@ const page = ({ params }: { params: { id: string } }) => {
 
     const fetchStackHolders = async () => {
         try {
+            setLoading(true)
             const response = await fetch(`${BASE_URL}/trans-app/stack-holders?params=${search}`);
             const data = await response.json();
             const formattedData: ComboboxOption[] = data.map((item: { _id: string, InstitutionName: string }) => ({
@@ -85,6 +104,8 @@ const page = ({ params }: { params: { id: string } }) => {
             console.log(data)
         } catch (error) {
             console.error('Error fetching fuel providers:', error);
+        } finally {
+            setLoading(false)
         }
     }
 

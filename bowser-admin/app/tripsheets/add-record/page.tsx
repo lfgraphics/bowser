@@ -94,7 +94,7 @@ const AddRecordPage = ({ searchParams }: { searchParams: { tripSheetId?: number,
             ...record,
             vehicleNumberPlateImage: "",
             gpsLocation,
-            location: `ITPL Bio-Diesel Pump-${String(record.fuelingLocation).toUpperCase()}`,
+            location: `ITPL Bio-Diesel Pump-${record.fuelingLocation.split(' ').map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1)).join(' ')}`,
             fuelMeterImage: "",
             bowser: {
                 regNo: searchParams.bowser,
