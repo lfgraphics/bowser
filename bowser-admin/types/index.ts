@@ -657,6 +657,8 @@ export type FuelingTypes = 'Own' | 'Attatch' | 'Bulk Sale'
 export interface TransAppUser {
   _id: string,
   name: string,
+  phoneNumber: string,
+  hashed: boolean,
   userId: string,
   Photo: {
     type: string,

@@ -63,7 +63,6 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     setLoading(true);
     e.preventDefault();
-    console.log('normal login:', userId, password, istransAppUser);
     if (istransAppUser) {
       console.log('TransApp login:', userId, password, istransAppUser);
       try {

@@ -1,7 +1,7 @@
 "use client"
 import React, { useContext, useEffect, useState } from 'react'
 
-import { Ban, Trash2 } from 'lucide-react'
+import { Ban, Settings, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import ImageFromBufferObject from '@/components/ImageFromBuffer'
@@ -21,6 +21,7 @@ import { TabsTrigger, Tabs, TabsList } from '@/components/ui/tabs'
 import { formatDate } from '@/lib/utils'
 import { SearchModal } from '@/components/SearchModal'
 import VehiclesSummary from '@/components/transappComponents/VehiclesSummary'
+import Link from 'next/link'
 
 type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary"
 
@@ -232,10 +233,21 @@ export default function Page() {
     <>
       {loading && <Loading />}
       <div className='mx-4 mt-4 flex flex-col gap-4'>
-        <Card className='w-fit'>
+        <Card className="w-fit">
+          <CardHeader className="font-semibold relative">
+            User Profile
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8"
+            >
+              <Link href="/trans-app/manage-profile">
+                <Settings className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardHeader>
           <CardContent>
-            <CardHeader className='font-semibold'>User Profile</CardHeader>
-            <ImageFromBufferObject bufferObject={photo} className='rounded-full w-20 h-20' />
+            <ImageFromBufferObject bufferObject={photo} className="rounded-full w-20 h-20" />
             <p><strong>Name: </strong>{user?.name}</p>
             <p><strong>Vehicles: </strong>{vehicles?.length}</p>
           </CardContent>

@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const TransUser = require('../../models/TransUser');
 const DeactivatedVehicle = require('../../models/DeactivatedVehicles')
+const argon2 = require('argon2');
+const {division} = require('./utils');
 
 router.get('/inactive-vehicles/:userId', async (req, res) => {
     const userId = req.params.userId;
@@ -111,5 +113,52 @@ router.post('/add-vehicle', async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 });
+
+router.post('/update-profile', async (req, res) => {
+    const { userName, phoneNumber, password, photo, id } = req.body;
+    if (!userName || !phoneNumber || !id) {
+        return res.status(400).json({ message: "userName, phoneNumber and id are required." });
+    }
+    try {
+        const user = await TransUser.findOne({ _id: id });
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        user.UserName = userName;
+        user.phoneNumber = phoneNumber;
+
+        if (password) {
+            const hashedPassword = await argon2.hash(password);
+            user.Password = hashedPassword;
+            user.hashed = true;
+        }
+
+        if (photo) {
+            user.Photo = Buffer.from(photo, 'base64');
+        }
+
+        await user.save();
+        await user.save();
+
+        const responseUser = {
+            _id: user._id,
+            userId: user.UserName,
+            phoneNumber: user.phoneNumber,
+            name: user.UserName,
+            Photo: user.Photo,
+            Division: (typeof division !== 'undefined' ? division[user.Division] : user.Division),
+            vehicles: user.myVehicles || [],
+            roles: ['Trans App'],
+            verified: true
+        };
+
+        return res.status(200).json({ message: "Profile updated successfully.", user: responseUser });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: error.message });
+    }
+});
+
 
 module.exports = router;
