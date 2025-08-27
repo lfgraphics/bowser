@@ -10,8 +10,8 @@ type ExtendedIcon = {
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'ITPL Deisel Control System',
-    short_name: 'ITPL DCS Admin',
+    name: 'Indian Tankers Pvt Ltd',
+    short_name: 'ITPL',
     description: 'A Progressive Web App for managing wechicles fuel allocation',
     start_url: '/',
     scope: '/',
@@ -79,38 +79,38 @@ export default function manifest(): MetadataRoute.Manifest {
         label: "Navigation menu showing navigations of the app"
       }
     ],
-    shortcuts: [
-      {
-        name: "Allocation",
-        url: "/dashboard",
-        "icons": [
-          {
-            "src": "/shortcuts/allocation.png",
-            "sizes": "1024x1024"
-          }
-        ]
-      },
-      {
-        name: "Dispenses",
-        url: "/dispense-records",
-        "icons": [
-          {
-            "src": "/shortcuts/dispense.png",
-            "sizes": "1024x1024"
-          }
-        ]
-      },
-      {
-        name: "Trip Sheets",
-        url: "/tripsheets",
-        "icons": [
-          {
-            "src": "/shortcuts/sheets.png",
-            "sizes": "1024x1024"
-          }
-        ]
-      },
-    ],
+    // shortcuts: [
+    //   {
+    //     name: "Allocation",
+    //     url: "/dashboard",
+    //     "icons": [
+    //       {
+    //         "src": "/shortcuts/allocation.png",
+    //         "sizes": "1024x1024"
+    //       }
+    //     ]
+    //   },
+    //   {
+    //     name: "Dispenses",
+    //     url: "/dispense-records",
+    //     "icons": [
+    //       {
+    //         "src": "/shortcuts/dispense.png",
+    //         "sizes": "1024x1024"
+    //       }
+    //     ]
+    //   },
+    //   {
+    //     name: "Trip Sheets",
+    //     url: "/tripsheets",
+    //     "icons": [
+    //       {
+    //         "src": "/shortcuts/sheets.png",
+    //         "sizes": "1024x1024"
+    //       }
+    //     ]
+    //   },
+    // ],
     prefer_related_applications: true,
     related_applications: [
       {

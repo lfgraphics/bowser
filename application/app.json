@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "ITPL Fueling",
+    "name": "Indian Tankers",
     "slug": "bowsers-dispensing",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "bowsers-fueling",
@@ -25,7 +25,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "runtimeVersion": "1.0.0",
+      "runtimeVersion": "2.0.0",
       "package": "com.itplfirebase.bowsersdispensing",
       "googleServicesFile": "./google-services.json"
     },
