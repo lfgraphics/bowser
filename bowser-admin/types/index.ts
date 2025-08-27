@@ -794,5 +794,5 @@ export interface TripsSummary {
   }
 }
 
-export type TripStatusUpdateEnums = "In Distelary" | "Accident" | "Returning" | 'Head Quarter'
-export const tripStatusUpdateVars = ["In Distelary", "Accident", "Returning", 'Head Quarter']
+export type TripStatusUpdateEnums = "In Distelary" | "Accident" | "Returning" | 'Head Quarter' | 'Custom'
+export const tripStatusUpdateVars = ["In Distelary", "Accident", "Returning", 'Head Quarter', 'Custom']

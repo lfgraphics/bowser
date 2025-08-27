@@ -101,7 +101,7 @@ const tankerTripSchema = new mongoose.Schema({
             },
             status: {
                 type: String,
-                enum: ["In Distelary", "Accident", "Returning", 'Head Quarter'],
+                enum: ["In Distelary", "Accident", "Returning", 'Head Quarter', 'Custom'],
                 required: true
             },
             comment: { type: String, required: false }

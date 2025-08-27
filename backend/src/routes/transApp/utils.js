@@ -144,124 +144,60 @@ async function getUsersDeactivatedVehicles(userId) {
  * 3. The `
  */
 async function getLoadedNotUnloadedVehicles(userId) {
-    const vehicles = await getUserVehicles(userId);
-    const vehicleNos = vehicles.map(v => v);
-    const deactivatedVehicles = await getUsersDeactivatedVehicles(userId);
-    return TankersTrip.aggregate([
-        {
-            $match: {
-                VehicleNo: { $in: vehicleNos, $nin: deactivatedVehicles },
-                LoadStatus: 1,
-                $and: [
-                    { "TallyLoadDetail.UnloadingDate": null },
-                    { "LoadTripDetail.UnloadDate": { $exists: false } }
-                ]
-            }
-        },
-        { $sort: { StartDate: -1 } },
-        {
-            $group: {
-                _id: "$VehicleNo",
-                trip: { $first: "$$ROOT" }
-            }
-        },
-        {
-            $replaceRoot: { newRoot: "$trip" }
-        }
-    ]).allowDiskUse(true);
+    // Reuse getNewSummary to return the same data set used in summary
+    const summary = await getNewSummary(userId, false);
+    const loadedOnWay = (summary?.loaded?.onWay?.trips) || [];
+    const loadedReported = (summary?.loaded?.reported?.trips) || [];
+    const unloadedStanding = (summary?.empty?.standing?.trips) || [];
+
+    // Exclude vehicles that are already in unloaded (standing) list
+    const unloadedSet = new Set(unloadedStanding.map(t => t.VehicleNo));
+    const combined = [...loadedOnWay, ...loadedReported].filter(t => !unloadedSet.has(t.VehicleNo));
+
+    // Deduplicate by VehicleNo (keep first occurrence)
+    const seen = new Set();
+    return combined.filter(t => {
+        if (seen.has(t.VehicleNo)) return false;
+        seen.add(t.VehicleNo);
+        return true;
+    });
 }
 
 /**
- * The function `getUnloadedNotPlannedVehicles` retrieves the latest unloaded and not planned vehicles
- * for a specific user.
- * @param userId - The `userId` parameter is used to identify the user for whom we want to retrieve
- * information about unloaded and not planned vehicles. This function fetches the vehicles associated
- * with the user, filters out the deactivated vehicles, and then queries the TankersTrip collection to
- * find unloaded vehicles that are not planned for any
- * @returns The function `getUnloadedNotPlannedVehicles` returns a list of TankersTrip documents that
- * match the specified criteria. The documents are aggregated based on the following stages:
+ * Returns unloaded (not planned) vehicles using the same facet from getNewSummary
  */
 async function getUnloadedNotPlannedVehicles(userId) {
-    const vehicles = await getUserVehicles(userId);
-    const vehicleNos = vehicles.map(v => v);
-    const deactivatedVehicles = await getUsersDeactivatedVehicles(userId);
-    const planned = await getUnloadedPlannedVehicles(userId)
-    const plannedVehicles = planned.map((trip) => trip.VehicleNo)
-    const toExclude = deactivatedVehicles.concat(plannedVehicles)
-
-    return TankersTrip.aggregate([
-        {
-            $match: {
-                VehicleNo: { $in: vehicleNos, $nin: toExclude },
-                LoadStatus: 1,
-                "TallyLoadDetail.UnloadingDate": { $ne: null },
-            }
-        },
-        {
-            $sort: {
-                VehicleNo: 1,
-                _id: -1
-            }
-        },
-        {
-            $group: {
-                _id: "$VehicleNo",
-                LatestTrip: { $first: "$$ROOT" }
-            }
-        },
-        {
-            $replaceRoot: {
-                newRoot: "$LatestTrip"
-            }
-        },
-        {
-            $sort: {
-                EndTo: 1,
-                VehicleNo: 1
-            }
-        }
-    ]);
+    const summary = await getNewSummary(userId, false);
+    return (summary?.empty?.standing?.trips) || [];
 }
 
 /**
- * The function `getUnloadedPlannedVehicles` retrieves the latest unloaded planned vehicles for a
- * specific user while filtering out deactivated and unplanned vehicles.
- * @param userId - The `userId` parameter is used to identify the user for whom we are fetching
- * information about unloaded planned vehicles. This function retrieves a list of the latest trips for
- * vehicles that belong to the specified user, are not deactivated, and do not have any unplanned trips
- * associated with them.
- * @returns The function `getUnloadedPlannedVehicles` returns an array of the latest trips for vehicles
- * that meet the specified criteria. The trips are sorted based on the `EmptyTripDetail.VehicleNo`
- * property in ascending order.
+ * Returns unloaded planned vehicles (empty trips) using getNewSummary facets.
+ * Returns a deduplicated array sorted by VehicleNo to match previous behavior.
  */
 async function getUnloadedPlannedVehicles(userId) {
-    const userVehicles = await getUserVehicles(userId);
-    const deactivatedVehicles = await getUsersDeactivatedVehicles(userId);
+    const summary = await getNewSummary(userId, false);
+    const emptyOnWay = (summary?.empty?.onWay?.trips) || [];
+    const emptyReported = (summary?.empty?.reported?.trips) || [];
 
-    const latestTrips = await TankersTrip.aggregate()
-        .match({
-            VehicleNo: { $in: userVehicles, $nin: deactivatedVehicles, },
-            LoadStatus: 0,
-            EndDate: { $eq: null }
-        }).sort({
-            _id: -1
-        })
-        .group({
-            _id: "$VehicleNo",
-            Trip: { $first: "$$ROOT" }
-        })
-        .allowDiskUse(true)
-        .exec();
+    const combined = [...emptyOnWay, ...emptyReported];
 
-    console.log(latestTrips.length)
+    // Deduplicate by VehicleNo (keep first occurrence)
+    const unique = [];
+    const seen = new Set();
+    combined.forEach(t => {
+        if (!seen.has(t.VehicleNo)) {
+            seen.add(t.VehicleNo);
+            unique.push(t);
+        }
+    });
 
-    return latestTrips
-        .map(t => t.Trip)
-        .sort((a, b) => {
-            const aNo = a.VehicleNo || '';
-            const bNo = b.VehicleNo || '';
-            return aNo.localeCompare(bNo);
-        });
+    // Sort by VehicleNo similar to original implementation
+    return unique.sort((a, b) => {
+        const aNo = a.VehicleNo || '';
+        const bNo = b.VehicleNo || '';
+        return aNo.localeCompare(bNo);
+    });
 }
 
 async function getSummary(userId, isAdmin) {
@@ -382,8 +318,14 @@ async function getNewSummary(userId, isAdmin) {
                                 LoadStatus: 1,
                                 $or: [
                                     { "TallyLoadDetail.ReportedDate": null },
-                                    { "TallyLoadDetail.UnloadingDate": null }
-                                ]
+                                    {
+                                        $and: [
+                                            { OpretionallyModified: true },
+                                            { "LoadTripDetail.ReportDate": { $exists: false } }
+                                        ]
+                                    },
+                                ],
+                                "TallyLoadDetail.UnloadDate": { $exists: false }
                             }
                         }
                     ],
@@ -392,8 +334,17 @@ async function getNewSummary(userId, isAdmin) {
                             $match: {
                                 LoadStatus: 1,
                                 $or: [
-                                    { "TallyLoadDetail.UnloadingDate": null },
-                                    { "LoadTripDetail.UnloadDate": { $exists: true } }
+                                    { "TallyLoadDetail.ReportedDate": { $ne: null } },
+                                    {
+                                        $and: [
+                                            { OpretionallyModified: true },
+                                            { "LoadTripDetail.ReportDate": { $exists: true } }
+                                        ]
+                                    }
+                                ],
+                                $and: [
+                                    { "TallyLoadDetail.UnloadDate": { $exists: false } },
+                                    { "LoadTripDetail.UnloadDate": { $exists: false } }
                                 ]
                             }
                         }
@@ -402,7 +353,11 @@ async function getNewSummary(userId, isAdmin) {
                         {
                             $match: {
                                 LoadStatus: 0,
-                                ReportingDate: { $exists: false }
+                                ReportingDate: { $eq: null },
+                                $or: [
+                                    { "EmptyTripDetail.EndDate": { $exists: false } },
+                                    { "EmptyTripDetail.EndDate": { $eq: null } }
+                                ]
                             }
                         }
                     ],
@@ -410,7 +365,11 @@ async function getNewSummary(userId, isAdmin) {
                         {
                             $match: {
                                 LoadStatus: 0,
-                                ReportingDate: { $exists: true }
+                                ReportingDate: { $exists: true },
+                                $or: [
+                                    { EndDate: { $exists: true } },
+                                    { EndDate: { $ne: null } }
+                                ]
                             }
                         }
                     ],
@@ -420,7 +379,8 @@ async function getNewSummary(userId, isAdmin) {
                                 LoadStatus: 1,
                                 $and: [
                                     { "TallyLoadDetail.UnloadingDate": { $ne: null } },
-                                    { "LoadTripDetail.UnloadDate": { $exists: true } }
+                                    { "LoadTripDetail.UnloadDate": { $exists: true } },
+                                    { "LoadTripDetail.UnloadDate": { $ne: null } }
                                 ]
                             }
                         }
