@@ -1,0 +1,15 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls",
+            "delegate_permission/common.get_login_creds"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "com.itplfirebase.bowsersdispensing",
+            "sha256_cert_fingerprints": [
+                "06:CD:55:8E:FF:4C:FD:B9:16:85:15:22:EA:00:DF:3D:63:91:6C:3C:36:00:70:F0:78:CE:5F:3D:12:4C:D2:A8"
+            ]
+        }
+    }
+]
