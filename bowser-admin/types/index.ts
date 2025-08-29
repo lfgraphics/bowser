@@ -755,6 +755,7 @@ export interface TankersTrip {
   VehicleNo: string;
   capacity: string;
   superwiser?: string;
+  loadingSupervisor?: string;
   statusUpdate: {
     dateTime: string;
     user: {
@@ -765,6 +766,17 @@ export interface TankersTrip {
     comment?: string
   }[];
   OpretionallyModified?: boolean;
+}
+
+export interface StackHolder {
+  _id: string;
+  InstitutionName: string;
+  IsBillingParty: boolean;
+  IsConsignee: boolean;
+  IsConsigner: boolean;
+  Location: string;
+  shortName: string;
+  loadingSupervisor: string;
 }
 
 export interface TripsSummary {

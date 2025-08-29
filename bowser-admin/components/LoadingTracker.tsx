@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { format } from "date-fns"
 import { useEffect, useMemo, useState } from "react"
 import Combobox, { ComboboxOption } from "./Combobox"
-import { Driver, TankersTrip } from "@/types"
+import { Driver, StackHolder, TankersTrip } from "@/types"
 import { getLocalDateTimeString } from "@/utils"
 import { BASE_URL } from "@/lib/api"
 import { toast } from "sonner"
@@ -29,6 +29,9 @@ export default function UnloadedPlannedVehicleTracker({ tripsData }: { tripsData
     const [data, setData] = useState<TankersTrip[]>(tripsData || [])
     const [vehicleSearch, setVehicleSearch] = useState<string>("")
     const [Driver, setDriver] = useState<string>("");
+    const [stackHolder, setStackHolder] = useState<StackHolder>();
+    const [loadingSuperVisor, setLoadingSuperVisor] = useState<string>('')
+    const [loadingSuperVisorUpdate, setLoadingSuperVisorUpdate] = useState<string>('')
     const vehicles: ComboboxOption[] = useMemo(() => {
         return data.map(trip => ({
             label: trip?.VehicleNo,
@@ -58,6 +61,7 @@ export default function UnloadedPlannedVehicleTracker({ tripsData }: { tripsData
             setTrackUpdateDate(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined);
             setLocationRemark(data.find(trip => trip?._id === tripId)?.EndTo.toUpperCase() || "");
             setManagerComment("Arrival #REPORTED by the vehicle at [" + data.find(trip => trip?._id === tripId)?.EndTo + "]");
+            (!loadingSuperVisor || loadingSuperVisor.length == 0) && fetchStackHolders();
         }
         if (actionType === "update") {
             setTrackUpdateDate(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined);
@@ -72,6 +76,7 @@ export default function UnloadedPlannedVehicleTracker({ tripsData }: { tripsData
     }
 
     const submit = async () => {
+        setLoading(true);
         const url = `${BASE_URL}/trans-app/trip-update/${actionType}`;
         const data = {
             TrackUpdateDate,
@@ -79,7 +84,8 @@ export default function UnloadedPlannedVehicleTracker({ tripsData }: { tripsData
             LocationOnTrackUpdate: LocationRemark,
             LocationRemark,
             ManagerComment,
-            Driver
+            Driver,
+            loadingSuperVisor: loadingSuperVisorUpdate?.trim().length > 3 ? loadingSuperVisorUpdate : loadingSuperVisor
         }
 
         try {
@@ -100,9 +106,37 @@ export default function UnloadedPlannedVehicleTracker({ tripsData }: { tripsData
                 return;
             }
             toast.success("Trip update submitted successfully!", { richColors: true });
+            loadingSuperVisorUpdate && loadingSuperVisorUpdate.length > 3 && !loadingSuperVisor && await updateLoadingSuperVisor();
         } catch (error) {
             console.error("Error submitting trip update:", error);
             toast.error("An error occurred while submitting the trip update.", { richColors: true });
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const updateLoadingSuperVisor = async () => {
+        if (!stackHolder) { toast.error('no stackholder found'); return }
+        console.log(stackHolder)
+        console.log(stackHolder._id)
+        if (!loadingSuperVisorUpdate || loadingSuperVisorUpdate.length < 3) return;
+        setLoading(true);
+        try {
+            const res = await fetch(`${BASE_URL}/trans-app/stack-holders/update-loading-supervisor/${stackHolder._id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ loadingSupervisor: loadingSuperVisorUpdate })
+            });
+            if (!res.ok) {
+                toast.error('Failed to update loading supervisor', { richColors: true });
+                return;
+            }
+            toast.success('Loading supervisor updated', { richColors: true });
+        } catch (error) {
+            console.error('Error updating loading supervisor:', error);
+            toast.error('An error occurred while updating loading supervisor', { richColors: true });
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -140,6 +174,19 @@ export default function UnloadedPlannedVehicleTracker({ tripsData }: { tripsData
             console.error('Error searching for driver:', error);
         } finally {
             setLoading(false);
+        }
+    }
+
+    const fetchStackHolders = async () => {
+        try {
+            const response = await fetch(`${BASE_URL}/trans-app/stack-holders/system/${data.find(trip => trip?._id === tripId)?.EndTo}`);
+            const responseData = await response.json();
+            if (!response.ok) return;
+            setStackHolder(responseData[0])
+            console.log(responseData[0])
+            setLoadingSuperVisor(responseData[0].loadingSupervisor);
+        } catch (error) {
+            console.error('Error fetching fuel providers:', error);
         }
     }
 
@@ -194,7 +241,7 @@ export default function UnloadedPlannedVehicleTracker({ tripsData }: { tripsData
                 <div className={actionType == undefined ? "hidden" : ""}>
                     {actionType == "report" &&
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor="dateTime">Current Date</Label>
+                            <Label htmlFor="dateTime">Reported on</Label>
                             <Input
                                 id="dateTime"
                                 type="datetime-local"
@@ -239,6 +286,62 @@ export default function UnloadedPlannedVehicleTracker({ tripsData }: { tripsData
                                 placeholder=""
                                 className={`${!OdometerOnTrackUpdate ? "bg-yellow-100" : ""}`}
                             />
+
+                            {(() => {
+                                const endTo = data.find(trip => trip?._id === tripId)?.EndTo;
+
+                                // const updateStackHolders = async (newSupervisor: string) => {
+                                //     if (!endTo) return;
+                                //     try {
+                                //         const res = await fetch(`${BASE_URL}/trans-app/stack-holders/system/${endTo}`, {
+                                //             method: "PUT",
+                                //             headers: { "Content-Type": "application/json" },
+                                //             body: JSON.stringify({ loadingSupervisor: newSupervisor }),
+                                //         });
+                                //         if (!res.ok) {
+                                //             const txt = await res.text();
+                                //             console.error("Failed to update stack holders:", txt);
+                                //             toast.error("Failed to update stack holders", { description: txt, richColors: true });
+                                //             return;
+                                //         }
+                                //         // reflect the newly saved supervisor in state
+                                //         setLoadingSuperVisor(newSupervisor);
+                                //         toast.success("Stackholders updated", { richColors: true });
+                                //     } catch (err) {
+                                //         console.error("Error updating stack holders:", err);
+                                //         toast.error("Error updating stack holders", { richColors: true });
+                                //     }
+                                // };
+
+                                const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                                    setLoadingSuperVisorUpdate(e.target.value);
+                                };
+
+                                // const handleBlur = () => {
+                                // If no loading supervisor existed in the fetched stackholders,
+                                // create/update it in the DB when the user provides a value.
+                                // if ((!loadingSuperVisor || loadingSuperVisor.length === 0) && loadingSuperVisorUpdate && loadingSuperVisorUpdate.length > 0) {
+                                //     updateStackHolders(loadingSuperVisorUpdate);
+                                // }
+                                // If a loadingSupervisor existed, we only track the user's input (loadingSuperVisorUpdate)
+                                // and do not call the DB update here. The value will be submitted with the main submit().
+                                // };
+
+                                return (
+                                    <>
+                                        <Label htmlFor="loadingSuperviser">Loading Supervisor</Label>
+                                        <Input
+                                            id="loadingSuperviser"
+                                            value={loadingSuperVisorUpdate ? loadingSuperVisorUpdate : loadingSuperVisor ? loadingSuperVisor : ""}
+                                            onChange={handleChange}
+                                            // onBlur={handleBlur}
+                                            type="text"
+                                            placeholder=""
+                                            className={`${(!loadingSuperVisor && !loadingSuperVisorUpdate) ? "bg-yellow-100" : ""}`}
+                                        />
+                                    </>
+                                );
+                            })()}
 
                             <Label htmlFor="locationRemark">Location Remark</Label>
                             <Input id="locationRemark" value={LocationRemark} onChange={(e) => setLocationRemark(e.target.value)} className={`${!LocationRemark ? "bg-yellow-100" : ""}`} type="string" placeholder="" />

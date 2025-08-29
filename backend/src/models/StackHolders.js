@@ -7,6 +7,8 @@ const stackHoldersSchema = new mongoose.Schema({
     IsConsignee: { type: Boolean, default: true },
     IsConsigner: { type: Boolean, default: true },
     Location: String,
+    shortName: String,
+    loadingSupervisor: String
 }, { versionKey: false });
 
 module.exports = transportDatabaseConnection.model('StackHolder', stackHoldersSchema, 'StackHolders');

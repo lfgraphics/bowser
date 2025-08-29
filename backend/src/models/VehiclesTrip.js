@@ -90,6 +90,7 @@ const tankerTripSchema = new mongoose.Schema({
     StartDriverMobile: { type: String },
     OpretionallyModified: { type: Boolean },
     ReportingDate: { type: Date },
+    loadingSuperVisor: { type: String },
     EndDate: { type: Date },
     LastSyncDate: { type: Date },
     statusUpdate: [

@@ -36,12 +36,12 @@ const page = ({ params }: { params: { id: string } }) => {
                 ...(trip as any),
                 OpretionallyModified: true,
                 LoadTripDetail: {
-                    ...((trip?.LoadTripDetail && !isEnded) ? 
+                    ...((trip?.LoadTripDetail && !isEnded) ?
                         // If not ended, remove UnloadDate field
-                        Object.fromEntries(Object.entries(trip.LoadTripDetail).filter(([key]) => key !== 'UnloadDate')) 
+                        Object.fromEntries(Object.entries(trip.LoadTripDetail).filter(([key]) => key !== 'UnloadDate'))
                         : trip?.LoadTripDetail || {}),
                     ...(isReported ? { ReportDate: trip?.LoadTripDetail?.ReportDate } : { ReportDate: null }),
-                    ...(isEnded ? { UnloadDate: trip?.LoadTripDetail?.UnloadDate } : {}),
+                    ...(isEnded ? { UnloadDate: trip?.LoadTripDetail?.UnloadDate } : { UnloadDate: null }),
                 },
             } as unknown as TankersTrip;
 

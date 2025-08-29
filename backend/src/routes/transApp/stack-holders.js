@@ -8,9 +8,28 @@ router.get('/', async (req, res) => {
         const stackHolders = await StackHolder.find({
             $or: [
                 { InstitutionName: { $regex: params, $options: 'i' } },
-                { Location: { $regex: params, $options: 'i' } }
+                { Location: { $regex: params, $options: 'i' } },
+                { shrortName: { $regex: params, $options: 'i' } }
             ]
         }).sort({ _id: -1 }).limit(20).lean();
+        res.status(200).json(stackHolders);
+    } catch (error) {
+        console.error('Error fetching stack holders:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.get('/system/:params', async (req, res) => {
+    const { params } = req.params;
+    try {
+        console.log(params)
+        const stackHolders = await StackHolder.find({
+            $or: [
+                { InstitutionName: params },
+                { Location: params },
+            ]
+        }).sort({ _id: -1 }).limit(20).lean();
+        console.log(stackHolders)
         res.status(200).json(stackHolders);
     } catch (error) {
         console.error('Error fetching stack holders:', error);
@@ -55,6 +74,30 @@ router.patch('/:id', async (req, res) => {
         res.status(200).json(updatedStation);
     } catch (error) {
         console.error('Error updating stack holder:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.patch('/update-loading-supervisor/:id', async (req, res) => {
+    const { id } = req.params;
+    const { loadingSupervisor } = req.body;
+
+    if (!loadingSupervisor || !id) {
+        return res.status(400).json({ error: 'Loading Supervisor and Location are required' });
+    }
+
+    try {
+        const updatedStation = await StackHolder.findByIdAndUpdate(
+            id,
+            { loadingSupervisor: loadingSupervisor },
+            { new: true }
+        );
+        if (!updatedStation) {
+            return res.status(404).json({ error: 'Stack Holder not found for the given location' });
+        }
+        res.status(200).json(updatedStation);
+    } catch (error) {
+        console.error('Error updating loading supervisor:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

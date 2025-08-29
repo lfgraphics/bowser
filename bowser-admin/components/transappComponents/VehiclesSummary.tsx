@@ -49,6 +49,7 @@ type TripBase = {
     StartFrom?: string;
     EndTo: string;
     superwiser?: string;
+    loadingSupervisor?: string;
     statusUpdate: {
         dateTime: string;
         user: {
@@ -211,21 +212,21 @@ const VehiclesSummary = () => {
         // Sort trips inside each group by their latest statusUpdate.status according to statusOrder
         keys.forEach((key) => {
             grouped[key].sort((t1, t2) => {
-            const latest1 = t1.statusUpdate?.[t1.statusUpdate.length - 1]?.status;
-            const latest2 = t2.statusUpdate?.[t2.statusUpdate.length - 1]?.status;
+                const latest1 = t1.statusUpdate?.[t1.statusUpdate.length - 1]?.status;
+                const latest2 = t2.statusUpdate?.[t2.statusUpdate.length - 1]?.status;
 
-            const i1 = latest1 ? statusOrder.indexOf(latest1) : -1;
-            const i2 = latest2 ? statusOrder.indexOf(latest2) : -1;
+                const i1 = latest1 ? statusOrder.indexOf(latest1) : -1;
+                const i2 = latest2 ? statusOrder.indexOf(latest2) : -1;
 
-            // Unknown statuses (not found in statusOrder) go to the end
-            if (i1 !== i2) {
-                if (i1 === -1) return 1;
-                if (i2 === -1) return -1;
-                return i1 - i2;
-            }
+                // Unknown statuses (not found in statusOrder) go to the end
+                if (i1 !== i2) {
+                    if (i1 === -1) return 1;
+                    if (i2 === -1) return -1;
+                    return i1 - i2;
+                }
 
-            // Tie-breaker: deterministic order by VehicleNo
-            return (t1.VehicleNo ?? "").localeCompare(t2.VehicleNo ?? "");
+                // Tie-breaker: deterministic order by VehicleNo
+                return (t1.VehicleNo ?? "").localeCompare(t2.VehicleNo ?? "");
             });
         });
 
@@ -322,10 +323,18 @@ const VehiclesSummary = () => {
                                 <CardTitle>Loaded Vehicles {data?.loaded?.onWay.count + data?.loaded?.reported.count}</CardTitle>
                             </CardHeader>
                             <CardContent className='flex flex-col gap-2'>
-                                <Button variant="outline" className='w-40' onClick={() => setFilter('loadedOnWay')}>
+                                <Button
+                                    variant="outline"
+                                    className={`w-40 ${filter !== 'all' && filter === 'loadedOnWay' ? 'bg-card text-card-foreground border-white' : ''}`}
+                                    onClick={() => setFilter('loadedOnWay')}
+                                >
                                     <strong>On Way: </strong><span>{data?.loaded?.onWay.count}</span>
                                 </Button>
-                                <Button variant="outline" className='w-40' onClick={() => setFilter('loadedReported')}>
+                                <Button
+                                    variant="outline"
+                                    className={`w-40 ${filter !== 'all' && filter === 'loadedReported' ? 'bg-card text-card-foreground border-white' : ''}`}
+                                    onClick={() => setFilter('loadedReported')}
+                                >
                                     <strong>Reported: </strong><span>{data?.loaded?.reported.count}</span>
                                 </Button>
                             </CardContent>
@@ -336,13 +345,25 @@ const VehiclesSummary = () => {
                                 <CardTitle>Empty Vehicles {data?.empty?.onWay.count + data?.empty?.reported.count + data?.empty?.standing.count}</CardTitle>
                             </CardHeader>
                             <CardContent className='flex flex-col gap-2'>
-                                <Button variant="outline" className='w-40' onClick={() => setFilter('emptyOnWay')}>
+                                <Button
+                                    variant="outline"
+                                    className={`w-40 ${filter !== 'all' && filter === 'emptyOnWay' ? 'bg-card text-card-foreground border-white' : ''}`}
+                                    onClick={() => setFilter('emptyOnWay')}
+                                >
                                     <strong>On Way: </strong>{data?.empty?.onWay.count}
                                 </Button>
-                                <Button variant="outline" className='w-40' onClick={() => setFilter('emptyStanding')}>
+                                <Button
+                                    variant="outline"
+                                    className={`w-40 ${filter !== 'all' && filter === 'emptyStanding' ? 'bg-card text-card-foreground border-white' : ''}`}
+                                    onClick={() => setFilter('emptyStanding')}
+                                >
                                     <strong>Standing: </strong>{data?.empty?.standing.count}
                                 </Button>
-                                <Button variant="outline" className='w-40' onClick={() => setFilter('emptyReported')}>
+                                <Button
+                                    variant="outline"
+                                    className={`w-40 ${filter !== 'all' && filter === 'emptyReported' ? 'bg-card text-card-foreground border-white' : ''}`}
+                                    onClick={() => setFilter('emptyReported')}
+                                >
                                     <strong>Reported: </strong> {data?.empty?.reported.count}
                                 </Button>
                             </CardContent>
@@ -360,6 +381,7 @@ const VehiclesSummary = () => {
                                     <TableHead>Vehicle No</TableHead>
                                     <TableHead>Type/Capacity</TableHead>
                                     <TableHead>Last Updated Location</TableHead>
+                                    {filter === 'emptyReported' && <TableHead>Loading Supervisor</TableHead>}
                                     {(filter === 'emptyReported' || filter === 'loadedReported') && <TableHead>Reached On</TableHead>}
                                     <TableHead>Current Status</TableHead>
                                     {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
@@ -511,6 +533,7 @@ const VehiclesSummary = () => {
                                             <TableCell>{trip.VehicleNo}</TableCell>
                                             <TableCell>{trip.capacity}</TableCell>
                                             <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate}</TableCell>
+                                            <TableCell>{trip.loadingSupervisor}</TableCell>
                                             <TableCell>{formatDate(trip.EmptyTripDetail.EndDate)}</TableCell>
                                             <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
@@ -588,7 +611,7 @@ const VehiclesSummary = () => {
                         </Table>
                     }
                     <div className='my-4'>
-                        <Accordion type="single" collapsible className="mb-2 p-4 w-full">
+                        {filter === "all" && <Accordion type="single" collapsible className="mb-2 p-4 w-full">
                             {/* Loaded Vehicles */}
                             <AccordionItem value="loaded">
                                 <AccordionTrigger className="text-lg font-semibold">Loaded Vehicles</AccordionTrigger>
@@ -670,6 +693,7 @@ const VehiclesSummary = () => {
                                                             <TableHead>Vehicle No</TableHead>
                                                             <TableHead>Type/Capacity</TableHead>
                                                             <TableHead>Status</TableHead>
+                                                            {trips.some(trip => Boolean(trip.loadingSupervisor)) && <TableHead>Loading Supervisor</TableHead>}
                                                             <TableHead>Update</TableHead>
                                                             {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
                                                             {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
@@ -687,6 +711,7 @@ const VehiclesSummary = () => {
                                                                 <TableCell>{trip.VehicleNo}</TableCell>
                                                                 <TableCell>{trip.capacity}</TableCell>
                                                                 <TableCell>{trip.status === "Standing" ? "Not Programmed" : trip.status}</TableCell>
+                                                                {trips.some(trip => Boolean(trip.loadingSupervisor)) && <TableCell>{trip.loadingSupervisor}</TableCell>}
                                                                 <TableCell>{trip.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
                                                                 {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
                                                                 <TableCell className='flex gap-2'>
@@ -722,7 +747,7 @@ const VehiclesSummary = () => {
                                     ))}
                                 </AccordionContent>
                             </AccordionItem>
-                        </Accordion>
+                        </Accordion>}
                     </div>
                 </div >
             }
