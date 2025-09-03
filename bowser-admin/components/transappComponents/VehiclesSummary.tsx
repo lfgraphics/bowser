@@ -105,6 +105,7 @@ const VehiclesSummary = () => {
     const [filter, setFilter] = useState<'all' | 'loadedOnWay' | 'loadedReported' | 'emptyOnWay' | 'emptyReported' | 'emptyStanding'>('all')
     const [viewingTrip, setViewingTrip] = useState<string | null>(null)
     const [searchTerm, setSearchTerm] = useState<string>('')
+    const [allVehiclesAccordion, setAllVehiclesAccordion] = useState<string>('')
 
     // Helper function to highlight matching text
     const highlightText = (text: string) => {
@@ -259,6 +260,76 @@ const VehiclesSummary = () => {
         return sortedGrouped;
     }
 
+    function groupBySuperWisors(data: TripData | undefined, type: "loaded" | "empty") {
+        const grouped: Record<string, GroupedTrip[]> = {};
+
+        if (!data) return grouped;
+
+        const statuses: { key: keyof TripData; label: TripStatus }[] = [
+            { key: "onWay", label: "On Way" },
+            { key: "reported", label: "Reported" },
+            { key: "standing", label: "Standing" },
+        ];
+
+        statuses.forEach(({ key, label }) => {
+            const statusData = data[key];
+            if (statusData?.trips?.length) {
+                statusData.trips.forEach((trip) => {
+                    const endTo = trip.superwiser || "Unknown";
+                    // Filter based on search term
+                    if (searchTerm && !endTo.toLowerCase().includes(searchTerm.toLowerCase())) {
+                        return;
+                    }
+                    if (!grouped[endTo]) grouped[endTo] = [];
+
+                    grouped[endTo].push({
+                        ...trip,
+                        status: label,
+                    });
+                });
+            }
+        });
+
+        // 1. Get the keys (EndTo values) from the grouped object
+        const keys = Object.keys(grouped).sort((a, b) => a.localeCompare(b)); // alphabetical groups
+
+        // Use the exported tripStatusUpdateVars to define ordering of statusUpdate statuses
+        const statusOrder = [...tripStatusUpdateVars] as TripStatusUpdateEnums[];
+
+        // Sort trips inside each group by their latest statusUpdate.status according to statusOrder
+        keys.forEach((key) => {
+            grouped[key].sort((t1, t2) => {
+                const latest1 = t1.statusUpdate?.[t1.statusUpdate.length - 1]?.status;
+                const latest2 = t2.statusUpdate?.[t2.statusUpdate.length - 1]?.status;
+
+                const i1 = latest1 ? statusOrder.indexOf(latest1) : -1;
+                const i2 = latest2 ? statusOrder.indexOf(latest2) : -1;
+
+                // Unknown statuses (not found in statusOrder) go to the end
+                if (i1 !== i2) {
+                    if (i1 === -1) return 1;
+                    if (i2 === -1) return -1;
+                    return i1 - i2;
+                }
+
+                // Tie-breaker: deterministic order by VehicleNo
+                return (t1.VehicleNo ?? "").localeCompare(t2.VehicleNo ?? "");
+            });
+        });
+
+        const sortedKeys = keys;
+
+        // 2. Create a new object to store the sorted grouped data
+        const sortedGrouped: Record<string, GroupedTrip[]> = {};
+
+        // 3. Iterate over the sorted keys and populate the new object
+        sortedKeys.forEach((key) => {
+            sortedGrouped[key] = grouped[key];
+        });
+
+        return sortedGrouped;
+    }
+
     function getStatusOptions(type: "loaded" | "empty", currentStatus: TripStatus): TripStatus[] {
         const statusMap: Record<"loaded" | "empty", TripStatus[]> = {
             loaded: ["On Way", "Reported", "In Distillery", "Unloaded"],
@@ -333,7 +404,7 @@ const VehiclesSummary = () => {
             {loading && <Loading />}
             {data &&
                 <div className='mb-4'>
-                    <div className='w-full flex justify-end mb-3'>
+                    <div className='w-full flex justify-end mb-3 -mt-14 sm:mt-0'>
                         <Button onClick={() => handleDownload()}>Download Report</Button>
                     </div>
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
@@ -650,63 +721,67 @@ const VehiclesSummary = () => {
 
                     {/* summary table for admins */}
                     {user?.Division.includes('Admin') &&
-                        <>
-                            <div className='text-center mt-4 font-semibold text-xl'>Summary Table</div>
-                            <div>
-                                Programmed Vehicles
-                            </div>
-                            <Table className='w-full'>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Sr No.</TableHead>
-                                        <TableHead>Location</TableHead>
-                                        <TableHead>On Way</TableHead>
-                                        <TableHead>Reported</TableHead>
-                                        <TableHead>In Distillery</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {Object.entries(groupTripsByEndTo(data.empty, "empty"))
-                                        .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
-                                        .map(([endTo, trips], index) => (
-                                            <TableRow key={endTo} id={endTo}>
-                                                <TableHead>{index + 1}</TableHead>
-                                                <TableHead>{highlightText(endTo)}</TableHead>
-                                                <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
-                                                <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length}</TableHead>
-                                                <TableHead>{trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
+                        <Accordion type='single' collapsible >
+                            <AccordionItem value='locationwise'>
+                                <AccordionTrigger>
+                                    <div className='text-center mt-4 font-semibold text-xl'>High level Summary Table</div>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                    <div>
+                                        Programmed Vehicles
+                                    </div>
+                                    <Table className='w-full'>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Sr No.</TableHead>
+                                                <TableHead>Location</TableHead>
+                                                <TableHead>On Way</TableHead>
+                                                <TableHead>Reported</TableHead>
+                                                <TableHead>In Distillery</TableHead>
                                             </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                            <div className='mt-4'>
-                                Loaded Vehicles
-                            </div>
-                            <Table className='w-full'>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Sr No.</TableHead>
-                                        <TableHead>Location</TableHead>
-                                        <TableHead>On Way</TableHead>
-                                        <TableHead>Reported</TableHead>
-                                        <TableHead>In Distillery</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {Object.entries(groupTripsByEndTo(data.loaded, "loaded"))
-                                        .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
-                                        .map(([endTo, trips], index) => (
-                                            <TableRow key={endTo} id={endTo}>
-                                                <TableHead>{index + 1}</TableHead>
-                                                <TableHead>{highlightText(endTo)}</TableHead>
-                                                <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
-                                                <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length}</TableHead>
-                                                <TableHead>{trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {Object.entries(groupTripsByEndTo(data.empty, "empty"))
+                                                .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
+                                                .map(([endTo, trips], index) => (
+                                                    <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("empty"); setSearchTerm(endTo) }}>
+                                                        <TableHead>{index + 1}</TableHead>
+                                                        <TableHead>{highlightText(endTo)}</TableHead>
+                                                        <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
+                                                        <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length}</TableHead>
+                                                        <TableHead>{trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
+                                                    </TableRow>
+                                                ))}
+                                        </TableBody>
+                                    </Table>
+                                    <div className='mt-4'>
+                                        Loaded Vehicles
+                                    </div>
+                                    <Table className='w-full'>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Sr No.</TableHead>
+                                                <TableHead>Location</TableHead>
+                                                <TableHead>On Way</TableHead>
+                                                <TableHead>Reported</TableHead>
+                                                <TableHead>In Distillery</TableHead>
                                             </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                            {/* <div className='mt-4'>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {Object.entries(groupTripsByEndTo(data.loaded, "loaded"))
+                                                .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
+                                                .map(([endTo, trips], index) => (
+                                                    <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("loaded"); setSearchTerm(endTo) }}>
+                                                        <TableHead>{index + 1}</TableHead>
+                                                        <TableHead>{highlightText(endTo)}</TableHead>
+                                                        <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
+                                                        <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length}</TableHead>
+                                                        <TableHead>{trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
+                                                    </TableRow>
+                                                ))}
+                                        </TableBody>
+                                    </Table>
+                                    {/* <div className='mt-4'>
                                 Standing Vehicles
                             </div>
                             <Table className='w-full'>
@@ -731,11 +806,65 @@ const VehiclesSummary = () => {
                                     ))}
                                 </TableBody>
                             </Table> */}
-                        </>
+                                </AccordionContent>
+                            </AccordionItem>
+                            <AccordionItem value="superwiserwise">
+                                <AccordionTrigger>
+                                    <div className='text-center mt-4 font-semibold text-xl'>
+                                        Supervisor wise Summary
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                    <Table className='w-full'>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Sr No.</TableHead>
+                                                <TableHead>Supervisor</TableHead>
+                                                <TableHead>On Way</TableHead>
+                                                <TableHead>Reported</TableHead>
+                                                <TableHead>In Distillery</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            <TableRow>
+                                                <TableCell colSpan={5}>Empty Vehicles</TableCell>
+                                            </TableRow>
+                                            {Object.entries(groupBySuperWisors(data.empty, "empty"))
+                                                .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
+                                                .map(([endTo, trips], index) => (
+                                                    <TableRow key={endTo} id={endTo}>
+                                                        <TableHead>{index + 1}</TableHead>
+                                                        <TableHead>{highlightText(endTo)}</TableHead>
+                                                        <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
+                                                        <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length}</TableHead>
+                                                        <TableHead>{trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
+                                                    </TableRow>
+                                                ))
+                                            }
+                                            <TableRow>
+                                                <TableCell colSpan={5}>Loaded Vehicles</TableCell>
+                                            </TableRow>
+                                            {Object.entries(groupBySuperWisors(data.loaded, "loaded"))
+                                                .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
+                                                .map(([endTo, trips], index) => (
+                                                    <TableRow key={endTo} id={endTo}>
+                                                        <TableHead>{index + 1}</TableHead>
+                                                        <TableHead>{highlightText(endTo)}</TableHead>
+                                                        <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
+                                                        <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length}</TableHead>
+                                                        <TableHead>{trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
+                                                    </TableRow>
+                                                ))
+                                            }
+                                        </TableBody>
+                                    </Table>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
                     }
 
                     <div className='my-4'>
-                        {filter === "all" && <Accordion type="single" collapsible className="mb-2 p-4 w-full">
+                        {filter === "all" && <Accordion value={allVehiclesAccordion} onValueChange={setAllVehiclesAccordion} type="single" collapsible className="mb-2 p-4 w-full">
                             {/* Loaded Vehicles */}
                             <AccordionItem value="loaded">
                                 <AccordionTrigger className="text-lg font-semibold">Loaded Vehicles</AccordionTrigger>

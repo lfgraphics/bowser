@@ -233,7 +233,7 @@ export default function Page() {
     <>
       {loading && <Loading />}
       <div className='mx-4 mt-4 flex flex-col gap-4'>
-        <Card className="w-fit">
+        {/* <Card className="w-fit">
           <CardHeader className="font-semibold relative">
             User Profile
             <Button
@@ -251,16 +251,16 @@ export default function Page() {
             <p><strong>Name: </strong>{user?.name}</p>
             <p><strong>Vehicles: </strong>{vehicles?.length}</p>
           </CardContent>
-        </Card>
+        </Card> */}
         <Tabs
           value={tab}
           onValueChange={(v) => setTab(v as Tabslist)}
           className="sm:mb-2 flex flex-col md:flex-row items-start md:items-center justify-between"
         >
           <TabsList>
+            <TabsTrigger value="Summary">Vehicles Summary</TabsTrigger>
             <TabsTrigger value="Vehicles">My Vehicles</TabsTrigger>
             <TabsTrigger value="Inactive Vehicles">Inactive Vehicles</TabsTrigger>
-            <TabsTrigger value="Summary">Vehicles Summary</TabsTrigger>
           </TabsList>
           <Button className='my-2 sm:my-0' onClick={() => setIsVehicleAdditionDialogvisible(true)}>Add Vehicle</Button>
         </Tabs>

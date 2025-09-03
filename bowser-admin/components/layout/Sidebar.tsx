@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideSquareArrowOutUpRight, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List, Bell, FileUp, FileDown, AudioWaveform, Home, UserCogIcon } from 'lucide-react'
+import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideSquareArrowOutUpRight, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List, Bell, FileUp, FileDown, AudioWaveform, Home, UserCogIcon, User2Icon } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 import ThemeChanger from '../ThemeChanger'
@@ -446,6 +446,19 @@ export function Sidebar() {
                     </Button>
                   </Link>
                 </li>
+                <OnlyAllowed allowedRoles={["Trans App"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/trans-app/manage-profile">
+                      <Button
+                        variant="ghost"
+                        className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/trans-app/manage-profile" ? "bg-primary text-primary-foreground" : ""}`}
+                      >
+                        <User2Icon className="mr-2 w-4 h-4" />
+                        Profile
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
                 <OnlyAllowed allowedRoles={["Admin"]}>
                   <li onClick={toggleSidebar}>
                     <Link href="/password-reset-link">
