@@ -806,5 +806,5 @@ export interface TripsSummary {
   }
 }
 
-export type TripStatusUpdateEnums = "In Distelary" | "Accident" | "Returning" | 'Head Quarter' | 'Custom'
-export const tripStatusUpdateVars = ["In Distelary", "Accident", "Returning", 'Head Quarter', 'Custom']
+export type TripStatusUpdateEnums = "In Distillery" | "Accident" | "Returning" | 'Head Quarter' | 'Custom' | 'Breakdown'
+export const tripStatusUpdateVars = ["In Distillery", "Accident", "Returning", 'Head Quarter', 'Custom', 'Breakdown']

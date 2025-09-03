@@ -104,6 +104,18 @@ const VehiclesSummary = () => {
     const [statusUpdate, setStatusUpdate] = useState<{ tripId: string, status: TripStatusUpdateEnums, comment?: string } | null>(null)
     const [filter, setFilter] = useState<'all' | 'loadedOnWay' | 'loadedReported' | 'emptyOnWay' | 'emptyReported' | 'emptyStanding'>('all')
     const [viewingTrip, setViewingTrip] = useState<string | null>(null)
+    const [searchTerm, setSearchTerm] = useState<string>('')
+
+    // Helper function to highlight matching text
+    const highlightText = (text: string) => {
+        if (!searchTerm) return text;
+        const parts = text.split(new RegExp(`(${searchTerm})`, 'gi'));
+        return parts.map((part, i) =>
+            part.toLowerCase() === searchTerm.toLowerCase()
+                ? <span key={i} className="bg-yellow-600 text-foreground">{part}</span>
+                : part
+        );
+    };
 
     useEffect(() => {
         if (viewingTrip == null) return
@@ -193,6 +205,10 @@ const VehiclesSummary = () => {
             if (statusData?.trips?.length) {
                 statusData.trips.forEach((trip) => {
                     const endTo = trip.EndTo || "Unknown";
+                    // Filter based on search term
+                    if (searchTerm && !endTo.toLowerCase().includes(searchTerm.toLowerCase())) {
+                        return;
+                    }
                     if (!grouped[endTo]) grouped[endTo] = [];
 
                     grouped[endTo].push({
@@ -264,6 +280,7 @@ const VehiclesSummary = () => {
             comment: statusUpdate.comment
         }
         try {
+            setLoading(true)
             const url = `${BASE_URL}/trans-app/trip-update/update-trip-status/${statusUpdate.tripId}`
             const res = await fetch(url, {
                 method: "POST",
@@ -306,6 +323,8 @@ const VehiclesSummary = () => {
         } catch (error) {
             console.error(error)
             toast.error("Error", { description: String(error), richColors: true })
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -371,6 +390,24 @@ const VehiclesSummary = () => {
                         </Card>
                         {filter !== 'all' && <Button variant="outline" className='w-max my-4' onClick={() => setFilter('all')}>View All Vehicles</Button>}
                     </div>
+                    <div className='flex justify-center gap-2 my-4'>
+                        <Input
+                            type="text"
+                            placeholder="Search by destination..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-max"
+                        />
+                        {searchTerm && (
+                            <Button
+                                variant="outline"
+                                onClick={() => setSearchTerm('')}
+                                size="sm"
+                            >
+                                Clear
+                            </Button>
+                        )}
+                    </div>
                     {
                         filter !== 'all' &&
                         <Table className='w-full'>
@@ -390,14 +427,14 @@ const VehiclesSummary = () => {
                             </TableHeader>
                             <TableBody>
                                 {filter == 'loadedOnWay' &&
-                                    data.loaded.onWay.trips.map((trip, index) =>
+                                    data.loaded.onWay.trips.sort((a, b) => a.EndTo.localeCompare(b.EndTo)).map((trip, index) =>
                                         <TableRow onClick={(e: React.MouseEvent) => {
                                             const el = e.target as HTMLElement | null;
                                             // if the click happened inside the dropdown, don't open the drawer
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                 setViewingTrip(trip._id)
                                             }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip.EndTo}</TableCell>
                                             <TableCell>{trip.VehicleNo}</TableCell>
@@ -433,14 +470,14 @@ const VehiclesSummary = () => {
                                     )
                                 }
                                 {filter == 'loadedReported' &&
-                                    data.loaded.reported.trips.map((trip, index) =>
+                                    data.loaded.reported.trips.sort((a, b) => a.EndTo.localeCompare(b.EndTo)).map((trip, index) =>
                                         <TableRow onClick={(e: React.MouseEvent) => {
                                             const el = e.target as HTMLElement | null;
                                             // if the click happened inside the dropdown, don't open the drawer
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                 setViewingTrip(trip._id)
                                             }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip.EndTo}</TableCell>
                                             <TableCell>{trip.VehicleNo}</TableCell>
@@ -477,14 +514,14 @@ const VehiclesSummary = () => {
                                     )
                                 }
                                 {filter == 'emptyOnWay' &&
-                                    data.empty.onWay.trips.map((trip, index) =>
+                                    data.empty.onWay.trips.sort((a, b) => a.EndTo.localeCompare(b.EndTo)).map((trip, index) =>
                                         <TableRow onClick={(e: React.MouseEvent) => {
                                             const el = e.target as HTMLElement | null;
                                             // if the click happened inside the dropdown, don't open the drawer
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                 setViewingTrip(trip._id)
                                             }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip.EndTo}</TableCell>
                                             <TableCell>{trip.VehicleNo}</TableCell>
@@ -520,14 +557,14 @@ const VehiclesSummary = () => {
                                     )
                                 }
                                 {filter == 'emptyReported' &&
-                                    data.empty.reported.trips.map((trip, index) =>
+                                    data.empty.reported.trips.sort((a, b) => a.EndTo.localeCompare(b.EndTo)).map((trip, index) =>
                                         <TableRow onClick={(e: React.MouseEvent) => {
                                             const el = e.target as HTMLElement | null;
                                             // if the click happened inside the dropdown, don't open the drawer
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                 setViewingTrip(trip._id)
                                             }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip.EndTo}</TableCell>
                                             <TableCell>{trip.VehicleNo}</TableCell>
@@ -565,14 +602,14 @@ const VehiclesSummary = () => {
                                     )
                                 }
                                 {filter == 'emptyStanding' &&
-                                    data.empty.standing.trips.map((trip, index) =>
+                                    data.empty.standing.trips.sort((a, b) => a.EndTo.localeCompare(b.EndTo)).map((trip, index) =>
                                         <TableRow onClick={(e: React.MouseEvent) => {
                                             const el = e.target as HTMLElement | null;
                                             // if the click happened inside the dropdown, don't open the drawer
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                 setViewingTrip(trip._id)
                                             }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip.EndTo}</TableCell>
                                             <TableCell>{trip.VehicleNo}</TableCell>
@@ -610,15 +647,102 @@ const VehiclesSummary = () => {
                             </TableBody>
                         </Table>
                     }
+
+                    {/* summary table for admins */}
+                    {user?.Division.includes('Admin') &&
+                        <>
+                            <div className='text-center mt-4 font-semibold text-xl'>Summary Table</div>
+                            <div>
+                                Programmed Vehicles
+                            </div>
+                            <Table className='w-full'>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Sr No.</TableHead>
+                                        <TableHead>Location</TableHead>
+                                        <TableHead>On Way</TableHead>
+                                        <TableHead>Reported</TableHead>
+                                        <TableHead>In Distillery</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {Object.entries(groupTripsByEndTo(data.empty, "empty"))
+                                        .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
+                                        .map(([endTo, trips], index) => (
+                                            <TableRow key={endTo} id={endTo}>
+                                                <TableHead>{index + 1}</TableHead>
+                                                <TableHead>{highlightText(endTo)}</TableHead>
+                                                <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
+                                                <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length}</TableHead>
+                                                <TableHead>{trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
+                                            </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                            <div className='mt-4'>
+                                Loaded Vehicles
+                            </div>
+                            <Table className='w-full'>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Sr No.</TableHead>
+                                        <TableHead>Location</TableHead>
+                                        <TableHead>On Way</TableHead>
+                                        <TableHead>Reported</TableHead>
+                                        <TableHead>In Distillery</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {Object.entries(groupTripsByEndTo(data.loaded, "loaded"))
+                                        .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
+                                        .map(([endTo, trips], index) => (
+                                            <TableRow key={endTo} id={endTo}>
+                                                <TableHead>{index + 1}</TableHead>
+                                                <TableHead>{highlightText(endTo)}</TableHead>
+                                                <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
+                                                <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length}</TableHead>
+                                                <TableHead>{trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
+                                            </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                            {/* <div className='mt-4'>
+                                Standing Vehicles
+                            </div>
+                            <Table className='w-full'>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Sr No.</TableHead>
+                                        <TableHead>Location</TableHead>
+                                        <TableHead>On Way</TableHead>
+                                        <TableHead>Reported</TableHead>
+                                        <TableHead>In Distillery</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {Object.entries(groupTripsByEndTo(data.empty, "loaded")).map(([endTo, trips], index) => (
+                                        <TableRow key={endTo} id={endTo}>
+                                            <TableHead>{index + 1}</TableHead>
+                                            <TableHead>{endTo}</TableHead>
+                                            <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
+                                            <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length}</TableHead>
+                                            <TableHead>{trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table> */}
+                        </>
+                    }
+
                     <div className='my-4'>
                         {filter === "all" && <Accordion type="single" collapsible className="mb-2 p-4 w-full">
                             {/* Loaded Vehicles */}
                             <AccordionItem value="loaded">
                                 <AccordionTrigger className="text-lg font-semibold">Loaded Vehicles</AccordionTrigger>
                                 <AccordionContent>
-                                    {Object.entries(groupTripsByEndTo(data.loaded, "loaded")).map(([endTo, trips]) => (
+                                    {Object.entries(groupTripsByEndTo(data.loaded, "loaded")).map(([endTo, trips]: [string, GroupedTrip[]]) => (
                                         <Card key={endTo} className="mb-4">
-                                            <CardHeader className="font-semibold text-md">{endTo}</CardHeader>
+                                            <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
                                             <CardContent>
                                                 <Table className="w-full">
                                                     <TableHeader>
@@ -632,14 +756,14 @@ const VehiclesSummary = () => {
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
-                                                        {trips.map((trip) => (
+                                                        {trips.sort((a: GroupedTrip, b: GroupedTrip) => a.status.localeCompare(b.status)).map((trip: GroupedTrip) => (
                                                             <TableRow onClick={(e: React.MouseEvent) => {
                                                                 const el = e.target as HTMLElement | null;
                                                                 // if the click happened inside the dropdown, don't open the drawer
                                                                 if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                                     setViewingTrip(trip._id)
                                                                 }
-                                                            }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                                            }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                                                 <TableCell>{trip.VehicleNo}</TableCell>
                                                                 <TableCell>{trip.capacity}</TableCell>
                                                                 <TableCell>{trip.status}</TableCell>
@@ -683,9 +807,9 @@ const VehiclesSummary = () => {
                             <AccordionItem value="empty">
                                 <AccordionTrigger className="text-lg font-semibold">Empty Vehicles</AccordionTrigger>
                                 <AccordionContent>
-                                    {Object.entries(groupTripsByEndTo(data.empty, "empty")).map(([endTo, trips]) => (
+                                    {Object.entries(groupTripsByEndTo(data.empty, "empty")).map(([endTo, trips]: [string, GroupedTrip[]]) => (
                                         <Card key={endTo} className="mb-4">
-                                            <CardHeader className="font-semibold text-md">{endTo}</CardHeader>
+                                            <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
                                             <CardContent>
                                                 <Table className="w-full">
                                                     <TableHeader>
@@ -700,14 +824,14 @@ const VehiclesSummary = () => {
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
-                                                        {trips.map((trip) => (
+                                                        {trips.sort((a: GroupedTrip, b: GroupedTrip) => a.status.localeCompare(b.status)).map((trip: GroupedTrip) => (
                                                             <TableRow onClick={(e: React.MouseEvent) => {
                                                                 const el = e.target as HTMLElement | null;
                                                                 // if the click happened inside the dropdown, don't open the drawer
                                                                 if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                                     setViewingTrip(trip._id)
                                                                 }
-                                                            }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distelary" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                                            }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                                                 <TableCell>{trip.VehicleNo}</TableCell>
                                                                 <TableCell>{trip.capacity}</TableCell>
                                                                 <TableCell>{trip.status === "Standing" ? "Not Programmed" : trip.status}</TableCell>
