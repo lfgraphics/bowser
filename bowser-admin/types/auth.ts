@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { TransAppUser } from '.'
 
 export interface User {
   _id: mongoose.Types.ObjectId
@@ -8,6 +9,7 @@ export interface User {
   phoneNumber: string
   verified: boolean
   roles: string[]
+  Division: string
 }
 
 export interface LoginResponse {

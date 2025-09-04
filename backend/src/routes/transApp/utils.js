@@ -367,8 +367,6 @@ async function getNewSummary(userId, isAdmin) {
                                 LoadStatus: 0,
                                 ReportingDate: { $exists: true },
                                 ReportingDate: { $ne: null },
-                                EndDate: { $exists: true },
-                                EndDate: { $ne: null }
                             }
                         }
                     ],
@@ -377,7 +375,6 @@ async function getNewSummary(userId, isAdmin) {
                             $match: {
                                 LoadStatus: 1,
                                 $and: [
-                                    { "TallyLoadDetail.UnloadingDate": { $ne: null } },
                                     { "LoadTripDetail.UnloadDate": { $exists: true } },
                                     { "LoadTripDetail.UnloadDate": { $ne: null } }
                                 ]

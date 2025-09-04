@@ -48,9 +48,9 @@ export async function login(
       localStorage.setItem('isLoggedIn', 'true')
 
       if (response.data.user.phoneNumber) {
-
         let groups = response.data.user.roles
-        groups.push(response.data.user.department)
+        if (response.data.user.department) groups.push(response.data.user.department)
+        if (response.data.user.Division) groups.push(response.data.user.Division)
         await registerPushSubscription(
           response.data.user.phoneNumber,
           response.data.user.userId,
