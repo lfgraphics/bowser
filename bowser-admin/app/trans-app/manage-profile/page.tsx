@@ -115,17 +115,6 @@ const Profile = () => {
                             <Separator orientation="horizontal" decorative className='bg-background dark:bg-foreground' />
                             <div className="flex flex-col space-y-4">
                                 <div className="flex justify-between items-center gap-3">
-                                    <Label className='flex-[0.9]'>Name</Label>
-                                    {editingField === 'name' ? (
-                                        <Input value={name} onChange={(e) => setName(e.target.value)} className="flex-[1] bg-background" />
-                                    ) : (
-                                        <span className="flex-[1">{name}</span>
-                                    )}
-                                    <span onClick={() => editingField === 'name' ? handleSave() : handleEdit('name')}>
-                                        {editingField === 'name' ? <Check size={18} className='text-card-foreground' /> : <Edit2 size={18} className='text-card-foreground' />}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between items-center gap-3">
                                     <Label className='flex-[0.9]'>Phone Number</Label>
                                     {editingField === 'phoneNumber' ? (
                                         <Input type='number' value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="flex-[1] bg-background" />
