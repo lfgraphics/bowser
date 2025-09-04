@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '../ui/drawer';
-import { Eye, Pen } from 'lucide-react';
+import { Eye, Pen, X } from 'lucide-react';
 import Link from 'next/link';
 
 type TripBase = {
@@ -44,6 +44,46 @@ type TripBase = {
         ManagerComment: string;
         Driver: string;
     }[];
+    TallyLoadDetail: {
+        LockNo: string;
+        BillingPartyName: string;
+        BillingRoute: string;
+        BooksOf: string;
+        Consignee: string;
+        Consignor: string;
+        DieselRoute: string;
+        DriverLicenseNo: string;
+        DriverLicenseValidityDate: string;
+        DriverName: string;
+        EndOdometer: number;
+        FinancialyClose: number;
+        FinancialyCloseDate: string;
+        Goods: string;
+        GRNo: string;
+        GUID: string;
+        KMbyDieseRoute: number;
+        KMbyRoute: number;
+        LoadingDate: string;
+        LoadingQty: number;
+        MasterId: number;
+        OperationalyClose: number;
+        PartyLedger: string;
+        PersistedView: string;
+        ReportedDate: string;
+        ShortageQty: number;
+        StartOdometer: number;
+        SyncDateTime: string;
+        TripId: string;
+        UnloadingDate: string;
+        UnloadingQty: number;
+        UnloadingTime: number;
+        VehicleMode: string;
+        VehicleNo: string;
+        VoucherDate: string;
+        VoucherKey: number;
+        VoucherNo: string;
+        VoucherType: string;
+    };
     VehicleNo: string;
     capacity: string;
     StartFrom?: string;
@@ -260,7 +300,7 @@ const VehiclesSummary = () => {
         return sortedGrouped;
     }
 
-    function groupBySuperWisors(data: TripData | undefined, type: "loaded" | "empty") {
+    function groupBySupervisors(data: TripData | undefined, type: "loaded" | "empty") {
         const grouped: Record<string, GroupedTrip[]> = {};
 
         if (!data) return grouped;
@@ -275,14 +315,14 @@ const VehiclesSummary = () => {
             const statusData = data[key];
             if (statusData?.trips?.length) {
                 statusData.trips.forEach((trip) => {
-                    const endTo = trip.superwiser || "Unknown";
+                    const supervisor = trip.superwiser || "Unknown";
                     // Filter based on search term
-                    if (searchTerm && !endTo.toLowerCase().includes(searchTerm.toLowerCase())) {
+                    if (searchTerm && !supervisor.toLowerCase().includes(searchTerm.toLowerCase())) {
                         return;
                     }
-                    if (!grouped[endTo]) grouped[endTo] = [];
+                    if (!grouped[supervisor]) grouped[supervisor] = [];
 
-                    grouped[endTo].push({
+                    grouped[supervisor].push({
                         ...trip,
                         status: label,
                     });
@@ -328,15 +368,6 @@ const VehiclesSummary = () => {
         });
 
         return sortedGrouped;
-    }
-
-    function getStatusOptions(type: "loaded" | "empty", currentStatus: TripStatus): TripStatus[] {
-        const statusMap: Record<"loaded" | "empty", TripStatus[]> = {
-            loaded: ["On Way", "Reported", "In Distillery", "Unloaded"],
-            empty: ["On Way", "Standing", "Reported", "In Distillery", "Loaded"],
-        };
-
-        return statusMap[type].filter((status) => status !== currentStatus);
     }
 
     const updateTripStatus = async () => {
@@ -462,22 +493,26 @@ const VehiclesSummary = () => {
                         {filter !== 'all' && <Button variant="outline" className='w-max my-4' onClick={() => setFilter('all')}>View All Vehicles</Button>}
                     </div>
                     <div className='flex justify-center gap-2 my-4'>
-                        <Input
-                            type="text"
-                            placeholder="Search by destination..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-max"
-                        />
-                        {searchTerm && (
-                            <Button
-                                variant="outline"
-                                onClick={() => setSearchTerm('')}
-                                size="sm"
-                            >
-                                Clear
-                            </Button>
-                        )}
+                        <div className="relative w-[310px]">
+                            <Input
+                                id="searchInput"
+                                type="text"
+                                placeholder="Search by destination or Supervisor name..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pr-8"
+                            />
+                            {searchTerm && (
+                                <Button
+                                    size="icon"
+                                    aria-label="Clear search"
+                                    onClick={() => { setSearchTerm(''); (document.getElementById('searchInput') as HTMLInputElement | null)?.focus(); }}
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full flex items-center justify-center text-sm"
+                                >
+                                    <X />
+                                </Button>
+                            )}
+                        </div>
                     </div>
                     {
                         filter !== 'all' &&
@@ -613,6 +648,15 @@ const VehiclesSummary = () => {
                                                                 {statupOpetion}
                                                             </DropdownMenuItem>
                                                         ))}
+                                                        <DropdownMenuItem>
+                                                            <Link href={{
+                                                                pathname: "trans-app/loading-tracker",
+                                                                query: {
+                                                                    actionType: "destinationChange",
+                                                                    tripId: trip._id
+                                                                }
+                                                            }}>Change Destination</Link>
+                                                        </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                                 <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
@@ -658,6 +702,15 @@ const VehiclesSummary = () => {
                                                                 {statupOpetion}
                                                             </DropdownMenuItem>
                                                         ))}
+                                                        <DropdownMenuItem>
+                                                            <Link href={{
+                                                                pathname: "trans-app/loading-tracker",
+                                                                query: {
+                                                                    actionType: "destinationChange",
+                                                                    tripId: trip._id
+                                                                }
+                                                            }}>Change Destination</Link>
+                                                        </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                                 <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
@@ -701,6 +754,14 @@ const VehiclesSummary = () => {
                                                                 {statupOpetion}
                                                             </DropdownMenuItem>
                                                         ))}
+                                                        <DropdownMenuItem>
+                                                            <Link href={{
+                                                                pathname: "trans-app/loading-planner",
+                                                                query: {
+                                                                    tripId: trip._id
+                                                                }
+                                                            }}>Give Plave</Link>
+                                                        </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                                 <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
@@ -724,7 +785,7 @@ const VehiclesSummary = () => {
                         <Accordion type='single' collapsible >
                             <AccordionItem value='locationwise'>
                                 <AccordionTrigger>
-                                    <div className='text-center mt-4 font-semibold text-xl'>High level Summary Table</div>
+                                    <div className='text-center mt-4 font-semibold text-xl'>Location Wise Summary Table</div>
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <div>
@@ -829,10 +890,10 @@ const VehiclesSummary = () => {
                                             <TableRow>
                                                 <TableCell colSpan={5}>Empty Vehicles</TableCell>
                                             </TableRow>
-                                            {Object.entries(groupBySuperWisors(data.empty, "empty"))
+                                            {Object.entries(groupBySupervisors(data.empty, "empty"))
                                                 .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
                                                 .map(([endTo, trips], index) => (
-                                                    <TableRow key={endTo} id={endTo}>
+                                                    <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("supervisors"); setSearchTerm(endTo) }}>
                                                         <TableHead>{index + 1}</TableHead>
                                                         <TableHead>{highlightText(endTo)}</TableHead>
                                                         <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
@@ -844,7 +905,7 @@ const VehiclesSummary = () => {
                                             <TableRow>
                                                 <TableCell colSpan={5}>Loaded Vehicles</TableCell>
                                             </TableRow>
-                                            {Object.entries(groupBySuperWisors(data.loaded, "loaded"))
+                                            {Object.entries(groupBySupervisors(data.loaded, "loaded"))
                                                 .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
                                                 .map(([endTo, trips], index) => (
                                                     <TableRow key={endTo} id={endTo}>
@@ -873,7 +934,7 @@ const VehiclesSummary = () => {
                                         <Card key={endTo} className="mb-4">
                                             <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
                                             <CardContent>
-                                                <Table className="w-full">
+                                                <Table className="w-max min-w-full">
                                                     <TableHeader>
                                                         <TableRow>
                                                             <TableHead>Vehicle No</TableHead>
@@ -940,7 +1001,7 @@ const VehiclesSummary = () => {
                                         <Card key={endTo} className="mb-4">
                                             <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
                                             <CardContent>
-                                                <Table className="w-full">
+                                                <Table className="w-max min-w-full">
                                                     <TableHeader>
                                                         <TableRow>
                                                             <TableHead>Vehicle No</TableHead>
@@ -980,6 +1041,26 @@ const VehiclesSummary = () => {
                                                                                     {statupOpetion}
                                                                                 </DropdownMenuItem>
                                                                             ))}
+                                                                            {(trip.status == "Reported" || trip.status == "On Way") &&
+                                                                                <DropdownMenuItem>
+                                                                                    <Link href={{
+                                                                                        pathname: "trans-app/loading-tracker",
+                                                                                        query: {
+                                                                                            actionType: "destinationChange",
+                                                                                            tripId: trip._id
+                                                                                        }
+                                                                                    }}>Change Destination</Link>
+                                                                                </DropdownMenuItem>
+                                                                            }
+                                                                            {trip.status == "Standing" &&
+                                                                                <DropdownMenuItem>
+                                                                                    <Link href={{
+                                                                                        pathname: "trans-app/loading-planner",
+                                                                                        query: {
+                                                                                            tripId: trip._id
+                                                                                        }
+                                                                                    }}>Give Plave</Link>
+                                                                                </DropdownMenuItem>}
                                                                         </DropdownMenuContent>
                                                                     </DropdownMenu>
                                                                     <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
@@ -1000,7 +1081,169 @@ const VehiclesSummary = () => {
                                     ))}
                                 </AccordionContent>
                             </AccordionItem>
-                        </Accordion>}
+
+                            {/* Super visor wise Vehicles */}
+                            <AccordionItem value="supervisors">
+                                <AccordionTrigger className="text-lg font-semibold">Super Wiseor Wise Data</AccordionTrigger>
+                                <AccordionContent>
+                                    <div>Empty Vehicles</div>
+                                    {Object.entries(groupBySupervisors(data.empty, "empty")).map(([endTo, trips]: [string, GroupedTrip[]]) => (
+                                        <Card key={endTo} className="mb-4">
+                                            <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
+                                            <CardContent>
+                                                <Table className="w-max min-w-full">
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Sr No</TableHead>
+                                                            <TableHead>Vehicle No</TableHead>
+                                                            <TableHead>Capacity</TableHead>
+                                                            {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
+                                                            <TableHead>Loading Station</TableHead>
+                                                            <TableHead>Loading Supervisor</TableHead>
+                                                            <TableHead>Reached On</TableHead>
+                                                            <TableHead>Status</TableHead>
+                                                            <TableHead>Update</TableHead>
+                                                            {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {trips.sort((a: GroupedTrip, b: GroupedTrip) => a.status.localeCompare(b.status)).map((trip: GroupedTrip, index) => (
+                                                            <TableRow onClick={(e: React.MouseEvent) => {
+                                                                const el = e.target as HTMLElement | null;
+                                                                // if the click happened inside the dropdown, don't open the drawer
+                                                                if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
+                                                                    setViewingTrip(trip._id)
+                                                                }
+                                                            }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                                                <TableCell>{index + 1}</TableCell>
+                                                                <TableCell>{trip.VehicleNo}</TableCell>
+                                                                <TableCell>{trip.capacity}</TableCell>
+                                                                {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
+                                                                <TableCell>{trip.EndTo}</TableCell>
+                                                                <TableCell>{trip.loadingSupervisor}</TableCell>
+                                                                <TableCell>{formatDate(trip.LoadTripDetail?.ReportDate || trip.LoadTripDetail?.UnloadDate || trip.TallyLoadDetail?.ReportedDate || trip.TallyLoadDetail?.UnloadingDate)}</TableCell>
+                                                                <TableCell>{trip.status === "Standing" ? "Not Programmed" : trip.status}</TableCell>
+                                                                <TableCell>{trip.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
+                                                                <TableCell className='flex gap-2'>
+                                                                    <DropdownMenu>
+                                                                        <DropdownMenuTrigger asChild>
+                                                                            <Button variant="outline" size="sm">
+                                                                                Update
+                                                                            </Button>
+                                                                        </DropdownMenuTrigger>
+                                                                        <DropdownMenuContent className='dropdown'>
+                                                                            {tripStatusUpdateVars.map((statupOpetion) => (
+                                                                                <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
+                                                                                    {statupOpetion}
+                                                                                </DropdownMenuItem>
+                                                                            ))}
+                                                                            {(trip.status == "Reported" || trip.status == "On Way") &&
+                                                                                <DropdownMenuItem>
+                                                                                    <Link href={{
+                                                                                        pathname: "trans-app/loading-tracker",
+                                                                                        query: {
+                                                                                            actionType: "destinationChange",
+                                                                                            tripId: trip._id
+                                                                                        }
+                                                                                    }}>Change Destination</Link>
+                                                                                </DropdownMenuItem>
+                                                                            }
+                                                                            {trip.status == "Standing" &&
+                                                                                <DropdownMenuItem>
+                                                                                    <Link href={{
+                                                                                        pathname: "trans-app/loading-planner",
+                                                                                        query: {
+                                                                                            tripId: trip._id
+                                                                                        }
+                                                                                    }}>Give Plave</Link>
+                                                                                </DropdownMenuItem>}
+                                                                        </DropdownMenuContent>
+                                                                    </DropdownMenu>
+                                                                    <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
+                                                                        <Eye />
+                                                                    </Button>
+                                                                    <Button variant="outline" size="sm">
+                                                                        <Link href={`/trans-app/trip-update/${trip._id}`}>
+                                                                            <Pen />
+                                                                        </Link>
+                                                                    </Button>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                    <div>Loaded Vehicles</div>
+                                    {Object.entries(groupBySupervisors(data.loaded, "loaded")).map(([endTo, trips]: [string, GroupedTrip[]]) => (
+                                        <Card key={endTo} className="mb-4">
+                                            <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
+                                            <CardContent>
+                                                <Table className="w-max min-w-full">
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Sr No.</TableHead>
+                                                            <TableHead>Vehicle No</TableHead>
+                                                            <TableHead>Type/Capacity</TableHead>
+                                                            <TableHead>Status</TableHead>
+                                                            {trips.some(trip => Boolean(trip.loadingSupervisor)) && <TableHead>Loading Supervisor</TableHead>}
+                                                            <TableHead>Update</TableHead>
+                                                            {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
+                                                            {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {trips.sort((a: GroupedTrip, b: GroupedTrip) => a.status.localeCompare(b.status)).map((trip: GroupedTrip, index) => (
+                                                            <TableRow onClick={(e: React.MouseEvent) => {
+                                                                const el = e.target as HTMLElement | null;
+                                                                // if the click happened inside the dropdown, don't open the drawer
+                                                                if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
+                                                                    setViewingTrip(trip._id)
+                                                                }
+                                                            }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                                                <TableCell>{index + 1}</TableCell>
+                                                                <TableCell>{trip.VehicleNo}</TableCell>
+                                                                <TableCell>{trip.capacity}</TableCell>
+                                                                <TableCell>{trip.status === "Standing" ? "Not Programmed" : trip.status}</TableCell>
+                                                                {trips.some(trip => Boolean(trip.loadingSupervisor)) && <TableCell className='w-max'>{trip.loadingSupervisor}</TableCell>}
+                                                                <TableCell>{trip.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
+                                                                {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
+                                                                <TableCell className='flex gap-2'>
+                                                                    <DropdownMenu>
+                                                                        <DropdownMenuTrigger asChild>
+                                                                            <Button variant="outline" size="sm">
+                                                                                Update
+                                                                            </Button>
+                                                                        </DropdownMenuTrigger>
+                                                                        <DropdownMenuContent className='dropdown'>
+                                                                            {tripStatusUpdateVars.map((statupOpetion) => (
+                                                                                <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
+                                                                                    {statupOpetion}
+                                                                                </DropdownMenuItem>
+                                                                            ))}
+                                                                        </DropdownMenuContent>
+                                                                    </DropdownMenu>
+                                                                    <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
+                                                                        <Eye />
+                                                                    </Button>
+                                                                    <Button variant="outline" size="sm">
+                                                                        <Link href={`/trans-app/trip-update/${trip._id}`}>
+                                                                            <Pen />
+                                                                        </Link>
+                                                                    </Button>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+                        }
                     </div>
                 </div >
             }
@@ -1027,7 +1270,7 @@ const VehiclesSummary = () => {
             }
             <Drawer open={viewingTrip !== null} onOpenChange={() => setViewingTrip(null)}>
                 {viewingTrip &&
-                    <DrawerContent className="mx-auto w-full max-w-lg px-4">
+                    <DrawerContent className="mx-auto w-full max-w-lg md:max-w-screen-xl px-4">
                         <DrawerHeader className="text-left">
                             <DrawerTitle>{findTripById(viewingTrip).VehicleNo + ": " + findTripById(viewingTrip).StartFrom + " - " + findTripById(viewingTrip).EndTo}</DrawerTitle>
                             <DrawerDescription>{viewingTrip}</DrawerDescription>
@@ -1040,38 +1283,50 @@ const VehiclesSummary = () => {
                                 <strong>Started at: </strong> {formatDate(findTripById(viewingTrip).StartDate)}
                             </div>
                         </div>
-                        {findTripById(viewingTrip)?.TravelHistory && <h4 className='font-semibold mt-4 mb-2'>Travel History</h4>}
-                        {findTripById(viewingTrip)?.TravelHistory
-                            ?.sort((a, b) => new Date(a.TrackUpdateDate).getTime() - new Date(b.TrackUpdateDate).getTime())
-                            .map((history, index) => (
-                                <Card key={index} className="mb-2">
-                                    <CardHeader>
-                                        <CardTitle className="text-md font-semibold">{formatDate(history.TrackUpdateDate)}</CardTitle>
-                                        <CardDescription>
-                                            {history.LocationOnTrackUpdate && <div><strong>Location on Track Update:</strong> {history.LocationOnTrackUpdate}</div>}
-                                            {typeof history.OdometerOnTrackUpdate === "number" && <div><strong>Odometer:</strong> {history.OdometerOnTrackUpdate} km</div>}
-                                            {history.ManagerComment && <div><strong>Manager Comment:</strong> {history.ManagerComment}</div>}
-                                            {history.Driver && <div><strong>Driver:</strong> {history.Driver}</div>}
-                                        </CardDescription>
-                                    </CardHeader>
-                                </Card>
-                            ))
+                        {findTripById(viewingTrip)?.TravelHistory &&
+                            <>
+                                <h4 className='font-semibold mt-4 mb-2'>Travel History</h4>
+                                <div className='grid grid-cols-2 md:grid-cols-4 gap-2'>
+                                    {findTripById(viewingTrip)?.TravelHistory
+                                        ?.sort((a, b) => new Date(a.TrackUpdateDate).getTime() - new Date(b.TrackUpdateDate).getTime())
+                                        .map((history, index) => (
+                                            <Card key={index}>
+                                                <CardHeader>
+                                                    <CardTitle className="text-md font-semibold">{formatDate(history.TrackUpdateDate)}</CardTitle>
+                                                    <CardDescription>
+                                                        {history.LocationOnTrackUpdate && <div><strong>Location on Track Update:</strong> {history.LocationOnTrackUpdate}</div>}
+                                                        {typeof history.OdometerOnTrackUpdate === "number" && <div><strong>Odometer:</strong> {history.OdometerOnTrackUpdate} km</div>}
+                                                        {history.ManagerComment && <div><strong>Manager Comment:</strong> {history.ManagerComment}</div>}
+                                                        {history.Driver && <div><strong>Driver:</strong> {history.Driver}</div>}
+                                                    </CardDescription>
+                                                </CardHeader>
+                                            </Card>
+                                        ))
+                                    }
+                                </div>
+                            </>
                         }
-                        {findTripById(viewingTrip)?.statusUpdate && <h4 className='font-semibold mt-4 mb-2'>Status Updates</h4>}
-                        {findTripById(viewingTrip)?.statusUpdate
-                            ?.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
-                            .map((history, index) => (
-                                <Card key={index} className="mb-2">
-                                    <CardHeader>
-                                        <CardTitle className="text-md font-semibold">{formatDate(history.dateTime)}</CardTitle>
-                                        <CardDescription className='text-foreground'>
-                                            {history.status && <div><strong>Status:</strong> {history.status}</div>}
-                                            {history.comment && <div><strong>Comment:</strong> {history.comment}</div>}
-                                        </CardDescription>
-                                        <CardFooter>{history.user.name}</CardFooter>
-                                    </CardHeader>
-                                </Card>
-                            ))
+                        {findTripById(viewingTrip)?.statusUpdate &&
+                            <>
+                                <h4 className='font-semibold mt-4 mb-2'>Status Updates</h4>
+                                <div className='grid grid-cols-2 md:grid-cols-4 gap-2'>
+                                    {findTripById(viewingTrip)?.statusUpdate
+                                        ?.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
+                                        .map((history, index) => (
+                                            <Card key={index}>
+                                                <CardHeader>
+                                                    <CardTitle className="text-md font-semibold">{formatDate(history.dateTime)}</CardTitle>
+                                                    <CardDescription className='text-card-foreground'>
+                                                        {history.status && <div><strong>Status:</strong> {history.status}</div>}
+                                                        {history.comment && <div><strong>Comment:</strong> {history.comment}</div>}
+                                                    </CardDescription>
+                                                    <CardFooter className='text-muted-foreground'>by: {history.user.name}</CardFooter>
+                                                </CardHeader>
+                                            </Card>
+                                        ))
+                                    }
+                                </div>
+                            </>
                         }
                         <DrawerFooter className="pt-2">
                             <DrawerClose asChild>

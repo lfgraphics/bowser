@@ -19,9 +19,10 @@ import MarkLoaded from "./transappComponents/MarkLoaded"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 import { Card, CardContent, CardHeader } from "./ui/card"
 
-export default function UnloadedPlannedVehicleTracker({ tripsData }: { tripsData: TankersTrip[] }) {
+export default function UnloadedPlannedVehicleTracker({ tripsData, query }: { tripsData: TankersTrip[], query: { actionType: "update" | "report" | "loaded" | "destinationChange" | undefined; tripId: string } }) {
+    const queryAction = query?.actionType
     const [loading, setLoading] = useState(false)
-    const [actionType, setActionType] = useState<"update" | "report" | "loaded" | "destinationChange" | undefined>(undefined)
+    const [actionType, setActionType] = useState<"update" | "report" | "loaded" | "destinationChange" | undefined>(queryAction)
     const [TrackUpdateDate, setTrackUpdateDate] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
     const [OdometerOnTrackUpdate, setOdometerOnTrackUpdate] = useState<number | undefined>(undefined)
     const [LocationRemark, setLocationRemark] = useState<string>("")
@@ -54,7 +55,7 @@ export default function UnloadedPlannedVehicleTracker({ tripsData }: { tripsData
         keyExtractor: () => "",
     });
 
-    const [tripId, setTripId] = useState<string>("")
+    const [tripId, setTripId] = useState<string>(query.tripId)
 
     useEffect(() => {
         if (actionType === "report") {

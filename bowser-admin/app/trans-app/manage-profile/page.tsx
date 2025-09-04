@@ -109,42 +109,42 @@ const Profile = () => {
                                 <span>{user?.userId}</span>
                             </div>
                             <div className="flex justify-between gap-3">
-                                <Label className='flex-[0.9]'>Role/s</Label>
+                                <Label className='flex-[0.9]'>Division</Label>
                                 <span>{user?.Division}</span>
                             </div>
-                            <Separator />
+                            <Separator orientation="horizontal" decorative className='bg-background dark:bg-foreground' />
                             <div className="flex flex-col space-y-4">
                                 <div className="flex justify-between items-center gap-3">
                                     <Label className='flex-[0.9]'>Name</Label>
                                     {editingField === 'name' ? (
-                                        <Input value={name} onChange={(e) => setName(e.target.value)} className="flex-[1]" />
+                                        <Input value={name} onChange={(e) => setName(e.target.value)} className="flex-[1] bg-background" />
                                     ) : (
                                         <span className="flex-[1">{name}</span>
                                     )}
                                     <span onClick={() => editingField === 'name' ? handleSave() : handleEdit('name')}>
-                                        {editingField === 'name' ? <Check size={18} color='white' /> : <Edit2 size={18} color='gray' />}
+                                        {editingField === 'name' ? <Check size={18} className='text-card-foreground' /> : <Edit2 size={18} className='text-card-foreground' />}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center gap-3">
                                     <Label className='flex-[0.9]'>Phone Number</Label>
                                     {editingField === 'phoneNumber' ? (
-                                        <Input type='number' value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="flex-[1]" />
+                                        <Input type='number' value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="flex-[1] bg-background" />
                                     ) : (
                                         <span className="flex-[1">{phoneNumber}</span>
                                     )}
                                     <span onClick={() => editingField === 'phoneNumber' ? handleSave() : handleEdit('phoneNumber')}>
-                                        {editingField === 'phoneNumber' ? <Check size={18} color='white' /> : <Edit2 size={18} color='gray' />}
+                                        {editingField === 'phoneNumber' ? <Check size={18} className='text-card-foreground' /> : <Edit2 size={18} className='text-card-foreground' />}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center gap-3">
                                     <Label className='flex-[0.9]'>Password</Label>
                                     {editingField === 'password' ? (
-                                        <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} className="flex-[1]" />
+                                        <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} className="flex-[1] bg-background" />
                                     ) : (
                                         '*'.repeat(password.length)
                                     )}
                                     <span onClick={() => editingField === 'password' ? handleSave() : handleEdit('password')}>
-                                        {editingField === 'password' ? <Check size={18} color='white' /> : <Edit2 size={18} color='gray' />}
+                                        {editingField === 'password' ? <Check size={18} className='text-card-foreground' /> : <Edit2 size={18} className='text-card-foreground' />}
                                     </span>
                                 </div>
                             </div>

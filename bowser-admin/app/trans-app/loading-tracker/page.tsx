@@ -5,8 +5,30 @@ import React, { useEffect, useState, useContext } from 'react'
 import { TransAppContext } from "../layout";
 import UnloadedPlannedVehicleTracker from '@/components/LoadingTracker'
 import Loading from '@/app/loading'
+import { useSearchParams } from 'next/navigation';
+
+type QueryType = {
+  actionType: "loaded" | "destinationChange" | "update" | "report" | undefined;
+  tripId: string;
+}
 
 const LoadingTracker = () => {
+  const searchParams = useSearchParams();
+
+  // parse and validate search params into QueryType
+  const rawQuery = Object.fromEntries(searchParams.entries()) as Record<string, string | undefined>;
+  const actionRaw = rawQuery.actionType;
+  const actionType = (actionRaw === "loaded" ||
+    actionRaw === "destinationChange" ||
+    actionRaw === "update" ||
+    actionRaw === "report")
+    ? actionRaw as QueryType["actionType"]
+    : undefined;
+  const query: QueryType = {
+    actionType,
+    tripId: rawQuery.tripId ?? ""
+  };
+
   const [loading, setLoading] = useState<boolean>(true)
   const { user } = useContext(TransAppContext);
   const [data, setData] = useState<TankersTrip[]>([])
@@ -36,7 +58,7 @@ const LoadingTracker = () => {
       {loading && <Loading />}
       <div className="flex flex-col gap-4">
         <div className="actions">
-          {!loading && data && <UnloadedPlannedVehicleTracker tripsData={data} />}
+          {!loading && data && <UnloadedPlannedVehicleTracker query={query} tripsData={data} />}
         </div>
       </div>
     </>

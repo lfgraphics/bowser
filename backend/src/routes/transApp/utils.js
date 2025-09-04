@@ -366,10 +366,9 @@ async function getNewSummary(userId, isAdmin) {
                             $match: {
                                 LoadStatus: 0,
                                 ReportingDate: { $exists: true },
-                                $or: [
-                                    { EndDate: { $exists: true } },
-                                    { EndDate: { $ne: null } }
-                                ]
+                                ReportingDate: { $ne: null },
+                                EndDate: { $exists: true },
+                                EndDate: { $ne: null }
                             }
                         }
                     ],

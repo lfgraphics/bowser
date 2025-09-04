@@ -15,7 +15,7 @@ import { SearchModal } from "./SearchModal"
 import { searchItems } from "@/utils/searchUtils"
 import Loading from "@/app/loading"
 
-export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { tripsData: TankersTrip[], user: TransAppUser | undefined }) {
+export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query }: { tripsData: TankersTrip[], user: TransAppUser | undefined, query: { tripId: string } }) {
     const [loading, setLoading] = useState<boolean>(false)
     const [targetTime, setTargetTime] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
     const [proposedDate, setProposedDate] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
@@ -25,7 +25,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user }: { t
     const [data, setData] = useState<TankersTrip[]>(tripsData || [])
     const [driverMobile, setDriverMobile] = useState<string>("")
     const [vehicleSearch, setVehicleSearch] = useState<string>("")
-    const [tripId, setTripId] = useState<string>("")
+    const [tripId, setTripId] = useState<string>(query.tripId)
     const [Driver, setDriver] = useState<string>("");
     const [search, setSearch] = useState<string>("")
     const [stackHolders, setStackHolders] = useState<ComboboxOption[]>([])
