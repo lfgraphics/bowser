@@ -11,7 +11,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export const formatDate = (dateInput: string | Date | null): string => {
   if (dateInput == null) return ""
-    const date = moment(dateInput);
+  const date = moment(dateInput);
   return `${date.format('DD-MM-YY')}, ${date.format('hh:mm A')}`;
 };
 
@@ -44,3 +44,9 @@ export const downloadExcel = (data: any[], fileName: string) => {
   console.log(data.length)
   xlsx(data, settings);
 };
+
+export function camelToWords(str: string) {
+  return str
+    .replace(/([A-Z])/g, " $1")   // insert space before capital letters
+    .replace(/^./, (s) => s.toUpperCase()); // capitalize first letter
+}
