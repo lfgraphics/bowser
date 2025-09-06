@@ -13,6 +13,7 @@ export interface User {
 }
 
 export interface LoginResponse {
+  error:string,
   token: string
   user: User
 }

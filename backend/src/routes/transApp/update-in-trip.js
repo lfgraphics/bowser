@@ -122,27 +122,34 @@ router.post('/destination-change', async (req, res) => {
                 newTrip: null
             });
         } else {
-            updatedTrip = await TankersTrip.findByIdAndUpdate(
-                tripId,
-                {
-                    $set: {
-                        EndDate: nowInIST,
-                        EndOdometer: data.odometer,
-                        'EmptyTripDetail.EndDate': nowInIST,
-                        'EmptyTripDetail.EndOdometer': data.odometer,
-                    },
-                    $push: {
-                        TravelHistory: {
-                            TrackUpdateDate: nowInIST,
-                            LocationOnTrackUpdate: data.StartFrom,
-                            OdometerOnTrackUpdate: data.odometer,
-                            ManagerComment: data.ManagerComment !== undefined ? data.ManagerComment : '',
-                            Driver: data.driverName,
-                        }
-                    }
-                },
-                { new: true }
-            );
+            // load the trip, modify fields, push history, then save
+            updatedTrip = tripExists; // reuse the trip we already fetched above
+
+            // ensure nested objects exist
+            if (!updatedTrip.EmptyTripDetail || typeof updatedTrip.EmptyTripDetail !== 'object') {
+                updatedTrip.EmptyTripDetail = {};
+            }
+            if (!Array.isArray(updatedTrip.TravelHistory)) {
+                updatedTrip.TravelHistory = [];
+            }
+
+            // apply updates
+            updatedTrip.EndDate = nowInIST;
+            updatedTrip.EndOdometer = data.odometer;
+            updatedTrip.EmptyTripDetail.EndDate = nowInIST;
+            updatedTrip.EmptyTripDetail.EndOdometer = data.odometer;
+
+            // push travel history entry
+            updatedTrip.TravelHistory.push({
+                TrackUpdateDate: nowInIST,
+                LocationOnTrackUpdate: data.StartFrom,
+                OdometerOnTrackUpdate: data.odometer,
+                ManagerComment: data.ManagerComment !== undefined ? data.ManagerComment : '',
+                Driver: data.driverName,
+            });
+
+            // save and get the updated document
+            updatedTrip = await updatedTrip.save();
 
             if (!updatedTrip) {
                 throw new Error('Trip not found.');

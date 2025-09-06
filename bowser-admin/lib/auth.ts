@@ -5,6 +5,7 @@ import {
   unregisterPushSubscription
 } from '@/utils/pushNotifications'
 import { BASE_URL } from './api'
+import { toast } from 'sonner'
 
 export async function signup(userData: {
   userId: string
@@ -70,35 +71,49 @@ export async function TransAppLogin(
 ): Promise<LoginResponse> {
   try {
     console.log('TransApp Login data:', userId, password)
-    const response = await axios.post<LoginResponse>(
-      `${BASE_URL}/trans-app/login`,
-      {
+    const res = await fetch(`${BASE_URL}/trans-app/login`, {
+      method: 'POST',
+      credentials: 'include', // include cookies
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
         userId,
         password,
         appName: 'Bowser Admin'
-      },
-      { withCredentials: true }
-    )
-    console.log('TransApp Login response:', response)
-    if (response.data.token) {
-      localStorage.setItem('adminToken', response.data.token)
-      localStorage.setItem('adminUser', JSON.stringify(response.data.user))
+      })
+    })
+
+    const data = await res.json().catch(() => ({}))
+
+    console.log('TransApp Login response:', res, data)
+
+    if (res.ok && data.token) {
+      localStorage.setItem('adminToken', data.token)
+      localStorage.setItem('adminUser', JSON.stringify(data.user))
       localStorage.setItem('isLoggedIn', 'true')
 
-      if (response.data.user.phoneNumber) {
+      if (data.user && data.user.phoneNumber) {
+        const groups: string[] = Array.isArray(data.user.roles) ? [...data.user.roles] : []
+        if (data.user.department) groups.push(data.user.department)
+        if (data.user.Division) groups.push(data.user.Division)
 
-        let groups = response.data.user.roles
-        groups.push(response.data.user.department)
         await registerPushSubscription(
-          response.data.user.phoneNumber || 'No phone number',
-          response.data.user.userId,
+          data.user.phoneNumber,
+          data.user.userId,
           groups
         )
       }
-      return response.data
+      return data as LoginResponse
     }
-    throw new Error('Login failed')
-  } catch (error) {
+
+    const errMsg = (data && (data.error || data.message)) || res.statusText || 'Login failed'
+    console.error(errMsg)
+    throw new Error(errMsg)
+  } catch (error: any) {
+    const message = error?.message || 'Login failed'
+    console.error('TransApp Login error:', error)
+    toast.error(message, { richColors: true })
     throw error
   }
 }

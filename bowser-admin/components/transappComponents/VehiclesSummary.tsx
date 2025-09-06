@@ -1022,7 +1022,7 @@ const VehiclesSummary = () => {
                                                 ))}
                                         </TableBody>
                                     </Table>
-                                    <div className='mt-4'>
+                                    <div className='text-center font-semibold text-lg mt-4'>
                                         Loaded Vehicles
                                     </div>
                                     <Table className='w-full'>
@@ -1093,7 +1093,7 @@ const VehiclesSummary = () => {
                                         </TableHeader>
                                         <TableBody>
                                             <TableRow>
-                                                <TableCell colSpan={5}>Empty Vehicles</TableCell>
+                                                <TableCell className='text-center font-semibold text-lg' colSpan={5}>Empty Vehicles</TableCell>
                                             </TableRow>
                                             {Object.entries(groupBySupervisors(data.empty, "empty"))
                                                 .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -1108,7 +1108,7 @@ const VehiclesSummary = () => {
                                                 ))
                                             }
                                             <TableRow>
-                                                <TableCell colSpan={5}>Loaded Vehicles</TableCell>
+                                                <TableCell className='text-center font-semibold text-lg' colSpan={5}>Loaded Vehicles</TableCell>
                                             </TableRow>
                                             {Object.entries(groupBySupervisors(data.loaded, "loaded"))
                                                 .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -1308,9 +1308,9 @@ const VehiclesSummary = () => {
                             {/* Super visor wise Vehicles */}
                             {user?.Division.includes('Admin') &&
                                 <AccordionItem value="supervisors">
-                                    <AccordionTrigger className="text-lg font-semibold">Super Wiseor Wise Data</AccordionTrigger>
+                                    <AccordionTrigger className="text-lg font-semibold">Supervisor Wise Data</AccordionTrigger>
                                     <AccordionContent>
-                                        <div>Empty Vehicles</div>
+                                        <div className='text-center font-semibold text-lg'>Empty Vehicles</div>
                                         {Object.entries(groupBySupervisors(data.empty, "empty")).map(([endTo, trips]: [string, GroupedTrip[]]) => (
                                             <Card key={endTo} className="mb-4">
                                                 <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
@@ -1408,7 +1408,7 @@ const VehiclesSummary = () => {
                                                 </CardContent>
                                             </Card>
                                         ))}
-                                        <div>Loaded Vehicles</div>
+                                        <div className='text-center font-semibold text-lg'>Loaded Vehicles</div>
                                         {Object.entries(groupBySupervisors(data.loaded, "loaded")).map(([endTo, trips]: [string, GroupedTrip[]]) => (
                                             <Card key={endTo} className="mb-4">
                                                 <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>

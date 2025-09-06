@@ -104,7 +104,8 @@ const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
     }
 
     useEffect(() => {
-        setManagerComment("#DestinationModified [" + selectedTrip.EmptyTripDetail.ProposedDestination + `] ${currentLocation}`);
+        setManagerComment("#DestinationModified [" + selectedTrip.EndTo + `] ${currentLocation}`);
+        // setManagerComment("#DestinationModified [" + selectedTrip.EmptyTripDetail.ProposedDestination + `] ${currentLocation}`);
         setDriver(selectedTrip.StartDriver)
         setDriverMobile(selectedTrip.StartDriverMobile)
     }, [selectedTrip, currentLocation])
@@ -182,7 +183,7 @@ const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
                 VehicleNo: selectedTrip.VehicleNo,
                 driverName: Driver,
                 driverMobile,
-                stackHolder,
+                stackHolder: stackHolders.find(holder => holder.value === stackHolder)?.label || stackHolder,
                 targetTime,
                 odometer,
                 orderedBy,

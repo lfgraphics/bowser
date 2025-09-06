@@ -17,7 +17,7 @@ router.post('/', async (req, res) => {
     if (user) {
         if (user.hashed) {
             // stored password is hashed -> compare using argon2
-            const hash = user.Password || user.password || '';
+            const hash = user.Password;
             let isPasswordValid = false;
             try {
                 isPasswordValid = await argon2.verify(hash, password);
@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
         } else {
             // stored password is plain (keep the previous regex-style matching)
             const passRegex = new RegExp(password, 'i');
-            if (!passRegex.test(user.Password || user.password || '')) user = null;
+            if (!passRegex.test(user.Password)) user = null;
         }
     } else {
         // fallback to original behavior if no user found by username alone

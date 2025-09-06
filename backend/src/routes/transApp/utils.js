@@ -479,7 +479,7 @@ async function getNewSummary(userId, isAdmin) {
 
 async function createEmptyTrip(postData) {
     const {
-        vehicleNo,
+        VehicleNo,
         driverName,
         driverMobile,
         stackHolder,
@@ -505,7 +505,7 @@ async function createEmptyTrip(postData) {
     }
 
     const newEmptyTrip = new TankersTrip({
-        VehicleNo: vehicleNo,
+        VehicleNo: VehicleNo,
         StartDate: new Date(),
         EndDate: null,
         targetTime: new Date(targetTime),
@@ -516,7 +516,7 @@ async function createEmptyTrip(postData) {
         LoadStatus: 0,
         EmptyTripDetail: {
             StartOdometer: odometer,
-            VehicleNo: vehicleNo,
+            VehicleNo: VehicleNo,
             ProposedDate: proposedDate ? new Date(proposedDate) : undefined,
             ProposedBy: proposedBy,
             OrderedBy: orderedBy,
