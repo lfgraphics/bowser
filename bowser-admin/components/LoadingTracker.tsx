@@ -67,7 +67,7 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query }: { tr
         if (actionType === "update") {
             setTrackUpdateDate(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined);
             setLocationRemark("");
-            setManagerComment("");
+            setManagerComment("#UPDATE ");
         }
     }, [actionType, tripId]);
 

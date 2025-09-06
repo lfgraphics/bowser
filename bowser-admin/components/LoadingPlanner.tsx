@@ -114,7 +114,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
             vehicleNo: data.find(trip => trip?._id === tripId)?.VehicleNo,
             driverName: Driver,
             driverMobile,
-            stackHolder: stackHolders.find(holder => holder.value === stackHolder)?.label,
+            stackHolder: stackHolders.find(holder => holder.value === stackHolder)?.label || stackHolder,
             targetTime: targetTime?.toISOString(),
             odometer,
             orderedBy,

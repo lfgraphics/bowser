@@ -141,7 +141,7 @@ router.post('/destination-change', async (req, res) => {
                         }
                     }
                 },
-                { new: true, session }
+                { new: true }
             );
 
             if (!updatedTrip) {
