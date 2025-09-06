@@ -583,7 +583,7 @@ const VehiclesSummary = () => {
                                         <TableHead>Loading Station</TableHead>
                                         <TableHead>Loading Supervisor</TableHead>
                                         <TableHead>Reached On</TableHead>
-                                        <TableHead>Marked Loaded at</TableHead>
+                                        <TableHead>Status Update Time</TableHead>
                                         {/* <TableHead>Action</TableHead> */}
                                     </TableRow>
                                 }
