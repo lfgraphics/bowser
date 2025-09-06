@@ -5,11 +5,33 @@ import React, { useEffect, useState, useContext } from 'react'
 import { TransAppContext } from "../layout";
 import LoadVehicleTracker from '@/components/UnloadingTracker'
 import Loading from '@/app/loading';
+import { useSearchParams } from 'next/navigation';
+
+type QueryType = {
+  actionType: "unload" | "update" | "report" | undefined;
+  tripId: string;
+}
 
 const UnloadingTracker = () => {
+  const searchParams = useSearchParams();
+
   const [loading, setLoading] = useState<boolean>(true)
   const { user } = useContext(TransAppContext);
   const [data, setData] = useState<TankersTrip[]>([])
+
+  // parse and validate search params into QueryType
+  const rawQuery = Object.fromEntries(searchParams.entries()) as Record<string, string | undefined>;
+  const actionRaw = rawQuery.actionType;
+  const actionType = (actionRaw === "unload" ||
+    actionRaw === "update" ||
+    actionRaw === "report")
+    ? actionRaw as QueryType["actionType"]
+    : undefined;
+  const query: QueryType = {
+    actionType,
+    tripId: rawQuery.tripId ?? ""
+  };
+
 
   useEffect(() => {
     if (!user) return
@@ -37,7 +59,7 @@ const UnloadingTracker = () => {
       {loading && <Loading />}
       <div className="flex flex-col gap-4">
         <div className="actions">
-          {!loading && data && <LoadVehicleTracker tripsData={data} />}
+          {!loading && data && <LoadVehicleTracker query={query} tripsData={data} />}
         </div>
       </div>
     </>

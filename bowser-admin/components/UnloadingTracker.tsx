@@ -18,15 +18,16 @@ import { AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordio
 import { searchItems } from "@/utils/searchUtils"
 import { SearchModal } from "./SearchModal"
 
-export default function LoadVehicleTracker({ tripsData }: { tripsData: TankersTrip[] }) {
+export default function LoadVehicleTracker({ tripsData, query }: { tripsData: TankersTrip[], query: { actionType: "update" | "report" | "unload" | undefined; tripId: string } }) {
+    const queryAction = query?.actionType
     const [loading, setLoading] = useState<boolean>(false)
-    const [actionType, setActionType] = useState<"update" | "report" | "unload" | undefined>(undefined)
+    const [actionType, setActionType] = useState<"update" | "report" | "unload" | undefined>(queryAction)
     const [TrackUpdateDate, setTrackUpdateDate] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
     const [OdometerOnTrackUpdate, setOdometerOnTrackUpdate] = useState<number | undefined>(undefined)
     const [LocationRemark, setLocationRemark] = useState<string>("")
     const [ManagerComment, setManagerComment] = useState<string>("")
     const [data, setData] = useState<TankersTrip[]>(tripsData || [])
-    const [tripId, setTripId] = useState<string>("")
+    const [tripId, setTripId] = useState<string>(query.tripId)
     const [Driver, setDriver] = useState<string>("")
     const [vehicleSearch, setVehicleSearch] = useState<string>("")
     const trips: ComboboxOption[] = useMemo(() => {
