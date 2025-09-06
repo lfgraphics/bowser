@@ -12,6 +12,7 @@ export function cn(...inputs: ClassValue[]) {
 export const formatDate = (dateInput: string | Date | null): string => {
   if (dateInput == null) return ""
   const date = moment(dateInput);
+  if (!date || !date.isValid()) return "no date provided";
   return `${date.format('DD-MM-YY')}, ${date.format('hh:mm A')}`;
 };
 
