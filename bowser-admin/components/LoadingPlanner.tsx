@@ -111,7 +111,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
     const submit = async () => {
         const url = `${BASE_URL}/trans-app/trip-update/create-empty-trip`;
         const postData = {
-            vehicleNo: data.find(trip => trip?._id === tripId)?.VehicleNo,
+            VehicleNo: data.find(trip => trip?._id === tripId)?.VehicleNo,
             driverName: Driver,
             driverMobile,
             stackHolder: stackHolders.find(holder => holder.value === stackHolder)?.label || stackHolder,
