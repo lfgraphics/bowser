@@ -104,11 +104,11 @@ const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
     }
 
     useEffect(() => {
-        setManagerComment("#DestinationModified [" + selectedTrip.EndTo + `] ${currentLocation}`);
+        setManagerComment(`#DestinationModified ${modificationCheck ? "after leaving for" : ""} [ ${selectedTrip.EndTo} ] from ${currentLocation}, diverted to ${location}`);
         // setManagerComment("#DestinationModified [" + selectedTrip.EmptyTripDetail.ProposedDestination + `] ${currentLocation}`);
         setDriver(selectedTrip.StartDriver)
         setDriverMobile(selectedTrip.StartDriverMobile)
-    }, [selectedTrip, currentLocation])
+    }, [selectedTrip, currentLocation, modificationCheck, location])
 
     const fetchStackHolders = async () => {
         try {

@@ -208,7 +208,7 @@ export default function LoadVehicleTracker({ tripsData, query }: { tripsData: Ta
                             id: {tripId}
                             <h4 className="text-lg font-semibold">Trip Details</h4>
                             <div className="flex">
-                                <strong>Loaded From: </strong>{data.find(trip => trip?._id === tripId)?.StartFrom || "N/A"}
+                            <strong>Loaded From: </strong>{data.find(trip => trip?._id === tripId)?.StartFrom}
                             </div>
                             <div className="flex">
                                 <strong>Loading Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.StartDate))}
@@ -217,13 +217,13 @@ export default function LoadVehicleTracker({ tripsData, query }: { tripsData: Ta
                             <strong>Reporting Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.ReportingDate))}
                             </div>
                             <div className="flex">
-                                <strong>Unloading Factory: </strong> {data.find(trip => trip?._id === tripId)?.TallyLoadDetail.Consignee || "N/A"}
+                                <strong>Unloading Factory: </strong> {data.find(trip => trip?._id === tripId)?.TallyLoadDetail.Consignee}
                             </div>
                             <div className="flex">
-                                <strong>Ending Location: </strong> {data.find(trip => trip?._id === tripId)?.EndTo || "N/A"}
+                                <strong>Ending Location: </strong> {data.find(trip => trip?._id === tripId)?.EndTo}
                             </div>
                             <div className="flex">
-                                <strong>Starat Driver: </strong> {data.find(trip => trip?._id === tripId)?.StartDriver || "N/A"}
+                                <strong>Starat Driver: </strong> {data.find(trip => trip?._id === tripId)?.StartDriver}
                             </div>
                         </div>
                     </>

@@ -506,7 +506,7 @@ async function createEmptyTrip(postData) {
 
     const newEmptyTrip = new TankersTrip({
         VehicleNo: VehicleNo,
-        StartDate: new Date(),
+        StartDate: new Date(proposedDate),
         EndDate: null,
         targetTime: new Date(targetTime),
         StartDriver: driverName,
@@ -584,6 +584,7 @@ async function updateEmptyTrip(tripId, postData) {
                     Division: divisionNo,
                     PreviousTripId: new mongoose.Types.ObjectId(previousTripId),
                     PreviousTripIdNew: previousTripId,
+                    StartOdometer: odometer
                 },
                 ReportingDate: null,
                 EndDate: null

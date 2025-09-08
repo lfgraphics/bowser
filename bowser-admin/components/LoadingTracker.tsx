@@ -358,7 +358,7 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query }: { tr
                     }
                     {actionType == "update" &&
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor="dateTime">Current Date</Label>
+                            <Label htmlFor="dateTime">Update Date</Label>
                             <Input
                                 id="dateTime"
                                 type="datetime-local"
