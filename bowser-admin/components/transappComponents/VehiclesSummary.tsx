@@ -619,7 +619,7 @@ const VehiclesSummary = () => {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent className='dropdown'>
-                                                        {tripStatusUpdateVars.map((statupOpetion) => (
+                                                        {tripStatusUpdateVars.filter((option) => !["Loaded", "In Distillery"].includes(option)).map((statupOpetion) => (
                                                             <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
                                                                 {statupOpetion}
                                                             </DropdownMenuItem>
@@ -663,7 +663,7 @@ const VehiclesSummary = () => {
                                             <TableCell>{trip.VehicleNo}</TableCell>
                                             <TableCell>{trip.capacity}</TableCell>
                                             <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate}</TableCell>
-                                            <TableHead>{formatDate(trip.LoadTripDetail.ReportDate || trip.TallyLoadDetail.ReportedDate)}</TableHead>
+                                            <TableHead>{formatDate(trip.LoadTripDetail.ReportDate || trip.TallyLoadDetail.ReportedDate || trip.ReportingDate)}</TableHead>
                                             <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Custom" ? trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.comment : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
                                             <TableCell className='flex gap-2'>
@@ -674,11 +674,20 @@ const VehiclesSummary = () => {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent className='dropdown'>
-                                                        {tripStatusUpdateVars.map((statupOpetion) => (
+                                                        {tripStatusUpdateVars.filter((option)=> !["Loaded"].includes(option)).map((statupOpetion) => (
                                                             <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
                                                                 {statupOpetion}
                                                             </DropdownMenuItem>
                                                         ))}
+                                                        <DropdownMenuItem>
+                                                            <Link href={{
+                                                                pathname: "trans-app/unloading-tracker",
+                                                                query: {
+                                                                    actionType: "unload",
+                                                                    tripId: trip._id
+                                                                }
+                                                            }}>Unloaded</Link>
+                                                        </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                                 <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
