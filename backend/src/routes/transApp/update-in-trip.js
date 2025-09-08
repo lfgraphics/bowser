@@ -57,6 +57,7 @@ router.post('/report', async (req, res) => {
             trip.ReportingDate = data.TrackUpdateDate || new Date();
             trip.loadingSuperVisor = data.loadingSuperVisor
         } else if (trip.LoadStatus == 1) {
+            trip.ReportingDate = data.TrackUpdateDate || new Date();
             trip.TallyLoadDetail.ReportedDate = data.TrackUpdateDate || new Date();
             trip.TallyLoadDetail.EndOdometer = data.OdometerOnTrackUpdate || 0;
             trip.LoadTripDetail.ReportDate = data.TrackUpdateDate || new Date();
