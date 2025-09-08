@@ -317,15 +317,9 @@ async function getNewSummary(userId, isAdmin) {
                             $match: {
                                 LoadStatus: 1,
                                 $or: [
-                                    { "TallyLoadDetail.ReportedDate": null },
-                                    {
-                                        $and: [
-                                            { OpretionallyModified: true },
-                                            { "LoadTripDetail.ReportDate": { $exists: false } }
-                                        ]
-                                    },
-                                ],
-                                "TallyLoadDetail.UnloadDate": { $exists: false }
+                                    { ReportingDate: { $exists: false } },
+                                    { ReportingDate: { $eq: null } }
+                                ]
                             }
                         }
                     ],
@@ -333,18 +327,9 @@ async function getNewSummary(userId, isAdmin) {
                         {
                             $match: {
                                 LoadStatus: 1,
-                                $or: [
-                                    { "TallyLoadDetail.ReportedDate": { $ne: null } },
-                                    {
-                                        $and: [
-                                            { OpretionallyModified: true },
-                                            { "LoadTripDetail.ReportDate": { $exists: true } }
-                                        ]
-                                    }
-                                ],
                                 $and: [
-                                    { "TallyLoadDetail.UnloadDate": { $exists: false } },
-                                    { "LoadTripDetail.UnloadDate": { $exists: false } }
+                                    { ReportingDate: { $exists: true } },
+                                    { ReportingDate: { $ne: null } }
                                 ]
                             }
                         }
@@ -353,10 +338,9 @@ async function getNewSummary(userId, isAdmin) {
                         {
                             $match: {
                                 LoadStatus: 0,
-                                ReportingDate: { $eq: null },
                                 $or: [
-                                    { "EmptyTripDetail.EndDate": { $exists: false } },
-                                    { "EmptyTripDetail.EndDate": { $eq: null } }
+                                    { ReportingDate: { $exists: false } },
+                                    { ReportingDate: { $eq: null } }
                                 ]
                             }
                         }
