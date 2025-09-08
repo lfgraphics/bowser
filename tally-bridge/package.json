@@ -1,6 +1,6 @@
 {
   "name": "tally-bridge",
-  "version": "2.1.8",
+  "version": "2.2.0",
   "description": "A bridge between Local data (tally, mongodb) and your web app",
   "main": "main.js",
   "scripts": {

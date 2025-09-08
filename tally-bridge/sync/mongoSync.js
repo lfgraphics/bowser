@@ -441,13 +441,13 @@ async function syncTrips() {
             openedTrips.push(localTrip._id);
         } else {
             if (JSON.stringify(localTrip) !== JSON.stringify(atlasTrip)) {
-                bulkOps.push({
-                    updateOne: {
-                        filter: { _id: localTrip._id },
-                        update: { $set: localTrip }
-                    }
-                });
-                updatedTrips.push(localTrip._id);
+                // bulkOps.push({
+                //     updateOne: {
+                //         filter: { _id: localTrip._id },
+                //         update: { $set: localTrip }
+                //     }
+                // });
+                // updatedTrips.push(localTrip._id);
             } else {
                 noUpdatesNeeded++;
             }
@@ -457,17 +457,19 @@ async function syncTrips() {
     // Remove from cloud if missing in local (within range)
     for (const atlasTrip of atlasTrips) {
         if (!localTripsMap.has(atlasTrip._id.toString())) {
-            bulkOps.push({
-                deleteOne: { filter: { _id: atlasTrip._id } }
-            });
-            deletedTrips.push(atlasTrip._id);
+            // bulkOps.push({
+            //     deleteOne: { filter: { _id: atlasTrip._id } }
+            // });
+            // deletedTrips.push(atlasTrip._id);
         }
     }
 
     // Step 3: Execute bulk operations
     if (bulkOps.length > 0) {
+        // The actual cloud update is intentionally disabled:
         const result = await atlasCollection.bulkWrite(bulkOps);
         console.log(`Bulk sync result: ${result.modifiedCount || 0} updated, ${result.insertedCount || 0} inserted, ${result.deletedCount || 0} deleted.`);
+        console.log('Cloud updates are commented out; no changes pushed to Atlas.');
     }
 
     // Step 4: Log summary
@@ -539,61 +541,61 @@ async function syncTrips() {
 //     addLog("---------------------------------------");
 // }
 
-async function syncDeactivatedVehicles() {
-    const localCollection = localClient.db(localDbName).collection('TransMongoDeactivatedVehicleCollection');
-    const atlasCollection = atlasClient.db(atlasTransportDbName).collection('DeactivatedVehicles');
-    addLog("---------------------------------------");
-    addLog("Syncing Deactivated Vehicles Data...");
+// async function syncDeactivatedVehicles() {
+//     const localCollection = localClient.db(localDbName).collection('TransMongoDeactivatedVehicleCollection');
+//     const atlasCollection = atlasClient.db(atlasTransportDbName).collection('DeactivatedVehicles');
+//     addLog("---------------------------------------");
+//     addLog("Syncing Deactivated Vehicles Data...");
 
-    // 1. Fetch all users from both local and Atlas
-    const [localDeactivatedVehicles, atlasDeactivatedVehicles] = await Promise.all([
-        localCollection.find().toArray(),
-        atlasCollection.find().toArray()
-    ]);
-    const atlasMap = new Map(atlasDeactivatedVehicles.map(v => [v._id.toString(), v]));
+//     // 1. Fetch all users from both local and Atlas
+//     const [localDeactivatedVehicles, atlasDeactivatedVehicles] = await Promise.all([
+//         localCollection.find().toArray(),
+//         atlasCollection.find().toArray()
+//     ]);
+//     const atlasMap = new Map(atlasDeactivatedVehicles.map(v => [v._id.toString(), v]));
 
-    // 2. Prepare bulk operations
-    const inserts = [];
-    const updates = [];
+//     // 2. Prepare bulk operations
+//     const inserts = [];
+//     const updates = [];
 
-    for (const localVehicle of localDeactivatedVehicles) {
-        const atlasVehicle = atlasMap.get(localVehicle._id.toString());
-        if (!atlasVehicle) {
-            // Not in Atlas, insert
-            inserts.push(localVehicle);
-        } else {
-            // Exists in both, check for changes (compare relevant fields)
-            // You can customize which fields to compare
-            if (JSON.stringify(localVehicle) !== JSON.stringify(atlasVehicle)) {
-                updates.push({
-                    updateOne: {
-                        filter: { _id: localVehicle._id },
-                        update: { $set: localVehicle }
-                    }
-                });
-            }
-        }
-    }
+//     for (const localVehicle of localDeactivatedVehicles) {
+//         const atlasVehicle = atlasMap.get(localVehicle._id.toString());
+//         if (!atlasVehicle) {
+//             // Not in Atlas, insert
+//             inserts.push(localVehicle);
+//         } else {
+//             // Exists in both, check for changes (compare relevant fields)
+//             // You can customize which fields to compare
+//             if (JSON.stringify(localVehicle) !== JSON.stringify(atlasVehicle)) {
+//                 updates.push({
+//                     updateOne: {
+//                         filter: { _id: localVehicle._id },
+//                         update: { $set: localVehicle }
+//                     }
+//                 });
+//             }
+//         }
+//     }
 
-    // 3. Insert new users to Atlas
-    if (inserts.length > 0) {
-        await atlasCollection.insertMany(inserts);
-        addLog(`Inserted ${inserts.length} new deactive vehicle to Atlas.`);
-    } else {
-        addLog('No new users to insert.');
-    }
+//     // 3. Insert new users to Atlas
+//     if (inserts.length > 0) {
+//         await atlasCollection.insertMany(inserts);
+//         addLog(`Inserted ${inserts.length} new deactive vehicle to Atlas.`);
+//     } else {
+//         addLog('No new users to insert.');
+//     }
 
-    // 4. Update changed users in Atlas
-    if (updates.length > 0) {
-        await atlasCollection.bulkWrite(updates);
-        addLog(`Updated ${updates.length} deactive vehicle in Atlas.`);
-    } else {
-        addLog('No vehicles to update.');
-    }
+//     // 4. Update changed users in Atlas
+//     if (updates.length > 0) {
+//         await atlasCollection.bulkWrite(updates);
+//         addLog(`Updated ${updates.length} deactive vehicle in Atlas.`);
+//     } else {
+//         addLog('No vehicles to update.');
+//     }
 
-    addLog("Deactive vehicles Data Sync Completed.");
-    addLog("---------------------------------------");
-}
+//     addLog("Deactive vehicles Data Sync Completed.");
+//     addLog("---------------------------------------");
+// }
 
 async function syncTransportGoodsCollection() {
     const localCollection = localClient.db(localDbName).collection('TransportGoodsCollection');
@@ -714,8 +716,8 @@ export async function runSync(logger) {
         await syncAttachedVechicles();
         await syncTripData();
         await syncTrips();
-        await syncTransAppUsers();
-        await syncDeactivatedVehicles();
+        // await syncTransAppUsers();
+        // await syncDeactivatedVehicles();
         await syncTransportGoodsCollection();
         await syncStackHolders();
     } catch (error) {
