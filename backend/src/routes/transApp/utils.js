@@ -377,7 +377,7 @@ async function getNewSummary(userId, isAdmin) {
             unloadedNotPlanned = []
         } = result[0] || {};
 
-        if (isAdmin == true) {
+        if (isAdmin) {
             const allVehicleNos = [
                 ...loadedOnWay.map(t => t.VehicleNo),
                 ...loadedReported.map(t => t.VehicleNo),
