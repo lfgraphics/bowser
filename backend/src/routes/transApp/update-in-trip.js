@@ -90,7 +90,7 @@ router.post('/destination-change', async (req, res) => {
             proposedBy: Joi.string().required(),
             previousTripId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(),
             StartFrom: Joi.string().required(),
-            division: Joi.number().required(),
+            division: Joi.string().required(),
             modificationCheck: Joi.boolean().required(),
             ManagerComment: Joi.string().required()
             // ManagerComment: Joi.string().allow('').optional()

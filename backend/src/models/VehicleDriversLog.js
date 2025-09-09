@@ -15,17 +15,19 @@ const driversLogSchema = new mongoose.Schema({
         }, required: false
     },
     leaving: {
-        form: Date,
-        tilldate: { type: Date, required: false },
-        odometer: Number,
-        location: String,
-        tripId: { type: mongoose.Types.ObjectId, ref: "TankersTrip" },
-        vehicleLoadStatus: Number,
-        remark: String,
+        type: {
+            form: Date,
+            tilldate: { type: Date, required: false },
+            odometer: Number,
+            location: String,
+            tripId: { type: mongoose.Types.ObjectId, ref: "TankersTrip" },
+            vehicleLoadStatus: Number,
+            remark: String,
+        }, required: false
     },
-    statusUpdate:{
-        dateTime:Date,
-        remark:String,
+    statusUpdate: {
+        dateTime: Date,
+        remark: String,
     }
 });
 

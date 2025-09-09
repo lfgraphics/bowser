@@ -18,10 +18,11 @@ import { Label } from '../ui/label'
 import { SearchModal } from '../SearchModal'
 
 interface DestinationChangeProps {
-    selectedTrip: TankersTrip
+    selectedTrip: TankersTrip,
+    user: TransAppUser
 }
 
-const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
+const DestinationChange = ({ selectedTrip, user }: DestinationChangeProps) => {
     const [loading, setLoading] = useState(false);
     const [driverMobile, setDriverMobile] = useState("")
     const [searchModalConfig, setSearchModalConfig] = useState<{
@@ -49,6 +50,7 @@ const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
     const [odometer, setOdometer] = useState<number | undefined>(undefined)
     const [orderedBy, setOrderedBy] = useState<string>("")
     const [proposedBy, setProposedBy] = useState<string>("")
+    const [userDivision, setUserDivision] = useState<string>("")
     const [modificationCheck, setModificationCheck] = useState<boolean>(false)
     const [ManagerComment, setManagerComment] = useState<string>("")
     const [location, setLocation] = useState<string | undefined>("")
@@ -59,7 +61,9 @@ const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
         let user = localStorage.getItem("adminUser")
         let jsonUser: TransAppUser = JSON.parse(user!)
         setProposedBy(jsonUser.name)
-    }, [])
+        setUserDivision(jsonUser.Division)
+        console.log(jsonUser.Division)
+    }, [user])
 
     const handleDriverSelection = (driver: Driver) => {
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
@@ -190,14 +194,14 @@ const DestinationChange = ({ selectedTrip }: DestinationChangeProps) => {
                 proposedBy,
                 previousTripId: selectedTrip._id,
                 StartFrom: modificationCheck ? currentLocation : selectedTrip.StartFrom,
-                division: selectedTrip.EmptyTripDetail.Division,
+                division: userDivision,
                 proposedDate,
                 ManagerComment,
                 modificationCheck
             }
             const url = `${BASE_URL}/trans-app/trip-update/destination-change`;
             const tripId = selectedTrip._id;
-
+            
             const response = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

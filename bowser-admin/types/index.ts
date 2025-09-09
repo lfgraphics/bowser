@@ -726,7 +726,7 @@ export interface TankersTrip {
   EndTo: string;
   LoadStatus: number;
   StartDate: string;
-  ReportingDate: string;
+  ReportingDate: string | null;
   targetTime: string;
   StartDriver: string;
   StartDriverMobile: string;
@@ -752,6 +752,7 @@ export interface TankersTrip {
     ManagerComment: string;
     Driver: string;
   }[];
+  EndDate: string | null;
   VehicleNo: string;
   capacity: string;
   superwiser?: string;

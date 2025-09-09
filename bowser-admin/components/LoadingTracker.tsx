@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { format } from "date-fns"
 import { useEffect, useMemo, useState } from "react"
 import Combobox, { ComboboxOption } from "./Combobox"
-import { Driver, StackHolder, TankersTrip } from "@/types"
+import { Driver, StackHolder, TankersTrip, TransAppUser } from "@/types"
 import { getLocalDateTimeString } from "@/utils"
 import { BASE_URL } from "@/lib/api"
 import { toast } from "sonner"
@@ -19,7 +19,7 @@ import MarkLoaded from "./transappComponents/MarkLoaded"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 import { Card, CardContent, CardHeader } from "./ui/card"
 
-export default function UnloadedPlannedVehicleTracker({ tripsData, query }: { tripsData: TankersTrip[], query: { actionType: "update" | "report" | "loaded" | "destinationChange" | undefined; tripId: string } }) {
+export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }: { tripsData: TankersTrip[], user: TransAppUser, query: { actionType: "update" | "report" | "loaded" | "destinationChange" | undefined; tripId: string } }) {
     const queryAction = query?.actionType
     const [loading, setLoading] = useState(false)
     const [actionType, setActionType] = useState<"update" | "report" | "loaded" | "destinationChange" | undefined>(queryAction)
@@ -425,6 +425,7 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query }: { tr
                     {actionType == "destinationChange" && data.find((trip) => trip._id == tripId) &&
                         <DestinationChange
                             selectedTrip={data.find((trip) => trip._id == tripId)!}
+                            user={user}
                         />
                     }
                 </div>

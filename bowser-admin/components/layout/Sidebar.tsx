@@ -163,7 +163,7 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>
-                <OnlyAllowed allowedRoles={["Diesel Control Center Staff", "Admin", "Trans App"]}>
+                {!user?.Division.includes('Admin') && <OnlyAllowed allowedRoles={["Diesel Control Center Staff", "Admin", "Trans App"]}>
                   <li onClick={toggleSidebar}>
                     <Link href="/manage-drivers">
                       <Button
@@ -175,7 +175,18 @@ export function Sidebar() {
                       </Button>
                     </Link>
                   </li>
-                </OnlyAllowed>
+                </OnlyAllowed>}
+                {user?.Division.includes('Admin') && <li onClick={toggleSidebar}>
+                  <Link href="/trans-app/manage-supervisors">
+                    <Button
+                      variant="ghost"
+                      className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/trans-app/manage-supervisors" ? "bg-primary text-primary-foreground" : ""}`}
+                    >
+                      <UserCogIcon className="mr-2 w-4 h-4" />
+                      Manage Supervisors
+                    </Button>
+                  </Link>
+                </li>}
                 <OnlyAllowed allowedRoles={["Diesel Control Center Staff", "Admin", "BCC Authorized Officer"]}>
                   <li onClick={toggleSidebar}>
                     <Link href="/push-notifications">
