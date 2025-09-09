@@ -1,15 +1,10 @@
 "use client"
 import React, { useContext, useEffect, useState } from 'react'
-
-import { Ban, Settings, Trash2 } from 'lucide-react'
+import { Ban, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-
-import ImageFromBufferObject from '@/components/ImageFromBuffer'
 import { BASE_URL } from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-
 import { TransAppContext } from "./layout";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Label } from '@/components/ui/label'
@@ -21,7 +16,6 @@ import { TabsTrigger, Tabs, TabsList } from '@/components/ui/tabs'
 import { formatDate } from '@/lib/utils'
 import { SearchModal } from '@/components/SearchModal'
 import VehiclesSummary from '@/components/transappComponents/VehiclesSummary'
-import Link from 'next/link'
 
 type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary"
 
@@ -327,7 +321,7 @@ export default function Page() {
         }
         {
           tab === "Summary" &&
-          <VehiclesSummary />
+          <VehiclesSummary user={user} />
         }
       </div>
       <SearchModal

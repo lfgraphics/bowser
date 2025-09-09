@@ -1,7 +1,9 @@
+import useSWR, { mutate as globalMutate } from "swr";
+import { useCache } from "@/src/context/CacheContext";
 import Loading from '@/app/loading';
 import { BASE_URL } from '@/lib/api'
 import { TankersTrip, TransAppUser, TripsSummary, TripStatusUpdateEnums, tripStatusUpdateVars } from '@/types'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
@@ -16,6 +18,8 @@ import { Label } from '../ui/label';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '../ui/drawer';
 import { Eye, Pen, X } from 'lucide-react';
 import Link from 'next/link';
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 type TripBase = {
     _id: string;
@@ -137,17 +141,41 @@ type Props = {
 };
 
 
-const VehiclesSummary = () => {
-    const [user, setUser] = useState<TransAppUser>();
-    const [loading, setLoading] = useState<boolean>(true)
-    const [data, setData] = useState<TripsSummary>();
-    const [statusUpdate, setStatusUpdate] = useState<{ tripId: string, status: TripStatusUpdateEnums, comment?: string } | null>(null)
-    const [filter, setFilter] = useState<'all' | 'loadedOnWay' | 'loadedReported' | 'emptyOnWay' | 'emptyReported' | 'emptyStanding' | 'outsideStandingVehicles' | 'notLoadedVehicles' | 'loaded'>('all')
-    const [viewingTrip, setViewingTrip] = useState<string | null>(null)
-    const [searchTerm, setSearchTerm] = useState<string>('')
-    const [allVehiclesAccordion, setAllVehiclesAccordion] = useState<string>('')
+const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
+    const { cache, setCache } = useCache();
+    // const [data, setData] = useState<TripsSummary>();
+    const [statusUpdate, setStatusUpdate] = useState<{ tripId: string, status: TripStatusUpdateEnums, comment?: string } | null>(cache.statusUpdate ?? null);
+    const [filter, setFilter] = useState<'all' | 'loadedOnWay' | 'loadedReported' | 'emptyOnWay' | 'emptyReported' | 'emptyStanding' | 'outsideStandingVehicles' | 'notLoadedVehicles' | 'loaded'>(cache.filter ?? "all");
+    const [viewingTrip, setViewingTrip] = useState<string | null>(cache.viewingTrip ?? null);
+    const [searchTerm, setSearchTerm] = useState(cache.searchTerm ?? "");
+    const [allVehiclesAccordion, setAllVehiclesAccordion] = useState(cache.allVehiclesAccordion ?? "");
 
-    // Helper function to highlight matching text
+    useEffect(() => {
+        setCache((prev) => {
+            // avoid unnecessary updates
+            if (
+                prev.user === user &&
+                prev.filter === filter &&
+                prev.viewingTrip === viewingTrip &&
+                prev.searchTerm === searchTerm &&
+                prev.allVehiclesAccordion === allVehiclesAccordion &&
+                JSON.stringify(prev.statusUpdate) === JSON.stringify(statusUpdate)
+            ) {
+                return prev; // no change → no re-render
+            }
+
+            return {
+                ...prev,
+                user,
+                filter,
+                viewingTrip,
+                searchTerm,
+                allVehiclesAccordion,
+                statusUpdate,
+            };
+        });
+    }, [user, filter, viewingTrip, searchTerm, allVehiclesAccordion, statusUpdate, setCache]);
+
     const highlightText = (text: string) => {
         if (!searchTerm) return text;
         const parts = text.split(new RegExp(`(${searchTerm})`, 'gi'));
@@ -183,31 +211,17 @@ const VehiclesSummary = () => {
         }
     }, [viewingTrip])
 
-    useEffect(() => {
-        let user = localStorage.getItem("adminUser")
-        let jsonUser: TransAppUser = JSON.parse(user!)
-        setUser(jsonUser)
-    }, [])
-
-    const fetchSummary = async () => {
-        if (!user?._id) return
-        try {
-            setLoading(true)
-            const url = `${BASE_URL}/trans-app/vehicles/get-summary/${user?._id}?isAdmin${user?.Division === "EthanolAdmin"}`
-            const summary = await fetch(url);
-            const jsonSummary = await summary.json()
-            setData(jsonSummary);
-            console.log(jsonSummary);
-        } catch (error) {
-            console.error(error)
-            toast.error("Error", { description: String(error), richColors: true })
-        } finally {
-            setLoading(false)
+    const { data, error, isLoading, mutate } = useSWR<TripsSummary>(
+        user?._id
+            ? `${BASE_URL}/trans-app/vehicles/get-summary/${user._id}?isAdmin=${user?.Division === "EthanolAdmin"}`
+            : null,
+        fetcher,
+        {
+            revalidateOnFocus: false,
+            dedupingInterval: 1000 * 60 * 30, // 30 minutes cache
         }
-    }
-    useEffect(() => {
-        fetchSummary()
-    }, [user?._id])
+    );
+
 
     const handleDownload = () => {
         generateTripsReport({
@@ -371,68 +385,76 @@ const VehiclesSummary = () => {
     }
 
     const updateTripStatus = async () => {
-        if (!statusUpdate) return
+        if (!statusUpdate) return;
+
         const obj = {
             dateTime: new Date(),
             user: {
                 _id: user?._id,
-                name: user?.name
+                name: user?.name,
             },
             status: statusUpdate.status,
-            comment: statusUpdate.comment
-        }
+            comment: statusUpdate.comment,
+        };
+
         try {
-            setLoading(true)
-            const url = `${BASE_URL}/trans-app/trip-update/update-trip-status/${statusUpdate.tripId}`
+            const url = `${BASE_URL}/trans-app/trip-update/update-trip-status/${statusUpdate.tripId}`;
+
             const res = await fetch(url, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ statusUpdate: obj }),
-            })
-            if (!res.ok) throw new Error('Network Request Failed');
-            else {
-                toast.success("Trip status updated successfully", { richColors: true })
-                setStatusUpdate(null)
-                // Find and update the trip in the data variable with the new status update
-                const allTrips = [
-                    ...(data?.loaded?.onWay?.trips ?? []),
-                    ...(data?.loaded?.reported?.trips ?? []),
-                    ...(data?.empty?.onWay?.trips ?? []),
-                    ...(data?.empty?.standing?.trips ?? []),
-                    ...(data?.empty?.reported?.trips ?? [])
-                ];
+            });
 
-                const trip = allTrips.find(trip => trip._id === statusUpdate.tripId);
-                if (trip) {
-                    if (!trip.statusUpdate) trip.statusUpdate = [];
-                    trip.statusUpdate.push({
-                        dateTime: obj.dateTime.toString(),
-                        user: {
-                            _id: obj.user._id!,
-                            name: obj.user.name!
-                        },
-                        status: obj.status,
-                        comment: obj.comment
-                    });
+            if (!res.ok) throw new Error("Network Request Failed");
+
+            toast.success("Trip status updated successfully", { richColors: true });
+            setStatusUpdate(null);
+
+            // ✅ Update SWR cache instead of setData
+            await globalMutate(
+                `${BASE_URL}/trans-app/vehicles/get-summary/${user?._id}?isAdmin=${user?.Division === "EthanolAdmin"}`,
+                (current: TripsSummary | undefined) => {
+                    if (!current) return current;
+
+                    // clone safely
+                    const updated: TripsSummary = JSON.parse(JSON.stringify(current));
+
+                    const allTrips = [
+                        ...(updated?.loaded?.onWay?.trips ?? []),
+                        ...(updated?.loaded?.reported?.trips ?? []),
+                        ...(updated?.empty?.onWay?.trips ?? []),
+                        ...(updated?.empty?.standing?.trips ?? []),
+                        ...(updated?.empty?.reported?.trips ?? []),
+                    ];
+
+                    const trip = allTrips.find((t) => t._id === statusUpdate!.tripId);
+                    if (trip) {
+                        if (!trip.statusUpdate) trip.statusUpdate = [];
+                        trip.statusUpdate.push({
+                            dateTime: new Date().toISOString(),
+                            user: { _id: user!._id, name: user!.name },
+                            status: statusUpdate!.status,
+                            comment: statusUpdate!.comment,
+                        });
+                    }
+
+                    return updated; // ✅ replaces cache immediately
                 }
-                // Force state update to reflect the change in UI
-                if (data && data.loaded && data.empty) {
-                    setData({ loaded: data.loaded, empty: data.empty });
-                }
-            }
+            );
+
         } catch (error) {
-            console.error(error)
-            toast.error("Error", { description: String(error), richColors: true })
-        } finally {
-            setLoading(false)
+            console.error(error);
+            toast.error("Error", { description: String(error), richColors: true });
         }
-    }
+    };
 
     return (
         <>
-            {loading && <Loading />}
+            {isLoading && <Loading />}
+            {error &&
+                <div className="text-red-500">{error}</div>
+            }
             {data &&
                 <div className='mb-4'>
                     <div className='w-full flex justify-end mb-3 -mt-14 sm:mt-0'>
@@ -674,7 +696,7 @@ const VehiclesSummary = () => {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent className='dropdown'>
-                                                        {tripStatusUpdateVars.filter((option)=> !["Loaded"].includes(option)).map((statupOpetion) => (
+                                                        {tripStatusUpdateVars.filter((option) => !["Loaded"].includes(option)).map((statupOpetion) => (
                                                             <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
                                                                 {statupOpetion}
                                                             </DropdownMenuItem>
@@ -1540,78 +1562,80 @@ const VehiclesSummary = () => {
             }
             <Drawer open={viewingTrip !== null} onOpenChange={() => setViewingTrip(null)}>
                 {viewingTrip &&
-                    <DrawerContent className="mx-auto w-full max-w-lg md:max-w-screen-xl px-4">
+                    <DrawerContent className="mx-auto w-full max-w-lg md:max-w-screen-xl px-4 max-h-[80svh]">
                         <DrawerHeader className="text-left">
                             <DrawerTitle>{findTripById(viewingTrip).VehicleNo}</DrawerTitle>
                             <DrawerDescription>{viewingTrip}</DrawerDescription>
                         </DrawerHeader>
-                        <div className='flex flex-col gap-1 mb-4'>
-                            <div className='flex gap-2'>
-                                <strong>Route: </strong> {findTripById(viewingTrip).StartFrom} to {findTripById(viewingTrip).EndTo}
-                            </div>
-                            <div className='flex gap-2'>
-                                <strong>Started at: </strong> {formatDate(findTripById(viewingTrip).StartDate)}
-                            </div>
-                            <div className='flex gap-2'>
-                                <strong>Start Driver: </strong> {findTripById(viewingTrip).StartDriver}
-                            </div>
-                            {findTripById(viewingTrip).TallyLoadDetail && <>
+                        <div className="max-h-[60svh] overflow-y-auto">
+                            <div className='flex flex-col gap-1 mb-4'>
                                 <div className='flex gap-2'>
-                                    <strong>Start Odometer: </strong> {findTripById(viewingTrip).TallyLoadDetail.StartOdometer}
+                                    <strong>Route: </strong> {findTripById(viewingTrip).StartFrom} to {findTripById(viewingTrip).EndTo}
                                 </div>
                                 <div className='flex gap-2'>
-                                    <strong>Product: </strong> {findTripById(viewingTrip).TallyLoadDetail.Goods}
+                                    <strong>Started at: </strong> {formatDate(findTripById(viewingTrip).StartDate)}
                                 </div>
-                            </>}
-                            {findTripById(viewingTrip).ReportingDate && <div className='flex gap-2'>
-                                <strong>Reported at: </strong> {formatDate(findTripById(viewingTrip).ReportingDate)}
-                            </div>}
+                                <div className='flex gap-2'>
+                                    <strong>Start Driver: </strong> {findTripById(viewingTrip).StartDriver}
+                                </div>
+                                {findTripById(viewingTrip).TallyLoadDetail && <>
+                                    <div className='flex gap-2'>
+                                        <strong>Start Odometer: </strong> {findTripById(viewingTrip).TallyLoadDetail.StartOdometer}
+                                    </div>
+                                    <div className='flex gap-2'>
+                                        <strong>Product: </strong> {findTripById(viewingTrip).TallyLoadDetail.Goods}
+                                    </div>
+                                </>}
+                                {findTripById(viewingTrip).ReportingDate && <div className='flex gap-2'>
+                                    <strong>Reported at: </strong> {formatDate(findTripById(viewingTrip).ReportingDate)}
+                                </div>}
+                            </div>
+                            {findTripById(viewingTrip)?.TravelHistory &&
+                                <>
+                                    <h4 className='font-semibold mt-4 mb-2'>Travel History</h4>
+                                    <div className='grid grid-cols-1 md:grid-cols-3 gap-2'>
+                                        {findTripById(viewingTrip)?.TravelHistory
+                                            ?.sort((a, b) => new Date(a.TrackUpdateDate).getTime() - new Date(b.TrackUpdateDate).getTime())
+                                            .map((history, index) => (
+                                                <Card key={index}>
+                                                    <CardHeader>
+                                                        <CardTitle className="text-md font-semibold">{(history.ManagerComment.match(/#(\w+)/) || [])[1] + " marked on " + formatDate(history.TrackUpdateDate)}</CardTitle>
+                                                        <CardDescription>
+                                                            {history.LocationOnTrackUpdate && <div><strong>Location on Track Update:</strong> {history.LocationOnTrackUpdate}</div>}
+                                                            {typeof history.OdometerOnTrackUpdate === "number" && <div><strong>Odometer:</strong> {history.OdometerOnTrackUpdate} km</div>}
+                                                            {history.ManagerComment && <div><strong>Manager Comment:</strong> {history.ManagerComment}</div>}
+                                                            {history.Driver && <div><strong>Driver:</strong> {history.Driver}</div>}
+                                                        </CardDescription>
+                                                    </CardHeader>
+                                                </Card>
+                                            ))
+                                        }
+                                    </div>
+                                </>
+                            }
+                            {findTripById(viewingTrip)?.statusUpdate &&
+                                <>
+                                    <h4 className='font-semibold mt-4 mb-2'>Status Updates</h4>
+                                    <div className='grid grid-cols-1 md:grid-cols-4 gap-2'>
+                                        {findTripById(viewingTrip)?.statusUpdate
+                                            ?.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
+                                            .map((history, index) => (
+                                                <Card key={index}>
+                                                    <CardHeader>
+                                                        <CardTitle className="text-md font-semibold">{formatDate(history.dateTime)}</CardTitle>
+                                                        <CardDescription className='text-card-foreground'>
+                                                            {history.status && <div><strong>Status:</strong> {history.status}</div>}
+                                                            {history.comment && <div><strong>Comment:</strong> {history.comment}</div>}
+                                                        </CardDescription>
+                                                        <CardFooter className='text-muted-foreground p-0'>by: {history.user.name}</CardFooter>
+                                                    </CardHeader>
+                                                </Card>
+                                            ))
+                                        }
+                                    </div>
+                                </>
+                            }
                         </div>
-                        {findTripById(viewingTrip)?.TravelHistory &&
-                            <>
-                                <h4 className='font-semibold mt-4 mb-2'>Travel History</h4>
-                                <div className='grid grid-cols-1 md:grid-cols-4 gap-2'>
-                                    {findTripById(viewingTrip)?.TravelHistory
-                                        ?.sort((a, b) => new Date(a.TrackUpdateDate).getTime() - new Date(b.TrackUpdateDate).getTime())
-                                        .map((history, index) => (
-                                            <Card key={index}>
-                                                <CardHeader>
-                                                    <CardTitle className="text-md font-semibold">{formatDate(history.TrackUpdateDate)}</CardTitle>
-                                                    <CardDescription>
-                                                        {history.LocationOnTrackUpdate && <div><strong>Location on Track Update:</strong> {history.LocationOnTrackUpdate}</div>}
-                                                        {typeof history.OdometerOnTrackUpdate === "number" && <div><strong>Odometer:</strong> {history.OdometerOnTrackUpdate} km</div>}
-                                                        {history.ManagerComment && <div><strong>Manager Comment:</strong> {history.ManagerComment}</div>}
-                                                        {history.Driver && <div><strong>Driver:</strong> {history.Driver}</div>}
-                                                    </CardDescription>
-                                                </CardHeader>
-                                            </Card>
-                                        ))
-                                    }
-                                </div>
-                            </>
-                        }
-                        {findTripById(viewingTrip)?.statusUpdate &&
-                            <>
-                                <h4 className='font-semibold mt-4 mb-2'>Status Updates</h4>
-                                <div className='grid grid-cols-2 md:grid-cols-4 gap-2'>
-                                    {findTripById(viewingTrip)?.statusUpdate
-                                        ?.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
-                                        .map((history, index) => (
-                                            <Card key={index}>
-                                                <CardHeader>
-                                                    <CardTitle className="text-md font-semibold">{formatDate(history.dateTime)}</CardTitle>
-                                                    <CardDescription className='text-card-foreground'>
-                                                        {history.status && <div><strong>Status:</strong> {history.status}</div>}
-                                                        {history.comment && <div><strong>Comment:</strong> {history.comment}</div>}
-                                                    </CardDescription>
-                                                    <CardFooter className='text-muted-foreground'>by: {history.user.name}</CardFooter>
-                                                </CardHeader>
-                                            </Card>
-                                        ))
-                                    }
-                                </div>
-                            </>
-                        }
                         <DrawerFooter className="pt-2">
                             <DrawerClose asChild>
                                 <Button variant="outline">Close</Button>

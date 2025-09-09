@@ -249,7 +249,7 @@ export async function generateTripsReport({
                 sheet.addRow([
                     location,
                     trip.VehicleNo || "",
-                    formatDate(trip.TallyLoadDetail.UnloadingDate),
+                    formatDate(trip.LoadTripDetail.UnloadDate),
                 ]);
             });
         });

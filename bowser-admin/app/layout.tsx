@@ -3,6 +3,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { useEffect, useState } from 'react';
 import { Inter } from "next/font/google";
 import "./globals.css";
+import "./loading";
+import { CacheProvider } from '@/src/context/CacheContext'
 import { Sidebar } from '@/components/layout/Sidebar';
 import { isAuthenticated } from '@/lib/auth';
 import { SpeedInsights } from "@vercel/speed-insights/next"
@@ -31,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {isAuth && <Sidebar />}
           <div className={`h-[96svh]`}>
             <Toaster />
-            {children}
+            <CacheProvider>{children}</CacheProvider>
             <SpeedInsights />
           </div>
         </ThemeProvider>
