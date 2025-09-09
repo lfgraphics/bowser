@@ -163,7 +163,7 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>
-                {!user?.Division.includes('Admin') && <OnlyAllowed allowedRoles={["Diesel Control Center Staff", "Admin", "Trans App"]}>
+                {!user?.Division?.includes('Admin') && <OnlyAllowed allowedRoles={["Diesel Control Center Staff", "Admin", "Trans App"]}>
                   <li onClick={toggleSidebar}>
                     <Link href="/manage-drivers">
                       <Button
@@ -176,7 +176,7 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>}
-                {user?.Division.includes('Admin') && <li onClick={toggleSidebar}>
+                {user?.Division?.includes('Admin') && <li onClick={toggleSidebar}>
                   <Link href="/trans-app/manage-supervisors">
                     <Button
                       variant="ghost"
