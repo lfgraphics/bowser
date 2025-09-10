@@ -18,6 +18,7 @@ import { Label } from '../ui/label';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '../ui/drawer';
 import { Eye, Pen, X } from 'lucide-react';
 import Link from 'next/link';
+import CustomDrawer from "../custom-drawer";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -1560,7 +1561,81 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                     </AlertDialogContent>
                 </AlertDialog>
             }
-            <Drawer open={viewingTrip !== null} onOpenChange={() => setViewingTrip(null)}>
+
+            {viewingTrip !== null &&
+                <CustomDrawer key={viewingTrip} title={findTripById(viewingTrip).VehicleNo} description={viewingTrip}>
+                    <div className="max-h-[60svh] overflow-y-auto">
+                        <div className='flex flex-col gap-1 mb-4'>
+                            <div className='flex gap-2'>
+                                <strong>Route: </strong> {findTripById(viewingTrip).StartFrom} to {findTripById(viewingTrip).EndTo}
+                            </div>
+                            <div className='flex gap-2'>
+                                <strong>Started at: </strong> {formatDate(findTripById(viewingTrip).StartDate)}
+                            </div>
+                            <div className='flex gap-2'>
+                                <strong>Start Driver: </strong> {findTripById(viewingTrip).StartDriver}
+                            </div>
+                            {findTripById(viewingTrip).TallyLoadDetail && <>
+                                <div className='flex gap-2'>
+                                    <strong>Start Odometer: </strong> {findTripById(viewingTrip).TallyLoadDetail.StartOdometer}
+                                </div>
+                                <div className='flex gap-2'>
+                                    <strong>Product: </strong> {findTripById(viewingTrip).TallyLoadDetail.Goods}
+                                </div>
+                            </>}
+                            {findTripById(viewingTrip).ReportingDate && <div className='flex gap-2'>
+                                <strong>Reported at: </strong> {formatDate(findTripById(viewingTrip).ReportingDate)}
+                            </div>}
+                        </div>
+                        {findTripById(viewingTrip)?.TravelHistory &&
+                            <>
+                                <h4 className='font-semibold mt-4 mb-2'>Travel History</h4>
+                                <div className='grid grid-cols-1 md:grid-cols-3 gap-2'>
+                                    {findTripById(viewingTrip)?.TravelHistory
+                                        ?.sort((a, b) => new Date(a.TrackUpdateDate).getTime() - new Date(b.TrackUpdateDate).getTime())
+                                        .map((history, index) => (
+                                            <Card key={index}>
+                                                <CardHeader>
+                                                    <CardTitle className="text-md font-semibold">{(history.ManagerComment.match(/#(\w+)/) || [])[1] + " marked on " + formatDate(history.TrackUpdateDate)}</CardTitle>
+                                                    <CardDescription>
+                                                        {history.LocationOnTrackUpdate && <div><strong>Location on Track Update:</strong> {history.LocationOnTrackUpdate}</div>}
+                                                        {typeof history.OdometerOnTrackUpdate === "number" && <div><strong>Odometer:</strong> {history.OdometerOnTrackUpdate} km</div>}
+                                                        {history.ManagerComment && <div><strong>Manager Comment:</strong> {history.ManagerComment}</div>}
+                                                        {history.Driver && <div><strong>Driver:</strong> {history.Driver}</div>}
+                                                    </CardDescription>
+                                                </CardHeader>
+                                            </Card>
+                                        ))
+                                    }
+                                </div>
+                            </>
+                        }
+                        {findTripById(viewingTrip)?.statusUpdate &&
+                            <>
+                                <h4 className='font-semibold mt-4 mb-2'>Status Updates</h4>
+                                <div className='grid grid-cols-1 md:grid-cols-4 gap-2'>
+                                    {findTripById(viewingTrip)?.statusUpdate
+                                        ?.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
+                                        .map((history, index) => (
+                                            <Card key={index}>
+                                                <CardHeader>
+                                                    <CardTitle className="text-md font-semibold">{formatDate(history.dateTime)}</CardTitle>
+                                                    <CardDescription className='text-card-foreground'>
+                                                        {history.status && <div><strong>Status:</strong> {history.status}</div>}
+                                                        {history.comment && <div><strong>Comment:</strong> {history.comment}</div>}
+                                                    </CardDescription>
+                                                    <CardFooter className='text-muted-foreground p-0'>by: {history.user.name}</CardFooter>
+                                                </CardHeader>
+                                            </Card>
+                                        ))
+                                    }
+                                </div>
+                            </>
+                        }
+                    </div>
+                </CustomDrawer>
+            }
+            {/* <Drawer open={viewingTrip !== null} onOpenChange={() => setViewingTrip(null)}>
                 {viewingTrip &&
                     <DrawerContent className="mx-auto w-full max-w-lg md:max-w-screen-xl px-4 max-h-[80svh]">
                         <DrawerHeader className="text-left">
@@ -1643,7 +1718,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                         </DrawerFooter>
                     </DrawerContent>
                 }
-            </Drawer>
+            </Drawer> */}
         </>
     )
 }

@@ -329,7 +329,23 @@ async function getNewSummary(userId, isAdmin) {
                                 LoadStatus: 1,
                                 $and: [
                                     { ReportingDate: { $exists: true } },
-                                    { ReportingDate: { $ne: null } }
+                                    { ReportingDate: { $ne: null } },
+                                    {
+                                        $or: [
+                                            {
+                                                $or: [
+                                                    { EndDate: { $exists: false } },
+                                                    { EndDate: { $eq: null } }
+                                                ]
+                                            },
+                                            {
+                                                $or: [
+                                                    { "LoadTripDetail.UnloadDate": { $exists: false } },
+                                                    { "LoadTripDetail.UnloadDate": { $eq: null } }
+                                                ]
+                                            }
+                                        ]
+                                    }
                                 ]
                             }
                         }
