@@ -154,6 +154,7 @@ router.get('/all', async (req, res) => {
                     totalLoadQuantity: 1,
                     totalLoadQuantityBySlip: 1,
                     saleQty: 1,
+                    'loading.quantityByDip': 1,
                     balanceQtyBySlip: 1,
                     dispenses: {
                         $map: {

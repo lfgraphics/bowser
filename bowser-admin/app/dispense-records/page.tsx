@@ -562,7 +562,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>{record.tripSheetId}</TableCell>
                 <TableCell>{record.category}</TableCell>
-                <TableCell>{record.party}</TableCell>
+                <TableCell>{record.category !== "Own" ? record.party : "Not Applicable"}</TableCell>
                 <TableCell>{`${formatDate(
                   record.fuelingDateTime
                 )}`}</TableCell>

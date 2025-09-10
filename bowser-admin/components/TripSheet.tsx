@@ -233,10 +233,10 @@ const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
                                     <TableCell><Link className='text-blue-500 underline' href={`/tripsheets/bowser/${sheet.bowser.regNo}`}>{sheet.bowser.regNo}</Link></TableCell>
                                     <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.name : ""}</TableCell>
                                     <TableCell>{sheet.bowser.driver?.length > 0 ? sheet.bowser.driver[0]?.phoneNo : ""}</TableCell>
-                                    <TableCell>{(sheet.totalLoadQuantityBySlip || 0) + (sheet.totalAdditionQty || 0)}</TableCell>
+                                    <TableCell>{((sheet.totalLoadQuantityBySlip || 0) + (sheet.totalAdditionQty || 0) + (sheet.loading.quantityByDip)).toFixed(2)}</TableCell>
                                     <TableCell className='text-center' >{sheet.dispenses?.length || "0"}</TableCell>
                                     <TableCell>{sheet.saleQty?.toFixed(2)}</TableCell>
-                                    <TableCell>{(Number((sheet.totalLoadQuantityBySlip || 0) + (sheet.totalAdditionQty || 0)) - Number(sheet.saleQty?.toFixed(2))).toFixed(2)}</TableCell>
+                                    <TableCell>{(Number(((sheet.totalLoadQuantityBySlip || 0) + (sheet.totalAdditionQty || 0) + (sheet.loading.quantityByDip)).toFixed(2)) - Number(sheet.saleQty?.toFixed(2))).toFixed(2)}</TableCell>
                                     <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer", "Data Entry"]}>
                                         <TableCell className="flex justify-center gap-2 w-full items-center">
                                             <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>

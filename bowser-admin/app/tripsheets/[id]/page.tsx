@@ -129,6 +129,17 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                             ))}
                         </div>
                     </div>
+                    <div className='my-3'>
+                        <h2 className="my-2 font-semibold text-xl">Closing Information</h2>
+                        <h2 className="font-semibold text-md">Chamberwise Dip List Before</h2>
+                        {record.settelment?.details.chamberwiseDipList.map((chamber, index) => (
+                            <div key={index}>
+                                <p>Chamber ID: {chamber.chamberId}</p>
+                                <p>Level Height: {chamber.levelHeight}</p>
+                                <p>Quantity: {chamber.qty.toFixed(2)}</p>
+                            </div>
+                        ))}
+                    </div>
                     <Separator className='my-3' />
                     {record.dispenses && <>
                         <strong>Dispenses: </strong>{record.dispenses.length}
@@ -233,7 +244,7 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                             >
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>{record.category}</TableCell>
-                                <TableCell>{record.party}</TableCell>
+                                <TableCell>{record.category !== "Own" ? record.party :"Not Applicable"}</TableCell>
                                 <TableCell>{`${formatDate(
                                     record.fuelingDateTime
                                 )}`}</TableCell>
@@ -256,7 +267,7 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                                         </Button>
                                     </Link>
 
-                                    <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer"]}>
+                                    {!record.posted && <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer", "Trans App"]}>
                                         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                                             <AlertDialogTrigger asChild>
                                                 <Button variant="destructive" onClick={() => { setShowDeleteDialog(true); setDeleteRecord(record._id) }}>Delete</Button>
@@ -272,7 +283,7 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                             </AlertDialogContent>
                                         </AlertDialog>
-                                    </OnlyAllowed>
+                                    </OnlyAllowed>}
                                 </TableCell>
                                 <TableCell>
                                     {record.verified ? (<Check />) : (<X />)}

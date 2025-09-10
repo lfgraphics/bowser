@@ -202,7 +202,7 @@ const Allocations = ({ searchParams }: { searchParams: { tripNumber?: number, al
                             <TableCell>{`${formatDate(record.createdAt)}`}</TableCell>
                             <TableCell>{record.allocationAdmin.name}</TableCell>
                             <TableCell>{record.category}</TableCell>
-                            <TableCell>{record.party}</TableCell>
+                            <TableCell>{record.category !== "Own" ? record.party : "Not Applicable"}</TableCell>
                             <TableCell>{record.vehicleNumber}</TableCell>
                             <TableCell>{record.driverName}</TableCell>
                             <TableCell>{record.driverMobile}</TableCell>

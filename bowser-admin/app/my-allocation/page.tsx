@@ -169,7 +169,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                             <TableCell>{index + 1}</TableCell>
                             <TableCell>{`${formatDate(record.createdAt)}`}</TableCell>
                             <TableCell>{record.category}</TableCell>
-                            <TableCell>{record.party}</TableCell>
+                            <TableCell>{record.category !== "Own" ? record.party : "Not Applicable"}</TableCell>
                             <TableCell>{record.vehicleNumber}</TableCell>
                             <TableCell>{record.driverName}</TableCell>
                             <TableCell>{record.driverMobile}</TableCell>
