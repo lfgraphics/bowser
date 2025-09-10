@@ -58,6 +58,10 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
         setProposedBy(jsonUser.name)
     }, [])
 
+    useEffect(()=>{
+        searchDriver(data.find((trip)=>trip._id === tripId)?.StartDriver!)
+    },[data, tripId])
+
     const resetForm = () => {
         setTripId("");
         setDriver("");
@@ -94,7 +98,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
             if (drivers.length > 0) {
                 setSearchModalConfig({
                     isOpen: true,
-                    title: "Select a Driver",
+                    title: "Select Driver",
                     items: drivers,
                     onSelect: handleDriverSelection,
                     renderItem: (driver) => `${driver.Name}, ${driver.MobileNo.find((num: { LastUsed: boolean }) => num.LastUsed)?.MobileNo || "No Last Used Mobile No."}`,

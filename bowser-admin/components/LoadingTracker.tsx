@@ -164,7 +164,7 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }
             if (drivers.length > 0) {
                 setSearchModalConfig({
                     isOpen: true,
-                    title: "Select a Driver",
+                    title: "Select Driver",
                     items: drivers,
                     onSelect: handleDriverSelection,
                     renderItem: (driver) => `${driver.Name}, ${driver.MobileNo.find((num: { LastUsed: boolean }) => num.LastUsed)?.MobileNo || "No Last Used Mobile No."}`,
