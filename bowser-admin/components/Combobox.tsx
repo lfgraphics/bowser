@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "./ui/button";
 
 export type ComboboxOption = {
     value: string;
@@ -18,6 +19,7 @@ type ComboboxProps = {
     onSearchTermChange: (term: string) => void;
     className?: string;
     width?: string;
+    onAddOption?: (option: ComboboxOption) => void;
 };
 
 const Combobox = ({
@@ -107,7 +109,7 @@ const Combobox = ({
             >
                 <span>
                     {value
-                        ? options.find((opt) => opt.value === value)?.label
+                        ? options.find((opt) => opt.value === value)?.label || value
                         : placeholder}
                 </span>
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -126,7 +128,9 @@ const Combobox = ({
                         placeholder="Search..."
                     />
                     {filteredOptions.length === 0 ? (
-                        <div className="p-2 text-sm text-muted-foreground">No option found.</div>
+                        <div className="p-2 text-sm text-muted-foreground">No option found. <Button onClick={() => { onChange(searchTerm); value = searchTerm; setOpen(false) }}>
+                            Add {searchTerm}
+                        </Button></div>
                     ) : (
                         filteredOptions.map((item, index) => (
                             <div
