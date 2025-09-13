@@ -38,7 +38,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
                 console.error("Error in callback function:", error);
             });
         });
-        setVehicleSelectionModalVisible(true);
+        !vehicleNumbers && setVehicleSelectionModalVisible(true);
     };
 
     const openProcessModal = async (processFn: (vehicleNumber: string) => void) => {
@@ -120,7 +120,7 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
     const handleRequestFuel = async () => {
         await getVehicleNumber();
 
-        setVehicleSelectionModalVisible(true);
+        // setVehicleSelectionModalVisible(true);
 
         setProcessFunction(() => async (vehicleNumber: string) => {
             openModalWithFunction(async (odometer: string) => {
@@ -284,19 +284,25 @@ const VehicleDriverHome: React.FC<VehicleDriverHomeProps> = ({ userData }) => {
         if (userData && isDriverData(userData)) {
             setLoading(true);
             try {
-                const response = await fetch(`${baseUrl}/fuel-request/driver?driverId=${userData.Id}`);
+                const response = await fetch(`${baseUrl}/trans-app/vehicles/get-latest-trip/${userData.Id}`);
                 if (!response.ok) {
                     throw new Error(`Failed to fetch vehicle numbers. Status: ${response.status}`);
                 }
 
-                const vehicleNumbersData = await response.json();
-                if (vehicleNumbersData.length === 0) {
+                const jsonResponse = await response.json();
+                if (!jsonResponse) {
                     Alert.alert('एरर', 'कोई गाड़ी नंबर नहीं मिला। कृपया दोबारा कोशिश करें।');
                     return;
-                }
+                } else {
+                    const vehicleNo = jsonResponse.vehicleNo
 
-                // Update the vehicle numbers state
-                setVehicleNumbers(vehicleNumbersData);
+                    setVehicleNumbers([vehicleNo]);
+                    if (vehicleNo && processFunction) {
+                        processFunction(vehicleNo)
+                        setOdometerModalVisible(true)
+                    }
+
+                }
             } catch (error) {
                 console.error('Error fetching vehicle numbers:', error);
                 Alert.alert('एरर', 'गाड़ी नंबर नहीं मिल पाया। कृपया दोबारा कोशिश करें।');

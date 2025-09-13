@@ -45,7 +45,7 @@ const getCurrentTrip = async (vehicleNumber) => {
 
 const getCurrentTripByDriverId = async (driverId) => {
     try {
-        const trip = await TankersTrip.findOne({ StartDriver: driverId }).sort({ StartDate: -1 }).lean();
+        const trip = await TankersTrip.findOne({ StartDriver: { $regex: driverId } }).sort({ StartDate: -1 }).lean();
         if (!trip) {
             throw new Error('No current trip found for this vehicle.');
         }

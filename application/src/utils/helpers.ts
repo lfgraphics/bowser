@@ -2,8 +2,7 @@ import axios from "axios"
 import * as Location from 'expo-location';
 import moment from 'moment';
 import { Alert } from "react-native";
-import { sendLocationUpdate } from './sendLocationUpdate';
-export const baseUrl = "https://bowser-backend-2cdr.onrender.com"  //http://192.168.137.1:5000 //https://bowser-backend-2cdr.onrender.com
+export const baseUrl = "http://192.168.137.1:5000"  //http://192.168.137.1:5000 //https://bowser-backend-2cdr.onrender.com
 
 export const getAppUpdate = async () => {
     try {
@@ -33,8 +32,6 @@ export const shareLocation = async (orderId: string) => {
         let location = await Location.getCurrentPositionAsync({});
         const { latitude, longitude } = location.coords;
         const longLat = `${latitude},${longitude}`;
-
-        sendLocationUpdate(orderId, longLat);
 
         // Establish WebSocket connection if not already connected
         if (!socket) {
