@@ -8,6 +8,7 @@ const {
     getNewSummary,
     getTripById
 } = require('./utils');
+const { getVehiclesFullDetails } = require('../../utils/enrichVehicles');
 
 router.get('/', async (req, res) => {
     const { userId } = req.query;
@@ -98,6 +99,29 @@ router.get('/get-summary/:userId', async (req, res) => {
     } catch (error) {
         console.error(error);
         return res.status(500).json(error);
+    }
+});
+
+router.get('/user-detailed-vehicles', async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) {
+        return res.status(400).json({ error: 'User ID is required.' });
+    }
+    try {
+        const vehicles = await getUserVehicles(userId);
+        if (!vehicles || vehicles.length === 0) {
+            return res.status(404).json({ error: 'No vehicles found for this user.' });
+        }
+        try {
+            const details = await getVehiclesFullDetails(vehicles);
+            res.status(200).json(details);
+        } catch (err) {
+            console.error('Error fetching vehicle details:', err);
+            res.status(500).json({ message: 'Server error', error: err.message });
+        }
+    } catch (error) {
+        console.error('Error fetching vehicles:', error);
+        return res.status(500).json({ error: 'Internal server error.' });
     }
 });
 

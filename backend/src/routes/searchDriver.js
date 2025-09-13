@@ -72,29 +72,36 @@ router.post('/updateDriverMobile', async (req, res) => {
             return res.status(404).json({ message: 'Driver not found.' });
         }
 
-        // Step 2: Update all existing MobileNo entries to mark LastUsed and IsDefaultNumber as false
-        await Driver.updateOne(
-            { _id: driver._id },
-            {
-                $set: {
-                    'MobileNo.$[].LastUsed': false,
-                    'MobileNo.$[].IsDefaultNumber': false
-                }
-            }
-        );
-
-        // Step 3: Push the new mobile number
         const updatedDriver = await Driver.findOneAndUpdate(
             { _id: driver._id },
-            {
-                $push: {
-                    MobileNo: {
-                        MobileNo: driverMobile,
-                        LastUsed: true,
-                        IsDefaultNumber: true
-                    }
-                }
-            },
+            [
+                {
+                    $set: {
+                        MobileNo: {
+                            $concatArrays: [
+                                {
+                                    $map: {
+                                        input: { $ifNull: ["$MobileNo", []] },
+                                        as: "m",
+                                        in: {
+                                            MobileNo: "$$m.MobileNo",
+                                            LastUsed: false,
+                                            IsDefaultNumber: false,
+                                        },
+                                    },
+                                },
+                                [
+                                    {
+                                        MobileNo: driverMobile,
+                                        LastUsed: true,
+                                        IsDefaultNumber: true,
+                                    },
+                                ],
+                            ],
+                        },
+                    },
+                },
+            ],
             { new: true }
         );
 

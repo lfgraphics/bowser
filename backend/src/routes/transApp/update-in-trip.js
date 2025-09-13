@@ -36,6 +36,8 @@ router.post('/update', async (req, res) => {
 router.post('/report', async (req, res) => {
     const { tripId, data } = req.body;
 
+    console.log("reporting: ")
+
     if (!tripId || !data) {
         return res.status(400).json({ error: 'Trip ID and travel history are required.' });
     }

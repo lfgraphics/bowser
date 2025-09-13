@@ -10,6 +10,7 @@ import { isAuthenticated } from '@/lib/auth';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { usePathname } from 'next/navigation';
 import { Toaster } from "sonner";
+import { VehiclesCacheProvider } from "@/src/context/VehiclesCacheContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -32,8 +33,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           {isAuth && <Sidebar />}
           <div className={`h-[96svh]`}>
-            <Toaster />
-            <CacheProvider>{children}</CacheProvider>
+            <Toaster richColors closeButton position="bottom-center"/>
+            <CacheProvider>
+              <VehiclesCacheProvider>
+                {children}
+              </VehiclesCacheProvider>
+            </CacheProvider>
             <SpeedInsights />
           </div>
         </ThemeProvider>

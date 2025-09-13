@@ -501,7 +501,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                     className={`w-40 ${filter !== 'all' && filter === 'emptyStanding' ? 'bg-card text-card-foreground border-white' : ''}`}
                                     onClick={() => setFilter('emptyStanding')}
                                 >
-                                    <strong>Standing: </strong>{data?.empty?.standing.count}
+                                    <strong>Dipo Standing: </strong>{data?.empty?.standing.count}
                                 </Button>
                                 <div className='flex gap-2 flex-wrap'>
                                     {/* <Button
@@ -517,14 +517,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                         onClick={() => setFilter("outsideStandingVehicles")}
                                     >
                                         {/* <strong>Outside Standing: </strong> {data.empty.reported.trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status !== "In Distillery").length - data.empty.reported.trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Loaded").length} */}
-                                        <strong>Outside Standing: </strong> {data.empty.reported.trips.filter((trip) => (trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status !== "In Distillery" && trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status !== "Loaded")).length}
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        className={`w-40 ${filter !== 'all' && filter === 'notLoadedVehicles' ? 'bg-card text-card-foreground border-white' : ''}`}
-                                        onClick={() => setFilter("notLoadedVehicles")}
-                                    >
-                                        <strong>Not Loaded: </strong> {data.empty.reported.trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}
+                                        <strong>Outside Standing: </strong> {data.empty.reported.trips.filter((trip) => (trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status !== "Loaded")).length}
                                     </Button>
                                     <Button
                                         variant="outline"
@@ -624,7 +617,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                 setViewingTrip(trip._id)
                                             }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.StartFrom}</TableCell>}
                                             {user?.Division.includes('Admin') && <TableCell>{formatDate(trip.StartDate)}</TableCell>}
@@ -678,7 +671,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                 setViewingTrip(trip._id)
                                             }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.StartFrom}</TableCell>}
                                             {user?.Division.includes('Admin') && <TableCell>{formatDate(trip.StartDate)}</TableCell>}
@@ -733,7 +726,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                 setViewingTrip(trip._id)
                                             }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.StartFrom}</TableCell>}
                                             {user?.Division.includes('Admin') && <TableCell>{formatDate(trip.StartDate)}</TableCell>}
@@ -789,60 +782,14 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                     )
                                 }
                                 {filter == 'outsideStandingVehicles' &&
-                                    data.empty.reported.trips.filter((trip) => (trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status !== "In Distillery" && trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status !== "Loaded")).sort((a, b) => a.EndTo.localeCompare(b.EndTo)).map((trip, index) =>
+                                    data.empty.reported.trips.filter((trip) => (trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status !== "Loaded")).sort((a, b) => a.EndTo.localeCompare(b.EndTo)).map((trip, index) =>
                                         <TableRow onClick={(e: React.MouseEvent) => {
                                             const el = e.target as HTMLElement | null;
                                             // if the click happened inside the dropdown, don't open the drawer
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                 setViewingTrip(trip._id)
                                             }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
-                                            <TableCell>{index + 1}</TableCell>
-                                            {user?.Division.includes('Admin') && <TableCell>{trip.StartFrom}</TableCell>}
-                                            {user?.Division.includes('Admin') && <TableCell>{formatDate(trip.StartDate)}</TableCell>}
-                                            <TableCell>{trip.VehicleNo}</TableCell>
-                                            <TableCell>{trip.capacity}</TableCell>
-                                            {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
-                                            <TableCell>{trip.EndTo}</TableCell>
-                                            <TableCell>{trip.loadingSupervisor}</TableCell>
-                                            <TableCell>{formatDate(trip.EmptyTripDetail.ReportDate)}</TableCell>
-                                            <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status !== "Custom" ? trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.comment}</TableCell>
-                                            <TableCell className='flex gap-2'>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="outline" size="sm">
-                                                            Update
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent className='dropdown'>
-                                                        {tripStatusUpdateVars.map((statupOpetion) => (
-                                                            <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
-                                                                {statupOpetion}
-                                                            </DropdownMenuItem>
-                                                        ))}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                                <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
-                                                    <Eye />
-                                                </Button>
-                                                {!user?.Division.includes('Admin') && <Button variant="outline" size="sm" className='link'>
-                                                    <Link href={`/trans-app/trip-update/${trip._id}`}>
-                                                        <Pen />
-                                                    </Link>
-                                                </Button>}
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                }
-                                {filter == 'notLoadedVehicles' &&
-                                    data.empty.reported.trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").sort((a, b) => a.EndTo.localeCompare(b.EndTo)).map((trip, index) =>
-                                        <TableRow onClick={(e: React.MouseEvent) => {
-                                            const el = e.target as HTMLElement | null;
-                                            // if the click happened inside the dropdown, don't open the drawer
-                                            if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
-                                                setViewingTrip(trip._id)
-                                            }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.StartFrom}</TableCell>}
                                             {user?.Division.includes('Admin') && <TableCell>{formatDate(trip.StartDate)}</TableCell>}
@@ -888,7 +835,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                 setViewingTrip(trip._id)
                                             }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip.VehicleNo}</TableCell>
                                             <TableCell>{trip.capacity}</TableCell>
@@ -932,7 +879,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                 setViewingTrip(trip._id)
                                             }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.StartFrom}</TableCell>}
                                             {user?.Division.includes('Admin') && <TableCell>{formatDate(trip.StartDate)}</TableCell>}
@@ -988,7 +935,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                 setViewingTrip(trip._id)
                                             }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.StartFrom}</TableCell>}
                                             {user?.Division.includes('Admin') && <TableCell>{formatDate(trip.StartDate)}</TableCell>}
@@ -1055,7 +1002,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 <TableHead>Location</TableHead>
                                                 <TableHead>On Way</TableHead>
                                                 <TableHead>Reported</TableHead>
-                                                <TableHead>In Distillery</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -1067,7 +1013,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                         <TableHead>{highlightText(endTo)}</TableHead>
                                                         <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
                                                         <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length}</TableHead>
-                                                        <TableHead>{trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
                                                     </TableRow>
                                                 ))}
                                         </TableBody>
@@ -1082,7 +1027,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 <TableHead>Location</TableHead>
                                                 <TableHead>On Way</TableHead>
                                                 <TableHead>Reported</TableHead>
-                                                <TableHead>In Distillery</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -1094,7 +1038,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                         <TableHead>{highlightText(endTo)}</TableHead>
                                                         <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
                                                         <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length}</TableHead>
-                                                        <TableHead>{trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
                                                     </TableRow>
                                                 ))}
                                         </TableBody>
@@ -1109,7 +1052,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                         <TableHead>Location</TableHead>
                                         <TableHead>On Way</TableHead>
                                         <TableHead>Reported</TableHead>
-                                        <TableHead>In Distillery</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -1119,7 +1061,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             <TableHead>{endTo}</TableHead>
                                             <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
                                             <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length}</TableHead>
-                                            <TableHead>{trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -1138,7 +1079,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 <TableHead>Supervisor</TableHead>
                                                 <TableHead>On Way</TableHead>
                                                 <TableHead>Reported</TableHead>
-                                                <TableHead>In Distillery</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -1151,9 +1091,8 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                     <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("supervisors"); setSearchTerm(endTo) }}>
                                                         <TableHead>{index + 1}</TableHead>
                                                         <TableHead>{highlightText(endTo)}</TableHead>
-                                                        <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length - (trips.filter((trip) => trip.status === "Reported")?.length + trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length)}</TableHead>
-                                                        <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length - trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
-                                                        <TableHead>{trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
+                                                        <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
+                                                        <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length - trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Loaded").length}</TableHead>
                                                     </TableRow>
                                                 ))
                                             }
@@ -1168,7 +1107,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                         <TableHead>{highlightText(endTo)}</TableHead>
                                                         <TableHead>{trips.filter((trip) => trip.status === "On Way")?.length}</TableHead>
                                                         <TableHead>{trips.filter((trip) => trip.status === "Reported")?.length}</TableHead>
-                                                        <TableHead>{trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Distillery").length}</TableHead>
                                                     </TableRow>
                                                 ))
                                             }
@@ -1208,7 +1146,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                 if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                                     setViewingTrip(trip._id)
                                                                 }
-                                                            }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                                            }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                                                 <TableCell>{trip.VehicleNo}</TableCell>
                                                                 <TableCell>{trip.capacity}</TableCell>
                                                                 <TableCell>{trip.status}</TableCell>
@@ -1285,7 +1223,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                 if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                                     setViewingTrip(trip._id)
                                                                 }
-                                                            }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                                            }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                                                 <TableCell>{trip.VehicleNo}</TableCell>
                                                                 <TableCell>{trip.capacity}</TableCell>
                                                                 <TableCell>{trip.status === "Standing" ? "Not Programmed" : trip.status}</TableCell>
@@ -1388,7 +1326,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                     if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                                         setViewingTrip(trip._id)
                                                                     }
-                                                                }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                                                }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                                                     <TableCell>{index + 1}</TableCell>
                                                                     <TableCell>{trip.VehicleNo}</TableCell>
                                                                     <TableCell>{trip.capacity}</TableCell>
@@ -1484,7 +1422,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                     if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                                         setViewingTrip(trip._id)
                                                                     }
-                                                                }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Distillery" ? "bg-yellow-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                                                }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
                                                                     <TableCell>{index + 1}</TableCell>
                                                                     <TableCell>{trip.VehicleNo}</TableCell>
                                                                     <TableCell>{trip.capacity}</TableCell>
@@ -1635,90 +1573,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                     </div>
                 </CustomDrawer>
             }
-            {/* <Drawer open={viewingTrip !== null} onOpenChange={() => setViewingTrip(null)}>
-                {viewingTrip &&
-                    <DrawerContent className="mx-auto w-full max-w-lg md:max-w-screen-xl px-4 max-h-[80svh]">
-                        <DrawerHeader className="text-left">
-                            <DrawerTitle>{findTripById(viewingTrip).VehicleNo}</DrawerTitle>
-                            <DrawerDescription>{viewingTrip}</DrawerDescription>
-                        </DrawerHeader>
-                        <div className="max-h-[60svh] overflow-y-auto">
-                            <div className='flex flex-col gap-1 mb-4'>
-                                <div className='flex gap-2'>
-                                    <strong>Route: </strong> {findTripById(viewingTrip).StartFrom} to {findTripById(viewingTrip).EndTo}
-                                </div>
-                                <div className='flex gap-2'>
-                                    <strong>Started at: </strong> {formatDate(findTripById(viewingTrip).StartDate)}
-                                </div>
-                                <div className='flex gap-2'>
-                                    <strong>Start Driver: </strong> {findTripById(viewingTrip).StartDriver}
-                                </div>
-                                {findTripById(viewingTrip).TallyLoadDetail && <>
-                                    <div className='flex gap-2'>
-                                        <strong>Start Odometer: </strong> {findTripById(viewingTrip).TallyLoadDetail.StartOdometer}
-                                    </div>
-                                    <div className='flex gap-2'>
-                                        <strong>Product: </strong> {findTripById(viewingTrip).TallyLoadDetail.Goods}
-                                    </div>
-                                </>}
-                                {findTripById(viewingTrip).ReportingDate && <div className='flex gap-2'>
-                                    <strong>Reported at: </strong> {formatDate(findTripById(viewingTrip).ReportingDate)}
-                                </div>}
-                            </div>
-                            {findTripById(viewingTrip)?.TravelHistory &&
-                                <>
-                                    <h4 className='font-semibold mt-4 mb-2'>Travel History</h4>
-                                    <div className='grid grid-cols-1 md:grid-cols-3 gap-2'>
-                                        {findTripById(viewingTrip)?.TravelHistory
-                                            ?.sort((a, b) => new Date(a.TrackUpdateDate).getTime() - new Date(b.TrackUpdateDate).getTime())
-                                            .map((history, index) => (
-                                                <Card key={index}>
-                                                    <CardHeader>
-                                                        <CardTitle className="text-md font-semibold">{(history.ManagerComment.match(/#(\w+)/) || [])[1] + " marked on " + formatDate(history.TrackUpdateDate)}</CardTitle>
-                                                        <CardDescription>
-                                                            {history.LocationOnTrackUpdate && <div><strong>Location on Track Update:</strong> {history.LocationOnTrackUpdate}</div>}
-                                                            {typeof history.OdometerOnTrackUpdate === "number" && <div><strong>Odometer:</strong> {history.OdometerOnTrackUpdate} km</div>}
-                                                            {history.ManagerComment && <div><strong>Manager Comment:</strong> {history.ManagerComment}</div>}
-                                                            {history.Driver && <div><strong>Driver:</strong> {history.Driver}</div>}
-                                                        </CardDescription>
-                                                    </CardHeader>
-                                                </Card>
-                                            ))
-                                        }
-                                    </div>
-                                </>
-                            }
-                            {findTripById(viewingTrip)?.statusUpdate &&
-                                <>
-                                    <h4 className='font-semibold mt-4 mb-2'>Status Updates</h4>
-                                    <div className='grid grid-cols-1 md:grid-cols-4 gap-2'>
-                                        {findTripById(viewingTrip)?.statusUpdate
-                                            ?.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
-                                            .map((history, index) => (
-                                                <Card key={index}>
-                                                    <CardHeader>
-                                                        <CardTitle className="text-md font-semibold">{formatDate(history.dateTime)}</CardTitle>
-                                                        <CardDescription className='text-card-foreground'>
-                                                            {history.status && <div><strong>Status:</strong> {history.status}</div>}
-                                                            {history.comment && <div><strong>Comment:</strong> {history.comment}</div>}
-                                                        </CardDescription>
-                                                        <CardFooter className='text-muted-foreground p-0'>by: {history.user.name}</CardFooter>
-                                                    </CardHeader>
-                                                </Card>
-                                            ))
-                                        }
-                                    </div>
-                                </>
-                            }
-                        </div>
-                        <DrawerFooter className="pt-2">
-                            <DrawerClose asChild>
-                                <Button variant="outline">Close</Button>
-                            </DrawerClose>
-                        </DrawerFooter>
-                    </DrawerContent>
-                }
-            </Drawer> */}
         </>
     )
 }

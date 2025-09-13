@@ -1,6 +1,6 @@
 "use client"
 import React, { useContext, useEffect, useState } from 'react'
-import { Ban, Trash2 } from 'lucide-react'
+import { Ban, Trash2, UserCog } from 'lucide-react'
 import { toast } from 'sonner'
 import { BASE_URL } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,8 @@ import { TabsTrigger, Tabs, TabsList } from '@/components/ui/tabs'
 import { formatDate } from '@/lib/utils'
 import { SearchModal } from '@/components/SearchModal'
 import VehiclesSummary from '@/components/transappComponents/VehiclesSummary'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import VehicleManagement from '@/components/transappComponents/VehicleManagement'
 
 type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary"
 
@@ -227,25 +229,6 @@ export default function Page() {
     <>
       {loading && <Loading />}
       <div className='mx-4 mt-4 flex flex-col gap-4'>
-        {/* <Card className="w-fit">
-          <CardHeader className="font-semibold relative">
-            User Profile
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2 h-8 w-8"
-            >
-              <Link href="/trans-app/manage-profile">
-                <Settings className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <ImageFromBufferObject bufferObject={photo} className="rounded-full w-20 h-20" />
-            <p><strong>Name: </strong>{user?.name}</p>
-            <p><strong>Vehicles: </strong>{vehicles?.length}</p>
-          </CardContent>
-        </Card> */}
         <Tabs
           value={tab}
           onValueChange={(v) => setTab(v as Tabslist)}
@@ -260,31 +243,7 @@ export default function Page() {
         </Tabs>
         {
           tab == "Vehicles" && vehicles &&
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Sn</TableHead>
-                <TableHead>Vehicle no.</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {vehicles.map((vehicle, index) =>
-                <TableRow key={index} className={`${inactiveVehicles?.findIndex((inactive) => inactive.VehicleNo == vehicle) !== -1 ? "bg-red-300" : ""}`}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{vehicle}</TableCell>
-                  <TableCell>
-                    <div className='flex gap-2 max-w-max text-center'>
-                      <Button onClick={() => { let confirmation = confirm(`Do you want to delete the vehicle ${vehicle}?`); if (confirmation) deleteVehicle(vehicle) }} variant="destructive"><Trash2 /></Button>
-                      {inactiveVehicles?.findIndex((inactive) => inactive.VehicleNo == vehicle) == -1 &&
-                        <Button onClick={() => { let confirmation = confirm(`Do you want to deactivate the vehicle ${vehicle}?`); if (confirmation) deActivateVehicle(vehicle) }} variant="secondary"><Ban /></Button>
-                      }
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <VehicleManagement user={user} />
         }
         {
           tab === "Inactive Vehicles" &&

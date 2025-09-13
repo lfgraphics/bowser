@@ -807,5 +807,70 @@ export interface TripsSummary {
   }
 }
 
-export type TripStatusUpdateEnums = "In Distillery" | "Accident" | "Returning" | 'Head Quarter' | 'Loaded' | 'Breakdown' | 'Custom'
-export const tripStatusUpdateVars = ["In Distillery", "Accident", "Returning", 'Head Quarter', 'Loaded', 'Breakdown', 'Custom']
+export type TripStatusUpdateEnums = "Accident" | "Returning" | 'Head Quarter' | 'Loaded' | 'Breakdown' | 'Custom'
+export const tripStatusUpdateVars = ["Accident", "Returning", 'Head Quarter', 'Loaded', 'Breakdown', 'Custom']
+
+export interface DetailedVehicleData {
+  _id: string;
+  vehicle: {
+    tripDetails: {
+      id: string;
+      tripId: string;
+      product: string;
+      driver: string;
+      open: boolean;
+      loadStatus: string;
+      from: string;
+      to: string;
+      startedOn: Date | string;
+    };
+    _id: string;
+    VehicleNo: string;
+    GoodsCategory: string;
+    manager: string;
+    capacity: string | number;
+    operationManager: string;
+    driverLogs: [string]
+  };
+  driver: {
+    _id: string | null;
+    name: string;
+    mobile: string | null
+    leaving?: {
+      from: string | Date;
+      till?: string | Date;
+      tillDate?: string | Date;
+      odometer: number;
+      location: string;
+      tripId: string | TankersTrip;
+      vehicleLoadStatus?: number;
+      remark?: string;
+    }
+  };
+  latestTrip: TankersTrip;
+  lastDriverLog: {
+    vehicleNo: string;
+    driver: Driver;
+    joining?: {
+      date: Date | string;
+      odometer: number;
+      location: string;
+      tripId: string;
+      vehicleLoadStatus: number;
+      remark: string;
+    };
+    leaving?: {
+      from: string | Date;
+      tillDate?: string | Date;
+      odometer: number;
+      location: string;
+      tripId: string;
+      vehicleLoadStatus: number;
+      remark: string;
+    }
+    statusUpdate: {
+      dateTime: string | Date;
+      remark: string;
+    }[];
+  }
+}

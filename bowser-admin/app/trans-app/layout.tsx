@@ -1,8 +1,6 @@
 "use client"
 
-import { useEffect, useState, createContext, useContext } from "react";
-
-import Link from "next/link";
+import { useEffect, useState, createContext } from "react";
 import {
     FileDown,
     FileUp,
@@ -10,8 +8,6 @@ import {
     Home,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
-
-import { Button } from "@/components/ui/button";
 import { TransAppUser } from "@/types";
 import ManualBreadcrumb from "@/components/ManualBreadCrumb";
 
@@ -28,6 +24,8 @@ export const TransAppContext = createContext<{
             data: [0]
         },
         Division: 'string',
+        hashed: false,
+        phoneNumber: 'xxxxxxxxx',
         vehicles: ['string']
     },
     photo: undefined,
@@ -82,23 +80,7 @@ export default function TransAppLayout({
     return (
         <TransAppContext.Provider value={{ user, photo }}>
             <ManualBreadcrumb />
-            {children}
-            {/* <div className="md:h-[96.5svh] flex flex-col">
-                <main className="md:flex-1 md:overflow-auto p-4">{children}</main> */}
-            {/* <div className="bg-muted p-2 md:flex gap-0 border-b sticky bottom-0 hidden ">
-                    {navItems.map(({ href, label, icon }) => (
-                        <Link key={href} href={href}>
-                            <Button
-                                variant={pathname === href ? "default" : "ghost"}
-                                className="rounded-none px-4"
-                            >
-                                {icon}
-                                {label}
-                            </Button>
-                        </Link>
-                    ))}
-                </div> */}
-            {/* </div> */}
+                {children}
         </TransAppContext.Provider>
     );
 }
