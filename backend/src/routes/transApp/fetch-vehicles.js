@@ -6,7 +6,8 @@ const {
     getUnloadedNotPlannedVehicles,
     getUnloadedPlannedVehicles,
     getNewSummary,
-    getTripById
+    getTripById,
+    getCurrentTripByDriverId
 } = require('./utils');
 const { getVehiclesFullDetails } = require('../../utils/enrichVehicles');
 
@@ -26,6 +27,17 @@ router.get('/', async (req, res) => {
         return res.status(500).json({ error: 'Internal server error.' });
     }
 });
+
+router.get('/get-latest-trip/:driverName', async (req, res) => {
+    const { driverName } = req.params;
+    try {
+        const latestTrip = await getCurrentTripByDriverId(driverName);
+        const vehicleNo = latestTrip.VehicleNo;
+        return res.status(200).json({ latestTrip, vehicleNo });
+    } catch (error) {
+        return res.status(500).json(error);
+    }
+})
 
 router.get('/get-trip-by-id/:tripId', async (req, res) => {
     const { tripId } = req.params;

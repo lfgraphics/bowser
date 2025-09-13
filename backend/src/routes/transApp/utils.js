@@ -32,7 +32,20 @@ function getDivisionKeyByValue(value) {
  */
 const getCurrentTrip = async (vehicleNumber) => {
     try {
-        const trip = await TankersTrip.findOne({ VehicleNo: vehicleNumber }).sort({ StartDate: -1 });
+        const trip = await TankersTrip.findOne({ VehicleNo: vehicleNumber }).sort({ StartDate: -1 }).lean();
+        if (!trip) {
+            throw new Error('No current trip found for this vehicle.');
+        }
+        return trip;
+    } catch (error) {
+        console.error('Error fetching current trip:', error);
+        throw new Error('Failed to fetch current trip');
+    }
+}
+
+const getCurrentTripByDriverId = async (driverId) => {
+    try {
+        const trip = await TankersTrip.findOne({ StartDriver: driverId }).sort({ StartDate: -1 }).lean();
         if (!trip) {
             throw new Error('No current trip found for this vehicle.');
         }
@@ -603,6 +616,7 @@ async function updateEmptyTrip(tripId, postData) {
 
 module.exports = {
     getCurrentTrip,
+    getCurrentTripByDriverId,
     getAllTrips,
     getUserVehicles,
     getUsersDeactivatedVehicles,
