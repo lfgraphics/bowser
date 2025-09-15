@@ -46,8 +46,9 @@ eas build -p android --profile production
 
 ```bash
 gh release upload apk ./builds/latest.apk --clobber # update the file path accordingly
-
 gh release edit apk --title "Android Build v64" --notes "Bug fixes and performance improvements" #update the title and notes according tothe update
+                 or
+eas build --platform android --auto-submit #now you can use this command directly to build and submit to play store in one go, it is now configured
 ```
 
 > This will publish or update the `.apk` file under the `apk` tag using **GitHub Releases**. Your UI's `/download` page automatically fetches this release for easy one-click downloads for users.
