@@ -28,7 +28,7 @@
     "production": {
       "android": {
         "serviceAccountKeyPath": "./bowsers-management-1a1695468aa1.json",
-        "track": "internal"
+        "track": "production"
       }
     }
   }

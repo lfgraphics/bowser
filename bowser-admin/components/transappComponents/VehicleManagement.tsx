@@ -159,7 +159,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                             <TableCell>{index + 1}</TableCell>
                             <TableCell>{VehicleNo}</TableCell>
                             {/* {v.vehicle.tripDetails.driver !== "no driver" ? v.driver?.name : `${v.lastDriverLog?.leaving?.tillDate ? `${v.driver.name} On leave til` + formatDate(v.lastDriverLog?.leaving?.tillDate) : `${v.driver.name} left the vehicle from ${formatDate(v.driver.leaving!.from)}`}` || "—"} */}
-                            <TableCell>{v.vehicle.tripDetails.driver.toUpperCase()}</TableCell>
+                            <TableCell>{v.vehicle.tripDetails.driver?.toUpperCase()}</TableCell>
                             <TableCell>
                                 {v.driver.leaving?.from
                                     ? `${Math.round(

@@ -61,7 +61,7 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }
         if (actionType === "report") {
             setTrackUpdateDate(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined);
             setLocationRemark(data.find(trip => trip?._id === tripId)?.EndTo.toUpperCase() || "");
-            setManagerComment("Arrival #REPORTED by the vehicle at [" + data.find(trip => trip?._id === tripId)?.EndTo + "]");
+            setManagerComment("#REPORTED ");
             (!loadingSuperVisor || loadingSuperVisor.length == 0) && fetchStackHolders();
         }
         if (actionType === "update") {

@@ -57,12 +57,12 @@ export default function LoadVehicleTracker({ tripsData, query }: { tripsData: Ta
         if (actionType === "report") {
             setTrackUpdateDate(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined);
             setLocationRemark(data.find(trip => trip?._id === tripId)?.EndTo.toUpperCase() || "");
-            setManagerComment("Arrival #REPORTED by the vehicle at [" + data.find(trip => trip?._id === tripId)?.TallyLoadDetail.Consignee.toUpperCase() + "]");
+            setManagerComment("#REPORTED ");
         }
         if (actionType === "unload") {
             setTrackUpdateDate(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined);
             setLocationRemark(data.find(trip => trip?._id === tripId)?.EndTo.toUpperCase() || "");
-            setManagerComment("The vehicle has been #UNLOADED at [" + data.find(trip => trip?._id === tripId)?.TallyLoadDetail.Consignee.toUpperCase() + "]");
+            setManagerComment("#UNLOADED ");
         }
         if (actionType === "update") {
             setTrackUpdateDate(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined);
