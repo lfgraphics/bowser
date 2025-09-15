@@ -103,7 +103,8 @@ type TripBase = {
         },
         status: TripStatusUpdateEnums;
         comment?: string
-    }[]
+    }[];
+    driverStatus: number
 };
 
 type LoadedTrip = TripBase & {
@@ -617,7 +618,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                 setViewingTrip(trip._id)
                                             }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : ""}>
+                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Returning" ? "bg-gray-500" : trip.driverStatus == 0 ? "text-destructive" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.StartFrom}</TableCell>}
                                             {user?.Division.includes('Admin') && <TableCell>{formatDate(trip.StartDate)}</TableCell>}

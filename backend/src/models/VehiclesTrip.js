@@ -107,7 +107,8 @@ const tankerTripSchema = new mongoose.Schema({
             },
             comment: { type: String, required: false }
         }
-    ]
+    ],
+    driverStatus: { type: Number, default: 1 }
 }, { versionKey: false });
 
 module.exports = transportDatabaseConnection.model('TankersTrip', tankerTripSchema, 'TankersTrips');

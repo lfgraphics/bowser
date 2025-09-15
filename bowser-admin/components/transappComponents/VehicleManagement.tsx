@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Trash2, Ban } from "lucide-react";
+import { Trash2, Ban, ListFilter } from "lucide-react";
 
 import { DetailedVehicleData, InactiveVehicles, TransAppUser } from "@/types";
 import { useVehiclesCache } from "@/src/context/VehiclesCacheContext";
@@ -29,6 +29,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
     const { cache, setCache } = useVehiclesCache();
     const [vehicles, setVehicles] = useState<DetailedVehicleData[]>([]);
     const [inactiveVehicles, setInactiveVehicles] = useState<InactiveVehicles[]>([]);
+    const [filterNoDriver, setFilterNoDriver] = useState(false);
 
     useEffect(() => {
         if (!user?._id) return;
@@ -137,7 +138,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                 <TableRow>
                     <TableHead>Sn</TableHead>
                     <TableHead>Vehicle no.</TableHead>
-                    <TableHead>Driver</TableHead>
+                    <TableHead className="flex flex-row gap-3 items-center">Driver <ListFilter size={16} onClick={() => setFilterNoDriver(filterNoDriver ? false : true)} /></TableHead>
                     {vehicles.some(v => v.vehicle.tripDetails.driver === "no driver") && (
                         <TableHead>No Driver Since</TableHead>
                     )}
@@ -146,12 +147,15 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {vehicles.map((v, index) => {
+                {vehicles.filter(vehicle => {
+                    if (!filterNoDriver) return true; // show all
+                    return vehicle.vehicle.tripDetails.driver === "no driver"; // filter
+                }).map((v, index) => {
                     const { VehicleNo } = v.vehicle;
                     const isInactive = inactiveVehicles.findIndex((i) => i.VehicleNo === VehicleNo) !== -1;
 
                     return (
-                        <TableRow key={v.vehicle._id} className={isInactive ? "bg-red-300" : "" + v.vehicle.tripDetails.driver == "no driver" ? "bg-destructive text-destructive-foreground hover:bg-destructive hover:text-destructive-foreground" : ""}>
+                        <TableRow key={v.vehicle._id} className={isInactive ? "bg-red-300" : "" + v.vehicle.tripDetails.driver == "no driver" ? "text-destructive" : ""}>
                             <TableCell>{index + 1}</TableCell>
                             <TableCell>{VehicleNo}</TableCell>
                             {/* {v.vehicle.tripDetails.driver !== "no driver" ? v.driver?.name : `${v.lastDriverLog?.leaving?.tillDate ? `${v.driver.name} On leave til` + formatDate(v.lastDriverLog?.leaving?.tillDate) : `${v.driver.name} left the vehicle from ${formatDate(v.driver.leaving!.from)}`}` || "—"} */}
@@ -173,7 +177,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                                             <TooltipTrigger asChild>
                                                 <Button
                                                     onClick={() => deleteVehicle(VehicleNo)}
-                                                    variant={v.vehicle.tripDetails.driver !== "no driver" ? "destructive" : "default"}
+                                                    variant="destructive"
                                                     size="icon"
                                                 >
                                                     <Trash2 />

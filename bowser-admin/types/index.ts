@@ -767,6 +767,7 @@ export interface TankersTrip {
     comment?: string
   }[];
   OpretionallyModified?: boolean;
+  driverStatus: number;
 }
 
 export interface StackHolder {

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const DriversLog = require("../models/VehicleDriversLog");
 const Vehicle = require("../models/vehicle");
+const TankersTrip = require("../models/VehiclesTrip");
 const { getOneTripOfVehicleByDate } = require("../utils/vehicles");
 
 // ---------------------------
@@ -71,6 +72,12 @@ router.post("/leave", async (req, res) => {
                 await updatedVehicle.save();
             }
         }
+
+        const tripOnLeaving = await getOneTripOfVehicleByDate(vehicleNo, leaving.from)
+        await TankersTrip.findOneAndUpdate({ _id: tripOnLeaving.latestTrip._id },
+            { $set: { driverStatus: 0 } },
+            { new: true }
+        );
 
         res.json({ message: "Driver leaving updated", entry: log });
     } catch (error) {

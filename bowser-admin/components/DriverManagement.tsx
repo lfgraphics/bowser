@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -13,13 +13,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { DetailedVehicleData, Driver } from "@/types";
+import { DetailedVehicleData, Driver, TankersTrip } from "@/types";
 import { BASE_URL } from "@/lib/api";
 import { UserCog } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useVehiclesCache } from "@/src/context/VehiclesCacheContext";
 import { searchItems } from "@/utils/searchUtils";
 import { SearchModal } from "./SearchModal";
+import Loading from "@/app/loading";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 type DriverModalProps = {
     vehicle: DetailedVehicleData;
@@ -27,6 +29,7 @@ type DriverModalProps = {
 
 const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
     const [loading, setLoading] = useState(false);
+    const [updatingTrip, setUpdatingTrip] = useState<TankersTrip>()
     const [open, setOpen] = useState(false);
     const [mode, setMode] = useState<"none" | "add" | "leave" | "status">("none");
     const { cache, setCache } = useVehiclesCache()
@@ -63,10 +66,26 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
         remark: "",
     });
 
+    const fetchTripOnLeavingDate = async (date: string) => {
+        console.log('Called Fetching trip function')
+        setLoading(true)
+        try {
+            const response = await fetch(`${BASE_URL}/driver-log/last-trip/${vehicle.vehicle.VehicleNo}/${date}`);
+            const lastTripObj = await response.json();
+            const latestTrip = lastTripObj.latestTrip;
+            setUpdatingTrip(latestTrip)
+            console.log(latestTrip)
+        } catch (error) {
+            console.log(error);
+            toast.error('Error fetching trip on leaving date', { description: String(error) })
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const [statusRemark, setStatusRemark] = useState("");
 
     const noDriver = vehicle.vehicle.tripDetails.driver === "no driver";
-    const lastLog = vehicle.lastDriverLog;
 
     // ---------------------------
     // API Handlers
@@ -154,7 +173,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                                 driver: "no driver",
                             },
                         },
-                        lastDriverLog: data.entry, // the leaving log
+                        lastDriverLog: data.entry,
                     };
                 }
 
@@ -251,12 +270,20 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
     return (
         <>
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="secondary" size="icon">
-                        <UserCog />
-                    </Button>
-                </DialogTrigger>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <DialogTrigger asChild>
+                                <Button variant="secondary" size="icon">
+                                    <UserCog />
+                                </Button>
+                            </DialogTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent>Manage Driver</TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
                 <DialogContent className="max-w-lg">
+                    {loading && <Loading />}
                     <DialogHeader>
                         <DialogTitle className="text-center">Driver Management</DialogTitle>
                         <DialogDescription className="text-card-foreground">
@@ -271,7 +298,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                                         ) / (1000 * 60 * 60 * 24)
                                     )} Days`
                                     : ""}
-                            ` : " Driver is currently assigned"}
+                            ` : ` ${vehicle.driver.name} is currently assigned`}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -317,15 +344,16 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                     {/* MODE: ADD DRIVER */}
                     {mode === "add" && (
                         <div className="space-y-3">
-                            <Label>Joining Date</Label>
+                            <Label htmlFor="joiningDate">Joining Date</Label>
                             <Input
+                                id="joiningDate"
                                 type="date"
                                 value={joining.date}
                                 onChange={(e) => setJoining({ ...joining, date: e.target.value })}
                             />
-                            <Label>Joining Driver</Label>
+                            <Label htmlFor="joiningDriver">Joining Driver</Label>
                             <Input
-                                id="driverId"
+                                id="joiningDriver"
                                 placeholder="Enter Joinig Driver ITPLId"
                                 value={joiningDriver}
                                 onChange={(e) => {
@@ -347,20 +375,23 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                                 }}
                                 required
                             />
-                            <Label>Odometer</Label>
+                            <Label htmlFor="joiningOdometer">Odometer</Label>
                             <Input
+                                id="joiningOdometer"
                                 type="string"
                                 placeholder=""
                                 value={Number(joining.odometer) || 0}
                                 onChange={(e) => setJoining({ ...joining, odometer: e.target.value })}
                             />
-                            <Label>Location</Label>
+                            <Label htmlFor="joiningLocation">Location</Label>
                             <Input
+                                id="joiningLocation"
                                 value={joining.location}
                                 onChange={(e) => setJoining({ ...joining, location: e.target.value })}
                             />
-                            <Label>Remark</Label>
+                            <Label htmlFor="joiningRemark">Remark</Label>
                             <Input
+                                id="joiningRemark"
                                 value={joining.remark}
                                 onChange={(e) => setJoining({ ...joining, remark: e.target.value })}
                             />
@@ -374,31 +405,66 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                     {/* MODE: LEAVE DRIVER */}
                     {mode === "leave" && (
                         <div className="space-y-3">
-                            <Label>Leaving Date</Label>
+                            <Label htmlFor="leavingDate">Leaving Date</Label>
                             <Input
+                                id="leavingDate"
                                 type="date"
                                 value={leaving.from}
-                                onChange={(e) => setLeaving({ ...leaving, from: e.target.value })}
+                                onChange={(e) => { setLeaving({ ...leaving, from: e.target.value }); fetchTripOnLeavingDate(e.target.value) }}
                             />
-                            <Label>Till Date (if on leave)</Label>
+                            {updatingTrip && leaving.from && (
+                                <div className="gap-y-2">
+                                    <strong className="text-lg">Trip on leaving</strong><br />
+                                    <div className="grid grid-cols-[auto_1fr] gap-x-2 text-lg">
+                                        <span>
+                                            <strong>Load Status: </strong>
+                                        </span>
+                                        <span>
+                                            {updatingTrip.LoadStatus == 1 ? "Loaded" : "Empty"}
+                                        </span>
+
+                                        <span>
+                                            <strong>Start Date: </strong>
+                                        </span>
+                                        <span>
+                                            {formatDate(updatingTrip.StartDate)}
+                                        </span>
+
+                                        <span>
+                                            <strong>Route: </strong>
+                                        </span>
+                                        <span>
+                                            {updatingTrip.StartFrom} - {updatingTrip.EndTo}
+                                        </span>
+
+                                        <span><strong>Driver: </strong></span>
+                                        <span>{updatingTrip.StartDriver}</span>
+                                    </div>
+                                </div>
+                            )}
+                            <Label htmlFor="tillDate">Till Date (if on leave)</Label>
                             <Input
+                                id="tillDate"
                                 type="date"
                                 value={leaving.tillDate}
                                 onChange={(e) => setLeaving({ ...leaving, tillDate: e.target.value })}
                             />
-                            <Label>Odometer</Label>
+                            <Label htmlFor="odometer">Odometer</Label>
                             <Input
+                                id="odometer"
                                 type="number"
                                 value={leaving.odometer}
                                 onChange={(e) => setLeaving({ ...leaving, odometer: e.target.value })}
                             />
-                            <Label>Location</Label>
+                            <Label htmlFor="location">Location</Label>
                             <Input
+                                id="location"
                                 value={leaving.location}
                                 onChange={(e) => setLeaving({ ...leaving, location: e.target.value })}
                             />
-                            <Label>Remark</Label>
+                            <Label htmlFor="remark">Remark</Label>
                             <Input
+                                id="remark"
                                 value={leaving.remark}
                                 onChange={(e) => setLeaving({ ...leaving, remark: e.target.value })}
                             />
@@ -412,8 +478,9 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                     {/* MODE: STATUS UPDATE */}
                     {mode === "status" && (
                         <div className="space-y-3">
-                            <Label>Status Remark</Label>
+                            <Label htmlFor="statusRemark">Status Remark</Label>
                             <Input
+                                id="statusRemark"
                                 value={statusRemark}
                                 onChange={(e) => setStatusRemark(e.target.value)}
                                 placeholder="Enter status remark"
