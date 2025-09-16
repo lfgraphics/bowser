@@ -91,24 +91,12 @@ export async function generateTripsReport({
 
         Object.entries(loadedGrouped).forEach(([station, trips]) => {
             trips.forEach((trip) => {
-                const vehicleNoOnWay = summary.loaded.onWay.trips.includes(trip) ? trip.TallyLoadDetail.VehicleNo : "";
-                const vehicleNoReported = summary.loaded.reported.trips.includes(trip) ? trip.TallyLoadDetail.VehicleNo : "";
-                const superwiser = trip.superwiser || "Not in frontend";
-
-                const row = loadedSheet.addRow([
+                loadedSheet.addRow([
                     station,
-                    vehicleNoOnWay,
-                    vehicleNoReported,
-                    superwiser,
+                    summary.loaded.onWay.trips.includes(trip) ? trip.TallyLoadDetail.VehicleNo : "",
+                    summary.loaded.reported.trips.includes(trip) ? trip.TallyLoadDetail.VehicleNo : "",
+                    trip.superwiser || "Not in frontend",
                 ]);
-
-                if (trip.driverStatus === 0) {
-                    row.eachCell((cell) => {
-                        cell.font = {
-                            color: { argb: 'FFDC2626' },
-                        };
-                    });
-                }
             });
         });
 
@@ -130,26 +118,14 @@ export async function generateTripsReport({
             ...summary.empty.reported.trips,
         ]);
 
-        Object.entries(programmedGrouped).forEach(([station, trips]) => {
+        Object.entries(programmedGrouped).forEach(([location, trips]) => {
             trips.forEach((trip) => {
-                const vehicleNoOnWay = summary.empty.onWay.trips.includes(trip) ? trip.EmptyTripDetail?.VehicleNo || "" : ""; 
-                const vehicleNoReported = summary.empty.reported.trips.includes(trip) ? trip.EmptyTripDetail?.VehicleNo || "" : "";                
-                const superwiser = trip.superwiser || "Not in frontend";
-
-                const row = loadedSheet.addRow([
-                    station,
-                    vehicleNoOnWay,
-                    vehicleNoReported,
-                    superwiser,
+                programmedSheet.addRow([
+                    location,
+                    summary.empty.onWay.trips.includes(trip) ? trip.EmptyTripDetail?.VehicleNo || "" : "",
+                    summary.empty.reported.trips.includes(trip) ? trip.EmptyTripDetail?.VehicleNo || "" : "",
+                    trip.superwiser || "Not in frontend",
                 ]);
-
-                if (trip.driverStatus === 0) {
-                    row.eachCell((cell) => {
-                        cell.font = {
-                            color: { argb: 'FFDC2626' },
-                        };
-                    });
-                }
             });
         });
 
@@ -167,27 +143,14 @@ export async function generateTripsReport({
         emptySheet.addRow(["Unloading Location", "Vehicle No", "Standing TL", "Superwiser"]).font = { bold: true };
 
         const standingGrouped = groupByEndTo(summary.empty.standing.trips);
-
-        Object.entries(standingGrouped).forEach(([station, trips]) => {
+        Object.entries(standingGrouped).forEach(([location, trips]) => {
             trips.forEach((trip) => {
-                const vehicleNo = trip.VehicleNo || "";
-                const standingFrom = formatDate(trip.TallyLoadDetail.UnloadingDate);
-                const superwiser = trip.superwiser || "Not in frontend";
-
-                const row = loadedSheet.addRow([
-                    station,
-                    vehicleNo,
-                    standingFrom,
-                    superwiser,
+                emptySheet.addRow([
+                    location,
+                    trip.VehicleNo || "",
+                    formatDate(trip.TallyLoadDetail.UnloadingDate),
+                    trip.superwiser || "Not in frontend",
                 ]);
-
-                if (trip.driverStatus === 0) {
-                    row.eachCell((cell) => {
-                        cell.font = {
-                            color: { argb: 'FFDC2626' },
-                        };
-                    });
-                }
             });
         });
 
@@ -233,23 +196,11 @@ export async function generateTripsReport({
 
         Object.entries(loadedGrouped).forEach(([station, trips]) => {
             trips.forEach((trip) => {
-                const vehicleNoOnWay = summary.loaded.onWay.trips.includes(trip) ? trip.TallyLoadDetail.VehicleNo : "";
-                const vehicleNoReported = summary.loaded.reported.trips.includes(trip) ? trip.TallyLoadDetail.VehicleNo : "";
-
-                const row = sheet.addRow([
+                sheet.addRow([
                     station,
-                    vehicleNoOnWay,
-                    vehicleNoReported
+                    summary.loaded.onWay.trips.includes(trip) ? trip.TallyLoadDetail.VehicleNo : "",
+                    summary.loaded.reported.trips.includes(trip) ? trip.TallyLoadDetail.VehicleNo : "",
                 ]);
-
-                // Apply red (destructive) color to entire row if driverStatus is 0
-                if (trip.driverStatus === 0) {
-                    row.eachCell((cell) => {
-                        cell.font = {
-                            color: { argb: 'FFDC2626' }, // Red (Excel uses ARGB, prefix with 'FF')
-                        };
-                    });
-                }
             });
         });
 
@@ -270,24 +221,13 @@ export async function generateTripsReport({
 
         sheet.addRow(["Proposed Location", "OnWays", "Reported"]).font = { bold: true };
 
-        Object.entries(loadedGrouped).forEach(([station, trips]) => {
+        Object.entries(programmedGrouped).forEach(([location, trips]) => {
             trips.forEach((trip) => {
-                const vehicleNoOnWay = summary.empty.onWay.trips.includes(trip) ? trip.EmptyTripDetail?.VehicleNo || "" : "";
-                const vehicleNoReported = summary.empty.reported.trips.includes(trip) ? trip.EmptyTripDetail?.VehicleNo || "" : "";
-
-                const row = sheet.addRow([
-                    station,
-                    vehicleNoOnWay,
-                    vehicleNoReported
+                sheet.addRow([
+                    location,
+                    summary.empty.onWay.trips.includes(trip) ? trip.EmptyTripDetail?.VehicleNo || "" : "",
+                    summary.empty.reported.trips.includes(trip) ? trip.EmptyTripDetail?.VehicleNo || "" : "",
                 ]);
-
-                if (trip.driverStatus === 0) {
-                    row.eachCell((cell) => {
-                        cell.font = {
-                            color: { argb: 'FFDC2626' },
-                        };
-                    });
-                }
             });
         });
 
@@ -304,25 +244,13 @@ export async function generateTripsReport({
         const standingGrouped = groupByEndTo(summary.empty.standing.trips);
         sheet.addRow(["Unloading Location", "Vehicle No", "Standing TL"]).font = { bold: true };
 
-        Object.entries(loadedGrouped).forEach(([station, trips]) => {
+        Object.entries(standingGrouped).forEach(([location, trips]) => {
             trips.forEach((trip) => {
-                const location = station;
-                const vehicle = trip.VehicleNo || "";
-                const standingFrom = formatDate(trip.LoadTripDetail.UnloadDate);
-
-                const row = sheet.addRow([
+                sheet.addRow([
                     location,
-                    vehicle,
-                    standingFrom
+                    trip.VehicleNo || "",
+                    formatDate(trip.LoadTripDetail.UnloadDate),
                 ]);
-
-                if (trip.driverStatus === 0) {
-                    row.eachCell((cell) => {
-                        cell.font = {
-                            color: { argb: 'FFDC2626' },
-                        };
-                    });
-                }
             });
         });
 

@@ -85,7 +85,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
 
     const [statusRemark, setStatusRemark] = useState("");
 
-    const noDriver = vehicle.vehicle.tripDetails.driver === "no driver";
+    const noDriver = vehicle.vehicle.tripDetails.driver === "no driver" || vehicle.driver.name === "no driver";
 
     // ---------------------------
     // API Handlers

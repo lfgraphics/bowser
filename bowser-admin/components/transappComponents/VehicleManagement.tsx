@@ -32,6 +32,12 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
     const [filterNoDriver, setFilterNoDriver] = useState(false);
 
     useEffect(() => {
+        if (vehicles.length > 0) {
+            console.log('Vehicles state updated:', vehicles);
+        }
+    }, [vehicles])
+
+    useEffect(() => {
         if (!user?._id) return;
 
         if (cache.vehicleDetails && Object.keys(cache.vehicleDetails).length > 0) {
@@ -139,7 +145,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                     <TableHead>Sn</TableHead>
                     <TableHead>Vehicle no.</TableHead>
                     <TableHead className="flex flex-row gap-3 items-center">Driver <ListFilter size={16} onClick={() => setFilterNoDriver(filterNoDriver ? false : true)} /></TableHead>
-                    {vehicles.some(v => v.vehicle.tripDetails.driver === "no driver") && (
+                    {vehicles.some(v => v.vehicle.tripDetails.driver === "no driver" || v.driver.name === "no driver") && (
                         <TableHead>No Driver Since</TableHead>
                     )}
                     <TableHead>Last Comment</TableHead>
@@ -149,13 +155,13 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
             <TableBody>
                 {vehicles.filter(vehicle => {
                     if (!filterNoDriver) return true; // show all
-                    return vehicle.vehicle.tripDetails.driver === "no driver"; // filter
+                    return vehicle.vehicle.tripDetails.driver === "no driver" || vehicle.driver.name === "no driver"; // filter
                 }).map((v, index) => {
                     const { VehicleNo } = v.vehicle;
                     const isInactive = inactiveVehicles.findIndex((i) => i.VehicleNo === VehicleNo) !== -1;
 
                     return (
-                        <TableRow key={v.vehicle._id} className={isInactive ? "bg-red-300" : "" + v.vehicle.tripDetails.driver == "no driver" ? "text-destructive" : ""}>
+                        <TableRow key={v.vehicle._id} className={isInactive ? "bg-red-300" : "" + v.vehicle.tripDetails.driver == "no driver" || v.driver.name === "no driver" ? "text-destructive" : ""}>
                             <TableCell>{index + 1}</TableCell>
                             <TableCell>{VehicleNo}</TableCell>
                             {/* {v.vehicle.tripDetails.driver !== "no driver" ? v.driver?.name : `${v.lastDriverLog?.leaving?.tillDate ? `${v.driver.name} On leave til` + formatDate(v.lastDriverLog?.leaving?.tillDate) : `${v.driver.name} left the vehicle from ${formatDate(v.driver.leaving!.from)}`}` || "—"} */}

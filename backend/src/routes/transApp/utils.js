@@ -97,6 +97,7 @@ const getTripById = async (tripId) => {
  * specific user. Here is a summary of what each function returns:
  */
 async function getUserVehicles(userId) {
+    console.log('Called getUserVehicles with userId:', userId);
     try {
         const user = await TransUser.findOne({ _id: userId });
         if (!user) throw new Error('User not found');
@@ -112,6 +113,7 @@ async function getUserVehicles(userId) {
             const vehiclesArray = divisionUsers.map(user => user.myVehicles || []).flat();
             return vehiclesArray || []
         } else {
+            console.log('User found:', user.UserName, 'with vehicles:', user.myVehicles, user.myVehicles.length);
             return user.myVehicles || [];
         }
     } catch (error) {

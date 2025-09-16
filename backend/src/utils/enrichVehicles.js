@@ -100,6 +100,7 @@ async function getDriverFromLog(vehicleNumbers) {
  * Consolidated fetch for latest vehicle details
  */
 async function getVehiclesFullDetails(vehicleNumbers) {
+    console.log('length of vehicles provided: ', vehicleNumbers)
     const enrichedVehicles = await fetchAndEnrichVehicles(vehicleNumbers);
     const tripMap = await getLatestTrips(vehicleNumbers);
 
