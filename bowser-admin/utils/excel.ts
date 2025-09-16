@@ -91,12 +91,15 @@ export async function generateTripsReport({
 
         Object.entries(loadedGrouped).forEach(([station, trips]) => {
             trips.forEach((trip) => {
-                loadedSheet.addRow([
+                const row = loadedSheet.addRow([
                     station,
                     summary.loaded.onWay.trips.includes(trip) ? trip.TallyLoadDetail.VehicleNo : "",
                     summary.loaded.reported.trips.includes(trip) ? trip.TallyLoadDetail.VehicleNo : "",
                     trip.superwiser || "Not in frontend",
                 ]);
+                if (trip.driverStatus === 0) {
+                    row.font = { color: { argb: 'FFFF0000' } };
+                }
             });
         });
 
@@ -120,12 +123,15 @@ export async function generateTripsReport({
 
         Object.entries(programmedGrouped).forEach(([location, trips]) => {
             trips.forEach((trip) => {
-                programmedSheet.addRow([
+                const row = programmedSheet.addRow([
                     location,
                     summary.empty.onWay.trips.includes(trip) ? trip.EmptyTripDetail?.VehicleNo || "" : "",
                     summary.empty.reported.trips.includes(trip) ? trip.EmptyTripDetail?.VehicleNo || "" : "",
                     trip.superwiser || "Not in frontend",
                 ]);
+                if (trip.driverStatus === 0) {
+                    row.font = { color: { argb: 'FFFF0000' } };
+                }
             });
         });
 
@@ -145,12 +151,15 @@ export async function generateTripsReport({
         const standingGrouped = groupByEndTo(summary.empty.standing.trips);
         Object.entries(standingGrouped).forEach(([location, trips]) => {
             trips.forEach((trip) => {
-                emptySheet.addRow([
+                const row = emptySheet.addRow([
                     location,
                     trip.VehicleNo || "",
                     formatDate(trip.TallyLoadDetail.UnloadingDate),
                     trip.superwiser || "Not in frontend",
                 ]);
+                if (trip.driverStatus === 0) {
+                    row.font = { color: { argb: 'FFFF0000' } };
+                }
             });
         });
 
@@ -196,11 +205,14 @@ export async function generateTripsReport({
 
         Object.entries(loadedGrouped).forEach(([station, trips]) => {
             trips.forEach((trip) => {
-                sheet.addRow([
+                const row = sheet.addRow([
                     station,
                     summary.loaded.onWay.trips.includes(trip) ? trip.TallyLoadDetail.VehicleNo : "",
                     summary.loaded.reported.trips.includes(trip) ? trip.TallyLoadDetail.VehicleNo : "",
                 ]);
+                if (trip.driverStatus === 0) {
+                    row.font = { color: { argb: 'FFFF0000' } };
+                }
             });
         });
 
@@ -223,11 +235,14 @@ export async function generateTripsReport({
 
         Object.entries(programmedGrouped).forEach(([location, trips]) => {
             trips.forEach((trip) => {
-                sheet.addRow([
+                const row = sheet.addRow([
                     location,
                     summary.empty.onWay.trips.includes(trip) ? trip.EmptyTripDetail?.VehicleNo || "" : "",
                     summary.empty.reported.trips.includes(trip) ? trip.EmptyTripDetail?.VehicleNo || "" : "",
                 ]);
+                if (trip.driverStatus === 0) {
+                    row.font = { color: { argb: 'FFFF0000' } };
+                }
             });
         });
 
@@ -246,11 +261,14 @@ export async function generateTripsReport({
 
         Object.entries(standingGrouped).forEach(([location, trips]) => {
             trips.forEach((trip) => {
-                sheet.addRow([
+                const row = sheet.addRow([
                     location,
                     trip.VehicleNo || "",
                     formatDate(trip.LoadTripDetail.UnloadDate),
                 ]);
+                if (trip.driverStatus === 0) {
+                    row.font = { color: { argb: 'FFFF0000' } };
+                }
             });
         });
 
