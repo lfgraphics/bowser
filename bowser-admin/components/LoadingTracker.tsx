@@ -63,6 +63,7 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }
             setLocationRemark(data.find(trip => trip?._id === tripId)?.EndTo.toUpperCase() || "");
             setManagerComment("#REPORTED ");
             (!loadingSuperVisor || loadingSuperVisor.length == 0) && fetchStackHolders();
+            console.log('loadingSuperVisor: ', loadingSuperVisor)
         }
         if (actionType === "update") {
             setTrackUpdateDate(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined);
@@ -180,11 +181,14 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }
 
     const fetchStackHolders = async () => {
         try {
-            const response = await fetch(`${BASE_URL}/trans-app/stack-holders/system/${data.find(trip => trip?._id === tripId)?.EndTo}`);
+            const response = await fetch(`${BASE_URL}/trans-app/stack-holders/system/${data.find(trip => trip?._id === tripId)?.EndTo.split(":")[0]}`);
+            console.log('url: ', `${BASE_URL}/trans-app/stack-holders/system/${data.find(trip => trip?._id === tripId)?.EndTo.split(":")[0]}`)
+            console.log('response: ', response);
             const responseData = await response.json();
+            console.log('responseData: ', responseData);
             if (!response.ok) return;
             setStackHolder(responseData[0])
-            console.log(responseData[0])
+            console.log('stackHolder: ', responseData[0])
             setLoadingSuperVisor(responseData[0].loadingSupervisor);
         } catch (error) {
             console.error('Error fetching fuel providers:', error);
