@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronUp } from "lucide-react";
 import {
     Table,
     TableBody,
@@ -17,19 +18,53 @@ import {
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Trash2, Ban, ListFilter } from "lucide-react";
+import { Trash2, Ban, Filter } from "lucide-react";
 
 import { DetailedVehicleData, InactiveVehicles, TransAppUser } from "@/types";
 import { useVehiclesCache } from "@/src/context/VehiclesCacheContext";
 import { BASE_URL } from "@/lib/api";
 import { fetchUserVehicles } from "@/utils/transApp";
 import DriverManagementModal from "../DriverManagement";
+import { formatDate } from "@/lib/utils";
+import UpdateTripMenu from "./UpdateTripMenu";
+import { Input } from "@/components/ui/input";
 
 const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
     const { cache, setCache } = useVehiclesCache();
     const [vehicles, setVehicles] = useState<DetailedVehicleData[]>([]);
     const [inactiveVehicles, setInactiveVehicles] = useState<InactiveVehicles[]>([]);
     const [filterNoDriver, setFilterNoDriver] = useState(false);
+    const [searchQuery, setSearchQuery] = useState<string>("");
+
+    // Derive a human-readable trip status based on business rules provided
+    const computeTripStatus = (trip: DetailedVehicleData["latestTrip"] | undefined): string => {
+        if (!trip) return "—";
+
+        // Base by LoadStatus (0 -> Empty, else Loaded)
+        const isEmpty = Number(trip.LoadStatus) === 0;
+
+        // Consider different sources for reporting/unloading
+        const hasReported = Boolean(
+            trip.ReportingDate || trip.LoadTripDetail?.ReportDate || trip.EmptyTripDetail?.ReportDate
+        );
+        const hasUnloaded = Boolean(
+            trip.LoadTripDetail?.UnloadDate
+        );
+
+        // Derive base status first
+        let base = "";
+        if (hasUnloaded) base = "Unloaded - Not Planned";
+        else if (hasReported) base = isEmpty ? "Empty Reported" : "Loaded Reported";
+        else base = isEmpty ? "Empty On Way" : "Loaded On Way";
+
+        // Override with statusUpdate, unless it's Custom
+        // const lastSU = trip.statusUpdate?.[trip.statusUpdate.length - 1];
+        // if (lastSU?.status && lastSU.status !== "Custom") {
+        //     return lastSU.status === "Loaded" ? "Loaded" : lastSU.status;
+        // }
+
+        return base;
+    };
 
     useEffect(() => {
         if (vehicles.length > 0) {
@@ -46,7 +81,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
         }
 
         // Otherwise fetch and update cache
-        fetchUserVehicles(user._id)
+        fetchUserVehicles(user._id, user?.Division?.includes('Admin') || false)
             .then((data) => {
                 setVehicles(data);
                 setCache((prev) => ({
@@ -138,95 +173,364 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
         }
     };
 
+    // Memoized derived values for performance on large datasets
+    const hasAnyNoDriver = useMemo(() =>
+        vehicles.some(v => v.vehicle.tripDetails.driver === "no driver" || v.driver.name === "no driver"),
+        [vehicles]
+    );
+
+    const filteredVehicles = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase();
+        const matchesSearch = (v: DetailedVehicleData) => {
+            if (!q) return true;
+            const vehicleNo = v.vehicle?.VehicleNo?.toString()?.toLowerCase() || "";
+            const capacity = (v.vehicle?.capacity ?? "")?.toString()?.toLowerCase();
+            const driverName = v.driver?.name?.toString()?.toLowerCase() || "";
+            // Access potential driver mobile fields safely using any to avoid type issues
+            const anyV = v as any;
+            const driverMobile = (
+                anyV?.driver?.mobile ||
+                anyV?.driver?.mobileNo ||
+                anyV?.driver?.mobile_number ||
+                anyV?.driver?.phone ||
+                anyV?.driver?.contactNo ||
+                anyV?.driver?.contact
+            );
+            const driverMobileStr = driverMobile ? String(driverMobile).toLowerCase() : "";
+            const supervisor = (v as any)?.superwiser?.toString()?.toLowerCase() || "";
+
+            return (
+                vehicleNo.includes(q) ||
+                driverName.includes(q) ||
+                driverMobileStr.includes(q) ||
+                capacity.includes(q) ||
+                supervisor.includes(q)
+            );
+        };
+
+        const list = vehicles.filter((v) => {
+            const noDriver = v.vehicle.tripDetails.driver === "no driver" || v.driver.name === "no driver";
+            const passesNoDriver = filterNoDriver ? noDriver : true;
+            return passesNoDriver && matchesSearch(v);
+        });
+        return list;
+    }, [vehicles, filterNoDriver, searchQuery]);
+
+    const inactiveSet = useMemo(() => new Set(inactiveVehicles.map(i => i.VehicleNo)), [inactiveVehicles]);
+
+    // Basic virtualization setup
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const firstVisibleRowRef = useRef<HTMLTableRowElement | null>(null);
+    const isProgrammaticScroll = useRef<boolean>(false);
+    const rafId = useRef<number | null>(null);
+    const [scrollTop, setScrollTop] = useState(0);
+    const [containerHeight, setContainerHeight] = useState(0);
+    const [rowHeight, setRowHeight] = useState<number>(56); // px; measured after render
+    const overscan = 16; // extra rows above/below viewport
+    const [showBackToTop, setShowBackToTop] = useState(false);
+
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        const onScroll = () => {
+            // Ignore intermediate events during smooth programmatic scroll
+            if (isProgrammaticScroll.current) {
+                if (el.scrollTop === 0) {
+                    isProgrammaticScroll.current = false;
+                }
+                return;
+            }
+            if (rafId.current !== null) cancelAnimationFrame(rafId.current);
+            rafId.current = requestAnimationFrame(() => {
+                setScrollTop(el.scrollTop);
+                setShowBackToTop(el.scrollTop > rowHeight * 4);
+                rafId.current = null;
+            });
+        };
+        const onResize = () => setContainerHeight(el.clientHeight);
+        onResize();
+        el.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onResize);
+        const onKeyDown = (e: KeyboardEvent) => {
+            const key = e.key?.toLowerCase();
+            if (e.altKey && key === 't') {
+                e.preventDefault();
+                el.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => {
+            el.removeEventListener('scroll', onScroll);
+            window.removeEventListener('resize', onResize);
+            window.removeEventListener('keydown', onKeyDown);
+            if (rafId.current !== null) cancelAnimationFrame(rafId.current);
+        };
+    }, []);
+
+    const total = filteredVehicles.length;
+    const visibleCount = Math.max(1, Math.ceil(containerHeight / rowHeight));
+    let startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
+    let endIndex = Math.min(total, startIndex + visibleCount + overscan * 2);
+    // If we're near the end, render the final chunk to avoid blank space
+    const totalHeight = total * rowHeight;
+    const viewportBottom = scrollTop + containerHeight;
+    const nearEnd = totalHeight - viewportBottom <= rowHeight * 2;
+    if (nearEnd) {
+        endIndex = total;
+        startIndex = Math.max(0, total - (visibleCount + overscan * 2));
+    }
+    const topSpacerHeight = startIndex * rowHeight;
+    const bottomSpacerHeight = Math.max(0, (total - endIndex) * rowHeight);
+
+    // Measure actual row height to improve accuracy (runs after slice renders)
+    useEffect(() => {
+        const el = firstVisibleRowRef.current;
+        if (!el) return;
+        const h = el.getBoundingClientRect().height;
+        if (h && Math.abs(h - rowHeight) > 1) {
+            setRowHeight(h);
+        }
+    }, [filteredVehicles, startIndex]);
+
+    // column span for spacer rows
+    const colSpan = useMemo(() => {
+        let count = 0;
+        // Sn, Vehicle no., Capacity, Driver
+        count += 4;
+        if (hasAnyNoDriver) count += 2; // No Driver Since, Location
+        // Trip Status, Last Update IN, Last Status Comment, Last Comment Time
+        // When filterNoDriver is active, hide Trip Status, Last Update IN, Last Comment Time (keep Last Status Comment)
+        count += filterNoDriver ? 1 /* only Last Status Comment */ : 4;
+        if (user?.Division?.includes('Admin')) count += 1; // Supervisor
+        // Actions
+        count += filterNoDriver ? 0 : 1;
+        return count;
+    }, [hasAnyNoDriver, user?.Division, filterNoDriver]);
+
     return (
-        <Table className='w-full min-w-max'>
-            <TableHeader>
-                <TableRow>
-                    <TableHead>Sn</TableHead>
-                    <TableHead>Vehicle no.</TableHead>
-                    <TableHead className="flex flex-row gap-3 items-center">Driver <ListFilter size={16} onClick={() => setFilterNoDriver(filterNoDriver ? false : true)} /></TableHead>
-                    {vehicles.some(v => v.vehicle.tripDetails.driver === "no driver" || v.driver.name === "no driver") && (
-                        <TableHead>No Driver Since</TableHead>
-                    )}
-                    <TableHead>Last Comment</TableHead>
-                    <TableHead>Actions</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {vehicles.filter(vehicle => {
-                    if (!filterNoDriver) return true; // show all
-                    return vehicle.vehicle.tripDetails.driver === "no driver" || vehicle.driver.name === "no driver"; // filter
-                }).map((v, index) => {
-                    const { VehicleNo } = v.vehicle;
-                    const isInactive = inactiveVehicles.findIndex((i) => i.VehicleNo === VehicleNo) !== -1;
-
-                    return (
-                        <TableRow key={v.vehicle._id} className={isInactive ? "bg-red-300" : "" + v.vehicle.tripDetails.driver == "no driver" || v.driver.name === "no driver" ? "text-destructive" : ""}>
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell>{VehicleNo}</TableCell>
-                            {/* {v.vehicle.tripDetails.driver !== "no driver" ? v.driver?.name : `${v.lastDriverLog?.leaving?.tillDate ? `${v.driver.name} On leave til` + formatDate(v.lastDriverLog?.leaving?.tillDate) : `${v.driver.name} left the vehicle from ${formatDate(v.driver.leaving!.from)}`}` || "—"} */}
-                            <TableCell>{v.vehicle.tripDetails.driver?.toUpperCase()}</TableCell>
-                            <TableCell>
-                                {v.driver.leaving?.from
-                                    ? `${Math.round(
-                                        Math.abs(
-                                            Number(new Date()) - Number(new Date(v.driver.leaving.from))
-                                        ) / (1000 * 60 * 60 * 24)
-                                    )} Days`
-                                    : ""}
-                            </TableCell>
-                            <TableCell>{v.lastDriverLog?.statusUpdate?.[v.lastDriverLog?.statusUpdate?.length - 1]?.remark || v.lastDriverLog?.leaving?.remark}</TableCell>
-                            <TableCell>
-                                <div className="flex gap-2">
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button
-                                                    onClick={() => deleteVehicle(VehicleNo)}
-                                                    variant="destructive"
-                                                    size="icon"
-                                                >
-                                                    <Trash2 />
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>Delete Vehicle</TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-
-                                    {!isInactive && (
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button
-                                                        onClick={() => deActivateVehicle(VehicleNo)}
-                                                        variant="secondary"
-                                                        size="icon"
-                                                    >
-                                                        <Ban />
-                                                    </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>Mark Inactive</TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    )}
-
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <DriverManagementModal vehicle={v} />
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>Manage Driver</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                </div>
-                            </TableCell>
+        <>
+            <div className="flex items-center gap-3 flex-wrap mb-2">
+                <Button className="w-max" size="sm" onClick={() => setFilterNoDriver(filterNoDriver ? false : true)} aria-pressed={filterNoDriver} variant={filterNoDriver ? "secondary" : "default"}>
+                    No Driver
+                    <Filter size={16} className="ml-1" />
+                </Button>
+                <div className="flex-1 min-w-[240px] max-w-md">
+                    <Input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search by Vehicle No, Driver, Mobile, Capacity, Supervisor"
+                        aria-label="Search vehicles"
+                    />
+                </div>
+            </div>
+            <div ref={containerRef} className="relative w-full overflow-auto" style={{ maxHeight: '80svh' }}>
+                <Table className='w-full min-w-max'>
+                    <TableHeader>
+                        <TableRow className="sticky top-0 bg-background z-10">
+                            <TableHead className="bg-background">Sn</TableHead>
+                            <TableHead className="bg-background">Vehicle no.</TableHead>
+                            <TableHead className="bg-background">Capacity</TableHead>
+                            <TableHead className="bg-background flex flex-row gap-3 items-center">Driver</TableHead>
+                            {hasAnyNoDriver && (
+                                <>
+                                    <TableHead className="bg-background">No Driver Since</TableHead>
+                                    <TableHead className="bg-background">Location</TableHead>
+                                </>
+                            )}
+                            {!filterNoDriver && (
+                                <>
+                                    <TableHead className="bg-background">Trip Status</TableHead>
+                                    <TableHead className="bg-background">Last Update IN</TableHead>
+                                </>
+                            )}
+                            <TableHead className="bg-background">Last Status Comment</TableHead>
+                            {!filterNoDriver && (
+                                <TableHead className="bg-background">Last Comment Time</TableHead>
+                            )}
+                            {user?.Division?.includes('Admin') && (
+                                <TableHead className="bg-background">Supervisor</TableHead>
+                            )}
+                            {!filterNoDriver && (
+                                <TableHead className="bg-background">Actions</TableHead>
+                            )}
                         </TableRow>
-                    );
-                })}
-            </TableBody>
-        </Table>
+                    </TableHeader>
+                    <TableBody>
+                        {/* Top spacer */}
+                        {topSpacerHeight > 0 && (
+                            <TableRow>
+                                <TableCell colSpan={colSpan} style={{ height: topSpacerHeight }} />
+                            </TableRow>
+                        )}
+                        {filteredVehicles.slice(startIndex, endIndex).map((v, index) => {
+                            const { VehicleNo } = v.vehicle;
+                            const isInactive = inactiveSet.has(VehicleNo);
+                            const noDriverRow = v.vehicle.tripDetails.driver === "no driver" || v.driver.name === "no driver";
+
+                            let rowClass = "";
+                            if (isInactive) rowClass += " bg-red-300";
+                            if (noDriverRow) rowClass += " text-destructive";
+
+                            const q = searchQuery.trim();
+                            const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                            const highlight = (value: string | number | undefined) => {
+                                if (!q || value === undefined || value === null) return value ?? '—';
+                                const str = String(value);
+                                try {
+                                    const regex = new RegExp(`(${escapeRegExp(q)})`, 'ig');
+                                    const parts = str.split(regex);
+                                    return parts.map((part, i) => (
+                                        i % 2 === 1
+                                            ? <span key={i} className="bg-yellow-200 dark:bg-yellow-700 rounded px-0.5">{part}</span>
+                                            : <React.Fragment key={i}>{part}</React.Fragment>
+                                    ));
+                                } catch {
+                                    return str;
+                                }
+                            };
+
+                            return (
+                                <TableRow ref={index === 0 ? firstVisibleRowRef : undefined} key={v.vehicle._id} className={rowClass.trim()}>
+                                    <TableCell>{startIndex + index + 1}</TableCell>
+                                    <TableCell>{highlight(VehicleNo)}</TableCell>
+                                    <TableCell>{highlight(v.vehicle.capacity ?? "—")}</TableCell>
+                                    {/* Show driver name if available, else tripDetails driver (e.g., NO DRIVER). Also show mobile if present. */}
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            <span>{
+                                                v.vehicle.tripDetails.driver === "no driver"
+                                                    ? highlight(v.vehicle.tripDetails.driver?.toUpperCase())
+                                                    : highlight(v.driver?.name || v.vehicle.tripDetails.driver)
+                                            }</span>
+                                            {(() => {
+                                                const anyV = v as any;
+                                                const mobile = v.driver.mobile || anyV?.driver?.mobileNo || anyV?.driver?.mobile_number || anyV?.driver?.phone || anyV?.driver?.contactNo || anyV?.driver?.contact;
+                                                if (!mobile) return null;
+                                                return v.vehicle.tripDetails.driver !== "no driver" && <span className="text-xs text-muted-foreground">{highlight(String(mobile))}</span>;
+                                            })()}
+                                        </div>
+                                    </TableCell>
+                                    {hasAnyNoDriver && (
+                                        <>
+                                            <TableCell>
+                                                {v.driver.leaving?.from
+                                                    ? `${Math.round(
+                                                        Math.abs(
+                                                            Number(new Date()) - Number(new Date(v.driver.leaving.from))
+                                                        ) / (1000 * 60 * 60 * 24)
+                                                    )} Days`
+                                                    : ""}
+                                            </TableCell>
+                                            <TableCell>{v.driver.leaving?.location}</TableCell>
+                                        </>
+                                    )}
+                                    {!filterNoDriver && (
+                                        <>
+                                            <TableCell>
+                                                {computeTripStatus(v.latestTrip)}
+                                            </TableCell>
+                                            <TableCell>{v.lastStatusUpdate?.source || '_'}</TableCell>
+                                        </>
+                                    )}
+                                    <TableCell>{filterNoDriver? v.lastDriverLog.leaving?.remark : v.lastStatusUpdate?.comment || v.lastDriverLog?.statusUpdate?.[v.lastDriverLog?.statusUpdate?.length - 1]?.remark || v.lastDriverLog?.leaving?.remark}</TableCell>
+                                    {!filterNoDriver && (
+                                        <TableCell>{formatDate(v.lastStatusUpdate?.dateTime!) || formatDate(v.lastDriverLog?.statusUpdate?.[v.lastDriverLog?.statusUpdate?.length - 1]?.dateTime)}</TableCell>
+                                    )}
+                                    {user?.Division?.includes('Admin') && (
+                                        <TableCell>
+                                            {highlight((v as any).superwiser || '-')}
+                                        </TableCell>
+                                    )}
+                                    {!filterNoDriver && (
+                                        <TableCell>
+                                            <div className="flex gap-2 items-center">
+                                                {!user?.Division?.includes('Admin') && (
+                                                    <>
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button
+                                                                        onClick={() => deleteVehicle(VehicleNo)}
+                                                                        variant="destructive"
+                                                                        size="icon"
+                                                                    >
+                                                                        <Trash2 />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>Delete Vehicle</TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+
+                                                        {!isInactive && (
+                                                            <TooltipProvider>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button
+                                                                            onClick={() => deActivateVehicle(VehicleNo)}
+                                                                            variant="secondary"
+                                                                            size="icon"
+                                                                        >
+                                                                            <Ban />
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Mark Inactive</TooltipContent>
+                                                                </Tooltip>
+                                                            </TooltipProvider>
+                                                        )}
+
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <DriverManagementModal vehicle={v} />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p>Manage Driver</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                    </>
+                                                )}
+
+                                                {/* Update menu per row */}
+                                                <UpdateTripMenu
+                                                    trip={v.latestTrip}
+                                                    vehicleNo={VehicleNo}
+                                                    user={user}
+                                                    statusLabel={computeTripStatus(v.latestTrip)}
+                                                />
+                                            </div>
+                                        </TableCell>
+                                    )}
+                                </TableRow>
+                            );
+                        })}
+                        {/* Bottom spacer */}
+                        {bottomSpacerHeight > 0 && (
+                            <TableRow>
+                                <TableCell colSpan={colSpan} style={{ height: bottomSpacerHeight }} />
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+                {showBackToTop && (
+                    <Button
+                        className="fixed bottom-6 right-6 rounded-full h-10 w-10 p-0 shadow-lg"
+                        onClick={() => {
+                            const el = containerRef.current;
+                            if (!el) return;
+                            isProgrammaticScroll.current = true;
+                            el.scrollTo({ top: 0, behavior: 'smooth' });
+                            // Safety timeout to clear the flag in case 'scrollTop===0' check misses
+                            window.setTimeout(() => { isProgrammaticScroll.current = false; }, 800);
+                        }}
+                        aria-label="Back to top"
+                        title="Back to top (Alt+T)"
+                    >
+                        <ChevronUp className="h-5 w-5" />
+                    </Button>
+                )}
+            </div>
+        </>
     );
 };
 

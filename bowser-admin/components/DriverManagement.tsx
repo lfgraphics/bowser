@@ -323,7 +323,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                                             )}
 
                                             <span className="font-medium">Driver:</span>
-                                            <span>{vehicle.driver.name}</span>
+                                            <span>{vehicle.lastDriverLog.driver.Name || vehicle.driver.name}</span>
 
                                             <span className="font-medium">Remark:</span>
                                             <span>{vehicle.driver.leaving?.remark}</span>

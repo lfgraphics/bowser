@@ -152,7 +152,7 @@ export async function generateTripsReport({
         Object.entries(standingGrouped).forEach(([location, trips]) => {
             trips.forEach((trip) => {
                 const row = emptySheet.addRow([
-                    location,
+                    location.split(':')[1],
                     trip.VehicleNo || "",
                     formatDate(trip.TallyLoadDetail.UnloadingDate),
                     trip.superwiser || "Not in frontend",

@@ -3,6 +3,8 @@ const Vehicle = require('../models/vehicle');
 const Driver = require('../models/driver');
 const TankersTrip = require('../models/VehiclesTrip');
 const DriversLog = require('../models/VehicleDriversLog');
+const TransUser = require('../models/TransUser');
+const { getLatestVehicleUpdates } = require('./vehicles');
 
 /**
  * Extract ITPL number from driver string
@@ -99,10 +101,20 @@ async function getDriverFromLog(vehicleNumbers) {
 /**
  * Consolidated fetch for latest vehicle details
  */
-async function getVehiclesFullDetails(vehicleNumbers) {
-    console.log('length of vehicles provided: ', vehicleNumbers)
+async function getVehiclesFullDetails(vehicleNumbers, isAdmin = false) {
+    console.log('length of vehicles provided: ', vehicleNumbers);
     const enrichedVehicles = await fetchAndEnrichVehicles(vehicleNumbers);
     const tripMap = await getLatestTrips(vehicleNumbers);
+
+    // Get last status update for all vehicles
+    let lastStatusUpdates = [];
+    try {
+        lastStatusUpdates = await getLatestVehicleUpdates(vehicleNumbers);
+    } catch (err) {
+        lastStatusUpdates = [];
+    }
+    const statusMap = new Map();
+    lastStatusUpdates.forEach(u => statusMap.set(u.vehicleNo, u));
 
     const noDriverVehicles = enrichedVehicles
         .filter(v => v.driver.name === 'no driver')
@@ -112,9 +124,35 @@ async function getVehiclesFullDetails(vehicleNumbers) {
         ? await getDriverFromLog(noDriverVehicles)
         : new Map();
 
+    // Optional admin enrichment: supervisors (no capacity here)
+    let userMapByVehicle = new Map();
+    if (isAdmin) {
+        try {
+            const allVehicleNos = enrichedVehicles.map(v => v.vehicle.VehicleNo);
+            const users = await TransUser.find(
+                {
+                    Division: { $in: [0, 1, 2, 3] },
+                    myVehicles: { $in: allVehicleNos }
+                },
+                { UserName: 1, myVehicles: 1, Division: 1 }
+            ).lean();
+
+            userMapByVehicle = new Map();
+            users.forEach(u => {
+                (u.myVehicles || []).forEach(vNo => {
+                    if (!userMapByVehicle.has(vNo)) userMapByVehicle.set(vNo, []);
+                    userMapByVehicle.get(vNo).push(u.UserName);
+                });
+            });
+        } catch (e) {
+            console.error('Admin enrichment failed in getVehiclesFullDetails:', e);
+        }
+    }
+
     return enrichedVehicles.map(v => {
         const vehicleNo = v.vehicle.VehicleNo;
         const latestTrip = tripMap.get(vehicleNo) || null;
+        const lastStatusUpdate = statusMap.get(vehicleNo) || null;
 
         let driver = v.driver;
         if (driver.name === 'no driver' && logMap.has(vehicleNo)) {
@@ -122,17 +160,23 @@ async function getVehiclesFullDetails(vehicleNumbers) {
             driver = {
                 _id: log.driver?._id || null,
                 name: log.driver?.Name || 'unknown',
-                mobile: log.driver?.MobileNo?.[log.driver?.MobileNo.lenght - 1]?.MobileNo || null,
+                mobile: log.driver?.MobileNo?.[log.driver?.MobileNo.length - 1]?.MobileNo || null,
                 leaving: log.leaving || null
             };
         }
 
-        return {
+        const base = {
             vehicle: v.vehicle,
             driver,
             latestTrip,
-            lastDriverLog: v.vehicle.lastDriverLog || null
+            lastDriverLog: v.vehicle.lastDriverLog || null,
+            lastStatusUpdate
         };
+        if (isAdmin) {
+            const names = userMapByVehicle.get(vehicleNo) || [];
+            base.superwiser = names.length ? names.join(', ') : 'Not found';
+        }
+        return base;
     });
 }
 

@@ -9,7 +9,29 @@ const {
     getTripById,
     getCurrentTripByDriverId
 } = require('./utils');
+const { getLatestVehicleUpdates } = require('../../utils/vehicles');
 const { getVehiclesFullDetails } = require('../../utils/enrichVehicles');
+
+// Get latest status update for each vehicle of a user by userId
+router.get('/latest-vehicle-updates', async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) {
+        return res.status(400).json({ error: 'User ID is required.' });
+    }
+    try {
+        const vehicles = await getUserVehicles(userId);
+        if (!vehicles || vehicles.length === 0) {
+            return res.status(404).json({ error: 'No vehicles found for this user.' });
+        }
+        // vehicles can be array of objects or strings, extract vehicle numbers
+        const vehicleNumbers = vehicles.map(v => v.VehicleNo || v.vehicleNo || v);
+        const updates = await getLatestVehicleUpdates(vehicleNumbers);
+        return res.status(200).json(updates);
+    } catch (error) {
+        console.error('Error fetching latest vehicle updates:', error);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+});
 
 router.get('/', async (req, res) => {
     const { userId } = req.query;
@@ -115,7 +137,7 @@ router.get('/get-summary/:userId', async (req, res) => {
 });
 
 router.get('/user-detailed-vehicles', async (req, res) => {
-    const { userId } = req.query;
+    const { userId, isAdmin: isAdminQuery } = req.query;
     if (!userId) {
         return res.status(400).json({ error: 'User ID is required.' });
     }
@@ -125,7 +147,13 @@ router.get('/user-detailed-vehicles', async (req, res) => {
             return res.status(404).json({ error: 'No vehicles found for this user.' });
         }
         try {
-            const details = await getVehiclesFullDetails(vehicles);
+            // Parse isAdmin query param as boolean (accepts true/false or 1/0)
+            const isAdmin = (
+                typeof isAdminQuery === 'string'
+                    ? isAdminQuery.toLowerCase() === 'true' || isAdminQuery === '1'
+                    : Boolean(isAdminQuery)
+            );
+            const details = await getVehiclesFullDetails(vehicles, isAdmin);
             res.status(200).json(details);
         } catch (err) {
             console.error('Error fetching vehicle details:', err);

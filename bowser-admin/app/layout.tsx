@@ -11,6 +11,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { usePathname } from 'next/navigation';
 import { Toaster } from "sonner";
 import { VehiclesCacheProvider } from "@/src/context/VehiclesCacheContext";
+import NetStatus from "@/components/NetStatus";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <body className={`dark:bg-background dark:text-foreground`}>
+        <NetStatus />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

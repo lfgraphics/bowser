@@ -3,6 +3,7 @@ const TankersTrip = require('../../models/VehiclesTrip');
 const DeactivatedVehicle = require('../../models/DeactivatedVehicles');
 const Vehicle = require('../../models/vehicle');
 const { mongoose } = require('mongoose');
+const { getLatestVehicleUpdates } = require('../../utils/vehicles');
 
 const division = {
     "0": "Ethanol",
@@ -309,6 +310,16 @@ async function getNewSummary(userId, isAdmin) {
         const deactivatedVehicles = await getUsersDeactivatedVehicles(userId);
         const vehicleNos = vehicles.map(v => v);
         const activeVehicleNos = vehicleNos.filter(v => !deactivatedVehicles.includes(v));
+        // Get latest status updates for all active vehicles
+        let latestUpdates = [];
+        try {
+            latestUpdates = await getLatestVehicleUpdates(activeVehicleNos);
+        } catch (err) {
+            latestUpdates = [];
+        }
+        // Map for quick lookup
+        const updatesMap = new Map();
+        latestUpdates.forEach(u => updatesMap.set(u.vehicleNo, u));
 
         // Aggregate all latest trips per vehicle and facet them
         const result = await TankersTrip.aggregate([
@@ -408,13 +419,31 @@ async function getNewSummary(userId, isAdmin) {
             unloadedNotPlanned = []
         } = result[0] || {};
 
+        // Helper to embed last status update in each trip
+        function embedLastStatus(trips) {
+            return trips.map(trip => {
+                const update = updatesMap.get(trip.VehicleNo);
+                return {
+                    ...trip,
+                    lastStatusUpdate: update || null
+                };
+            });
+        }
+
+        // Embed last status update in all trip arrays
+        const loadedOnWayWithStatus = embedLastStatus(loadedOnWay);
+        const loadedReportedWithStatus = embedLastStatus(loadedReported);
+        const emptyOnWayWithStatus = embedLastStatus(emptyOnWay);
+        const emptyReportedWithStatus = embedLastStatus(emptyReported);
+        const unloadedNotPlannedWithStatus = embedLastStatus(unloadedNotPlanned);
+
         if (isAdmin) {
             const allVehicleNos = [
-                ...loadedOnWay.map(t => t.VehicleNo),
-                ...loadedReported.map(t => t.VehicleNo),
-                ...emptyOnWay.map(t => t.VehicleNo),
-                ...emptyReported.map(t => t.VehicleNo),
-                ...unloadedNotPlanned.map(t => t.VehicleNo)
+                ...loadedOnWayWithStatus.map(t => t.VehicleNo),
+                ...loadedReportedWithStatus.map(t => t.VehicleNo),
+                ...emptyOnWayWithStatus.map(t => t.VehicleNo),
+                ...emptyReportedWithStatus.map(t => t.VehicleNo),
+                ...unloadedNotPlannedWithStatus.map(t => t.VehicleNo)
             ];
 
             const users = await TransUser.find(
@@ -447,42 +476,41 @@ async function getNewSummary(userId, isAdmin) {
                 });
             };
 
-
-            attachCapacity(loadedOnWay);
-            attachCapacity(loadedReported);
-            attachCapacity(emptyOnWay);
-            attachCapacity(emptyReported);
-            attachCapacity(unloadedNotPlanned);
-            attachSuperviser(loadedOnWay);
-            attachSuperviser(loadedReported);
-            attachSuperviser(emptyOnWay);
-            attachSuperviser(emptyReported);
-            attachSuperviser(unloadedNotPlanned);
+            attachCapacity(loadedOnWayWithStatus);
+            attachCapacity(loadedReportedWithStatus);
+            attachCapacity(emptyOnWayWithStatus);
+            attachCapacity(emptyReportedWithStatus);
+            attachCapacity(unloadedNotPlannedWithStatus);
+            attachSuperviser(loadedOnWayWithStatus);
+            attachSuperviser(loadedReportedWithStatus);
+            attachSuperviser(emptyOnWayWithStatus);
+            attachSuperviser(emptyReportedWithStatus);
+            attachSuperviser(unloadedNotPlannedWithStatus);
         }
 
         return {
             loaded: {
                 onWay: {
-                    count: loadedOnWay.length,
-                    trips: loadedOnWay
+                    count: loadedOnWayWithStatus.length,
+                    trips: loadedOnWayWithStatus
                 },
                 reported: {
-                    count: loadedReported.length,
-                    trips: loadedReported
+                    count: loadedReportedWithStatus.length,
+                    trips: loadedReportedWithStatus
                 }
             },
             empty: {
                 onWay: {
-                    count: emptyOnWay.length,
-                    trips: emptyOnWay
+                    count: emptyOnWayWithStatus.length,
+                    trips: emptyOnWayWithStatus
                 },
                 standing: {
-                    count: unloadedNotPlanned.length,
-                    trips: unloadedNotPlanned
+                    count: unloadedNotPlannedWithStatus.length,
+                    trips: unloadedNotPlannedWithStatus
                 },
                 reported: {
-                    count: emptyReported.length,
-                    trips: emptyReported
+                    count: emptyReportedWithStatus.length,
+                    trips: emptyReportedWithStatus
                 }
             }
         };

@@ -768,6 +768,7 @@ export interface TankersTrip {
   }[];
   OpretionallyModified?: boolean;
   driverStatus: number;
+  lastStatusUpdate?: VehicleStatusUpdate;
 }
 
 export interface StackHolder {
@@ -808,8 +809,8 @@ export interface TripsSummary {
   }
 }
 
-export type TripStatusUpdateEnums = "Accident" | "Returning" | 'Head Quarter' | 'Loaded' | 'Breakdown' | 'Custom'
-export const tripStatusUpdateVars = ["Accident", "Returning", 'Head Quarter', 'Loaded', 'Breakdown', 'Custom']
+export type TripStatusUpdateEnums = "In Distillery" | "In Depot" | "Accident" | 'Custom' | 'Breakdown' | 'Loaded'
+export const tripStatusUpdateVars = ["In Distillery", "In Depot", "Accident", 'Custom', 'Breakdown', 'Loaded']
 
 export interface DetailedVehicleData {
   _id: string;
@@ -874,4 +875,13 @@ export interface DetailedVehicleData {
       remark: string;
     }[];
   }
+  lastStatusUpdate?: VehicleStatusUpdate;
+  superwiser?: string;
+}
+
+export interface VehicleStatusUpdate {
+  vehicleNo: string;
+  comment: string;
+  dateTime: string;
+  source: string;
 }

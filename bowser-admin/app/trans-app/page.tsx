@@ -1,6 +1,6 @@
 "use client"
-import React, { useContext, useEffect, useState } from 'react'
-import { Ban, Trash2, UserCog } from 'lucide-react'
+import React, { useContext, useEffect, useMemo, useState } from 'react'
+import { Trash2, ChevronUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { BASE_URL } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,6 @@ import { TabsTrigger, Tabs, TabsList } from '@/components/ui/tabs'
 import { formatDate } from '@/lib/utils'
 import { SearchModal } from '@/components/SearchModal'
 import VehiclesSummary from '@/components/transappComponents/VehiclesSummary'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import VehicleManagement from '@/components/transappComponents/VehicleManagement'
 
 type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary"
@@ -25,10 +24,12 @@ export default function Page() {
   const { user, photo } = useContext(TransAppContext);
   const [loading, setLoading] = useState(false)
   const [tab, setTab] = useState<Tabslist>("Summary")
+  const [tabReady, setTabReady] = useState(false)
   const [vehicles, setVehicles] = useState<string[]>()
   const [vehicleNumber, setVehicleNumber] = useState<string>()
   const [isVehicleAdditionDialogvisible, setIsVehicleAdditionDialogvisible] = useState(false)
   const [inactiveVehicles, setInactiveVehilesList] = useState<InactiveVehicles[]>()
+  const [showBackToTop, setShowBackToTop] = useState(false)
   const [searchModalConfig, setSearchModalConfig] = useState<{
     isOpen: boolean;
     title: string;
@@ -45,50 +46,110 @@ export default function Page() {
     keyExtractor: () => "",
   });
 
+  // Determine allowed tabs based on user (Inactive Vehicles hidden for Admins)
+  const allowedTabs = useMemo<Readonly<Tabslist[]>>(() => {
+    const isAdmin = !!user?.Division?.includes('Admin')
+    return isAdmin ? ["Summary", "Vehicles"] : ["Summary", "Vehicles", "Inactive Vehicles"]
+  }, [user])
+
+  // Utility to map between tabs and URL slugs
+  const tabToSlug = useMemo(() => ({
+    Summary: 'summary',
+    Vehicles: 'vehicles',
+    'Inactive Vehicles': 'inactive-vehicles',
+  } as const), [])
+
+  const parseTabFromParam = (raw: string | null, allowed: Readonly<Tabslist[]>): Tabslist | null => {
+    if (!raw) return null
+    const lower = raw.toLowerCase()
+    // Try slug match first
+    for (const t of allowed) {
+      if (tabToSlug[t] === lower) return t
+    }
+    // Fallback: case-insensitive label match
+    for (const t of allowed) {
+      if (t.toLowerCase() === lower) return t
+    }
+    return null
+  }
+
+  // Initialize tab from URL or localStorage, with fallback to allowed tabs
+  useEffect(() => {
+    // Initialize only on client
+    const params = new URLSearchParams(window.location.search)
+    const rawParam = params.get('tab')
+    const storedRaw = typeof window !== 'undefined' ? localStorage.getItem('transapp_tab') : null
+
+    let initial: Tabslist | null = parseTabFromParam(rawParam, allowedTabs)
+    if (!initial) initial = parseTabFromParam(storedRaw, allowedTabs)
+    if (!initial || !allowedTabs.includes(initial)) initial = allowedTabs[0]
+    setTab(initial)
+    setTabReady(true)
+  }, [allowedTabs])
+
+  // Persist tab to URL and localStorage whenever it changes
+  useEffect(() => {
+    if (!tab || !tabReady) return
+    try {
+      localStorage.setItem('transapp_tab', tabToSlug[tab])
+      const url = new URL(window.location.href)
+      url.searchParams.set('tab', tabToSlug[tab])
+      window.history.replaceState(null, '', url.toString())
+    } catch (_) {
+      // noop
+    }
+  }, [tab, tabToSlug, tabReady])
+
+  // Handle browser back/forward to sync tab from URL
+  useEffect(() => {
+    const onPopState = () => {
+      const params = new URLSearchParams(window.location.search)
+      const raw = params.get('tab')
+      const parsed = parseTabFromParam(raw, allowedTabs)
+      if (parsed) {
+        setTab(parsed)
+      } else if (!allowedTabs.includes(tab)) {
+        setTab(allowedTabs[0])
+      }
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [allowedTabs, tab])
+
+  // Ensure the current tab remains valid when allowed tabs change (e.g., role switch)
+  useEffect(() => {
+    if (!allowedTabs.includes(tab)) {
+      setTab(allowedTabs[0])
+    }
+  }, [allowedTabs])
+
+  // Update vehicles/inactive vehicles when user changes
   useEffect(() => {
     console.log("User:", user);
     setVehicles(user?.vehicles)
     fetchInactiveVehicles()
   }, [user]);
 
-  const deleteVehicle = async (vehicleNumber: string) => {
-    console.log('deleting vehicle: ', vehicleNumber);
-    try {
-      const fetchResponse = await fetch(`${BASE_URL}/trans-app/manage-profile/delete-vehicle`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vehicleNo: vehicleNumber,
-          userName: user?.name
-        })
-      });
-
-      const response = await fetchResponse.json();
-
-      if (!fetchResponse.ok) {
-        toast.error('Error in request', {
-          description: response.error,
-          richColors: true
-        });
-      } else {
-        toast.success(response.message, {
-          description: `${vehicleNumber} has been deleted from your profile.`,
-          richColors: true
-        });
-
-        const updatedVehicles = vehicles?.filter((v) => v !== vehicleNumber) || [];
-
-        setVehicles(updatedVehicles);
-
-        const localUserData = JSON.parse(localStorage.getItem("adminUser")!);
-        localUserData.vehicles = updatedVehicles;
-        localStorage.setItem("adminUser", JSON.stringify(localUserData));
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("An error occurred", { richColors: true, description: String(error) });
+  // Show back-to-top button on scroll and register keyboard shortcut (Alt+T)
+  useEffect(() => {
+    const onScroll = () => {
+      setShowBackToTop(window.scrollY > 300)
     }
-  };
+    const onKeyDown = (e: KeyboardEvent) => {
+      const key = e.key?.toLowerCase()
+      if (e.altKey && key === 't') {
+        e.preventDefault()
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('keydown', onKeyDown)
+    onScroll()
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [])
 
   const addVehicle = async (vehicleNumber: string) => {
     console.log('adding vehicle: ', vehicleNumber);
@@ -128,37 +189,6 @@ export default function Page() {
       toast.error("An error occurred", { richColors: true, description: String(error) });
     }
   };
-
-  const deActivateVehicle = async (vehicleNumber: string) => {
-    console.log('deleting vehicle: ', vehicleNumber);
-    try {
-      const fetchResponse = await fetch(`${BASE_URL}/trans-app/manage-profile/deactivate-vehicle`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vehicleNo: vehicleNumber,
-          userName: user?.name
-        })
-      });
-      if (!fetchResponse.ok) {
-        let errorResponse = await fetchResponse.json();
-        toast.error('Error in request', {
-          description: errorResponse.error,
-          richColors: true
-        });
-      } else {
-        let response = await fetchResponse.json();
-        console.log("Response:", response); // Log to inspect
-        toast.success(response.message, {
-          description: typeof response.entry === 'object' ? `${response.entry.VehicleNo} hase been deactivated for your profile.` : response.entry,
-          richColors: true
-        });
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("An error occurred", { richColors: true, description: String(error) });
-    }
-  }
 
   const searchVehicle = async (vehicleNumber: string) => {
     setLoading(true);
@@ -228,6 +258,7 @@ export default function Page() {
   return (
     <>
       {loading && <Loading />}
+      {tabReady && (
       <div className='mx-4 mt-4 flex flex-col gap-4'>
         <Tabs
           value={tab}
@@ -236,10 +267,12 @@ export default function Page() {
         >
           <TabsList>
             <TabsTrigger value="Summary">Vehicles Summary</TabsTrigger>
-            <TabsTrigger value="Vehicles">My Vehicles</TabsTrigger>
-            <TabsTrigger value="Inactive Vehicles">Inactive Vehicles</TabsTrigger>
+            <TabsTrigger value="Vehicles">{!user?.Division?.includes('Admin') ? "My Vehicles" : "All Vehicles"}</TabsTrigger>
+            {!user?.Division?.includes('Admin') &&
+              <TabsTrigger value="Inactive Vehicles">Inactive Vehicles</TabsTrigger>
+            }
           </TabsList>
-          <Button className='my-2 sm:my-0' onClick={() => setIsVehicleAdditionDialogvisible(true)}>Add Vehicle</Button>
+          {tab == "Vehicles" && <Button className='my-2 sm:my-0' onClick={() => setIsVehicleAdditionDialogvisible(true)}>Add Vehicle</Button>}
         </Tabs>
         {
           tab == "Vehicles" && vehicles &&
@@ -283,6 +316,7 @@ export default function Page() {
           <VehiclesSummary user={user} />
         }
       </div>
+      )}
       <SearchModal
         isOpen={searchModalConfig.isOpen}
         onClose={() => setSearchModalConfig((prev) => ({ ...prev, isOpen: false }))}
@@ -324,6 +358,16 @@ export default function Page() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {showBackToTop && (
+        <Button
+          className="fixed bottom-6 right-6 rounded-full h-12 w-12 p-0 shadow-lg"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Back to top"
+          title="Back to top (Alt+T)"
+        >
+          <ChevronUp className="h-6 w-6" />
+        </Button>
+      )}
     </>
   )
 }
