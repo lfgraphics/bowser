@@ -587,6 +587,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                         <TableHead>Loading Date</TableHead>
                                         <TableHead>Qty</TableHead>
                                         <TableHead>From</TableHead>
+                                        <TableHead>To</TableHead>
                                         <TableHead>Reporting Date</TableHead>
                                         <TableHead>Days</TableHead>
                                         <TableHead>Comment</TableHead>
@@ -708,6 +709,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             <TableCell>{formatDate(trip.StartDate)}</TableCell>
                                             <TableCell>{trip.capacity}</TableCell>
                                             <TableCell>{trip.StartFrom}</TableCell>
+                                            <TableCell>{trip.EndTo}</TableCell>
                                             <TableCell>{formatDate(trip.ReportingDate)}</TableCell>
                                             <TableCell>{
                                                 `${Math.round(
