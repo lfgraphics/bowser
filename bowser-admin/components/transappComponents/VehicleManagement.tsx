@@ -282,15 +282,25 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
     const topSpacerHeight = startIndex * rowHeight;
     const bottomSpacerHeight = Math.max(0, (total - endIndex) * rowHeight);
 
-    // Measure actual row height to improve accuracy (runs after slice renders)
+    // Measure actual row height to improve accuracy.
+    // Important: Don't tie this to `startIndex` (which changes on scroll),
+    // otherwise we can get into a render loop where a tiny rowHeight change
+    // causes a new slice, which triggers a new measure, and so on.
     useEffect(() => {
         const el = firstVisibleRowRef.current;
         if (!el) return;
         const h = el.getBoundingClientRect().height;
-        if (h && Math.abs(h - rowHeight) > 1) {
-            setRowHeight(h);
+        if (!h) return;
+        // Use integer pixels to avoid sub-pixel oscillation and require a
+        // slightly higher delta before updating to further reduce churn.
+        const next = Math.round(h);
+        if (Number.isFinite(next) && Math.abs(next - rowHeight) >= 2) {
+            setRowHeight(next);
         }
-    }, [filteredVehicles, startIndex]);
+        // Re-measure only when the number of rows changes or when layout-affecting
+        // flags toggle (which can change the row height), not on every scroll.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filteredVehicles.length, filterNoDriver, hasAnyNoDriver]);
 
     // column span for spacer rows
     const colSpan = useMemo(() => {
