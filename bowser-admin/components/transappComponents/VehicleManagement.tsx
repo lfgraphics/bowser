@@ -86,7 +86,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                 setVehicles(data);
                 setCache((prev) => ({
                     ...prev,
-                    vehicleDetails: Object.fromEntries(data.map((v) => [v.vehicle._id, v]))
+                    vehicleDetails: Object.fromEntries(data.map((v) => [v.vehicle?._id, v]))
                 }));
             })
             .catch((err) => {
@@ -122,7 +122,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                 description: `${vehicleNo} has been deleted.`, richColors: true
             });
 
-            setVehicles((prev) => prev.filter((v) => v.vehicle.VehicleNo !== vehicleNo));
+            setVehicles((prev) => prev.filter((v) => v.vehicle?.VehicleNo !== vehicleNo));
         } catch (error) {
             console.error(error);
             toast.error("An error occurred", { description: String(error), richColors: true });
@@ -175,7 +175,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
 
     // Memoized derived values for performance on large datasets
     const hasAnyNoDriver = useMemo(() =>
-        vehicles.some(v => v.vehicle.tripDetails.driver === "no driver" || v.driver.name === "no driver"),
+        vehicles.some(v => v.vehicle?.tripDetails?.driver === "no driver" || v?.driver.name === "no driver"),
         [vehicles]
     );
 
@@ -185,7 +185,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
             if (!q) return true;
             const vehicleNo = v.vehicle?.VehicleNo?.toString()?.toLowerCase() || "";
             const capacity = (v.vehicle?.capacity ?? "")?.toString()?.toLowerCase();
-            const driverName = v.driver?.name?.toString()?.toLowerCase() || "";
+            const driverName = v?.driver?.name?.toString()?.toLowerCase() || "";
             // Access potential driver mobile fields safely using any to avoid type issues
             const anyV = v as any;
             const driverMobile = (
@@ -209,7 +209,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
         };
 
         const list = vehicles.filter((v) => {
-            const noDriver = v.vehicle.tripDetails.driver === "no driver" || v.driver.name === "no driver";
+            const noDriver = v.vehicle?.tripDetails?.driver === "no driver" || v?.driver.name === "no driver";
             const passesNoDriver = filterNoDriver ? noDriver : true;
             return passesNoDriver && matchesSearch(v);
         });
@@ -375,7 +375,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                         {filteredVehicles.slice(startIndex, endIndex).map((v, index) => {
                             const { VehicleNo } = v.vehicle;
                             const isInactive = inactiveSet.has(VehicleNo);
-                            const noDriverRow = v.vehicle.tripDetails.driver === "no driver" || v.driver.name === "no driver";
+                            const noDriverRow = v.vehicle?.tripDetails?.driver === "no driver" || v?.driver.name === "no driver";
 
                             let rowClass = "";
                             if (isInactive) rowClass += " bg-red-300";
@@ -400,38 +400,38 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                             };
 
                             return (
-                                <TableRow ref={index === 0 ? firstVisibleRowRef : undefined} key={v.vehicle._id} className={rowClass.trim()}>
+                                <TableRow ref={index === 0 ? firstVisibleRowRef : undefined} key={v.vehicle?._id} className={rowClass.trim()}>
                                     <TableCell>{startIndex + index + 1}</TableCell>
                                     <TableCell>{highlight(VehicleNo)}</TableCell>
-                                    <TableCell>{highlight(v.vehicle.capacity ?? "—")}</TableCell>
+                                    <TableCell>{highlight(v.vehicle?.capacity ?? "—")}</TableCell>
                                     {/* Show driver name if available, else tripDetails driver (e.g., NO DRIVER). Also show mobile if present. */}
                                     <TableCell>
                                         <div className="flex flex-col">
                                             <span>{
-                                                v.vehicle.tripDetails.driver === "no driver"
-                                                    ? highlight(v.vehicle.tripDetails.driver?.toUpperCase())
-                                                    : highlight(v.driver?.name || v.vehicle.tripDetails.driver)
+                                                v.vehicle?.tripDetails?.driver === "no driver"
+                                                    ? highlight(v.vehicle?.tripDetails?.driver?.toUpperCase())
+                                                    : highlight(v?.driver?.name || v.vehicle?.tripDetails?.driver)
                                             }</span>
                                             {(() => {
                                                 const anyV = v as any;
-                                                const mobile = v.driver.mobile || anyV?.driver?.mobileNo || anyV?.driver?.mobile_number || anyV?.driver?.phone || anyV?.driver?.contactNo || anyV?.driver?.contact;
+                                                const mobile = v?.driver.mobile || anyV?.driver?.mobileNo || anyV?.driver?.mobile_number || anyV?.driver?.phone || anyV?.driver?.contactNo || anyV?.driver?.contact;
                                                 if (!mobile) return null;
-                                                return v.vehicle.tripDetails.driver !== "no driver" && <span className="text-xs text-muted-foreground">{highlight(String(mobile))}</span>;
+                                                return v.vehicle?.tripDetails?.driver !== "no driver" && <span className="text-xs text-muted-foreground">{highlight(String(mobile))}</span>;
                                             })()}
                                         </div>
                                     </TableCell>
                                     {hasAnyNoDriver && (
                                         <>
                                             <TableCell>
-                                                {v.driver.leaving?.from
+                                                {v?.driver.leaving?.from
                                                     ? `${Math.round(
                                                         Math.abs(
-                                                            Number(new Date()) - Number(new Date(v.driver.leaving.from))
+                                                            Number(new Date()) - Number(new Date(v?.driver.leaving.from))
                                                         ) / (1000 * 60 * 60 * 24)
                                                     )} Days`
                                                     : ""}
                                             </TableCell>
-                                            <TableCell>{v.driver.leaving?.location}</TableCell>
+                                            <TableCell>{v?.driver.leaving?.location}</TableCell>
                                         </>
                                     )}
                                     {!filterNoDriver && (

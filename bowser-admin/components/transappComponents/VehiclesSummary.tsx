@@ -668,7 +668,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent className='dropdown'>
-                                                        {tripStatusUpdateVars.filter((option) => !["Loaded", "In Distillery"].includes(option)).map((statupOpetion) => (
+                                                        {tripStatusUpdateVars.filter((option) => !["Loaded", "In Distillery", "In Depot"].includes(option)).map((statupOpetion) => (
                                                             <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
                                                                 {statupOpetion}
                                                             </DropdownMenuItem>
@@ -790,7 +790,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent className='dropdown'>
-                                                        {tripStatusUpdateVars.map((statupOpetion) => (
+                                                        {tripStatusUpdateVars.filter((option) => !["In Depot", "In Distillery", "Loaded"].includes(option)).map((statupOpetion) => (
                                                             <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
                                                                 {statupOpetion}
                                                             </DropdownMenuItem>
@@ -854,11 +854,20 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent className='dropdown'>
-                                                        {tripStatusUpdateVars.filter((option) => !["Loaded", "In Distillery"].includes(option)).map((statupOpetion) => (
+                                                        {tripStatusUpdateVars.filter((option) => !["In Depot"].includes(option)).map((statupOpetion) => (
                                                             <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
                                                                 {statupOpetion}
                                                             </DropdownMenuItem>
                                                         ))}
+                                                        <DropdownMenuItem>
+                                                            <Link href={{
+                                                                pathname: "trans-app/loading-tracker",
+                                                                query: {
+                                                                    actionType: "destinationChange",
+                                                                    tripId: trip._id
+                                                                }
+                                                            }}>Change Destination</Link>
+                                                        </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                                 <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip._id)}>
@@ -1006,20 +1015,11 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent className='dropdown'>
-                                                        {tripStatusUpdateVars.filter((option) => !["Loaded", "In Depot"].includes(option)).map((statupOpetion) => (
+                                                        {tripStatusUpdateVars.filter((option) => !["In Depot", "In Distillery", "Loaded"].includes(option)).map((statupOpetion) => (
                                                             <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
                                                                 {statupOpetion}
                                                             </DropdownMenuItem>
                                                         ))}
-                                                        <DropdownMenuItem>
-                                                            <Link href={{
-                                                                pathname: "trans-app/unloading-tracker",
-                                                                query: {
-                                                                    actionType: "unload",
-                                                                    tripId: trip._id
-                                                                }
-                                                            }}>Unloaded</Link>
-                                                        </DropdownMenuItem>
                                                         <DropdownMenuItem>
                                                             <Link href={{
                                                                 pathname: "trans-app/loading-planner",
