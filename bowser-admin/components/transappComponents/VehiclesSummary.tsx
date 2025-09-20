@@ -458,9 +458,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
             }
             {data &&
                 <div className='mb-4'>
-                    <div className='w-full flex justify-end mb-3 -mt-14 sm:mt-0'>
-                        <Button onClick={() => handleDownload()}>Download Report</Button>
-                    </div>
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
                         <Card>
                             <CardHeader>
@@ -530,6 +527,9 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                             </CardContent>
                             {/* <CardFooter></CardFooter> */}
                         </Card>
+                        <div className='w-full flex justify-end my-3'>
+                            <Button onClick={() => handleDownload()}>Download Report</Button>
+                        </div>
                         {filter !== 'all' &&
                             <div className='flex items-center gap-2'>
                                 <span>{camelToWords(filter)}</span>
@@ -697,15 +697,15 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                     )
                                 }
                                 {filter == 'loadedReported' &&
-                                        data.loaded.reported.trips.sort((a, b) => a.EndTo.localeCompare(b.EndTo)).sort((a, b) => Math.round(
-                                            Math.abs(
-                                                Number(new Date()) - Number(new Date(b.ReportingDate!))
-                                            ) / (1000 * 60 * 60 * 24)
-                                        ) - Math.round(
-                                            Math.abs(
-                                                Number(new Date()) - Number(new Date(a.ReportingDate!))
-                                            ) / (1000 * 60 * 60 * 24)
-                                        )).map((trip, index) =>
+                                    data.loaded.reported.trips.sort((a, b) => a.EndTo.localeCompare(b.EndTo)).sort((a, b) => Math.round(
+                                        Math.abs(
+                                            Number(new Date()) - Number(new Date(b.ReportingDate!))
+                                        ) / (1000 * 60 * 60 * 24)
+                                    ) - Math.round(
+                                        Math.abs(
+                                            Number(new Date()) - Number(new Date(a.ReportingDate!))
+                                        ) / (1000 * 60 * 60 * 24)
+                                    )).map((trip, index) =>
                                         <TableRow onClick={(e: React.MouseEvent) => {
                                             const el = e.target as HTMLElement | null;
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
