@@ -2,10 +2,24 @@
 
 import React from "react";
 import Combobox, { ComboboxOption } from "@/components/Combobox";
-import Link from "next/link";
 import { BASE_URL } from "@/lib/api";
 import { TankersTrip, TransAppUser } from "@/types";
 import { isAuthenticated } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import UpdateTripMenu from "@/components/transappComponents/UpdateTripMenu";
+import { GripVertical } from "lucide-react";
 
 type GroupedTrips = Record<string, TankersTrip[]>; // key = YYYY-MM-DD
 
@@ -30,20 +44,29 @@ export default function TripsRankingPage() {
     const [grouped, setGrouped] = React.useState<GroupedTrips>({});
     const [error, setError] = React.useState<string>("");
 
+    // Confirmation dialog state
+    const [confirmDay, setConfirmDay] = React.useState<string | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null);
+
     // Initialize from search param if provided
     React.useEffect(() => {
         if (isAuthenticated()) {
             const storedUser: TransAppUser = JSON.parse(localStorage.getItem('adminUser')!);
             setUser(storedUser);
-            setUserId(storedUser.userId);
+            setUserId(storedUser._id);
         }
     }, []);
 
-    const fetchUserVehicles = React.useCallback(async () => {
-        if (!userId) {
-            setError("userId is required");
-            return;
+    // Auto-fetch vehicles once userId is available
+    React.useEffect(() => {
+        if (userId) {
+            fetchUserVehicles();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userId]);
+
+    const fetchUserVehicles = React.useCallback(async () => {
+        if (!userId) return;
         setError("");
         setLoadingVehicles(true);
         try {
@@ -96,6 +119,17 @@ export default function TripsRankingPage() {
         });
         setGrouped(g);
     }, [trips]);
+
+    // Derive a human-readable trip status like VehicleManagement
+    const computeTripStatus = React.useCallback((trip?: TankersTrip): string => {
+        if (!trip) return "—";
+        const isEmpty = Number(trip.LoadStatus) === 0;
+        const hasReported = Boolean((trip as any).ReportingDate || trip.LoadTripDetail?.ReportDate || (trip as any).EmptyTripDetail?.ReportDate);
+        const hasUnloaded = Boolean(trip.LoadTripDetail?.UnloadDate);
+        if (hasUnloaded) return "Unloaded - Not Planned";
+        if (hasReported) return isEmpty ? "Empty Reported" : "Loaded Reported";
+        return isEmpty ? "Empty On Way" : "Loaded On Way";
+    }, []);
 
     // Drag & drop state
     const dragItem = React.useRef<{ day: string; index: number } | null>(null);
@@ -159,25 +193,8 @@ export default function TripsRankingPage() {
 
     return (
         <div className="p-4 space-y-4">
-            <h1 className="text-2xl font-semibold">Trips ranking</h1>
+            <h1 className="text-2xl font-bold">Trips Ranking</h1>
             <div className="flex items-end gap-2 flex-wrap">
-                <div className="flex flex-col">
-                    <label className="text-sm text-gray-600">User ID</label>
-                    <input
-                        className="border rounded px-3 py-2 min-w-[320px]"
-                        placeholder="Enter userId (or pass ?userId=... in URL)"
-                        value={userId}
-                        onChange={(e) => setUserId(e.target.value)}
-                    />
-                </div>
-                <button
-                    className="border px-3 py-2 rounded bg-white hover:bg-gray-50"
-                    onClick={fetchUserVehicles}
-                    disabled={loadingVehicles || !userId}
-                >
-                    {loadingVehicles ? "Loading…" : "Load vehicles"}
-                </button>
-                <div className="flex-1" />
                 <div className="min-w-[280px]">
                     <Combobox
                         options={vehicleOptions}
@@ -194,66 +211,94 @@ export default function TripsRankingPage() {
                 </div>
             </div>
 
-            {error ? <div className="text-red-600 text-sm">{error}</div> : null}
 
-            {loadingTrips && <div>Loading trips…</div>}
+            {error ? <div className="text-destructive-foreground text-sm mt-3">{error}</div> : null}
+
+            {loadingTrips && <div className="mt-3 text-sm">Loading trips…</div>}
 
             {!loadingTrips && selectedVehicle && Object.keys(grouped).length === 0 && (
-                <div>No trips found for vehicle {selectedVehicle}</div>
+                <div className="mt-3 text-sm">No trips found for vehicle {selectedVehicle}</div>
             )}
 
-            <div className="space-y-6">
+            <div className="space-y-6 mt-4">
                 {Object.entries(grouped).map(([day, list]) => (
-                    <div key={day} className="border rounded-md">
-                        <div className="px-3 py-2 bg-gray-50 flex items-center justify-between">
-                            <div className="font-medium">{day} — {list.length} trip(s)</div>
-                            <button
-                                className="text-sm border px-2 py-1 rounded bg-white hover:bg-gray-100"
-                                onClick={() => persistOrder(day)}
-                            >
-                                Save order
-                            </button>
-                        </div>
-                        <ul className="divide-y" onDragOver={onDragOver}>
-                            {list.map((t, idx) => (
-                                <li
-                                    key={t._id}
-                                    draggable
-                                    onDragStart={onDragStart(day, idx)}
-                                    onDrop={onDrop(day, idx)}
-                                    className="p-3 flex items-center gap-3 bg-white hover:bg-gray-50"
-                                    title="Drag to reorder within this day"
-                                >
-                                    <span className="cursor-grab select-none text-gray-400">≡</span>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-medium truncate">
-                                            {t.VehicleNo} — {t.StartFrom || "?"} → {t.EndTo || "?"}
+                    <Card key={day}>
+                        <CardHeader className="py-3">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-base font-medium">{day} — {list.length} trip(s)</CardTitle>
+                                <AlertDialog open={confirmDay === day} onOpenChange={(open) => setConfirmDay(open ? day : null)}>
+                                    <AlertDialogTrigger asChild>
+                                        <Button size="sm" variant="outline" onClick={() => setConfirmDay(day)}>Save order</Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Save new order?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This will update the ranking for all trips on {day}. You can change it again later.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => { persistOrder(day); setConfirmDay(null); }}>Confirm</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-0 overflow-hidden">
+                            <ul className="divide-y" onDragOver={onDragOver}>
+                                {list.map((t, idx) => (
+                                    <li
+                                        key={t._id}
+                                        draggable
+                                        onDragStart={onDragStart(day, idx)}
+                                        onDrop={onDrop(day, idx)}
+                                        className="p-3 flex items-center gap-3 bg-background hover:bg-card"
+                                        title="Drag to reorder within this day"
+                                    >
+                                        <GripVertical className="cursor-grab select-none" />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-sm font-medium truncate">
+                                                {t.VehicleNo} — {t.StartFrom || "?"} → {t.EndTo || "?"}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                Status: {t.LoadStatus === 1 ? "Loaded" : "Empty"}
+                                                {typeof t.rankindex === "number" ? ` • rank ${t.rankindex}` : ""}
+                                            </div>
                                         </div>
-                                        <div className="text-xs text-gray-600">
-                                            Status: {t.LoadStatus === 1 ? "Loaded" : "Empty"}
-                                            {typeof t.rankindex === "number" ? ` • rank ${t.rankindex}` : ""}
+                                        <div className="flex items-center gap-2">
+                                            <UpdateTripMenu
+                                                trip={t as any}
+                                                vehicleNo={t.VehicleNo}
+                                                user={user as any}
+                                                statusLabel={computeTripStatus(t)}
+                                            />
+                                            <AlertDialog open={confirmDeleteId === t._id} onOpenChange={(open) => setConfirmDeleteId(open ? t._id : null)}>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button size="sm" variant="destructive" onClick={() => setConfirmDeleteId(t._id)}>Delete</Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Delete this trip?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            This action cannot be undone. This will permanently delete the selected trip.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => { deleteTrip(t._id); setConfirmDeleteId(null); }}>Delete</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Link
-                                            href={`/trans-app/trip-update/${t._id}`}
-                                            className="text-xs border px-2 py-1 rounded hover:bg-gray-100"
-                                        >
-                                            Update
-                                        </Link>
-                                        <button
-                                            className="text-xs border px-2 py-1 rounded hover:bg-red-50 text-red-700 border-red-300"
-                                            onClick={() => deleteTrip(t._id)}
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </Card>
                 ))}
             </div>
+
         </div>
     );
 }

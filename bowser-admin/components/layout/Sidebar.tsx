@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideSquareArrowOutUpRight, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List, Bell, FileUp, FileDown, AudioWaveform, Home, UserCogIcon, User2Icon } from 'lucide-react'
+import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideSquareArrowOutUpRight, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List, Bell, FileUp, FileDown, AudioWaveform, Home, UserCogIcon, User2Icon, TextQuote } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 import ThemeChanger from '../ThemeChanger'
@@ -154,7 +154,7 @@ export function Sidebar() {
                         variant="ghost"
                         className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/trans-app/trips-ranking" ? "bg-primary text-primary-foreground" : ""}`}
                       >
-                        <AudioWaveform className="mr-2 w-4 h-4" />
+                        <TextQuote className="mr-2 w-4 h-4" />
                         Trips Ranking
                       </Button>
                     </Link>

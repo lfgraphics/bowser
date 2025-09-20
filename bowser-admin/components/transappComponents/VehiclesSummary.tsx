@@ -697,13 +697,21 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                     )
                                 }
                                 {filter == 'loadedReported' &&
-                                    data.loaded.reported.trips.sort((a, b) => a.EndTo.localeCompare(b.EndTo)).map((trip, index) =>
+                                        data.loaded.reported.trips.sort((a, b) => a.EndTo.localeCompare(b.EndTo)).sort((a, b) => Math.round(
+                                            Math.abs(
+                                                Number(new Date()) - Number(new Date(b.ReportingDate!))
+                                            ) / (1000 * 60 * 60 * 24)
+                                        ) - Math.round(
+                                            Math.abs(
+                                                Number(new Date()) - Number(new Date(a.ReportingDate!))
+                                            ) / (1000 * 60 * 60 * 24)
+                                        )).map((trip, index) =>
                                         <TableRow onClick={(e: React.MouseEvent) => {
                                             const el = e.target as HTMLElement | null;
                                             if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                 setViewingTrip(trip._id)
                                             }
-                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Depot" ? "bg-yellow-200" : ""}>
+                                        }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Depot" ? "bg-yellow-200 dark:text-background hover:bg-yellow-200" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip.VehicleNo}</TableCell>
                                             <TableCell>{formatDate(trip.StartDate)}</TableCell>
@@ -720,7 +728,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             }</TableCell>
                                             <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Custom" ? trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.comment : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
-                                            <TableCell className='flex gap-2'>
+                                            <TableCell className={`flex gap-2 ${trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Depot" ? "dark:text-foreground" : ""}`}>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="outline" size="sm">
@@ -998,7 +1006,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent className='dropdown'>
-                                                        {tripStatusUpdateVars.filter((option) => !["Loaded", "In Distillery"].includes(option)).map((statupOpetion) => (
+                                                        {tripStatusUpdateVars.filter((option) => !["Loaded", "In Depot"].includes(option)).map((statupOpetion) => (
                                                             <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip._id, status: statupOpetion as TripStatusUpdateEnums })}>
                                                                 {statupOpetion}
                                                             </DropdownMenuItem>
@@ -1011,6 +1019,14 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                     tripId: trip._id
                                                                 }
                                                             }}>Unloaded</Link>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem>
+                                                            <Link href={{
+                                                                pathname: "trans-app/loading-planner",
+                                                                query: {
+                                                                    tripId: trip._id
+                                                                }
+                                                            }}>Give Plane</Link>
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
