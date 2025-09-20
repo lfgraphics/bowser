@@ -128,9 +128,18 @@ const Combobox = ({
                         placeholder="Search..."
                     />
                     {filteredOptions.length === 0 ? (
-                        <div className="p-2 text-sm text-muted-foreground">No option found. <Button onClick={() => { onChange(searchTerm); value = searchTerm; setOpen(false) }}>
-                            Add {searchTerm}
-                        </Button></div>
+                        <div className="p-2 text-sm text-muted-foreground">
+                            No option found.
+                            <Button
+                                className="ml-2"
+                                onClick={() => {
+                                    onChange(searchTerm);
+                                    setOpen(false);
+                                }}
+                            >
+                                Add {searchTerm}
+                            </Button>
+                        </div>
                     ) : (
                         filteredOptions.map((item, index) => (
                             <div
@@ -157,10 +166,14 @@ const Combobox = ({
                                 />
                                 <span
                                     dangerouslySetInnerHTML={{
-                                        __html: item.label.replace(
-                                            new RegExp(`(${searchTerm})`, "ig"),
-                                            "<strong>$1</strong>"
-                                        ),
+                                        __html: (() => {
+                                            try {
+                                                const safe = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                                                return item.label.replace(new RegExp(`(${safe})`, "ig"), "<strong>$1</strong>");
+                                            } catch {
+                                                return item.label;
+                                            }
+                                        })(),
                                     }}
                                 />
                             </div>

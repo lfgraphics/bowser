@@ -67,7 +67,8 @@ async function fetchAndEnrichVehicles(vehicleNumbers) {
 async function getLatestTrips(vehicleNumbers) {
     const trips = await TankersTrip.aggregate([
         { $match: { VehicleNo: { $in: vehicleNumbers } } },
-        { $sort: { StartDate: -1 } },
+        // Sort by date desc, then rankindex asc (0 highest priority)
+        { $sort: { StartDate: -1, rankindex: 1 } },
         {
             $group: {
                 _id: "$VehicleNo",

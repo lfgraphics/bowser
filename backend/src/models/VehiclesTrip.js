@@ -4,6 +4,8 @@ const { transportDatabaseConnection } = require('../../config/database');
 
 const tankerTripSchema = new mongoose.Schema({
     VehicleNo: { type: String, required: true },
+    // Day-wise ranking index for trips starting on the same date (lower value = higher priority)
+    rankindex: { type: Number, default: 0 },
     StartDate: { type: Date },
     targetTime: { type: Date },
     StartFrom: { type: String },
@@ -110,5 +112,8 @@ const tankerTripSchema = new mongoose.Schema({
     ],
     driverStatus: { type: Number, default: 1 }
 }, { versionKey: false });
+
+// Optimize common queries: by vehicle with date and rank ordering
+tankerTripSchema.index({ VehicleNo: 1, StartDate: -1, rankindex: 1 });
 
 module.exports = transportDatabaseConnection.model('TankersTrip', tankerTripSchema, 'TankersTrips');

@@ -7,10 +7,12 @@ const {
     getUnloadedPlannedVehicles,
     getNewSummary,
     getTripById,
-    getCurrentTripByDriverId
+    getCurrentTripByDriverId,
+    getAllTripsForVehicle
 } = require('./utils');
 const { getLatestVehicleUpdates } = require('../../utils/vehicles');
 const { getVehiclesFullDetails } = require('../../utils/enrichVehicles');
+const mongoose = require('mongoose');
 
 // Get latest status update for each vehicle of a user by userId
 router.get('/latest-vehicle-updates', async (req, res) => {
@@ -162,6 +164,65 @@ router.get('/user-detailed-vehicles', async (req, res) => {
     } catch (error) {
         console.error('Error fetching vehicles:', error);
         return res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+router.get('/get-all-trips/:vehicleNo', async (req, res) => {
+    const { vehicleNo } = req.params;
+
+    try {
+        const trips = await getAllTripsForVehicle(vehicleNo);
+        return res.status(200).json(trips);
+    } catch (error) {
+        console.error('Error fetching all trips for vehicle:', error);
+        return res.status(500).json({ error: 'Failed to fetch all trips for vehicle', errorDetails: error });
+    }
+});
+
+// Reorder trips within a given day by assigning rankindex based on provided order
+// Body: { orderedTripIds: string[], date?: string (YYYY-MM-DD) }
+router.post('/trips/reorder', async (req, res) => {
+    const { orderedTripIds, date } = req.body || {};
+    if (!Array.isArray(orderedTripIds) || orderedTripIds.length === 0) {
+        return res.status(400).json({ error: 'orderedTripIds array is required.' });
+    }
+    try {
+        const ops = orderedTripIds.map((id, idx) => ({
+            updateOne: {
+                filter: { _id: new mongoose.Types.ObjectId(id) },
+                update: { $set: { rankindex: idx } }
+            }
+        }));
+        // Optional: if date provided, ensure we only reorder trips from that date
+        if (date) {
+            const start = new Date(date + 'T00:00:00.000Z');
+            const end = new Date(date + 'T23:59:59.999Z');
+            ops.forEach(op => {
+                op.updateOne.filter.StartDate = { $gte: start, $lte: end };
+            });
+        }
+        const result = await require('../../models/VehiclesTrip').bulkWrite(ops);
+        return res.status(200).json({ success: true, result });
+    } catch (error) {
+        console.error('Error reordering trips:', error);
+        return res.status(500).json({ error: 'Failed to reorder trips' });
+    }
+});
+
+// Delete a single trip by id
+router.delete('/trip/:tripId', async (req, res) => {
+    const { tripId } = req.params;
+    try {
+        if (!mongoose.Types.ObjectId.isValid(tripId)) {
+            return res.status(400).json({ error: 'Invalid trip id' });
+        }
+        const TankersTrip = require('../../models/VehiclesTrip');
+        const deleted = await TankersTrip.findByIdAndDelete(tripId);
+        if (!deleted) return res.status(404).json({ error: 'Trip not found' });
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Error deleting trip:', error);
+        return res.status(500).json({ error: 'Failed to delete trip' });
     }
 });
 

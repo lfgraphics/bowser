@@ -726,6 +726,7 @@ export interface TankersTrip {
   EndTo: string;
   LoadStatus: number;
   StartDate: string;
+  rankindex?: number;
   ReportingDate: string | null;
   targetTime: string;
   StartDriver: string;

@@ -123,6 +123,19 @@ async function getUserVehicles(userId) {
     }
 }
 
+const getAllTripsForVehicle = async (vehicleNo) => {
+    try {
+        const trips = await TankersTrip
+            .find({ VehicleNo: vehicleNo })
+            .sort({ StartDate: -1, rankindex: 1 })
+            .lean();
+        return trips;
+    } catch (error) {
+        console.error('Error fetching trips for vehicle:', error);
+        throw new Error('Failed to fetch trips for vehicle');
+    }
+}
+
 /**
  * The function `getUsersDeactivatedVehicles` retrieves a list of deactivated vehicles associated with
  * a user based on their ID.
@@ -328,7 +341,8 @@ async function getNewSummary(userId, isAdmin) {
                     VehicleNo: { $in: activeVehicleNos }
                 }
             },
-            { $sort: { StartDate: -1 } },
+            // Sort by StartDate desc, then by rankindex asc (0 first)
+            { $sort: { StartDate: -1, rankindex: 1 } },
             {
                 $group: {
                     _id: "$VehicleNo",
@@ -648,6 +662,7 @@ module.exports = {
     getCurrentTrip,
     getCurrentTripByDriverId,
     getAllTrips,
+    getAllTripsForVehicle,
     getUserVehicles,
     getUsersDeactivatedVehicles,
     getLoadedNotUnloadedVehicles,

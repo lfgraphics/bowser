@@ -148,6 +148,17 @@ export function Sidebar() {
                       </Button>
                     </Link>
                   </li>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/trans-app/trips-ranking">
+                      <Button
+                        variant="ghost"
+                        className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/trans-app/trips-ranking" ? "bg-primary text-primary-foreground" : ""}`}
+                      >
+                        <AudioWaveform className="mr-2 w-4 h-4" />
+                        Trips Ranking
+                      </Button>
+                    </Link>
+                  </li>
                 </OnlyAllowed>
                 {/* Trans App navs end */}
                 <OnlyAllowed allowedRoles={["Diesel Control Center Staff", "Admin"]}>
