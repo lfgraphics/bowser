@@ -298,7 +298,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                 }
 
                 // Tie-breaker: deterministic order by VehicleNo
-                return (t1.VehicleNo ?? "").localeCompare(t2.VehicleNo ?? "");
+                return (t1?.VehicleNo ?? "").localeCompare(t2?.VehicleNo ?? "");
             });
         });
 
@@ -368,7 +368,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                 }
 
                 // Tie-breaker: deterministic order by VehicleNo
-                return (t1.VehicleNo ?? "").localeCompare(t2.VehicleNo ?? "");
+                return (t1?.VehicleNo ?? "").localeCompare(t2?.VehicleNo ?? "");
             });
         });
 
@@ -655,7 +655,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             {user?.Division.includes('Admin') && <TableCell>{trip.StartFrom}</TableCell>}
                                             {user?.Division.includes('Admin') && <TableCell>{formatDate(trip.StartDate)}</TableCell>}
                                             <TableCell>{trip.EndTo}</TableCell>
-                                            <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip?.VehicleNo}</TableCell>
                                             <TableCell>{trip.capacity}</TableCell>
                                             <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate}</TableCell>
                                             <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Custom" ? trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.comment : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
@@ -713,7 +713,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             }
                                         }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "In Depot" ? "bg-yellow-200 dark:text-background hover:bg-yellow-200" : ""}>
                                             <TableCell>{index + 1}</TableCell>
-                                            <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip?.VehicleNo}</TableCell>
                                             <TableCell>{formatDate(trip.StartDate)}</TableCell>
                                             <TableCell>{trip.capacity}</TableCell>
                                             <TableCell>{trip.StartFrom}</TableCell>
@@ -777,7 +777,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             {user?.Division.includes('Admin') && <TableCell>{trip.StartFrom}</TableCell>}
                                             {user?.Division.includes('Admin') && <TableCell>{formatDate(trip.StartDate)}</TableCell>}
                                             <TableCell>{trip.EndTo}</TableCell>
-                                            <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip?.VehicleNo}</TableCell>
                                             <TableCell>{trip.capacity}</TableCell>
                                             <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate}</TableCell>
                                             <TableCell>{trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Custom" ? trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.comment : trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
@@ -839,7 +839,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             <TableCell>{index + 1}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.StartFrom}</TableCell>}
                                             {user?.Division.includes('Admin') && <TableCell>{formatDate(trip.StartDate)}</TableCell>}
-                                            <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip?.VehicleNo}</TableCell>
                                             <TableCell>{trip.capacity}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
                                             <TableCell>{trip.EndTo}</TableCell>
@@ -892,7 +892,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             }
                                         }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
-                                            <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip?.VehicleNo}</TableCell>
                                             <TableCell>{trip.capacity}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
                                             <TableCell>{trip.EndTo}</TableCell>
@@ -939,7 +939,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             {user?.Division.includes('Admin') && <TableCell>{trip.StartFrom}</TableCell>}
                                             {user?.Division.includes('Admin') && <TableCell>{formatDate(trip.StartDate)}</TableCell>}
                                             <TableCell>{trip.EndTo}</TableCell>
-                                            <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip?.VehicleNo}</TableCell>
                                             <TableCell>{trip.capacity}</TableCell>
                                             <TableCell>{trip?.TravelHistory?.[trip.TravelHistory?.length - 1]?.LocationOnTrackUpdate}</TableCell>
                                             <TableCell>{trip.loadingSupervisor}</TableCell>
@@ -992,7 +992,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             }
                                         }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
-                                            <TableCell>{trip.VehicleNo}</TableCell>
+                                            <TableCell>{trip?.VehicleNo}</TableCell>
                                             <TableCell>{formatDate(trip.StartDate)}</TableCell>
                                             <TableCell>{trip.capacity}</TableCell>
                                             <TableCell>{trip.StartFrom}</TableCell>
@@ -1209,7 +1209,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                     setViewingTrip(trip._id)
                                                                 }
                                                             }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
-                                                                <TableCell>{trip.VehicleNo}</TableCell>
+                                                                <TableCell>{trip?.VehicleNo}</TableCell>
                                                                 <TableCell>{trip.capacity}</TableCell>
                                                                 <TableCell>{trip.status}</TableCell>
                                                                 <TableCell>{trip.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === 'Custom' ? trip.statusUpdate?.[trip.statusUpdate?.length - 1]?.comment : trip.statusUpdate?.[trip.statusUpdate?.length - 1]?.status}</TableCell>
@@ -1286,7 +1286,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                     setViewingTrip(trip._id)
                                                                 }
                                                             }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
-                                                                <TableCell>{trip.VehicleNo}</TableCell>
+                                                                <TableCell>{trip?.VehicleNo}</TableCell>
                                                                 <TableCell>{trip.capacity}</TableCell>
                                                                 <TableCell>{trip.status === "Standing" ? "Not Programmed" : trip.status}</TableCell>
                                                                 {trips.some(trip => Boolean(trip.loadingSupervisor)) && <TableCell>{trip.loadingSupervisor}</TableCell>}
@@ -1390,7 +1390,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                     }
                                                                 }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
                                                                     <TableCell>{index + 1}</TableCell>
-                                                                    <TableCell>{trip.VehicleNo}</TableCell>
+                                                                    <TableCell>{trip?.VehicleNo}</TableCell>
                                                                     <TableCell>{trip.capacity}</TableCell>
                                                                     {user?.Division.includes('Admin') && <TableCell>{trip.superwiser}</TableCell>}
                                                                     <TableCell>{trip.EndTo}</TableCell>
@@ -1486,7 +1486,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                     }
                                                                 }} key={trip._id} className={trip?.statusUpdate?.[trip.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
                                                                     <TableCell>{index + 1}</TableCell>
-                                                                    <TableCell>{trip.VehicleNo}</TableCell>
+                                                                    <TableCell>{trip?.VehicleNo}</TableCell>
                                                                     <TableCell>{trip.capacity}</TableCell>
                                                                     <TableCell>{trip.status === "Standing" ? "Not Programmed" : trip.status}</TableCell>
                                                                     {trips.some(trip => Boolean(trip.loadingSupervisor)) && <TableCell className='w-max'>{trip.loadingSupervisor}</TableCell>}
@@ -1563,7 +1563,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
             }
 
             {viewingTrip !== null &&
-                <CustomDrawer key={viewingTrip} title={findTripById(viewingTrip).VehicleNo} description={viewingTrip}>
+                <CustomDrawer key={viewingTrip} title={findTripById(viewingTrip)?.VehicleNo} description={viewingTrip}>
                     <div className="max-h-[60svh] overflow-y-auto">
                         <div className='flex flex-col gap-1 mb-4'>
                             <div className='flex gap-2'>

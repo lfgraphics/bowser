@@ -70,7 +70,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
         console.log('Called Fetching trip function')
         setLoading(true)
         try {
-            const response = await fetch(`${BASE_URL}/driver-log/last-trip/${vehicle.vehicle.VehicleNo}/${date}`);
+            const response = await fetch(`${BASE_URL}/driver-log/last-trip/${vehicle?.vehicle?.VehicleNo}/${date}`);
             const lastTripObj = await response.json();
             const latestTrip = lastTripObj.latestTrip;
             setUpdatingTrip(latestTrip)
@@ -85,7 +85,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
 
     const [statusRemark, setStatusRemark] = useState("");
 
-    const noDriver = vehicle.vehicle.tripDetails.driver === "no driver" || vehicle.driver.name === "no driver";
+    const noDriver = vehicle?.vehicle?.tripDetails.driver === "no driver" || vehicle?.driver?.name === "no driver";
 
     // ---------------------------
     // API Handlers
@@ -96,7 +96,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    vehicleNo: vehicle.vehicle.VehicleNo,
+                    vehicleNo: vehicle?.vehicle?.VehicleNo,
                     driverId: joiningDriverId,
                     driverName: joiningDriver,
                     joining,
@@ -106,10 +106,10 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
             if (!res.ok) throw new Error(data.error || "Failed");
             setCache((prev) => {
                 const updated = { ...prev.vehicleDetails };
-                const target = updated[vehicle.vehicle._id];
+                const target = updated[vehicle?.vehicle?._id];
 
                 if (target) {
-                    updated[vehicle.vehicle._id] = {
+                    updated[vehicle?.vehicle?._id] = {
                         ...target,
                         driver: {
                             _id: joiningDriverId,
@@ -119,7 +119,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                         vehicle: {
                             ...target.vehicle,
                             tripDetails: {
-                                ...target.vehicle.tripDetails,
+                                ...target.vehicle?.tripDetails,
                                 driver: joiningDriver,
                             },
                         },
@@ -144,8 +144,8 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    vehicleNo: vehicle.vehicle.VehicleNo,
-                    driverId: vehicle.driver._id,
+                    vehicleNo: vehicle?.vehicle?.VehicleNo,
+                    driverId: vehicle?.driver?._id,
                     leaving,
                 }),
             });
@@ -153,10 +153,10 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
             if (!res.ok) throw new Error(data.error || "Failed");
             setCache((prev) => {
                 const updated = { ...prev.vehicleDetails };
-                const target = updated[vehicle.vehicle._id];
+                const target = updated[vehicle?.vehicle?._id];
 
                 if (target) {
-                    updated[vehicle.vehicle._id] = {
+                    updated[vehicle?.vehicle?._id] = {
                         ...target,
                         driver: {
                             _id: null, name: "no driver", mobile: null, leaving: {
@@ -169,7 +169,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                         vehicle: {
                             ...target.vehicle,
                             tripDetails: {
-                                ...target.vehicle.tripDetails,
+                                ...target.vehicle?.tripDetails,
                                 driver: "no driver",
                             },
                         },
@@ -193,7 +193,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    vehicleNo: vehicle.vehicle.VehicleNo,
+                    vehicleNo: vehicle?.vehicle?.VehicleNo,
                     remark: statusRemark,
                 }),
             });
@@ -201,12 +201,12 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
             if (!res.ok) throw new Error(data.error || "Failed");
             setCache((prev) => {
                 let updated = { ...prev.vehicleDetails };
-                const target = updated[vehicle.vehicle._id];
+                const target = updated[vehicle?.vehicle?._id];
 
                 if (target) {
                     updated = {
                         ...updated,
-                        [vehicle.vehicle._id]: {
+                        [vehicle?.vehicle?._id]: {
                             ...target,
                             lastDriverLog: {
                                 ...target.lastDriverLog,
@@ -288,17 +288,17 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                         <DialogTitle className="text-center">Driver Management</DialogTitle>
                         <DialogDescription className="text-card-foreground">
                             <span className="text-lg">
-                                {vehicle.vehicle.VehicleNo}
+                                {vehicle?.vehicle?.VehicleNo}
                             </span>
                             {noDriver ? ` No active driver since
-                            ${vehicle.driver.leaving?.from
+                            ${vehicle?.driver?.leaving?.from
                                     ? `${Math.round(
                                         Math.abs(
-                                            Number(new Date()) - Number(new Date(vehicle.driver.leaving.from))
+                                            Number(new Date()) - Number(new Date(vehicle?.driver?.leaving.from))
                                         ) / (1000 * 60 * 60 * 24)
                                     )} Days`
                                     : ""}
-                            ` : ` ${vehicle.driver.name} is currently assigned`}
+                            ` : ` ${vehicle?.driver?.name} is currently assigned`}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -313,20 +313,20 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                                         <p className="mb-2">Last Leaving:</p>
                                         <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-lg">
                                             <span className="font-medium">Date:</span>
-                                            <span>{formatDate(vehicle.driver.leaving?.from!)}</span>
+                                            <span>{formatDate(vehicle?.driver?.leaving?.from!)}</span>
 
-                                            {vehicle.driver.leaving?.tillDate && (
+                                            {vehicle?.driver?.leaving?.tillDate && (
                                                 <>
                                                     <span className="font-medium">Till:</span>
-                                                    <span>{formatDate(vehicle.driver.leaving?.tillDate)}</span>
+                                                    <span>{formatDate(vehicle?.driver?.leaving?.tillDate)}</span>
                                                 </>
                                             )}
 
                                             <span className="font-medium">Driver:</span>
-                                            <span>{vehicle.lastDriverLog.driver.Name || vehicle.driver.name}</span>
+                                            <span>{vehicle?.lastDriverLog?.driver?.Name || vehicle?.driver?.name}</span>
 
                                             <span className="font-medium">Remark:</span>
-                                            <span>{vehicle.driver.leaving?.remark}</span>
+                                            <span>{vehicle?.driver?.leaving?.remark}</span>
                                         </div>
                                     </div>
 

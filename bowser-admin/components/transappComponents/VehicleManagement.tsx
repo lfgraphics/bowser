@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
     Table,
     TableBody,
@@ -27,6 +27,15 @@ import DriverManagementModal from "../DriverManagement";
 import { formatDate } from "@/lib/utils";
 import UpdateTripMenu from "./UpdateTripMenu";
 import { Input } from "@/components/ui/input";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationPrevious,
+    PaginationNext,
+    PaginationEllipsis,
+} from "@/components/ui/pagination";
 
 const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
     const { cache, setCache } = useVehiclesCache();
@@ -58,7 +67,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
         else if (hasReported) base = isEmpty ? "Empty Reported" : "Loaded Reported";
         else base = isEmpty ? "Empty On Way" : "Loaded On Way";
 
-        // Override with statusUpdate, unless it's Custom
+        // Override with statusUpdate, unless it's Custom (kept disabled as before)
         // const lastSU = trip.statusUpdate?.[trip.statusUpdate.length - 1];
         // if (lastSU?.status && lastSU.status !== "Custom") {
         //     return lastSU.status === "Loaded" ? "Loaded" : lastSU.status;
@@ -67,11 +76,12 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
         return base;
     };
 
+    // Log vehicle state updates (non-blocking)
     useEffect(() => {
         if (vehicles.length > 0) {
             console.log('Vehicles state updated:', vehicles);
         }
-    }, [vehicles])
+    }, [vehicles]);
 
     useEffect(() => {
         if (!user?._id) return;
@@ -87,7 +97,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                 setVehicles(data);
                 setCache((prev) => ({
                     ...prev,
-                    vehicleDetails: Object.fromEntries(data.map((v) => [v.vehicle?._id, v]))
+                    vehicleDetails: Object.fromEntries(data.map((v) => [v?.vehicle?._id, v]))
                 }));
             })
             .catch((err) => {
@@ -123,7 +133,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                 description: `${vehicleNo} has been deleted.`, richColors: true
             });
 
-            setVehicles((prev) => prev.filter((v) => v.vehicle?.VehicleNo !== vehicleNo));
+            setVehicles((prev) => prev?.filter((v) => v?.vehicle?.VehicleNo !== vehicleNo));
         } catch (error) {
             console.error(error);
             toast.error("An error occurred", { description: String(error), richColors: true });
@@ -176,7 +186,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
 
     // Memoized derived values for performance on large datasets
     const hasAnyNoDriver = useMemo(() =>
-        vehicles.some(v => v.vehicle?.tripDetails?.driver === "no driver" || v?.driver.name === "no driver"),
+        vehicles.some(v => v?.vehicle?.tripDetails?.driver === "no driver" || v?.driver?.name === "no driver"),
         [vehicles]
     );
 
@@ -184,8 +194,8 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
         const q = searchQuery.trim().toLowerCase();
         const matchesSearch = (v: DetailedVehicleData) => {
             if (!q) return true;
-            const vehicleNo = v.vehicle?.VehicleNo?.toString()?.toLowerCase() || "";
-            const capacity = (v.vehicle?.capacity ?? "")?.toString()?.toLowerCase();
+            const vehicleNo = v?.vehicle?.VehicleNo?.toString()?.toLowerCase() || "";
+            const capacity = (v?.vehicle?.capacity ?? "")?.toString()?.toLowerCase();
             const driverName = v?.driver?.name?.toString()?.toLowerCase() || "";
             // Access potential driver mobile fields safely using any to avoid type issues
             const anyV = v as any;
@@ -210,7 +220,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
         };
 
         const list = vehicles.filter((v) => {
-            const noDriver = v.vehicle?.tripDetails?.driver === "no driver" || v?.driver.name === "no driver";
+            const noDriver = v?.vehicle?.tripDetails?.driver === "no driver" || v?.driver?.name === "no driver";
             const passesNoDriver = filterNoDriver ? noDriver : true;
             return passesNoDriver && matchesSearch(v);
         });
@@ -233,20 +243,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
     const pageEnd = Math.min(total, pageStart + pageSize);
     const pageVehicles = useMemo(() => filteredVehicles.slice(pageStart, pageEnd), [filteredVehicles, pageStart, pageEnd]);
 
-    // column span for spacer rows
-    const colSpan = useMemo(() => {
-        let count = 0;
-        // Sn, Vehicle no., Capacity, Driver
-        count += 4;
-        if (hasAnyNoDriver) count += 2; // No Driver Since, Location
-        // Trip Status, Last Update IN, Last Status Comment, Last Comment Time
-        // When filterNoDriver is active, hide Trip Status, Last Update IN, Last Comment Time (keep Last Status Comment)
-        count += filterNoDriver ? 1 /* only Last Status Comment */ : 4;
-        if (user?.Division?.includes('Admin')) count += 1; // Supervisor
-        // Actions
-        count += filterNoDriver ? 0 : 1;
-        return count;
-    }, [hasAnyNoDriver, user?.Division, filterNoDriver]);
+    // (virtualization removed) no need for dynamic column span now
 
     return (
         <>
@@ -278,9 +275,9 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                                     <TableHead className="bg-background">Location</TableHead>
                                 </>
                             )}
+                            <TableHead className="bg-background">Trip Status</TableHead>
                             {!filterNoDriver && (
                                 <>
-                                    <TableHead className="bg-background">Trip Status</TableHead>
                                     <TableHead className="bg-background">Last Update IN</TableHead>
                                 </>
                             )}
@@ -364,15 +361,22 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                                             <TableCell>{v?.driver?.leaving?.location}</TableCell>
                                         </>
                                     )}
+                                    <TableCell>{computeTripStatus(v?.latestTrip)}</TableCell>
                                     {!filterNoDriver && (
                                         <>
-                                            <TableCell>
-                                                {computeTripStatus(v?.latestTrip)}
-                                            </TableCell>
                                             <TableCell>{v?.lastStatusUpdate?.source || '_'}</TableCell>
                                         </>
                                     )}
-                                    <TableCell>{filterNoDriver ? v?.lastDriverLog?.leaving?.remark : v?.lastStatusUpdate?.comment || v?.lastDriverLog?.statusUpdate?.[v?.lastDriverLog?.statusUpdate?.length - 1]?.remark || v?.lastDriverLog?.leaving?.remark}</TableCell>
+                                    <TableCell>
+                                        {filterNoDriver
+                                            ? v?.lastStatusUpdate?.comment || v?.lastDriverLog?.leaving?.remark
+                                            : (() => {
+                                                return v?.latestTrip?.statusUpdate?.[v?.latestTrip?.statusUpdate?.length - 1]?.comment || v?.latestTrip?.statusUpdate?.[v?.latestTrip?.statusUpdate?.length - 1]?.status
+                                                    || v?.lastDriverLog?.statusUpdate?.[v?.lastDriverLog?.statusUpdate?.length - 1]?.remark
+                                                    || v?.lastDriverLog?.leaving?.remark
+                                            })()
+                                        }
+                                    </TableCell>
                                     {!filterNoDriver && (
                                         <TableCell>{formatDate(v?.lastStatusUpdate?.dateTime!) || formatDate(v?.lastDriverLog?.statusUpdate?.[v?.lastDriverLog?.statusUpdate?.length - 1]?.dateTime)}</TableCell>
                                     )}
@@ -454,42 +458,113 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                         ? `Showing ${pageStart + 1}-${pageEnd} of ${total} records`
                         : 'No records'}
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" disabled={currentPage === 1} onClick={() => setCurrentPage(1)}>
-                        First
-                    </Button>
-                    <Button size="sm" variant="outline" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>
-                        Prev
-                    </Button>
-                    {/* Simple numeric window around current page */}
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        // Center current page if possible
-                        const half = Math.floor(5 / 2);
-                        let start = Math.max(1, Math.min(totalPages - 4, currentPage - half));
-                        if (totalPages <= 5) start = 1;
-                        const page = start + i;
-                        if (page > totalPages) return null;
-                        const active = page === currentPage;
-                        return (
-                            <Button
-                                key={page}
-                                size="sm"
-                                variant={active ? "default" : "outline"}
-                                onClick={() => setCurrentPage(page)}
-                                aria-current={active ? 'page' : undefined}
+                <Pagination className="sm:justify-end w-full sm:w-auto">
+                    <PaginationContent>
+                        {/* First */}
+                        <PaginationItem>
+                            <PaginationLink
+                                href="#"
+                                size="default"
+                                onClick={(e) => { e.preventDefault(); if (currentPage !== 1) setCurrentPage(1); }}
+                                aria-disabled={currentPage === 1}
+                                className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
                             >
-                                {page}
-                            </Button>
-                        );
-                    })}
-                    <Button size="sm" variant="outline" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}>
-                        Next
-                    </Button>
-                    <Button size="sm" variant="outline" disabled={currentPage === totalPages} onClick={() => setCurrentPage(totalPages)}>
-                        Last
-                    </Button>
-                    <div className="ml-2 text-sm text-muted-foreground">Page {currentPage} of {totalPages}</div>
-                </div>
+                                First
+                            </PaginationLink>
+                        </PaginationItem>
+
+                        {/* Prev */}
+                        <PaginationItem>
+                            <PaginationPrevious
+                                href="#"
+                                onClick={(e) => { e.preventDefault(); if (currentPage > 1) setCurrentPage((p) => Math.max(1, p - 1)); }}
+                                aria-disabled={currentPage === 1}
+                                className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
+                            />
+                        </PaginationItem>
+
+                        {/* Pages window with ellipses */}
+                        {(() => {
+                            const items: React.ReactNode[] = [];
+                            const maxButtons = 5;
+                            let start = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+                            let end = start + maxButtons - 1;
+                            if (end > totalPages) {
+                                end = totalPages;
+                                start = Math.max(1, end - maxButtons + 1);
+                            }
+                            // Leading first page + ellipsis
+                            if (start > 1) {
+                                items.push(
+                                    <PaginationItem key={1}>
+                                        <PaginationLink
+                                            href="#"
+                                            isActive={currentPage === 1}
+                                            onClick={(e) => { e.preventDefault(); setCurrentPage(1); }}
+                                        >
+                                            1
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                );
+                                if (start > 2) items.push(<PaginationEllipsis key="start-ellipsis" />);
+                            }
+                            // Window pages
+                            for (let p = start; p <= end; p++) {
+                                items.push(
+                                    <PaginationItem key={p}>
+                                        <PaginationLink
+                                            href="#"
+                                            isActive={p === currentPage}
+                                            onClick={(e) => { e.preventDefault(); setCurrentPage(p); }}
+                                        >
+                                            {p}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                );
+                            }
+                            // Trailing ellipsis + last page
+                            if (end < totalPages) {
+                                if (end < totalPages - 1) items.push(<PaginationEllipsis key="end-ellipsis" />);
+                                items.push(
+                                    <PaginationItem key={totalPages}>
+                                        <PaginationLink
+                                            href="#"
+                                            isActive={currentPage === totalPages}
+                                            onClick={(e) => { e.preventDefault(); setCurrentPage(totalPages); }}
+                                        >
+                                            {totalPages}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                );
+                            }
+                            return items;
+                        })()}
+
+                        {/* Next */}
+                        <PaginationItem>
+                            <PaginationNext
+                                href="#"
+                                onClick={(e) => { e.preventDefault(); if (currentPage < totalPages) setCurrentPage((p) => Math.min(totalPages, p + 1)); }}
+                                aria-disabled={currentPage === totalPages}
+                                className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
+                            />
+                        </PaginationItem>
+
+                        {/* Last */}
+                        <PaginationItem>
+                            <PaginationLink
+                                href="#"
+                                size="default"
+                                onClick={(e) => { e.preventDefault(); if (currentPage !== totalPages) setCurrentPage(totalPages); }}
+                                aria-disabled={currentPage === totalPages}
+                                className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
+                            >
+                                Last
+                            </PaginationLink>
+                        </PaginationItem>
+                    </PaginationContent>
+                </Pagination>
+                <div className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</div>
             </div>
         </>
     );
