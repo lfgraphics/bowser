@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- <meta http-equiv="Content-Security-Policy" content="script-src 'self';"> -->
+    <title>ITPL Fueling - Bridge and Sync</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 20px;
+      }
+
+      #status,
+      #nextSync {
+        margin-top: 10px;
+        font-size: 16px;
+      }
+
+      i {
+        font-size: small;
+      }
+
+      #logs {
+        margin-top: 10px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        font-family: monospace;
+        background: black;
+        color: white;
+        font-size: 14px;
+        line-height: 1.4;
+        scrollbar-width: thin;
+        scrollbar-color: #888 #333;
+      }
+
+      button {
+        padding: 8px 16px;
+        margin: 5px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      hr {
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
+
+      h2 {
+        text-align: center;
+      }
+    </style>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  </head>
+
+  <body>
+    <h2>Tally Bridge</h2>
+    <div id="status">Checking Tally status...</div>
+    <button onclick="refreshStatus()">
+      <i data-lucide="refresh-cw"></i> Refresh Tally Status
+    </button>
+
+    <hr />
+
+    <h2>Cloud and Local data Sync</h2>
+    <div id="nextSync">Fetching sync status...</div>
+    <div
+      style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center"
+    >
+      <button onclick="runSync()" id="manualSyncButton">
+        <i data-lucide="folder-sync"></i> Run Manual Sync
+      </button>
+      <button onclick="startSync()" id="startAutoSyncButton">
+        <i data-lucide="circle-play"></i> Start Auto Sync
+      </button>
+      <!-- <button onclick="stopSync()"><i data-lucide="circle-x"></i> Stop Auto Sync</button> -->
+      <button id="log-refresh-button" onclick="refreshLogs()">
+        <i data-lucide="refresh-cw"></i> Refresh Sync and Logs
+      </button>
+    </div>
+
+    <div id="logs"></div>
+    <!-- Modal for custom interval input -->
+    <div
+      id="modal"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        z-index: 1000;
+      "
+    >
+      <div
+        style="
+          background: #fff;
+          padding: 20px;
+          width: 300px;
+          margin: 100px auto;
+          border-radius: 4px;
+          align-items: center;
+          text-align: center;
+        "
+      >
+        <h3>Set Auto Sync Interval</h3>
+        <p>Enter interval in minutes (minimum 10):</p>
+        <input
+          style="padding: 4px; width: 80%; margin: 4px; border-radius: 4px"
+          type="number"
+          id="modalInput"
+          min="10"
+          value="60"
+        />
+        <br /><br />
+        <div style="display: flex; gap: 12px; justify-content: center">
+          <button onclick="submitInterval()">
+            <i data-lucide="check" style="color: green"></i> Confirm
+          </button>
+          <button onclick="closeModal()">
+            <i data-lucide="x" style="color: red"></i> Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      lucide.createIcons();
+      const { ipcRenderer } = require("electron");
+
+      async function refreshStatus() {
+        const result = await ipcRenderer.invoke("check-tally-status");
+        const statusText = result.companyName
+          ? "✅ " + result.status + ": " + result.companyName
+          : "⚠️ " + result.status;
+        document.getElementById("status").textContent = statusText;
+      }
+
+      async function runSync() {
+        await ipcRenderer.invoke("run-manual-sync");
+        refreshLogs();
+      }
+
+      async function startSync() {
+        openModal(); // replaces prompt()
+      }
+
+      async function stopSync() {
+        await ipcRenderer.invoke("stop-sync-interval");
+        refreshLogs();
+      }
+
+      ipcRenderer.on("refresh-logs", () => {
+        refreshLogs();
+      });
+
+      async function refreshLogs() {
+        const logs = await ipcRenderer.invoke("get-sync-logs");
+        const logsContainer = document.getElementById("logs");
+        logsContainer.innerHTML = ""; // clear old logs
+
+        logs.forEach((log) => {
+          const div = document.createElement("div");
+          div.textContent = `[${log.timestamp}] [${log.level}] ${log.message}`;
+
+          // color by log level
+          if (log.level === "INFO") div.style.color = "white";
+          else if (log.level === "WARN") div.style.color = "#ff9d1d";
+          else if (log.level === "ERROR") div.style.color = "#fc4e4e";
+          else div.style.color = "white";
+
+          logsContainer.appendChild(div);
+        });
+
+        logsContainer.scrollTop = logsContainer.scrollHeight;
+
+        const nextSync = await ipcRenderer.invoke("get-next-sync-time");
+        document.getElementById("nextSync").textContent =
+          "⏰ Next Sync: " + (nextSync || "Not Scheduled");
+      }
+
+      let intervalInputValue = 60;
+
+      function openModal() {
+        document.getElementById("modal").style.display = "block";
+      }
+
+      function closeModal() {
+        document.getElementById("modal").style.display = "none";
+      }
+
+      async function submitInterval() {
+        const val = parseInt(document.getElementById("modalInput").value, 10);
+        intervalInputValue = val;
+        closeModal();
+        await ipcRenderer.invoke("set-sync-interval", intervalInputValue);
+        refreshLogs();
+      }
+
+      async function loadLocalUri() {
+        const uri = await ipcRenderer.invoke("get-local-uri");
+        document.getElementById("localUriInput").value = uri;
+      }
+
+      async function saveLocalUri() {
+        const newUri = document.getElementById("localUriInput").value.trim();
+        if (!newUri) return;
+        const result = await ipcRenderer.invoke("set-local-uri", newUri);
+        if (result.success) {
+          document.getElementById("uriSaveMsg").textContent =
+            "Saved! Reloading...";
+          setTimeout(() => {
+            ipcRenderer.invoke("reload-app");
+          }, 1000);
+        } else {
+          document.getElementById("uriSaveMsg").textContent =
+            "Error: " + result.error;
+          document.getElementById("uriSaveMsg").style.color = "red";
+        }
+      }
+
+      loadLocalUri();
+      refreshStatus();
+      refreshLogs();
+    </script>
+  </body>
+</html>

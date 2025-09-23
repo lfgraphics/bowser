@@ -1,0 +1,40 @@
+{
+  "name": "bowserfuelingreportbackend",
+  "version": "1.9.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [],
+  "author": "Taha Kazmi @lfgraphics on github",
+  "license": "ISC",
+  "description": "This backend was first created only for the Bowsers related fueling reporting system. Later on it is becoming the main backend for the ITPL online applications.",
+  "dependencies": {
+    "argon2": "^0.41.1",
+    "axios": "^1.7.7",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "expo-server-sdk": "^3.13.0",
+    "express": "^4.21.2",
+    "firebase-admin": "^12.7.0",
+    "helmet": "^8.0.0",
+    "hpp": "^0.2.3",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^8.5.1",
+    "moment-timezone": "^0.5.46",
+    "mongodb": "^6.9.0",
+    "mongoose": "^8.7.1",
+    "mongoose-sequence": "^6.0.1",
+    "web-push": "^3.6.7",
+    "ws": "^8.18.1"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.7",
+    "nodemon": "^3.1.9"
+  }
+}
