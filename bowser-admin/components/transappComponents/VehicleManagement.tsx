@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronUp } from "lucide-react";
 import {
     Table,
     TableBody,
@@ -35,6 +34,8 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
     const [inactiveVehicles, setInactiveVehicles] = useState<InactiveVehicles[]>([]);
     const [filterNoDriver, setFilterNoDriver] = useState(false);
     const [searchQuery, setSearchQuery] = useState<string>("");
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const pageSize = 20;
 
     // Derive a human-readable trip status based on business rules provided
     const computeTripStatus = (trip: DetailedVehicleData["latestTrip"] | undefined): string => {
@@ -218,89 +219,19 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
 
     const inactiveSet = useMemo(() => new Set(inactiveVehicles.map(i => i.VehicleNo)), [inactiveVehicles]);
 
-    // Basic virtualization setup
-    const containerRef = useRef<HTMLDivElement | null>(null);
-    const firstVisibleRowRef = useRef<HTMLTableRowElement | null>(null);
-    const isProgrammaticScroll = useRef<boolean>(false);
-    const rafId = useRef<number | null>(null);
-    const [scrollTop, setScrollTop] = useState(0);
-    const [containerHeight, setContainerHeight] = useState(0);
-    const [rowHeight, setRowHeight] = useState<number>(56); // px; measured after render
-    const overscan = 16; // extra rows above/below viewport
-    const [showBackToTop, setShowBackToTop] = useState(false);
-
-    useEffect(() => {
-        const el = containerRef.current;
-        if (!el) return;
-        const onScroll = () => {
-            // Ignore intermediate events during smooth programmatic scroll
-            if (isProgrammaticScroll.current) {
-                if (el.scrollTop === 0) {
-                    isProgrammaticScroll.current = false;
-                }
-                return;
-            }
-            if (rafId.current !== null) cancelAnimationFrame(rafId.current);
-            rafId.current = requestAnimationFrame(() => {
-                setScrollTop(el.scrollTop);
-                setShowBackToTop(el.scrollTop > rowHeight * 4);
-                rafId.current = null;
-            });
-        };
-        const onResize = () => setContainerHeight(el.clientHeight);
-        onResize();
-        el.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', onResize);
-        const onKeyDown = (e: KeyboardEvent) => {
-            const key = e.key?.toLowerCase();
-            if (e.altKey && key === 't') {
-                e.preventDefault();
-                el.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-        };
-        window.addEventListener('keydown', onKeyDown);
-        return () => {
-            el.removeEventListener('scroll', onScroll);
-            window.removeEventListener('resize', onResize);
-            window.removeEventListener('keydown', onKeyDown);
-            if (rafId.current !== null) cancelAnimationFrame(rafId.current);
-        };
-    }, []);
-
+    // Pagination over filtered data (apply filters globally, show only current page)
     const total = filteredVehicles.length;
-    const visibleCount = Math.max(1, Math.ceil(containerHeight / rowHeight));
-    let startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
-    let endIndex = Math.min(total, startIndex + visibleCount + overscan * 2);
-    // If we're near the end, render the final chunk to avoid blank space
-    const totalHeight = total * rowHeight;
-    const viewportBottom = scrollTop + containerHeight;
-    const nearEnd = totalHeight - viewportBottom <= rowHeight * 2;
-    if (nearEnd) {
-        endIndex = total;
-        startIndex = Math.max(0, total - (visibleCount + overscan * 2));
-    }
-    const topSpacerHeight = startIndex * rowHeight;
-    const bottomSpacerHeight = Math.max(0, (total - endIndex) * rowHeight);
-
-    // Measure actual row height to improve accuracy.
-    // Important: Don't tie this to `startIndex` (which changes on scroll),
-    // otherwise we can get into a render loop where a tiny rowHeight change
-    // causes a new slice, which triggers a new measure, and so on.
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    // Keep current page within bounds when filters/search change
     useEffect(() => {
-        const el = firstVisibleRowRef.current;
-        if (!el) return;
-        const h = el.getBoundingClientRect().height;
-        if (!h) return;
-        // Use integer pixels to avoid sub-pixel oscillation and require a
-        // slightly higher delta before updating to further reduce churn.
-        const next = Math.round(h);
-        if (Number.isFinite(next) && Math.abs(next - rowHeight) >= 2) {
-            setRowHeight(next);
-        }
-        // Re-measure only when the number of rows changes or when layout-affecting
-        // flags toggle (which can change the row height), not on every scroll.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filteredVehicles.length, filterNoDriver, hasAnyNoDriver]);
+        setCurrentPage(1);
+    }, [searchQuery, filterNoDriver]);
+    useEffect(() => {
+        setCurrentPage((p) => Math.min(Math.max(1, p), totalPages));
+    }, [totalPages]);
+    const pageStart = (currentPage - 1) * pageSize;
+    const pageEnd = Math.min(total, pageStart + pageSize);
+    const pageVehicles = useMemo(() => filteredVehicles.slice(pageStart, pageEnd), [filteredVehicles, pageStart, pageEnd]);
 
     // column span for spacer rows
     const colSpan = useMemo(() => {
@@ -333,7 +264,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                     />
                 </div>
             </div>
-            <div ref={containerRef} className="relative w-full overflow-auto" style={{ maxHeight: '80svh' }}>
+            <div className="relative w-full overflow-auto" style={{ maxHeight: '70svh' }}>
                 <Table className='w-full min-w-max'>
                     <TableHeader>
                         <TableRow className="sticky top-0 bg-background z-10">
@@ -366,16 +297,15 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {/* Top spacer */}
-                        {topSpacerHeight > 0 && (
+                        {pageVehicles?.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={colSpan} style={{ height: topSpacerHeight }} />
+                                <TableCell colSpan={999} className="text-center text-muted-foreground">No records found</TableCell>
                             </TableRow>
                         )}
-                        {filteredVehicles.slice(startIndex, endIndex).map((v, index) => {
-                            const { VehicleNo } = v.vehicle;
+                        {pageVehicles?.map((v, index) => {
+                            const VehicleNo = v?.vehicle?.VehicleNo ?? "-";
                             const isInactive = inactiveSet.has(VehicleNo);
-                            const noDriverRow = v.vehicle?.tripDetails?.driver === "no driver" || v?.driver.name === "no driver";
+                            const noDriverRow = v?.vehicle?.tripDetails?.driver === "no driver" || v?.driver?.name === "no driver";
 
                             let rowClass = "";
                             if (isInactive) rowClass += " bg-red-300";
@@ -400,55 +330,55 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                             };
 
                             return (
-                                <TableRow ref={index === 0 ? firstVisibleRowRef : undefined} key={v.vehicle?._id} className={rowClass.trim()}>
-                                    <TableCell>{startIndex + index + 1}</TableCell>
+                                <TableRow key={v?.vehicle?._id ?? `${VehicleNo}-${pageStart + index}`} className={rowClass.trim()}>
+                                    <TableCell>{pageStart + index + 1}</TableCell>
                                     <TableCell>{highlight(VehicleNo)}</TableCell>
-                                    <TableCell>{highlight(v.vehicle?.capacity ?? "—")}</TableCell>
+                                    <TableCell>{highlight(v?.vehicle?.capacity ?? "—")}</TableCell>
                                     {/* Show driver name if available, else tripDetails driver (e.g., NO DRIVER). Also show mobile if present. */}
                                     <TableCell>
                                         <div className="flex flex-col">
                                             <span>{
-                                                v.vehicle?.tripDetails?.driver === "no driver"
-                                                    ? highlight(v.vehicle?.tripDetails?.driver?.toUpperCase())
-                                                    : highlight(v?.driver?.name || v.vehicle?.tripDetails?.driver)
+                                                v?.vehicle?.tripDetails?.driver === "no driver"
+                                                    ? highlight(v?.vehicle?.tripDetails?.driver?.toUpperCase())
+                                                    : highlight(v?.driver?.name || v?.vehicle?.tripDetails?.driver)
                                             }</span>
                                             {(() => {
                                                 const anyV = v as any;
-                                                const mobile = v?.driver.mobile || anyV?.driver?.mobileNo || anyV?.driver?.mobile_number || anyV?.driver?.phone || anyV?.driver?.contactNo || anyV?.driver?.contact;
+                                                const mobile = v?.driver?.mobile || anyV?.driver?.mobileNo || anyV?.driver?.mobile_number || anyV?.driver?.phone || anyV?.driver?.contactNo || anyV?.driver?.contact;
                                                 if (!mobile) return null;
-                                                return v.vehicle?.tripDetails?.driver !== "no driver" && <span className="text-xs text-muted-foreground">{highlight(String(mobile))}</span>;
+                                                return v?.vehicle?.tripDetails?.driver !== "no driver" && <span className="text-xs text-muted-foreground">{highlight(String(mobile))}</span>;
                                             })()}
                                         </div>
                                     </TableCell>
                                     {hasAnyNoDriver && (
                                         <>
                                             <TableCell>
-                                                {v?.driver.leaving?.from
+                                                {v?.driver?.leaving?.from
                                                     ? `${Math.round(
                                                         Math.abs(
-                                                            Number(new Date()) - Number(new Date(v?.driver.leaving.from))
+                                                            Number(new Date()) - Number(new Date(v?.driver?.leaving?.from))
                                                         ) / (1000 * 60 * 60 * 24)
                                                     )} Days`
                                                     : ""}
                                             </TableCell>
-                                            <TableCell>{v?.driver.leaving?.location}</TableCell>
+                                            <TableCell>{v?.driver?.leaving?.location}</TableCell>
                                         </>
                                     )}
                                     {!filterNoDriver && (
                                         <>
                                             <TableCell>
-                                                {computeTripStatus(v.latestTrip)}
+                                                {computeTripStatus(v?.latestTrip)}
                                             </TableCell>
-                                            <TableCell>{v.lastStatusUpdate?.source || '_'}</TableCell>
+                                            <TableCell>{v?.lastStatusUpdate?.source || '_'}</TableCell>
                                         </>
                                     )}
-                                    <TableCell>{filterNoDriver? v.lastDriverLog.leaving?.remark : v.lastStatusUpdate?.comment || v.lastDriverLog?.statusUpdate?.[v.lastDriverLog?.statusUpdate?.length - 1]?.remark || v.lastDriverLog?.leaving?.remark}</TableCell>
+                                    <TableCell>{filterNoDriver ? v?.lastDriverLog?.leaving?.remark : v?.lastStatusUpdate?.comment || v?.lastDriverLog?.statusUpdate?.[v?.lastDriverLog?.statusUpdate?.length - 1]?.remark || v?.lastDriverLog?.leaving?.remark}</TableCell>
                                     {!filterNoDriver && (
-                                        <TableCell>{formatDate(v.lastStatusUpdate?.dateTime!) || formatDate(v.lastDriverLog?.statusUpdate?.[v.lastDriverLog?.statusUpdate?.length - 1]?.dateTime)}</TableCell>
+                                        <TableCell>{formatDate(v?.lastStatusUpdate?.dateTime!) || formatDate(v?.lastDriverLog?.statusUpdate?.[v?.lastDriverLog?.statusUpdate?.length - 1]?.dateTime)}</TableCell>
                                     )}
                                     {user?.Division?.includes('Admin') && (
                                         <TableCell>
-                                            {highlight((v as any).superwiser || '-')}
+                                            {highlight((v as any)?.superwiser || '-')}
                                         </TableCell>
                                     )}
                                     {!filterNoDriver && (
@@ -503,10 +433,10 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
 
                                                 {/* Update menu per row */}
                                                 <UpdateTripMenu
-                                                    trip={v.latestTrip}
+                                                    trip={v?.latestTrip}
                                                     vehicleNo={VehicleNo}
                                                     user={user}
-                                                    statusLabel={computeTripStatus(v.latestTrip)}
+                                                    statusLabel={computeTripStatus(v?.latestTrip)}
                                                 />
                                             </div>
                                         </TableCell>
@@ -514,31 +444,52 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                                 </TableRow>
                             );
                         })}
-                        {/* Bottom spacer */}
-                        {bottomSpacerHeight > 0 && (
-                            <TableRow>
-                                <TableCell colSpan={colSpan} style={{ height: bottomSpacerHeight }} />
-                            </TableRow>
-                        )}
                     </TableBody>
                 </Table>
-                {showBackToTop && (
-                    <Button
-                        className="fixed bottom-6 right-6 rounded-full h-10 w-10 p-0 shadow-lg"
-                        onClick={() => {
-                            const el = containerRef.current;
-                            if (!el) return;
-                            isProgrammaticScroll.current = true;
-                            el.scrollTo({ top: 0, behavior: 'smooth' });
-                            // Safety timeout to clear the flag in case 'scrollTop===0' check misses
-                            window.setTimeout(() => { isProgrammaticScroll.current = false; }, 800);
-                        }}
-                        aria-label="Back to top"
-                        title="Back to top (Alt+T)"
-                    >
-                        <ChevronUp className="h-5 w-5" />
+            </div>
+            {/* Pagination footer */}
+            <div className="mt-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-sm text-muted-foreground">
+                    {total > 0
+                        ? `Showing ${pageStart + 1}-${pageEnd} of ${total} records`
+                        : 'No records'}
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" disabled={currentPage === 1} onClick={() => setCurrentPage(1)}>
+                        First
                     </Button>
-                )}
+                    <Button size="sm" variant="outline" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>
+                        Prev
+                    </Button>
+                    {/* Simple numeric window around current page */}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        // Center current page if possible
+                        const half = Math.floor(5 / 2);
+                        let start = Math.max(1, Math.min(totalPages - 4, currentPage - half));
+                        if (totalPages <= 5) start = 1;
+                        const page = start + i;
+                        if (page > totalPages) return null;
+                        const active = page === currentPage;
+                        return (
+                            <Button
+                                key={page}
+                                size="sm"
+                                variant={active ? "default" : "outline"}
+                                onClick={() => setCurrentPage(page)}
+                                aria-current={active ? 'page' : undefined}
+                            >
+                                {page}
+                            </Button>
+                        );
+                    })}
+                    <Button size="sm" variant="outline" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}>
+                        Next
+                    </Button>
+                    <Button size="sm" variant="outline" disabled={currentPage === totalPages} onClick={() => setCurrentPage(totalPages)}>
+                        Last
+                    </Button>
+                    <div className="ml-2 text-sm text-muted-foreground">Page {currentPage} of {totalPages}</div>
+                </div>
             </div>
         </>
     );
