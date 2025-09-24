@@ -46,7 +46,7 @@ const getCurrentTrip = async (vehicleNumber) => {
 
 const getCurrentTripByDriverId = async (driverId) => {
     try {
-        const trip = await TankersTrip.findOne({ StartDriver: { $regex: driverId } }).sort({ startDateOnly: -1, rankindex: 1 }).lean();
+        const trip = await TankersTrip.findOne({ StartDriver: { $regex: driverId } }).sort({ StartDate: -1 }).lean();
         if (!trip) {
             throw new Error('No current trip found for this vehicle.');
         }
@@ -341,14 +341,8 @@ async function getNewSummary(userId, isAdmin) {
                     VehicleNo: { $in: activeVehicleNos }
                 }
             },
-            {
-                $addFields: {
-                    StartDateOnly: {
-                        $dateTrunc: { date: "$StartDate", unit: "day" }
-                    }
-                }
-            },
-            { $sort: { StartDateOnly: -1, rankindex: 1 } },
+            // Sort by StartDate desc, then by rankindex asc (0 first)
+            { $sort: { StartDate: -1, rankindex: 1 } },
             {
                 $group: {
                     _id: "$VehicleNo",
