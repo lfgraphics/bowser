@@ -843,7 +843,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             <TableCell>{trip?.capacity}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip?.superwiser}</TableCell>}
                                             <TableCell>{trip?.EndTo}</TableCell>
-                                            <TableCell>{trip?.loadingSupervisor}</TableCell>
+                                            <TableCell>{trip?.loadingSuperVisor}</TableCell>
                                             <TableCell>{formatDate(trip?.EmptyTripDetail.ReportDate)}</TableCell>
                                             <TableCell>{trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status !== "Custom" ? trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment}</TableCell>
                                             <TableCell className='flex gap-2'>
@@ -896,7 +896,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             <TableCell>{trip?.capacity}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip?.superwiser}</TableCell>}
                                             <TableCell>{trip?.EndTo}</TableCell>
-                                            <TableCell>{trip?.loadingSupervisor}</TableCell>
+                                            <TableCell>{trip?.loadingSuperVisor}</TableCell>
                                             <TableCell>{formatDate(trip?.EmptyTripDetail.ReportDate)}</TableCell>
                                             <TableCell>{formatDate(trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.dateTime)}</TableCell>
                                             {/*
@@ -944,7 +944,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             <TableCell>{trip?.VehicleNo}</TableCell>
                                             <TableCell>{trip?.capacity}</TableCell>
                                             <TableCell>{trip?.TravelHistory?.[trip?.TravelHistory?.length - 1]?.LocationOnTrackUpdate}</TableCell>
-                                            <TableCell>{trip?.loadingSupervisor}</TableCell>
+                                            <TableCell>{trip?.loadingSuperVisor}</TableCell>
                                             <TableCell>{formatDate(trip?.EmptyTripDetail.ReportDate)}</TableCell>
                                             <TableCell>{trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Custom" ? trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip?.superwiser}</TableCell>}

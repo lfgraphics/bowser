@@ -757,7 +757,7 @@ export interface TankersTrip {
   VehicleNo: string;
   capacity: string;
   superwiser?: string;
-  loadingSupervisor?: string;
+  loadingSuperVisor?: string;
   statusUpdate: {
     dateTime: string;
     user: {
