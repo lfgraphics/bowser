@@ -899,9 +899,9 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             <TableCell>{trip?.loadingSupervisor}</TableCell>
                                             <TableCell>{formatDate(trip?.EmptyTripDetail.ReportDate)}</TableCell>
                                             <TableCell>{formatDate(trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.dateTime)}</TableCell>
-                                            {/* <TableCell className='flex gap-2'>
+                                            {/*
                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
+                                                <DropdownMenuTrigger asChild>
                                                         <Button variant="outline" size="sm">
                                                             Update
                                                         </Button>
@@ -917,12 +917,14 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                     <Eye />
                                                 </Button>
+                                                */}
+                                            <TableCell className='flex gap-2'>
                                                 {!user?.Division.includes('Admin') && <Button variant="outline" size="sm" className='link'>
                                                     <Link href={`/trans-app/trip-update/${trip?._id}`}>
                                                         <Pen />
                                                     </Link>
                                                 </Button>}
-                                            </TableCell> */}
+                                            </TableCell>
                                         </TableRow>
                                     )
                                 }

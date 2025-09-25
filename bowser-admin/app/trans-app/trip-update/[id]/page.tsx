@@ -219,7 +219,12 @@ const page = ({ params }: { params: { id: string } }) => {
             {trip &&
                 <div className="flex justify-center w-full">
                     <div className="w-full sm:max-w-xl py-2">
-                        <h2 className="text-lg font-bold mb-4">Trip Edit</h2>
+                        <div className='flex items-center justify-between'>
+                            <h2 className="text-lg font-bold mb-4">Trip Edit</h2>
+                            <span className={trip?.LoadStatus === 0 ? 'text-orange-400' : 'text-green-500'}>
+                                {trip?.LoadStatus === 0 ? 'Empty' : 'Loaded'}
+                            </span>
+                        </div>
                         <div className="space-y-4">
                             {/* Start Date (date-only; UTC seconds=1, ms=800) */}
                             <div className="flex flex-col gap-2">
