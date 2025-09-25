@@ -42,6 +42,7 @@ export default function TripsRankingPage() {
     const [trips, setTrips] = React.useState<TankersTrip[]>([]);
     const [grouped, setGrouped] = React.useState<GroupedTrips>({});
     const [error, setError] = React.useState<string>("");
+    const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null);
 
     // Confirmation dialog state
     const [confirmDay, setConfirmDay] = React.useState<string | null>(null);
@@ -167,6 +168,17 @@ export default function TripsRankingPage() {
         }
     };
 
+    const deleteTrip = async (id: string) => {
+        if (!id) return;
+        try {
+            const res = await fetch(`${BASE_URL}/trans-app/vehicles/trip/${encodeURIComponent(id)}`, { method: "DELETE" });
+            if (!res.ok) throw new Error("Failed to delete trip");
+            setTrips((prev) => prev.filter((t) => t._id !== id));
+        } catch (e: any) {
+            setError(e?.message || "Failed to delete trip");
+        }
+    };
+
     return (
         <div className="p-4 space-y-4">
             <div>
@@ -249,6 +261,25 @@ export default function TripsRankingPage() {
                                                     <span>{t.StartFrom || "?"} → {t.EndTo.split(":")[1] || t.EndTo}</span>
                                                 </div>
                                             </div>
+                                            {t.LoadStatus === 0 &&
+                                                <AlertDialog open={confirmDeleteId === t._id} onOpenChange={(open) => setConfirmDeleteId(open ? t._id : null)}>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button size="sm" variant="destructive" onClick={() => setConfirmDeleteId(t._id)}>Delete</Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Delete this trip?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action cannot be undone. This will permanently delete the selected trip.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => { deleteTrip(t._id); setConfirmDeleteId(null); }}>Delete</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            }
                                         </li>
                                     ))}
                                 </ul>

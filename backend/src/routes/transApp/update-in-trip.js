@@ -328,14 +328,50 @@ router.post('/update-trip-status/:tripId', async (req, res) => {
 
 router.post('/update-trip/:tripId', async (req, res) => {
     const { tripId } = req.params;
-    const updateData = req.body;
+    let updateData = req.body;
     try {
         if (!updateData || typeof updateData !== 'object') {
             return res.status(400).json({ error: 'Invalid update data.' });
         }
-        const trip = await TankersTrip.findByIdAndUpdate(tripId, {
-            $set: updateData
-        }, { new: true });
+        // Allow clients to send MongoDB update operators (e.g., $set, $unset)
+        const hasMongoOps = Object.keys(updateData).some((k) => k.startsWith('$'));
+        const update = hasMongoOps ? updateData : { $set: updateData };
+
+        // Backend normalization: keep EndDate and LoadTripDetail.UnloadDate in sync
+        try {
+            const setObj = update.$set || {};
+            const unsetObj = update.$unset || {};
+
+            // If either EndDate or UnloadDate is being set, ensure both are set to the same value
+            const endDateVal = setObj.EndDate;
+            const unloadVal = setObj['LoadTripDetail.UnloadDate'];
+            const finalDate = endDateVal || unloadVal;
+            if (finalDate) {
+                setObj.EndDate = finalDate;
+                setObj['LoadTripDetail.UnloadDate'] = finalDate;
+            }
+
+            // If either is being unset, unset both
+            const unsetEnd = Object.prototype.hasOwnProperty.call(unsetObj, 'EndDate');
+            const unsetUnload = Object.prototype.hasOwnProperty.call(unsetObj, 'LoadTripDetail.UnloadDate');
+            if (unsetEnd || unsetUnload) {
+                unsetObj.EndDate = '';
+                unsetObj['LoadTripDetail.UnloadDate'] = '';
+            }
+
+            // Avoid conflicting operators on the same path
+            Object.keys(unsetObj).forEach((k) => {
+                if (k in setObj) delete setObj[k];
+            });
+
+            // Write back possibly mutated operators
+            if (Object.keys(setObj).length) update.$set = setObj; else delete update.$set;
+            if (Object.keys(unsetObj).length) update.$unset = unsetObj; else delete update.$unset;
+        } catch (normErr) {
+            console.warn('Normalization warning (update-trip):', normErr?.message || normErr);
+        }
+
+        const trip = await TankersTrip.findByIdAndUpdate(tripId, update, { new: true });
         if (!trip) {
             return res.status(404).json({ error: 'Trip not found.' });
         }

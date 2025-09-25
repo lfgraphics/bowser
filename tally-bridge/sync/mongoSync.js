@@ -304,7 +304,18 @@ async function syncTripData() {
     const [atlasVehicles, localTrips] = await Promise.all([
         atlasCollection.find().toArray(),
         localCollection.find(localTripFilter, {
-            projection: { _id: 1, VehicleNo: 1, LoadStatus: 1, StartDriver: 1, StartDate: 1, StartFrom: 1, EndTo: 1, 'TallyLoadDetail.TripId': 1, 'TallyLoadDetail.Goods': 1, 'EmptyTripDetail.ProposedDate': 1 },
+            projection: {
+                _id: 1,
+                VehicleNo: 1,
+                LoadStatus: 1,
+                StartDriver: 1,
+                StartDate: 1,
+                StartFrom: 1,
+                EndTo: 1,
+                'TallyLoadDetail.TripId': 1,
+                'TallyLoadDetail.Goods': 1,
+                'EmptyTripDetail.ProposedDate': 1
+            },
         }).toArray(),
     ]);
 

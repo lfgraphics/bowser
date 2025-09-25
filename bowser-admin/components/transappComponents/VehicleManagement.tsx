@@ -36,6 +36,8 @@ import {
     PaginationNext,
     PaginationEllipsis,
 } from "@/components/ui/pagination";
+import { Label } from "../ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
     const { cache, setCache } = useVehiclesCache();
@@ -44,7 +46,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
     const [filterNoDriver, setFilterNoDriver] = useState(false);
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [currentPage, setCurrentPage] = useState<number>(1);
-    const pageSize = 20;
+    const [pageSize, setPageSize] = useState<number>(30);
 
     // Derive a human-readable trip status based on business rules provided
     const computeTripStatus = (trip: DetailedVehicleData["latestTrip"] | undefined): string => {
@@ -369,11 +371,15 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                                     )}
                                     <TableCell>
                                         {filterNoDriver
-                                            ? v?.lastStatusUpdate?.comment || v?.lastDriverLog?.leaving?.remark
+                                            ? v?.lastStatusUpdate?.comment
+                                            || v?.lastDriverLog?.leaving?.remark
                                             : (() => {
-                                                return v?.latestTrip?.statusUpdate?.[v?.latestTrip?.statusUpdate?.length - 1]?.comment || v?.latestTrip?.statusUpdate?.[v?.latestTrip?.statusUpdate?.length - 1]?.status
+                                                return v?.lastStatusUpdate?.comment?.includes('#') ? v?.lastStatusUpdate?.comment?.match(/#(\w+)/)?.[1] : v?.lastStatusUpdate?.comment
+                                                    || v?.latestTrip?.statusUpdate?.[v?.latestTrip?.statusUpdate?.length - 1]?.comment
+                                                    || v?.latestTrip?.statusUpdate?.[v?.latestTrip?.statusUpdate?.length - 1]?.status
                                                     || v?.lastDriverLog?.statusUpdate?.[v?.lastDriverLog?.statusUpdate?.length - 1]?.remark
                                                     || v?.lastDriverLog?.leaving?.remark
+                                                    || '-';
                                             })()
                                         }
                                     </TableCell>
@@ -452,7 +458,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                 </Table>
             </div>
             {/* Pagination footer */}
-            <div className="mt-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="mt-3 flex flex-col md:flex-row items-center justify-between gap-3">
                 <div className="text-sm text-muted-foreground">
                     {total > 0
                         ? `Showing ${pageStart + 1}-${pageEnd} of ${total} records`
@@ -460,18 +466,6 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                 </div>
                 <Pagination className="sm:justify-end w-full sm:w-auto">
                     <PaginationContent>
-                        {/* First */}
-                        <PaginationItem>
-                            <PaginationLink
-                                href="#"
-                                size="default"
-                                onClick={(e) => { e.preventDefault(); if (currentPage !== 1) setCurrentPage(1); }}
-                                aria-disabled={currentPage === 1}
-                                className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
-                            >
-                                First
-                            </PaginationLink>
-                        </PaginationItem>
 
                         {/* Prev */}
                         <PaginationItem>
@@ -550,20 +544,24 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                             />
                         </PaginationItem>
 
-                        {/* Last */}
-                        <PaginationItem>
-                            <PaginationLink
-                                href="#"
-                                size="default"
-                                onClick={(e) => { e.preventDefault(); if (currentPage !== totalPages) setCurrentPage(totalPages); }}
-                                aria-disabled={currentPage === totalPages}
-                                className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
-                            >
-                                Last
-                            </PaginationLink>
-                        </PaginationItem>
                     </PaginationContent>
                 </Pagination>
+                <div className="flex justify-between items-center gap-2">
+                    <Label htmlFor="pageSize" className="text-sm">Rows per page:</Label>
+                    <Select
+                        onValueChange={(value) => { setPageSize(Number(value)); setCurrentPage(1); }}
+                        value={String(pageSize)}
+                    >
+                        <SelectTrigger className="w-[80px] h-8">
+                            <SelectValue id="pageSize" placeholder="Select page size" />
+                        </SelectTrigger>
+                        <SelectContent className="w-fit">
+                            {[10, 20, 30, 50].map(size => (
+                                <SelectItem key={size} value={String(size)}>{size}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
                 <div className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</div>
             </div>
         </>
