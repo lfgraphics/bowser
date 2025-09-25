@@ -12,6 +12,7 @@ import { formatDate } from '@/lib/utils';
 import { TankersTrip } from '@/types';
 import React from 'react'
 import { toast } from 'sonner';
+import { toDate } from '@/utils';
 
 const page = ({ params }: { params: { id: string } }) => {
     const [loading, setLoading] = React.useState(false);
@@ -29,8 +30,6 @@ const page = ({ params }: { params: { id: string } }) => {
     const [endSearch, setEndSearch] = React.useState('');
     const [stackHolders, setStackHolders] = React.useState<ComboboxOption[]>([])
     const [fullStackHolders, setFullStackHolders] = React.useState<{ _id: string, Location: string, InstitutionName: string }[]>([])
-
-    const toDate = (d?: string | Date | null) => d ? new Date(d) : undefined
 
     const normalizeStartDate = (d?: Date) => {
         if (!d) return undefined

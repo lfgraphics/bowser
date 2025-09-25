@@ -6,10 +6,18 @@ router.get('/', async (req, res) => {
     const { params } = req.query;
     try {
         const stackHolders = await StackHolder.find({
-            $or: [
-                { InstitutionName: { $regex: params, $options: 'i' } },
-                { Location: { $regex: params, $options: 'i' } },
-                { shrortName: { $regex: params, $options: 'i' } }
+            $and: [
+                { Location: { $exists: true } },
+                { Location: { $ne: null } },
+                { InstitutionName: { $exists: true } },
+                { InstitutionName: { $ne: null } },
+                {
+                    $or: [
+                        { InstitutionName: { $regex: params, $options: 'i' } },
+                        { Location: { $regex: params, $options: 'i' } },
+                        { shrortName: { $regex: params, $options: 'i' } }
+                    ]
+                }
             ]
         }).sort({ _id: -1 }).limit(20).lean();
         res.status(200).json(stackHolders);

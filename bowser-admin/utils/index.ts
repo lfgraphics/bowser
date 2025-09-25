@@ -101,3 +101,5 @@ export async function getLocation(): Promise<string | { error: string }> {
         return { error: "Unable to retrieve location. Please check permissions or internet connection." };
     }
 }
+
+export const toDate = (d?: string | Date | null) => d ? new Date(d) : undefined

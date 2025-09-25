@@ -14,6 +14,7 @@ import { formatDate } from "@/lib/utils"
 import { SearchModal } from "./SearchModal"
 import { searchItems } from "@/utils/searchUtils"
 import Loading from "@/app/loading"
+import { DatePicker, DateTimePicker } from "./ui/datetime-picker"
 
 export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query }: { tripsData: TankersTrip[], user: TransAppUser | undefined, query: { tripId: string } }) {
     const [loading, setLoading] = useState<boolean>(false)
@@ -58,9 +59,9 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
         setProposedBy(jsonUser.name)
     }, [])
 
-    useEffect(()=>{
-        searchDriver(data.find((trip)=>trip._id === tripId)?.StartDriver!)
-    },[data, tripId])
+    useEffect(() => {
+        searchDriver(data.find((trip) => trip._id === tripId)?.StartDriver!)
+    }, [data, tripId])
 
     const resetForm = () => {
         setTripId("");
@@ -126,7 +127,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
             previousTripId: tripId,
             StartFrom: data.find(trip => trip?._id === tripId)?.EndTo,
             division: user?.Division || "",
-            proposedDate
+            proposedDate: new Date(new Date(proposedDate ? proposedDate : new Date()).setUTCHours(0, 0, 1, 800))
         }
         console.log("Submitting data:", postData);
         try {
@@ -181,149 +182,153 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
     return (
         <>
             {loading && <Loading />}
-            <div className="p-4 min-h-[80svh] flex flex-col justify-center gap-4">
-                {tripId &&
-                    <>
-                        id: {tripId}
-                        <div className="flex flex-col gap-2 md:gap-4 w-full md:w-auto justify-start text-sm">
-                            <h4 className="text-lg font-semibold">Trip Details</h4>
-                            <div className="flex">
-                                <strong>Started From: </strong>{data.find(trip => trip?._id === tripId)?.StartFrom || "N/A"}
-                            </div>
-                            <div className="flex">
-                                <strong>Starat Driver: </strong> {data.find(trip => trip?._id === tripId)?.StartDriver || "N/A"}
-                            </div>
-                            <div className="flex">
-                                <strong>Loading Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.StartDate))}
-                            </div>
-                            <div className="flex">
-                                <strong>Unloading Factory: </strong> {data.find(trip => trip?._id === tripId)?.TallyLoadDetail.Consignee || "N/A"}
-                            </div>
-                            <div className="flex">
-                                <strong>Reporting Date: </strong> {formatDate(data.find(trip => trip._id === tripId)?.ReportingDate || data.find(trip=> trip._id === tripId)?.TallyLoadDetail.ReportedDate!)}
-                            </div>
-                            <div className="flex">
-                                <strong>Unloading Date: </strong> {formatDate(data.find(trip => trip?._id === tripId)?.TallyLoadDetail.UnloadingDate || data.find(trip => trip?._id === tripId)?.LoadTripDetail.UnloadDate!) == "no date provided" ? "No unloading date" : formatDate(data.find(trip => trip?._id === tripId)?.LoadTripDetail.UnloadDate!)}
-                            </div>
-                            <div className="flex">
-                                <strong>Ending Location: </strong> {data.find(trip => trip?._id === tripId)?.EndTo || "N/A"}
-                            </div>
-                        </div>
-                    </>
-                }
-                {/* <div className="flex flex-col gap-4 md:flex-row items-center justify-center md:flex-shrink-0 w-full md:justify-around">
-                </div> */}
-                <Combobox
-                    className="w-full md:w-auto"
-                    options={vehicles}
-                    value={tripId}
-                    onChange={setTripId}
-                    searchTerm={vehicleSearch}
-                    onSearchTermChange={setVehicleSearch}
-                    placeholder="Select Vehicle"
-                />
-                <div className={tripId == "" ? "hidden" : ""}>
-                    <Label htmlFor="driver">Driver</Label>
-                    <Input
-                        id="driver"
-                        value={Driver}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            setDriver(value);
-                            const nativeEvent = e.nativeEvent as InputEvent;
-                            if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
-                                searchDriver(value);
-                            }
-                        }}
-                        onKeyDown={(e) => {
-                            if (e.key === "Backspace") {
-                                return;
-                            }
-                            if (e.key === 'Enter' && Driver.length > 3) {
-                                e.preventDefault();
-                                searchDriver(Driver);
-                            }
-                        }}
-                        className={`${!Driver ? "bg-yellow-100" : ""}`}
-                        required
-                    />
-                    <Label htmlFor="driver-mobile">Mobile No</Label>
-                    <Input
-                        id="driver-mobile"
-                        value={driverMobile}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            setDriverMobile(value);
-                        }}
-                        required
-                        className={`${!driverMobile ? "bg-yellow-100" : ""}`}
-                    />
-                    <Label htmlFor="location">Destination</Label>
+            <div className="flex justify-center w-full">
+                <div className="p-4 min-h-[80svh] flex flex-col justify-center gap-4 sm:max-w-xl py-2">
+                    {tripId &&
+                        <>
+                            id: {tripId}
+                            {(() => {
+                                const t = data.find(trip => trip?._id === tripId);
+                                return (
+                                    <div className="gap-y-2">
+                                        <strong className="text-lg">Last trip details</strong><br />
+                                        <div className="grid grid-cols-[auto_1fr] gap-x-2 text-lg">
+                                            <span><strong>Start Date: </strong></span>
+                                            <span>{formatDate(String(t?.StartDate))}</span>
+
+                                            <span><strong>Started From: </strong></span>
+                                            <span>{t?.StartFrom || "N/A"}</span>
+
+                                            <span><strong>Start Driver: </strong></span>
+                                            <span>{t?.StartDriver || "N/A"}</span>
+
+                                            <span><strong>Loading Date: </strong></span>
+                                            <span>{formatDate(String(t?.StartDate))}</span>
+
+                                            <span><strong>Unloading Factory: </strong></span>
+                                            <span>{t?.TallyLoadDetail?.Consignee || "N/A"}</span>
+
+                                            <span><strong>Reporting Date: </strong></span>
+                                            <span>{formatDate(t?.ReportingDate || t?.TallyLoadDetail?.ReportedDate || "")}</span>
+
+                                            <span><strong>Unloading Date: </strong></span>
+                                            <span>
+                                                {formatDate(t?.TallyLoadDetail?.UnloadingDate || t?.LoadTripDetail?.UnloadDate || "") === "no date provided"
+                                                    ? "No unloading date"
+                                                    : formatDate(t?.TallyLoadDetail?.UnloadingDate || t?.LoadTripDetail?.UnloadDate || "")
+                                                }
+                                            </span>
+
+                                            <span><strong>Ending Location: </strong></span>
+                                            <span>{t?.EndTo || "N/A"}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+                        </>
+                    }
                     <Combobox
-                        className={`${!stackHolder ? "bg-yellow-100" : ""} w-full`}
-                        options={stackHolders}
-                        value={stackHolder}
-                        onChange={setStackHolder}
-                        searchTerm={search}
-                        onSearchTermChange={setSearch}
-                        placeholder="Select Destination"
+                        className="w-full md:w-auto"
+                        options={vehicles}
+                        value={tripId}
+                        onChange={setTripId}
+                        searchTerm={vehicleSearch}
+                        onSearchTermChange={setVehicleSearch}
+                        placeholder="Select Vehicle"
                     />
-                    <Label htmlFor="dateTime">Proposed Departure Time</Label>
-                    <Input
-                        id="dateTime"
-                        type="datetime-local"
-                        placeholder="Current Time"
-                        value={proposedDate ? format(proposedDate, "yyyy-MM-dd'T'HH:mm") : ""}
-                        onChange={(e) => {
-                            setProposedDate(e.target.value ? new Date(e.target.value) : undefined);
-                        }}
-                    />
-                    <Label htmlFor="dateTime">Target Reaching Time</Label>
-                    <Input
-                        id="dateTime"
-                        type="datetime-local"
-                        placeholder="Current Time"
-                        value={targetTime ? format(targetTime, "yyyy-MM-dd'T'HH:mm") : ""}
-                        onChange={(e) => {
-                            setTargetTime(e.target.value ? new Date(e.target.value) : undefined);
-                        }}
-                    />
-                    <Label htmlFor="odometer">Odometer</Label>
-                    <Input
-                        id="odometer"
-                        type="string"
-                        value={odometer || ""}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            setOdometer(value ? parseFloat(value) : undefined);
-                        }}
-                    // className={`${!odometer || odometer < 0 ? "bg-yellow-100 text-black" : ""} text-foreground`}
-                    />
-                    <Label htmlFor="ordered-by">Ordered By</Label>
-                    <Input
-                        id="ordered-by"
-                        type="text"
-                        value={orderedBy}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            setOrderedBy(value);
-                        }}
-                        className={`${!orderedBy ? "bg-yellow-100" : ""}`}
-                    />
-                    <Label htmlFor="proposed-by">Proposed By</Label>
-                    <Input
-                        id="proposed-by"
-                        type="text"
-                        value={proposedBy}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            setProposedBy(value);
-                        }}
-                        readOnly
-                    />
-                    <div className="flex gap-2 flex-row justify-between mt-2">
-                        <Button className="w-full" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
-                        <Button className="w-full" type="button" onClick={() => submit()}>Submit</Button>
+                    <div className={tripId == "" ? "hidden" : ""}>
+                        <Label htmlFor="driver">Driver</Label>
+                        <Input
+                            id="driver"
+                            value={Driver}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setDriver(value);
+                                const nativeEvent = e.nativeEvent as InputEvent;
+                                if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
+                                    searchDriver(value);
+                                }
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === "Backspace") {
+                                    return;
+                                }
+                                if (e.key === 'Enter' && Driver.length > 3) {
+                                    e.preventDefault();
+                                    searchDriver(Driver);
+                                }
+                            }}
+                            className={`${!Driver ? "bg-yellow-100" : ""}`}
+                            required
+                        />
+                        <Label htmlFor="driver-mobile">Mobile No</Label>
+                        <Input
+                            id="driver-mobile"
+                            value={driverMobile}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setDriverMobile(value);
+                            }}
+                            required
+                            className={`${!driverMobile ? "bg-yellow-100" : ""}`}
+                        />
+                        <Label htmlFor="location">Destination</Label>
+                        <Combobox
+                            className={`${!stackHolder ? "bg-yellow-100" : ""} w-full`}
+                            options={stackHolders}
+                            value={stackHolder}
+                            onChange={setStackHolder}
+                            searchTerm={search}
+                            onSearchTermChange={setSearch}
+                            placeholder="Select Destination"
+                        />
+                        <Label htmlFor="dateTime">Proposed Departure Time</Label>
+                        <DatePicker
+                            value={proposedDate}
+                            onChange={setProposedDate}
+                        />
+                        <Label htmlFor="dateTime">Target Reaching Time</Label>
+                        <DateTimePicker
+                            value={targetTime}
+                            onChange={(d) => setTargetTime(d ?? undefined)}
+                        />
+                        <Label htmlFor="odometer">Odometer</Label>
+                        <Input
+                            id="odometer"
+                            type="string"
+                            value={odometer || ""}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setOdometer(value ? parseFloat(value) : undefined);
+                            }}
+                        // className={`${!odometer || odometer < 0 ? "bg-yellow-100 text-black" : ""} text-foreground`}
+                        />
+                        <Label htmlFor="ordered-by">Ordered By</Label>
+                        <Input
+                            id="ordered-by"
+                            type="text"
+                            value={orderedBy}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setOrderedBy(value);
+                            }}
+                            className={`${!orderedBy ? "bg-yellow-100" : ""}`}
+                        />
+                        <Label htmlFor="proposed-by">Proposed By</Label>
+                        <Input
+                            id="proposed-by"
+                            type="text"
+                            value={proposedBy}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setProposedBy(value);
+                            }}
+                            readOnly
+                        />
+                        <div className="flex gap-2 flex-row justify-between mt-2">
+                            <Button className="w-full" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
+                            <Button className="w-full" type="button" onClick={() => submit()}>Submit</Button>
+                        </div>
                     </div>
                 </div>
             </div>
