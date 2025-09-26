@@ -21,7 +21,7 @@ export const getDriversApp = async () => {
     let response = await axios.get(`${BASE_URL}/updates?appName=drivers`)
     return response.data[0]
   } catch (error) {
-    console.log(error)
+    return undefined
   }
 }
 
@@ -30,7 +30,7 @@ export const getTallyBridgeApp = async () => {
     let response = await axios.get(`${BASE_URL}/updates?appName=tally-bridge`)
     return response.data[0]
   } catch (error) {
-    console.log(error)
+    return undefined
   }
 }
 
@@ -40,9 +40,6 @@ export const downloadExcel = (data: any[], fileName: string) => {
     extraLength: 3,
     writeOptions: {},
   };
-  console.log("Downloading Excel file:", fileName);
-  console.log("Data to be exported:", data);
-  console.log(data.length)
   xlsx(data, settings);
 };
 

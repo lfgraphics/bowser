@@ -132,15 +132,14 @@ router.post('/', async (req, res) => {
                     console.warn('Notification was not sent:', sentNotificationResponse.response);
                 }
             } catch (error) {
-                console.error(error);
+                // ignore push errors to not block allocation
             }
         }
         try {
             console.log("New Fueling Order:", newFuelingOrder);
             await newFuelingOrder.save();
         } catch (error) {
-            console.error("Error creating FuelingOrder:", error);
-            throw new Error("Fueling Allocation Failed", error);
+            return res.status(500).json({ message: "Fueling Allocation Failed" });
         }
 
         // Prepare response message
@@ -180,8 +179,7 @@ router.post('/', async (req, res) => {
         }
 
     } catch (error) {
-        console.error("Error in fueling allocation:", error);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: "Error in fueling allocation" });
     }
 });
 

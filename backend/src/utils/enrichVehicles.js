@@ -18,7 +18,6 @@ function extractITPL(driverString) {
  * Fetch vehicles and related drivers in bulk
  */
 async function fetchAndEnrichVehicles(vehicleNumbers) {
-    console.log('request hittin the server')
     const vehicles = await Vehicle.find({ VehicleNo: { $in: vehicleNumbers } }).populate({
         path: "lastDriverLog",
         populate: { path: "driver" }
@@ -103,7 +102,6 @@ async function getDriverFromLog(vehicleNumbers) {
  * Consolidated fetch for latest vehicle details
  */
 async function getVehiclesFullDetails(vehicleNumbers, isAdmin = false) {
-    console.log('length of vehicles provided: ', vehicleNumbers);
     const enrichedVehicles = await fetchAndEnrichVehicles(vehicleNumbers);
     const tripMap = await getLatestTrips(vehicleNumbers);
 

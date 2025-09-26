@@ -17,9 +17,8 @@ export const updateDriverMobile = async (driverId: string, driverMobile: string)
 
         const result = await response.json();
         return result.message;
-    } catch (error) {
-        console.error('Error updating driver mobile number:', error);
-        throw error;
+    } catch (error: any) {
+        throw new Error(error?.message || 'Failed to update driver mobile number');
     }
 };
 
@@ -39,9 +38,8 @@ export const updateTripDriver = async (vehicleNo: string, driver: string) => {
             const result = await response.json();
             return result.message;
         }
-    } catch (error) {
-        console.error('Error trip details:', error);
-        throw error;
+    } catch (error: any) {
+        throw new Error(error?.message || 'Failed to update trip details');
     }
 }
 
@@ -97,7 +95,6 @@ export async function getLocation(): Promise<string | { error: string }> {
         const coordinates = `${latitude}, ${longitude}`;
         return coordinates;
     } catch (error) {
-        console.error("Error getting location:", error);
         return { error: "Unable to retrieve location. Please check permissions or internet connection." };
     }
 }

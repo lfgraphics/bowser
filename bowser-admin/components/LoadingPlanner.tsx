@@ -57,6 +57,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
         let user = localStorage.getItem("adminUser")
         let jsonUser: TransAppUser = JSON.parse(user!)
         setProposedBy(jsonUser.name)
+        searchDriver(data.find((trip) => trip._id === tripId)?.StartDriver!)
     }, [])
 
     useEffect(() => {
@@ -106,8 +107,9 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
                     keyExtractor: (driver) => driver.ITPLId || driver.Name,
                 });
             }
-        } catch (error) {
-            console.error('Error searching for driver:', error);
+        } catch (error: any) {
+            const message = error?.message || 'Failed to search for driver';
+            toast.error(message, { richColors: true });
         } finally {
             setLoading(false);
         }
@@ -129,7 +131,6 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
             division: user?.Division || "",
             proposedDate: new Date(new Date(proposedDate ? proposedDate : new Date()).setUTCHours(0, 0, 1, 800))
         }
-        console.log("Submitting data:", postData);
         try {
             const response = await fetch(url, {
                 method: "POST",
@@ -141,15 +142,21 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
                 }),
             });
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error("Failed to submit trip update:", errorText);
-                toast.error("Failed to submit trip update: ", { description: errorText, richColors: true });
+                let errorMsg = 'Failed to submit trip update';
+                try {
+                    const errJson = await response.json();
+                    errorMsg = errJson?.message || errorMsg;
+                } catch {
+                    const errorText = await response.text();
+                    errorMsg = errorText || errorMsg;
+                }
+                toast.error(errorMsg, { richColors: true });
                 return;
             }
             toast.success("Trip update submitted successfully!", { richColors: true });
-        } catch (error) {
-            console.error("Error submitting trip update:", error);
-            toast.error("An error occurred while submitting the trip update.", { richColors: true });
+        } catch (error: any) {
+            const message = error?.message || 'An error occurred while submitting the trip update.';
+            toast.error(message, { richColors: true });
         }
     }
 
@@ -162,8 +169,9 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
                 label: `${item.InstitutionName}: ${item.Location}`
             }));
             setStackHolders(formattedData);
-        } catch (error) {
-            console.error('Error fetching fuel providers:', error);
+        } catch (error: any) {
+            const message = error?.message || 'Failed to fetch destinations';
+            toast.error(message, { richColors: true });
         }
     }
 
@@ -173,11 +181,10 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
 
     useEffect(() => {
         setDriver(data.find(trip => trip?._id === tripId)?.StartDriver || "");
+        searchDriver(data.find((trip) => trip._id === tripId)?.StartDriver!);
         setOdometer(data.find(trip => trip?._id === tripId)?.TallyLoadDetail.EndOdometer || 0);
         setDriverMobile(data.find(trip => trip?._id === tripId)?.StartDriverMobile || "")
     }, [data, tripId]);
-
-    console.log('trips found: ', data.length)
 
     return (
         <>

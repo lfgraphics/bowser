@@ -14,21 +14,14 @@ webpush.setVapidDetails(
 
 async function registerSubscription({ mobileNumber, userId, subscription, platform, groups }) {
     try {
-        console.log(`Registering subscription for mobileNumber: ${mobileNumber}, userId: ${userId}, platform: ${platform}`);
-
         if (!mobileNumber || !subscription || !platform) {
             throw new Error('Mobile number or userId, subscription, and platform are required.');
         }
-
-        console.log(`Checking database for existing subscription or inserting a new one...`);
         const updatedSubscription = await PushSubscription.create({ mobileNumber, userId, subscription, groups, platform });
 
         if (!updatedSubscription) {
-            console.error(`Failed to register subscription in the database.`);
             throw new Error(`Can't register for notifications`);
         }
-
-        console.log(`Subscription registered successfully in the database:`, updatedSubscription);
 
         return updatedSubscription;
     } catch (error) {
@@ -162,7 +155,6 @@ async function sendBulkNotifications({ groups = [], recipients = [], message, pl
         const groupRecipients = await PushSubscription.find({
             groups: { $in: groups },
         }).select('mobileNumber userId -_id'); // Fetch only mobileNumber and userId fields
-        console.log('bulk notification recipients: ', groupRecipients)
         // Add group recipients to the list
         allRecipients.push(...groupRecipients.map((rec) => ({
             mobileNumber: rec.mobileNumber,

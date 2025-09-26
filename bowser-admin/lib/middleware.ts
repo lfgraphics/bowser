@@ -5,41 +5,34 @@ import { allowedRoutes } from '@/app/(auth)/login/page';
 
 export async function middleware (req: NextRequest) {
   const cookies = req.cookies; // Get all cookies
-  console.log('All cookies:', cookies); // Log all cookies
+  // Avoid logging cookies in production
 
   const token = cookies.get('token')?.value; // Get the token
-  console.log('Token from cookies:', token); // Log the token
+  // Do not log tokens
 
   if (!token) {
-    console.log('No token found, redirecting to login');
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
   try {
     // Use the verifyToken function to get roles
     const roles = await verifyToken(); // Call the verifyToken function
-    console.log('Roles retrieved from verifyToken:', roles); // Log roles
 
     if (!roles || roles.length === 0) {
-      console.log('No roles found, redirecting to unauthorized');
       return NextResponse.redirect(new URL('/unauthorized', req.url));
     }
 
-    console.log('User roles:', roles); // Log user roles
-
     const requestedPath = req.nextUrl.pathname
-    console.log('Requested path:', requestedPath); // Log the requested path
+    // Requested path: requestedPath
 
     // Check if the requested path is allowed for the user's roles
     const isAllowed = roles.some((role: string | number) => {
       const routes = allowedRoutes[role] || []
       const isRouteAllowed = routes.includes(requestedPath)
-      console.log(`Checking role: ${role}, Allowed routes: ${routes}, Is route allowed: ${isRouteAllowed}`);
       return isRouteAllowed
     })
 
     if (!isAllowed) {
-      console.log(`Access of this page is not allowed to: ${roles.join(', ')} on path: ${requestedPath}`)
       return NextResponse.redirect(new URL('/unauthorized', req.url)) // Redirect if not allowed
     }
 
@@ -48,7 +41,6 @@ export async function middleware (req: NextRequest) {
     // If everything is good, let them through
     return NextResponse.next()
   } catch (err) {
-    console.error('Token verification failed:', err); // Log error details
     return NextResponse.redirect(new URL('/login', req.url))
   }
 }

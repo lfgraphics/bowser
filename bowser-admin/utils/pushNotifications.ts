@@ -3,7 +3,12 @@ import { logout } from "@/lib/auth";
 
 export async function registerPushSubscription(mobileNumber: string, userId: string, roles: string[]): Promise<void> {
     if (!mobileNumber) {
-        console.error('Mobile number is required to register push subscription.');
+            // Mobile number is required to register push subscription.
+        return;
+    }
+
+    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+        alert('Notifications are temporarily unavailable: missing VAPID key configuration.');
         return;
     }
 
@@ -13,7 +18,6 @@ export async function registerPushSubscription(mobileNumber: string, userId: str
             const permission = await Notification.requestPermission();
 
             if (permission !== 'granted') {
-                console.error('Notification permission denied or dismissed.');
                 alert('Please enable and allow notifications in your browser settings to proceed\nand login again to register to recive notifications\nThis is necessary to stay in the system');
                 await logout()
                 return;
@@ -21,19 +25,13 @@ export async function registerPushSubscription(mobileNumber: string, userId: str
 
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/sw.js')
-                    .then(registration => {
-                        console.log('Service Worker registered:', registration);
-
-                        // Check if ready resolves
-                        navigator.serviceWorker.ready
-                            .then(readyRegistration => {
-                                console.log('Service Worker ready:', readyRegistration);
-                            })
-                            .catch(error => console.error('Service Worker ready error:', error));
-                    })
-                    .catch(error => {
-                        console.error('Service Worker registration failed:', error);
-                    });
+                        .then(() => {
+                            // Ensure ready resolves
+                            navigator.serviceWorker.ready.then(() => {}).catch(() => {});
+                        })
+                        .catch(() => {
+                            // Service Worker registration failed
+                        });
             }
 
             // Wait for service worker registration
@@ -42,19 +40,18 @@ export async function registerPushSubscription(mobileNumber: string, userId: str
 
             // Check if already subscribed and valid (VAPID-style endpoint)
             if (subscription && subscription.endpoint.includes('/wp/')) {
-                console.log("Already subscribed with valid VAPID endpoint");
+                // Already subscribed with valid VAPID endpoint
             } else {
                 if (subscription) {
                     await subscription.unsubscribe();
-                    console.log("Old non-VAPID subscription unsubscribed");
                 }
 
                 subscription = await registration.pushManager.subscribe({
                     userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!)
+                    applicationServerKey: (urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!) as unknown as BufferSource)
                 });
 
-                console.log("New VAPID subscription created");
+                    // New VAPID subscription created
             }
 
             // Send subscription to the backend
@@ -68,21 +65,18 @@ export async function registerPushSubscription(mobileNumber: string, userId: str
                 throw new Error(`Failed to register subscription: ${response.statusText}`);
             }
 
-            const result = await response.json();
-            console.log('Push subscription registered successfully:', result);
+                await response.json();
         } catch (error) {
-            console.error('Error registering push subscription:', error);
             alert('An error occurred while registering for notifications. Please try again.');
         }
     } else {
-        console.error('Push notifications are not supported in this browser.');
         alert('Push notifications are not supported in this browser. Please try a supported browser.');
     }
 }
 
 export async function unregisterPushSubscription(mobileNumber: string): Promise<{ success: boolean; error?: string }> {
     if (!mobileNumber) {
-        console.error('Mobile number is required to unregister push subscription.');
+            // Mobile number is required to unregister push subscription.
         return { success: false, error: 'Mobile number is missing' };
     }
 
@@ -100,7 +94,6 @@ export async function unregisterPushSubscription(mobileNumber: string): Promise<
             return { success: false, error: errorResult.error || 'Failed to unregister' };
         }
     } catch (error) {
-        console.error('Error unregistering push subscription:', error);
         return { success: false, error: 'Network or server error' };
     }
 }

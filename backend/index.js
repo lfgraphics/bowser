@@ -50,6 +50,20 @@ app.use(cookieParser());
 // Include your main API routes
 app.use('/', routes);
 
+// Centralized error handler
+// Ensures consistent error responses across the API
+// Shape: { message: string, details?: any }
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  const status = err.status || 500;
+  const message = err.message || 'Internal server error';
+  const details = process.env.NODE_ENV === 'production' ? undefined : err.stack;
+  if (status >= 500) {
+    console.error('Unhandled error:', err);
+  }
+  res.status(status).json({ message, ...(details ? { details } : {}) });
+});
+
 // Start server after database connection
 connectDatabases().then(() => {
 

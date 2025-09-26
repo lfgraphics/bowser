@@ -7,7 +7,6 @@ import { WholeTripSheet } from "@/types";
 export async function fetchTripSheet(id: string) {
   const response = await fetch(`${BASE_URL}/tripsheet/${id}`);
   const data: WholeTripSheet = await response.json();
-  console.log("<<extras>>", data.settelment?.details.extras, "<<extras>>");
   if (!response.ok) {
     throw new Error("Network response was not ok");
   }

@@ -11,15 +11,17 @@ export async function searchItems<T>({
     const response = await fetch(`${url}${searchTerm !== undefined ? "/" + searchTerm : ""}`);
 
     if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error(errorMessage);
+      try {
+        const { message } = await response.json();
+        throw new Error(message || (response.status === 404 ? errorMessage : 'Server error'));
+      } catch {
+        if (response.status === 404) throw new Error(errorMessage);
+        throw new Error('Server error');
       }
-      throw new Error('Server error');
     }
 
     return await response.json();
   } catch (error) {
-    console.error('Error searching:', error);
     throw error;
   }
 }

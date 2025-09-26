@@ -70,7 +70,6 @@ export async function TransAppLogin(
   password: string
 ): Promise<LoginResponse> {
   try {
-    console.log('TransApp Login data:', userId, password)
     const res = await fetch(`${BASE_URL}/trans-app/login`, {
       method: 'POST',
       credentials: 'include', // include cookies
@@ -85,8 +84,6 @@ export async function TransAppLogin(
     })
 
     const data = await res.json().catch(() => ({}))
-
-    console.log('TransApp Login response:', res, data)
 
     if (res.ok && data.token) {
       localStorage.setItem('adminToken', data.token)
@@ -108,11 +105,9 @@ export async function TransAppLogin(
     }
 
     const errMsg = (data && (data.error || data.message)) || res.statusText || 'Login failed'
-    console.error(errMsg)
     throw new Error(errMsg)
   } catch (error: any) {
     const message = error?.message || 'Login failed'
-    console.error('TransApp Login error:', error)
     toast.error(message, { richColors: true })
     throw error
   }
@@ -122,7 +117,6 @@ export async function logout(): Promise<void> {
   try {
     const userData = localStorage.getItem('adminUser')
     if (!userData) {
-      console.error('No user data found in local storage.')
       return
     }
 
@@ -135,21 +129,15 @@ export async function logout(): Promise<void> {
     }
 
     if (unregisterResponse.success) {
-      console.log('Logout process continuing...')
-
       localStorage.removeItem('adminToken')
       localStorage.removeItem('adminUser')
       localStorage.setItem('isLoggedIn', 'false')
 
       window.location.href = '/login'
     } else {
-      console.error(
-        'Failed to unregister push subscription'
-      )
       alert('Failed to unregister push notifications. Logout aborted.')
     }
   } catch (error) {
-    console.error('Error during logout process:', error)
     alert('An unexpected error occurred. Please try again.')
   }
 }
@@ -177,17 +165,13 @@ export async function verifyToken() {
       { withCredentials: true } // Include cookies in requests
     )
 
-    console.log('Response from verify-token:', response.data) // Log the response
-
     if (response.status !== 200) {
       throw new Error('Failed to verify token')
     }
 
     const data = response.data
-    console.log('Roles returned from server:', data.roles) // Log roles
     return data.roles // Return the roles
   } catch (error) {
-    console.error('Error verifying token:', error)
     return []
   }
 }

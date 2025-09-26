@@ -10,6 +10,7 @@ router.get('/:searchTerm', async (req, res) => {
         const drivers = await Driver.find({
             $or: [
                 { Name: { $regex: searchTerm, $options: 'i' } },
+                { Name: searchTerm },
                 { ITPLId: { $regex: searchTerm, $options: 'i' } },
                 { 'MobileNo.MobileNo': { $regex: searchTerm, $options: 'i' } }
             ]

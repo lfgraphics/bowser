@@ -22,47 +22,42 @@ router.get('/', async (req, res) => {
         }).sort({ _id: -1 }).limit(20).lean();
         res.status(200).json(stackHolders);
     } catch (error) {
-        console.error('Error fetching stack holders:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ message: 'Failed to fetch stack holders' });
     }
 });
 
 router.get('/system/:params', async (req, res) => {
     const { params } = req.params;
     try {
-        console.log(params)
         const stackHolders = await StackHolder.find({
             $or: [
                 { InstitutionName: params },
                 { Location: params },
             ]
         }).sort({ _id: -1 }).limit(20).lean();
-        console.log(stackHolders)
         res.status(200).json(stackHolders);
     } catch (error) {
-        console.error('Error fetching stack holders:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ message: 'Failed to fetch stack holders' });
     }
 });
 
 router.post('/', async (req, res) => {
     const { data } = req.body;
     if (!data) {
-        return res.status(400).json({ error: 'Stack Holder data is required' });
+        return res.status(400).json({ message: 'Stack Holder data is required' });
     }
 
     try {
         const existingStation = await StackHolder.findOne(data);
         if (existingStation) {
-            return res.status(400).json({ error: 'Stack Holder already exists' });
+            return res.status(400).json({ message: 'Stack Holder already exists' });
         }
 
         const newStation = new StackHolder(data);
         await newStation.save();
         res.status(201).json(newStation);
     } catch (error) {
-        console.error('Error creating stack holder:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ message: 'Failed to create stack holder' });
     }
 });
 
@@ -71,18 +66,17 @@ router.patch('/:id', async (req, res) => {
     const { data } = req.body;
 
     if (!data) {
-        return res.status(400).json({ error: 'Stack Holder name is required' });
+        return res.status(400).json({ message: 'Stack Holder name is required' });
     }
 
     try {
         const updatedStation = await StackHolder.findByIdAndUpdate(id, data, { new: true });
         if (!updatedStation) {
-            return res.status(404).json({ error: 'Stack Holder not found' });
+            return res.status(404).json({ message: 'Stack Holder not found' });
         }
         res.status(200).json(updatedStation);
     } catch (error) {
-        console.error('Error updating stack holder:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ message: 'Failed to update stack holder' });
     }
 });
 
@@ -91,7 +85,7 @@ router.patch('/update-loading-supervisor/:id', async (req, res) => {
     const { loadingSupervisor } = req.body;
 
     if (!loadingSupervisor || !id) {
-        return res.status(400).json({ error: 'Loading Supervisor and Location are required' });
+        return res.status(400).json({ message: 'Loading Supervisor and Location are required' });
     }
 
     try {
@@ -101,12 +95,11 @@ router.patch('/update-loading-supervisor/:id', async (req, res) => {
             { new: true }
         );
         if (!updatedStation) {
-            return res.status(404).json({ error: 'Stack Holder not found for the given location' });
+            return res.status(404).json({ message: 'Stack Holder not found for the given location' });
         }
         res.status(200).json(updatedStation);
     } catch (error) {
-        console.error('Error updating loading supervisor:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ message: 'Failed to update loading supervisor' });
     }
 });
 
@@ -116,12 +109,11 @@ router.delete('/:id', async (req, res) => {
     try {
         const deletedStation = await StackHolder.findByIdAndDelete(id);
         if (!deletedStation) {
-            return res.status(404).json({ error: 'Stack Holder not found' });
+            return res.status(404).json({ message: 'Stack Holder not found' });
         }
         res.status(200).json({ message: 'Stack Holder deleted successfully' });
     } catch (error) {
-        console.error('Error deleting stack holder:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ message: 'Failed to delete stack holder' });
     }
 });
 
