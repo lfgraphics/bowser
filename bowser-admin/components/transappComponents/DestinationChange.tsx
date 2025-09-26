@@ -16,6 +16,7 @@ import { Checkbox } from '../ui/checkbox'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { SearchModal } from '../SearchModal'
+import { DatePicker, DateTimePicker } from '../ui/datetime-picker'
 
 interface DestinationChangeProps {
     selectedTrip: TankersTrip,
@@ -62,7 +63,6 @@ const DestinationChange = ({ selectedTrip, user }: DestinationChangeProps) => {
         let jsonUser: TransAppUser = JSON.parse(user!)
         setProposedBy(jsonUser.name)
         setUserDivision(jsonUser.Division)
-        console.log(jsonUser.Division)
     }, [user])
 
     const handleDriverSelection = (driver: Driver) => {
@@ -118,13 +118,12 @@ const DestinationChange = ({ selectedTrip, user }: DestinationChangeProps) => {
         try {
             const response = await fetch(`${BASE_URL}/trans-app/stack-holders?params=${search}`);
             const data = await response.json();
-            const formattedData: ComboboxOption[] = data.map((item: { _id: string, InstitutionName: string }) => ({
+            const formattedData: ComboboxOption[] = data.map((item: { _id: string, InstitutionName: string, Location: string }) => ({
                 value: item._id,
-                label: item.InstitutionName
+                label: `${item.InstitutionName}: ${item.Location}`,
             }));
             setStackHolders(formattedData);
             setFullStackHolders(data);
-            console.log(data)
         } catch (error) {
             console.error('Error fetching fuel providers:', error);
         }
@@ -201,7 +200,7 @@ const DestinationChange = ({ selectedTrip, user }: DestinationChangeProps) => {
             }
             const url = `${BASE_URL}/trans-app/trip-update/destination-change`;
             const tripId = selectedTrip._id;
-            
+
             const response = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -215,7 +214,6 @@ const DestinationChange = ({ selectedTrip, user }: DestinationChangeProps) => {
                 toast.success("Trip update submitted successfully!", { richColors: true });
             }
         } catch (err) {
-            console.log("Submitting error: ", err);
             toast.error("Local Error in Submitting data", {
                 description: String(err),
                 richColors: true,
@@ -282,8 +280,8 @@ const DestinationChange = ({ selectedTrip, user }: DestinationChangeProps) => {
 
                 {modificationCheck &&
                     <div>
-                        <Label htmlFor='currentLocation'>Current Location</Label>
-                        <Input type='string' id='currentLocation' value={currentLocation} onChange={(e) => setCurrentLocation(e.target.value)} className={`${!currentLocation ? "bg-yellow-100" : ""}`} />
+                        <Label htmlFor='currentLocation'>Destination changing from</Label>
+                        <Input type='string' placeholder='Enter the location from where the destination is being changed' id='currentLocation' value={currentLocation} onChange={(e) => setCurrentLocation(e.target.value)} className={`${!currentLocation ? "bg-yellow-100" : ""}`} />
                     </div>
                 }
 
@@ -306,28 +304,18 @@ const DestinationChange = ({ selectedTrip, user }: DestinationChangeProps) => {
                 </div>
 
                 <div>
-                    <Label htmlFor="dateTime">Proposed Departure Time</Label>
-                    <Input
-                        id="dateTime"
-                        type="datetime-local"
-                        placeholder="Current Time"
-                        value={proposedDate ? format(proposedDate, "yyyy-MM-dd'T'HH:mm") : ""}
-                        onChange={(e) => {
-                            setProposedDate(e.target.value ? new Date(e.target.value) : undefined);
-                        }}
+                    <Label htmlFor="dateTime">Proposed Departure Date</Label>
+                    <DatePicker
+                        value={proposedDate}
+                        onChange={setProposedDate}
                     />
                 </div>
 
                 <div>
                     <Label htmlFor="dateTime">Target Reaching Time</Label>
-                    <Input
-                        id="dateTime"
-                        type="datetime-local"
-                        placeholder="Current Time"
-                        value={targetTime ? format(targetTime, "yyyy-MM-dd'T'HH:mm") : ""}
-                        onChange={(e) => {
-                            setTargetTime(e.target.value ? new Date(e.target.value) : undefined);
-                        }}
+                    <DateTimePicker
+                        value={targetTime}
+                        onChange={(d) => setTargetTime(d ?? undefined)}
                     />
                 </div>
 

@@ -18,6 +18,7 @@ import DestinationChange from "./transappComponents/DestinationChange"
 import MarkLoaded from "./transappComponents/MarkLoaded"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 import { Card, CardContent, CardHeader } from "./ui/card"
+import { DateTimePicker } from "./ui/datetime-picker"
 
 export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }: { tripsData: TankersTrip[], user: TransAppUser, query: { actionType: "update" | "report" | "loaded" | "destinationChange" | undefined; tripId: string } }) {
     const queryAction = query?.actionType
@@ -63,7 +64,6 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }
             setLocationRemark(data.find(trip => trip?._id === tripId)?.EndTo.toUpperCase() || "");
             setManagerComment("#REPORTED ");
             (!loadingSuperVisor || loadingSuperVisor.length == 0) && fetchStackHolders();
-            console.log('loadingSuperVisor: ', loadingSuperVisor)
         }
         if (actionType === "update") {
             setTrackUpdateDate(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined);
@@ -119,8 +119,6 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }
 
     const updateLoadingSuperVisor = async () => {
         if (!stackHolder) { toast.error('no stackholder found'); return }
-        console.log(stackHolder)
-        console.log(stackHolder._id)
         if (!loadingSuperVisorUpdate || loadingSuperVisorUpdate.length < 3) return;
         setLoading(true);
         try {
@@ -182,13 +180,9 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }
     const fetchStackHolders = async () => {
         try {
             const response = await fetch(`${BASE_URL}/trans-app/stack-holders/system/${data.find(trip => trip?._id === tripId)?.EndTo.split(":")[0]}`);
-            console.log('url: ', `${BASE_URL}/trans-app/stack-holders/system/${data.find(trip => trip?._id === tripId)?.EndTo.split(":")[0]}`)
-            console.log('response: ', response);
             const responseData = await response.json();
-            console.log('responseData: ', responseData);
             if (!response.ok) return;
             setStackHolder(responseData[0])
-            console.log('stackHolder: ', responseData[0])
             setLoadingSuperVisor(responseData[0].loadingSupervisor);
         } catch (error) {
             console.error('Error fetching fuel providers:', error);
@@ -198,275 +192,267 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }
     return (
         <>
             {loading && <Loading />}
-            <div className="p-4 min-h-[80svh] flex flex-col justify-center gap-4">
-                {tripId &&
-                    <>
-                        <div className="flex flex-col gap-2 md:gap-4 w-full md:w-auto justify-start text-sm">
-                            id: {tripId}
-                            <h4 className="text-lg font-semibold">Trip Details</h4>
-                            <div className="flex">
-                                <strong>Started From: </strong>{data.find(trip => trip?._id === tripId)?.StartFrom || "N/A"}
-                            </div>
-                            <div className="flex">
-                                <strong>Starting Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.StartDate))}
-                            </div>
-                            <div className="flex">
-                                <strong>Target Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.targetTime))}
-                            </div>
-                            <div className="flex">
-                                <strong>Proposed Destination: </strong> {data.find(trip => trip?._id === tripId)?.EndTo || "N/A"}
-                            </div>
-                            <div className="flex">
-                                <strong>Starat Driver: </strong> {data.find(trip => trip?._id === tripId)?.StartDriver || "N/A"}
-                            </div>
-                        </div>
-                    </>
-                }
-                <Combobox
-                    className="w-full"
-                    options={vehicles}
-                    value={tripId}
-                    onChange={setTripId}
-                    searchTerm={vehicleSearch}
-                    onSearchTermChange={setVehicleSearch}
-                    placeholder="Select Vehicle"
-                />
-                {
-                    tripId && (
-                        <div className="buttons flex flex-col gap-2 items-center w-full">
-                            <Button className={`w-full ${actionType === "destinationChange" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("destinationChange")}>Destination Change</Button>
-                            <Button className={`w-full ${actionType === "update" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("update")}>Update</Button>
-                            <Button className={`w-full ${actionType === "report" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("report")}>Report</Button>
-                            <Button disabled className={`w-full ${actionType === "loaded" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("loaded")}>Loaded</Button>
-                        </div>
-                    )
-                }
-                {/* <div className="flex flex-col gap-4 md:flex-row items-center justify-center md:flex-shrink-0 w-full md:justify-around">
-                </div> */}
-                <div className={actionType == undefined ? "hidden" : ""}>
-                    {actionType == "report" &&
-                        <div className="flex flex-col gap-2">
-                            <Label htmlFor="dateTime">Reported on</Label>
-                            <Input
-                                id="dateTime"
-                                type="datetime-local"
-                                placeholder="Current Time"
-                                value={TrackUpdateDate ? format(TrackUpdateDate, "yyyy-MM-dd'T'HH:mm") : ""}
-                                onChange={(e) => {
-                                    setTrackUpdateDate(e.target.value ? new Date(e.target.value) : undefined);
-                                }}
-                            />
-
-                            <Label htmlFor="driver">Driver</Label>
-                            <Input
-                                id="driver"
-                                value={Driver}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setDriver(value);
-                                    const nativeEvent = e.nativeEvent as InputEvent;
-                                    if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
-                                        searchDriver(value);
-                                    }
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Backspace") {
-                                        return;
-                                    }
-                                    if (e.key === 'Enter' && Driver.length > 3) {
-                                        e.preventDefault();
-                                        searchDriver(Driver);
-                                    }
-                                }}
-                                required
-                                className={`${!Driver ? "bg-yellow-100" : ""}`}
-                            />
-
-                            <Label htmlFor="odometer">Odometer</Label>
-                            <Input
-                                id="odometer"
-                                value={OdometerOnTrackUpdate === undefined ? "" : OdometerOnTrackUpdate}
-                                onChange={(e) => setOdometerOnTrackUpdate(e.target.value === "" ? undefined : Number(e.target.value))}
-                                type="number"
-                                placeholder=""
-                                className={`${!OdometerOnTrackUpdate ? "bg-yellow-100" : ""}`}
-                            />
-
-                            {(() => {
-                                const endTo = data.find(trip => trip?._id === tripId)?.EndTo;
-
-                                // const updateStackHolders = async (newSupervisor: string) => {
-                                //     if (!endTo) return;
-                                //     try {
-                                //         const res = await fetch(`${BASE_URL}/trans-app/stack-holders/system/${endTo}`, {
-                                //             method: "PUT",
-                                //             headers: { "Content-Type": "application/json" },
-                                //             body: JSON.stringify({ loadingSupervisor: newSupervisor }),
-                                //         });
-                                //         if (!res.ok) {
-                                //             const txt = await res.text();
-                                //             console.error("Failed to update stack holders:", txt);
-                                //             toast.error("Failed to update stack holders", { description: txt, richColors: true });
-                                //             return;
-                                //         }
-                                //         // reflect the newly saved supervisor in state
-                                //         setLoadingSuperVisor(newSupervisor);
-                                //         toast.success("Stackholders updated", { richColors: true });
-                                //     } catch (err) {
-                                //         console.error("Error updating stack holders:", err);
-                                //         toast.error("Error updating stack holders", { richColors: true });
-                                //     }
-                                // };
-
-                                const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                                    setLoadingSuperVisorUpdate(e.target.value);
-                                };
-
-                                // const handleBlur = () => {
-                                // If no loading supervisor existed in the fetched stackholders,
-                                // create/update it in the DB when the user provides a value.
-                                // if ((!loadingSuperVisor || loadingSuperVisor.length === 0) && loadingSuperVisorUpdate && loadingSuperVisorUpdate.length > 0) {
-                                //     updateStackHolders(loadingSuperVisorUpdate);
-                                // }
-                                // If a loadingSupervisor existed, we only track the user's input (loadingSuperVisorUpdate)
-                                // and do not call the DB update here. The value will be submitted with the main submit().
-                                // };
-
-                                return (
-                                    <>
-                                        <Label htmlFor="loadingSuperviser">Loading Supervisor</Label>
-                                        <Input
-                                            id="loadingSuperviser"
-                                            value={loadingSuperVisorUpdate ? loadingSuperVisorUpdate : loadingSuperVisor ? loadingSuperVisor : ""}
-                                            onChange={handleChange}
-                                            // onBlur={handleBlur}
-                                            type="text"
-                                            placeholder=""
-                                            className={`${(!loadingSuperVisor && !loadingSuperVisorUpdate) ? "bg-yellow-100" : ""}`}
-                                        />
-                                    </>
-                                );
-                            })()}
-
-                            <Label htmlFor="locationRemark">Location Remark</Label>
-                            <Input id="locationRemark" value={LocationRemark} onChange={(e) => setLocationRemark(e.target.value)} className={`${!LocationRemark ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
-
-                            <Label htmlFor="comment">Instruction/ Comment</Label>
-                            <Input id="comment" value={ManagerComment} onChange={(e) => setManagerComment(e.target.value)} className={`${!ManagerComment ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
-
-                            <div className="flex gap-2 flex-row justify-between mt-2">
-                                <Button className="w-full" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
-                                <Button className="w-full" type="button" onClick={() => submit()}>Submit</Button>
-                            </div>
-                        </div>
-                    }
-                    {actionType == "update" &&
-                        <div className="flex flex-col gap-2">
-                            <Label htmlFor="dateTime">Update Date</Label>
-                            <Input
-                                id="dateTime"
-                                type="datetime-local"
-                                placeholder="Current Time"
-                                value={TrackUpdateDate ? format(TrackUpdateDate, "yyyy-MM-dd'T'HH:mm") : ""}
-                                onChange={(e) => {
-                                    setTrackUpdateDate(e.target.value ? new Date(e.target.value) : undefined);
-                                }}
-                            />
-
-                            <Label htmlFor="driver">Driver</Label>
-                            <Input
-                                id="driver"
-                                value={Driver}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setDriver(value);
-                                    const nativeEvent = e.nativeEvent as InputEvent;
-                                    if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
-                                        searchDriver(value);
-                                    }
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Backspace") {
-                                        return;
-                                    }
-                                    if (e.key === 'Enter' && Driver.length > 3) {
-                                        e.preventDefault();
-                                        searchDriver(Driver);
-                                    }
-                                }}
-                                className={`${!Driver ? "bg-yellow-100" : ""}`}
-                                required
-                            />
-
-                            <Label htmlFor="odometer">Odometer</Label>
-                            <Input
-                                id="odometer"
-                                value={OdometerOnTrackUpdate === undefined ? "" : OdometerOnTrackUpdate}
-                                onChange={(e) => setOdometerOnTrackUpdate(e.target.value === "" ? undefined : Number(e.target.value))}
-                                className={`${!OdometerOnTrackUpdate ? "bg-yellow-100" : ""}`}
-                                type="number"
-                                placeholder=""
-                            />
-
-                            <Label htmlFor="locationRemark">Location Remark</Label>
-                            <Input id="locationRemark" value={LocationRemark} onChange={(e) => setLocationRemark(e.target.value)} className={`${!LocationRemark ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
-
-                            <Label htmlFor="comment">Instruction/ Comment</Label>
-                            <Input id="comment" value={ManagerComment} onChange={(e) => setManagerComment(e.target.value)} className={`${!ManagerComment ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
-
-                            <div className="flex gap-2 flex-row justify-between mt-2">
-                                <Button className="w-full" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
-                                <Button className="w-full" type="button" onClick={() => submit()}>Submit</Button>
-                            </div>
-                        </div>
-                    }
-                    {actionType == "loaded" &&
-                        <MarkLoaded
-                            selectedTrip={data.find((trip) => trip._id == tripId)!}
+            <div className="flex justify-center w-full">
+                <div className="w-full sm:max-w-xl">
+                    <div className="p-4 min-h-[80svh] flex flex-col justify-center gap-4">
+                        {tripId &&
+                            <>
+                                <div className="flex flex-col gap-2 md:gap-4 w-full md:w-auto justify-start text-sm">
+                                    id: {tripId}
+                                    <h4 className="text-lg font-semibold">Trip Details</h4>
+                                    <div className="flex">
+                                        <strong>Started From: </strong>{data.find(trip => trip?._id === tripId)?.StartFrom || "N/A"}
+                                    </div>
+                                    <div className="flex">
+                                        <strong>Starting Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.StartDate))}
+                                    </div>
+                                    <div className="flex">
+                                        <strong>Target Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.targetTime))}
+                                    </div>
+                                    <div className="flex">
+                                        <strong>Proposed Destination: </strong> {data.find(trip => trip?._id === tripId)?.EndTo || "N/A"}
+                                    </div>
+                                    <div className="flex">
+                                        <strong>Starat Driver: </strong> {data.find(trip => trip?._id === tripId)?.StartDriver || "N/A"}
+                                    </div>
+                                </div>
+                            </>
+                        }
+                        <Combobox
+                            className="w-full"
+                            options={vehicles}
+                            value={tripId}
+                            onChange={setTripId}
+                            searchTerm={vehicleSearch}
+                            onSearchTermChange={setVehicleSearch}
+                            placeholder="Select Vehicle"
                         />
-                    }
+                        {
+                            tripId && (
+                                <div className="buttons flex flex-col gap-2 items-center w-full">
+                                    <Button className={`w-full ${actionType === "destinationChange" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("destinationChange")}>Destination Change</Button>
+                                    <Button className={`w-full ${actionType === "update" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("update")}>Update</Button>
+                                    <Button className={`w-full ${actionType === "report" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("report")}>Report</Button>
+                                    <Button disabled className={`w-full ${actionType === "loaded" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("loaded")}>Loaded</Button>
+                                </div>
+                            )
+                        }
+                        <div className={actionType == undefined ? "hidden" : ""}>
+                            {actionType == "report" &&
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="dateTime">Reported on</Label>
+                                    <DateTimePicker
+                                        value={TrackUpdateDate}
+                                        onChange={(d) => setTrackUpdateDate(d ?? undefined)}
+                                    />
 
-                    {actionType == "destinationChange" && data.find((trip) => trip._id == tripId) &&
-                        <DestinationChange
-                            selectedTrip={data.find((trip) => trip._id == tripId)!}
-                            user={user}
-                        />
+                                    <Label htmlFor="driver">Driver</Label>
+                                    <Input
+                                        id="driver"
+                                        value={Driver}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setDriver(value);
+                                            const nativeEvent = e.nativeEvent as InputEvent;
+                                            if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
+                                                searchDriver(value);
+                                            }
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Backspace") {
+                                                return;
+                                            }
+                                            if (e.key === 'Enter' && Driver.length > 3) {
+                                                e.preventDefault();
+                                                searchDriver(Driver);
+                                            }
+                                        }}
+                                        required
+                                        className={`${!Driver ? "bg-yellow-100" : ""}`}
+                                    />
+
+                                    <Label htmlFor="odometer">Odometer</Label>
+                                    <Input
+                                        id="odometer"
+                                        value={OdometerOnTrackUpdate === undefined ? "" : OdometerOnTrackUpdate}
+                                        onChange={(e) => setOdometerOnTrackUpdate(e.target.value === "" ? undefined : Number(e.target.value))}
+                                        type="number"
+                                        placeholder=""
+                                        className={`${!OdometerOnTrackUpdate ? "bg-yellow-100" : ""}`}
+                                    />
+
+                                    {(() => {
+                                        const endTo = data.find(trip => trip?._id === tripId)?.EndTo;
+
+                                        // const updateStackHolders = async (newSupervisor: string) => {
+                                        //     if (!endTo) return;
+                                        //     try {
+                                        //         const res = await fetch(`${BASE_URL}/trans-app/stack-holders/system/${endTo}`, {
+                                        //             method: "PUT",
+                                        //             headers: { "Content-Type": "application/json" },
+                                        //             body: JSON.stringify({ loadingSupervisor: newSupervisor }),
+                                        //         });
+                                        //         if (!res.ok) {
+                                        //             const txt = await res.text();
+                                        //             console.error("Failed to update stack holders:", txt);
+                                        //             toast.error("Failed to update stack holders", { description: txt, richColors: true });
+                                        //             return;
+                                        //         }
+                                        //         // reflect the newly saved supervisor in state
+                                        //         setLoadingSuperVisor(newSupervisor);
+                                        //         toast.success("Stackholders updated", { richColors: true });
+                                        //     } catch (err) {
+                                        //         console.error("Error updating stack holders:", err);
+                                        //         toast.error("Error updating stack holders", { richColors: true });
+                                        //     }
+                                        // };
+
+                                        const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                                            setLoadingSuperVisorUpdate(e.target.value);
+                                        };
+
+                                        // const handleBlur = () => {
+                                        // If no loading supervisor existed in the fetched stackholders,
+                                        // create/update it in the DB when the user provides a value.
+                                        // if ((!loadingSuperVisor || loadingSuperVisor.length === 0) && loadingSuperVisorUpdate && loadingSuperVisorUpdate.length > 0) {
+                                        //     updateStackHolders(loadingSuperVisorUpdate);
+                                        // }
+                                        // If a loadingSupervisor existed, we only track the user's input (loadingSuperVisorUpdate)
+                                        // and do not call the DB update here. The value will be submitted with the main submit().
+                                        // };
+
+                                        return (
+                                            <>
+                                                <Label htmlFor="loadingSuperviser">Loading Supervisor</Label>
+                                                <Input
+                                                    id="loadingSuperviser"
+                                                    value={loadingSuperVisorUpdate ? loadingSuperVisorUpdate : loadingSuperVisor ? loadingSuperVisor : ""}
+                                                    onChange={handleChange}
+                                                    // onBlur={handleBlur}
+                                                    type="text"
+                                                    placeholder=""
+                                                    className={`${(!loadingSuperVisor && !loadingSuperVisorUpdate) ? "bg-yellow-100" : ""}`}
+                                                />
+                                            </>
+                                        );
+                                    })()}
+
+                                    <Label htmlFor="locationRemark">Location Remark</Label>
+                                    <Input id="locationRemark" value={LocationRemark} onChange={(e) => setLocationRemark(e.target.value)} className={`${!LocationRemark ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
+
+                                    <Label htmlFor="comment">Instruction/ Comment</Label>
+                                    <Input id="comment" value={ManagerComment} onChange={(e) => setManagerComment(e.target.value)} className={`${!ManagerComment ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
+
+                                    <div className="flex gap-2 flex-row justify-between mt-2">
+                                        <Button className="w-full" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
+                                        <Button className="w-full" type="button" onClick={() => submit()}>Submit</Button>
+                                    </div>
+                                </div>
+                            }
+                            {actionType == "update" &&
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="dateTime">Update Date</Label>
+                                    <DateTimePicker
+                                        value={TrackUpdateDate}
+                                        onChange={(d) => setTrackUpdateDate(d ?? undefined)}
+                                    />
+
+                                    <Label htmlFor="driver">Driver</Label>
+                                    <Input
+                                        id="driver"
+                                        value={Driver}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setDriver(value);
+                                            const nativeEvent = e.nativeEvent as InputEvent;
+                                            if (nativeEvent.inputType === "insertText" && e.currentTarget.value.length > 3) {
+                                                searchDriver(value);
+                                            }
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Backspace") {
+                                                return;
+                                            }
+                                            if (e.key === 'Enter' && Driver.length > 3) {
+                                                e.preventDefault();
+                                                searchDriver(Driver);
+                                            }
+                                        }}
+                                        className={`${!Driver ? "bg-yellow-100" : ""}`}
+                                        required
+                                    />
+
+                                    <Label htmlFor="odometer">Odometer</Label>
+                                    <Input
+                                        id="odometer"
+                                        value={OdometerOnTrackUpdate === undefined ? "" : OdometerOnTrackUpdate}
+                                        onChange={(e) => setOdometerOnTrackUpdate(e.target.value === "" ? undefined : Number(e.target.value))}
+                                        className={`${!OdometerOnTrackUpdate ? "bg-yellow-100" : ""}`}
+                                        type="number"
+                                        placeholder=""
+                                    />
+
+                                    <Label htmlFor="locationRemark">Location Remark</Label>
+                                    <Input id="locationRemark" value={LocationRemark} onChange={(e) => setLocationRemark(e.target.value)} className={`${!LocationRemark ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
+
+                                    <Label htmlFor="comment">Instruction/ Comment</Label>
+                                    <Input id="comment" value={ManagerComment} onChange={(e) => setManagerComment(e.target.value)} className={`${!ManagerComment ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
+
+                                    <div className="flex gap-2 flex-row justify-between mt-2">
+                                        <Button className="w-full" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
+                                        <Button className="w-full" type="button" onClick={() => submit()}>Submit</Button>
+                                    </div>
+                                </div>
+                            }
+                            {actionType == "loaded" &&
+                                <MarkLoaded
+                                    selectedTrip={data.find((trip) => trip._id == tripId)!}
+                                />
+                            }
+
+                            {actionType == "destinationChange" && data.find((trip) => trip._id == tripId) &&
+                                <DestinationChange
+                                    selectedTrip={data.find((trip) => trip._id == tripId)!}
+                                    user={user}
+                                />
+                            }
+                        </div>
+                    </div>
+
+                    {data.find(trips => trips?._id == tripId)?.TravelHistory &&
+                        <Accordion type="single" collapsible className="mb-2 p-4 w-full">
+                            <AccordionItem value="item-1">
+                                <AccordionTrigger className="mb-2 w-full text-left">Travel History</AccordionTrigger>
+                                <AccordionContent>
+                                    {data.find(trips => trips?._id == tripId)?.TravelHistory.map((history, index) => (
+                                        <Card key={index} className="mb-4">
+                                            <CardHeader>
+                                                <div className="flex flex-col items-start">
+                                                    <span className="font-semibold">{(history.ManagerComment.match(/#(\w+)/) || [])[1] + " on " + formatDate(history.TrackUpdateDate)}</span>
+                                                    <span className="text-sm text-muted-foreground"><strong>Driver: </strong> {history.Driver}</span>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="flex flex-col gap-2">
+                                                    <div>
+                                                        <strong>Location:</strong> {history.LocationOnTrackUpdate}
+                                                    </div>
+                                                    <div>
+                                                        <strong>Odometer:</strong> {history.OdometerOnTrackUpdate}
+                                                    </div>
+                                                    <div>
+                                                        <strong>Comment:</strong> {history.ManagerComment}
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
                     }
                 </div>
             </div>
-
-            {data.find(trips => trips?._id == tripId)?.TravelHistory &&
-                <Accordion type="single" collapsible className="mb-2 p-4 w-full">
-                    <AccordionItem value="item-1">
-                        <AccordionTrigger className="mb-2 w-full text-left">Travel History</AccordionTrigger>
-                        <AccordionContent>
-                            {data.find(trips => trips?._id == tripId)?.TravelHistory.map((history, index) => (
-                                <Card key={index} className="mb-4">
-                                    <CardHeader>
-                                        <div className="flex flex-col items-start">
-                                            <span className="font-semibold">{(history.ManagerComment.match(/#(\w+)/) || [])[1] + " on " + formatDate(history.TrackUpdateDate)}</span>
-                                            <span className="text-sm text-muted-foreground"><strong>Driver: </strong> {history.Driver}</span>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="flex flex-col gap-2">
-                                            <div>
-                                                <strong>Location:</strong> {history.LocationOnTrackUpdate}
-                                            </div>
-                                            <div>
-                                                <strong>Odometer:</strong> {history.OdometerOnTrackUpdate}
-                                            </div>
-                                            <div>
-                                                <strong>Comment:</strong> {history.ManagerComment}
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
-            }
             <SearchModal
                 isOpen={searchModalConfig.isOpen}
                 onClose={() => setSearchModalConfig((prev) => ({ ...prev, isOpen: false }))}

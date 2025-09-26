@@ -653,7 +653,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                         }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.driverStatus == 0 ? "text-destructive" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip?.StartFrom}</TableCell>}
-                                            {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate)}</TableCell>}
+                                            {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>}
                                             <TableCell>{trip?.EndTo}</TableCell>
                                             <TableCell>{trip?.VehicleNo}</TableCell>
                                             <TableCell>{trip?.capacity}</TableCell>
@@ -714,7 +714,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                         }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Depot" ? "bg-yellow-200 dark:text-background hover:bg-yellow-200" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip?.VehicleNo}</TableCell>
-                                            <TableCell>{formatDate(trip?.StartDate)}</TableCell>
+                                            <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>
                                             <TableCell>{trip?.capacity}</TableCell>
                                             <TableCell>{trip?.StartFrom}</TableCell>
                                             <TableCell>{trip?.EndTo}</TableCell>
@@ -775,7 +775,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                         }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip?.StartFrom}</TableCell>}
-                                            {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate)}</TableCell>}
+                                            {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>}
                                             <TableCell>{trip?.EndTo}</TableCell>
                                             <TableCell>{trip?.VehicleNo}</TableCell>
                                             <TableCell>{trip?.capacity}</TableCell>
@@ -838,7 +838,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                         }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip?.StartFrom}</TableCell>}
-                                            {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate)}</TableCell>}
+                                            {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>}
                                             <TableCell>{trip?.VehicleNo}</TableCell>
                                             <TableCell>{trip?.capacity}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip?.superwiser}</TableCell>}
@@ -939,7 +939,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                         }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             {user?.Division.includes('Admin') && <TableCell>{trip?.StartFrom}</TableCell>}
-                                            {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate)}</TableCell>}
+                                            {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>}
                                             <TableCell>{trip?.EndTo}</TableCell>
                                             <TableCell>{trip?.VehicleNo}</TableCell>
                                             <TableCell>{trip?.capacity}</TableCell>
@@ -995,7 +995,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                         }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>{trip?.VehicleNo}</TableCell>
-                                            <TableCell>{formatDate(trip?.StartDate)}</TableCell>
+                                            <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>
                                             <TableCell>{trip?.capacity}</TableCell>
                                             <TableCell>{trip?.StartFrom}</TableCell>
                                             <TableCell>{formatDate(trip?.ReportingDate)}</TableCell>

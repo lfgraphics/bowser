@@ -70,7 +70,6 @@ export default function LoadVehicleTracker({ tripsData, query }: { tripsData: Ta
             setLocationRemark("");
             setManagerComment("#UPDATE ");
         }
-        console.log(data.find(trip => trip?._id === tripId)?.TravelHistory, "Travel History for tripId:", tripId);
     }, [actionType, tripId, data]);
 
     const resetForm = () => {
