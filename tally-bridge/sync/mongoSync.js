@@ -23,16 +23,11 @@ past30Days.setDate(now.getDate() - 180);
 past6Months.setMonth(now.getMonth() - 3);
 
 const localTripFilter = {
-    $or: [
-        {
-            $and: [
-                // { $or: [{ "TallyLoadDetail.UnloadingDate": { $exists: false } }, { "TallyLoadDetail.UnloadingDate": { $ne: null } }] },
-                // { "EndDate": { $exists: false } },
-                { "TallyLoadDetail.LoadingDate": { $gte: past30Days, $lte: now } },
-                { "TallyLoadDetail.Goods": { $ne: "HSD" } }
-            ]
-        },
-        { 'EmptyTripDetail.ProposedDate': { $gte: past30Days, $lte: now } },
+    $and: [
+        // { $or: [{ "TallyLoadDetail.UnloadingDate": { $exists: false } }, { "TallyLoadDetail.UnloadingDate": { $ne: null } }] },
+        // { "EndDate": { $exists: false } },
+        { StartDate: { $gte: past30Days, $lte: now } },
+        { "TallyLoadDetail.Goods": { $ne: "HSD" } }
     ]
 };
 

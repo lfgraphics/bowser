@@ -1,6 +1,6 @@
 {
   "name": "tally-bridge",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "A bridge between Local data (tally, mongodb) and your web app",
   "main": "main.js",
   "scripts": {
@@ -20,7 +20,7 @@
     "electron-is-dev": "^3.0.1",
     "electron-updater": "^6.6.2",
     "express": "^5.1.0",
-    "mongodb": "3.6",
+    "mongodb": "^6.20.0",
     "mongoose": "^8.13.2",
     "update-electron-app": "^3.1.1",
     "xml2js": "^0.6.2"
@@ -34,8 +34,8 @@
     "electron-builder": "^26.0.12"
   },
   "build": {
-    "appId": "com.itplfirebase.tallybridge",
     "productName": "Tally Bridge",
+    "appId": "com.itplfirebase.tallybridge",
     "publish": [
       {
         "provider": "github",
@@ -44,8 +44,13 @@
       }
     ],
     "win": {
-      "target": "nsis",
+      "target": [
+        "portable"
+      ],
       "icon": "assets/icon.ico"
+    },
+    "portable": {
+      "artifactName": "${productName}Portable.${ext}"
     },
     "linux": {
       "icon": "assets/icon.png"
