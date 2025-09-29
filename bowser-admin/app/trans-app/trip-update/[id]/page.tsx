@@ -1,14 +1,12 @@
 "use client";
 
 import Loading from '@/app/loading';
-import Combobox, { ComboboxOption } from '@/components/Combobox';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DatePicker, DateTimePicker } from '@/components/ui/datetime-picker';
 import { BASE_URL } from '@/lib/api';
-import { formatDate } from '@/lib/utils';
 import { TankersTrip } from '@/types';
 import React from 'react'
 import { toast } from 'sonner';
@@ -17,24 +15,14 @@ import { toDate } from '@/utils';
 const page = ({ params }: { params: { id: string } }) => {
     const [loading, setLoading] = React.useState(false);
     const [trip, setTrip] = React.useState<TankersTrip>();
-    // Top-level ReportingDate toggle
     const [isReported, setIsReported] = React.useState(false);
-    // Ended = if either EndDate or LoadTripDetail.UnloadDate exists
     const [isEnded, setIsEnded] = React.useState(false);
-    // Odometer string values
     const [startOdoStr, setStartOdoStr] = React.useState<string>('');
     const [endOdoStr, setEndOdoStr] = React.useState<string>('');
-    const [stackHolder, setStackHolder] = React.useState<string>(trip?.StartFrom || '');
-    const [endStackHolder, setEndStackHolder] = React.useState<string>(trip?.EndTo || '');
-    const [search, setSearch] = React.useState('');
-    const [endSearch, setEndSearch] = React.useState('');
-    const [stackHolders, setStackHolders] = React.useState<ComboboxOption[]>([])
-    const [fullStackHolders, setFullStackHolders] = React.useState<{ _id: string, Location: string, InstitutionName: string }[]>([])
 
     const normalizeStartDate = (d?: Date) => {
         if (!d) return undefined
         const n = new Date(d)
-        // Keep only Y/M/D but set UTCHours to 00:00 with 1s and 800ms
         n.setUTCHours(0, 0, 1, 800)
         return n
     }
@@ -47,30 +35,23 @@ const page = ({ params }: { params: { id: string } }) => {
         const url = `${BASE_URL}/trans-app/trip-update/update-trip/${trip._id}`;
 
         try {
-            // Build $set and $unset payload so backend can properly remove fields
             const $set: Record<string, any> = {
                 OpretionallyModified: true,
             }
             const $unset: Record<string, any> = {}
-
-            // Normalize and set StartDate if present
             if (trip.StartDate) {
                 const norm = normalizeStartDate(new Date(trip.StartDate as any))
                 if (norm) $set['StartDate'] = norm
             }
-
-            // Target time
             if (trip.targetTime) {
                 $set['targetTime'] = trip.targetTime
             }
 
-            // Start From / End To / Driver / Mobile
             $set['StartFrom'] = trip.StartFrom || ''
             $set['EndTo'] = trip.EndTo || ''
             $set['StartDriver'] = trip.StartDriver || ''
             $set['StartDriverMobile'] = trip.StartDriverMobile || ''
 
-            // ReportingDate toggle: if enabled, set; if disabled, unset
             if (isReported && trip.ReportingDate) {
                 $set['ReportingDate'] = new Date(trip.ReportingDate as any)
             } else if (!isReported) {
@@ -80,7 +61,6 @@ const page = ({ params }: { params: { id: string } }) => {
                 });
             }
 
-            // EndDate and UnloadingDate should be the same and react similarly
             if (isReported && isEnded) {
                 const endOrUnload = trip.EndDate || trip.LoadTripDetail?.UnloadDate
                 if (endOrUnload) {
@@ -93,12 +73,10 @@ const page = ({ params }: { params: { id: string } }) => {
                 $unset['LoadTripDetail.UnloadDate'] = ""
             }
 
-            // Only set LoadTripDetail.ReportDate if reported is enabled
             if (isReported && trip.LoadTripDetail?.ReportDate) {
                 $set['LoadTripDetail.ReportDate'] = new Date(trip.LoadTripDetail.ReportDate as any)
             }
 
-            // Odometer input strings -> numbers on submit (or unset if invalid/disabled)
             const startNum = Number(startOdoStr)
             if (!Number.isNaN(startNum) && startOdoStr !== '') {
                 $set['TallyLoadDetail.StartOdometer'] = startNum
@@ -117,11 +95,9 @@ const page = ({ params }: { params: { id: string } }) => {
                 $unset['EmptyTripDetail.EndOdometer'] = ""
             }
 
-            // Persist deletions/edits of arrays
             if (Array.isArray(trip.TravelHistory)) $set['TravelHistory'] = trip.TravelHistory
             if (Array.isArray(trip.statusUpdate)) $set['statusUpdate'] = trip.statusUpdate
 
-            // Resolve conflicts: if a key exists in both $set and $unset, drop it from $set
             for (const k of Object.keys($unset)) {
                 if (k in $set) delete $set[k]
             }
@@ -164,9 +140,7 @@ const page = ({ params }: { params: { id: string } }) => {
                 }
                 const response = await request.json()
                 setTrip(response);
-                // Initialize toggles based on existing data
                 setIsReported(Boolean(response.ReportingDate))
-                // End considered true if either EndDate or UnloadDate exists
                 setIsEnded(Boolean(response.EndDate || response?.LoadTripDetail?.UnloadDate))
                 const sOdo = response?.TallyLoadDetail?.StartOdometer ?? response?.EmptyTripDetail?.StartOdometer
                 const eOdo = response?.TallyLoadDetail?.EndOdometer ?? response?.EmptyTripDetail?.EndOdometer
@@ -180,37 +154,7 @@ const page = ({ params }: { params: { id: string } }) => {
             }
         };
         fetchRecord();
-        fetchStackHolders();
     }, []);
-
-    const fetchStackHolders = async () => {
-        try {
-            setLoading(true)
-            const response = await fetch(`${BASE_URL}/trans-app/stack-holders?params=${search}`);
-            const data = await response.json();
-            const formattedData: ComboboxOption[] = data.map((item: { _id: string, InstitutionName: string }) => ({
-                value: item._id,
-                label: item.InstitutionName
-            }));
-            setStackHolders(formattedData);
-            setFullStackHolders(data);
-            console.log(data)
-        } catch (error) {
-            console.error('Error fetching fuel providers:', error);
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    React.useEffect(() => {
-        fetchStackHolders();
-    }, [search]);
-
-    React.useEffect(() => {
-        setStackHolder(trip?.StartFrom || '');
-        setEndStackHolder(trip?.EndTo || '');
-        console.log('trip changed', trip)
-    }, [trip])
 
     return (
         <>
@@ -225,7 +169,6 @@ const page = ({ params }: { params: { id: string } }) => {
                             </span>
                         </div>
                         <div className="space-y-4">
-                            {/* Start Date (date-only; UTC seconds=1, ms=800) */}
                             <div className="flex flex-col gap-2">
                                 <Label htmlFor="startDate">Start Date</Label>
                                 <DatePicker
@@ -237,7 +180,6 @@ const page = ({ params }: { params: { id: string } }) => {
                                 />
                             </div>
 
-                            {/* Start Odometer (string) */}
                             <div>
                                 <Label htmlFor="startOdometer">Start Odometer</Label>
                                 <Input
@@ -251,7 +193,6 @@ const page = ({ params }: { params: { id: string } }) => {
                                 />
                             </div>
 
-                            {/* Report Date (top-level ReportingDate) */}
                             <div className="flex items-center space-x-2">
                                 <Checkbox
                                     id="reported"
@@ -260,7 +201,6 @@ const page = ({ params }: { params: { id: string } }) => {
                                         const enabled = Boolean(checked)
                                         setIsReported(enabled);
                                         if (!enabled) {
-                                            // do not keep value; will be $unset on submit
                                             setTrip((prev) => prev ? { ...prev, ReportingDate: undefined as any } : prev)
                                         } else {
                                             setTrip((prev) => prev ? { ...prev, ReportingDate: (prev.ReportingDate ? prev.ReportingDate : new Date()) as any } : prev)
@@ -276,7 +216,6 @@ const page = ({ params }: { params: { id: string } }) => {
                                 </div>
                             </div>
 
-                            {/* End/Unload Date (single control; both fields sync) */}
                             <div className="flex items-center space-x-2">
                                 <Checkbox
                                     disabled={!isReported}
@@ -306,7 +245,6 @@ const page = ({ params }: { params: { id: string } }) => {
                                 </div>
                             </div>
 
-                            {/* End Odometer (string; enabled when Ended) */}
                             <div>
                                 <Label htmlFor="endOdometer">End Odometer</Label>
                                 <Input
@@ -321,7 +259,6 @@ const page = ({ params }: { params: { id: string } }) => {
                                 />
                             </div>
 
-                            {/* Start From / End To */}
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
                                     <Label htmlFor="startFrom">Start From</Label>
@@ -343,7 +280,6 @@ const page = ({ params }: { params: { id: string } }) => {
                                 </div>
                             </div>
 
-                            {/* Start Driver / Mobile */}
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
                                     <Label htmlFor="startDriver">Start Driver</Label>
@@ -365,7 +301,6 @@ const page = ({ params }: { params: { id: string } }) => {
                                 </div>
                             </div>
 
-                            {/* Target Time (Date & Time) */}
                             <div className="flex flex-col gap-2">
                                 <Label htmlFor="targetTime">Target Time</Label>
                                 <DateTimePicker
@@ -374,9 +309,6 @@ const page = ({ params }: { params: { id: string } }) => {
                                 />
                             </div>
 
-                            {/* Unloading Date control removed: it mirrors End Date automatically */}
-
-                            {/* Travel History - delete rows */}
                             <div className="space-y-2">
                                 <Label>Travel History</Label>
                                 <div className="space-y-2">
@@ -403,17 +335,34 @@ const page = ({ params }: { params: { id: string } }) => {
                                 </div>
                             </div>
 
-                            {/* Status Updates - delete rows */}
                             <div className="space-y-2">
                                 <Label>Status Updates</Label>
                                 <div className="space-y-2">
                                     {trip.statusUpdate && trip.statusUpdate.length > 0 ? (
                                         trip.statusUpdate.map((su, idx) => (
                                             <div key={idx} className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between">
-                                                <div className="text-sm">
+                                                <div className="text-sm w-full sm:w-auto sm:flex-1">
                                                     <div><span className="text-muted-foreground">At:</span> {su.dateTime ? new Date(su.dateTime as any).toLocaleString() : '-'}</div>
                                                     <div><span className="text-muted-foreground">Status:</span> {su.status}</div>
-                                                    {su.comment && <div><span className="text-muted-foreground">Comment:</span> {su.comment}</div>}
+                                                    <div className="mt-2">
+                                                        <Label htmlFor={`su-comment-${idx}`}>Comment</Label>
+                                                        <Input
+                                                            id={`su-comment-${idx}`}
+                                                            type="text"
+                                                            value={su.comment ?? ''}
+                                                            onChange={(e) =>
+                                                                setTrip((prev) => {
+                                                                    if (!prev) return prev;
+                                                                    const next = { ...prev } as typeof prev;
+                                                                    const list = Array.isArray(next.statusUpdate) ? [...next.statusUpdate] : [];
+                                                                    const current = list[idx] ?? {} as any;
+                                                                    list[idx] = { ...current, comment: e.target.value } as any;
+                                                                    (next as any).statusUpdate = list as any;
+                                                                    return next;
+                                                                })
+                                                            }
+                                                        />
+                                                    </div>
                                                 </div>
                                                 <Button
                                                     variant="destructive"
@@ -429,11 +378,7 @@ const page = ({ params }: { params: { id: string } }) => {
                                 </div>
                             </div>
 
-                            {/* Buttons */}
                             <div className="flex space-x-4 mt-4">
-                                {/* <Button variant="outline" onClick={() => console.log('Cancel')}>
-                                Cancel
-                            </Button> */}
                                 <Button variant="default" className='w-full' onClick={(e) => handleSave(e)}>
                                     Save
                                 </Button>

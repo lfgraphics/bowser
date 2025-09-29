@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 export type CacheData = {
     user?: TransAppUser;
-    filter?: 'all' | 'loadedOnWay' | 'loadedReported' | 'emptyOnWay' | 'emptyReported' | 'emptyStanding' | 'outsideStandingVehicles' | 'notLoadedVehicles' | 'loaded';
+    filter?: 'all' | 'loadedOnWay' | 'loadedReported' | 'emptyOnWay' | 'emptyReported' | 'emptyStanding' | 'outsideStandingVehicles' | 'notLoadedVehicles' | 'loaded' | 'otherStanding';
     viewingTrip?: string | null;
     searchTerm?: string;
     allVehiclesAccordion?: string;

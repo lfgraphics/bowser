@@ -1,4 +1,4 @@
-const { mongoose } = require('mongoose');
+const mongoose = require('mongoose');
 const { TripSheet } = require('../models/TripSheets')
 /**
  * @function updateTripSheet
@@ -9,12 +9,15 @@ const { TripSheet } = require('../models/TripSheets')
  * @param {Object} newDispense - The new dispense details.
  * @returns {Object} - The updated trip sheet.
  */
-const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense, removeDispenseId, verify, post }) => {
+const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense, removeDispenseId, verify, post, session }) => {
     try {
         // Build the query based on the identifier provided
         const query = sheetId ? { _id: new mongoose.Types.ObjectId(sheetId) } : { tripSheetId };
 
-        const tripSheet = await TripSheet.findOne(query);
+        // If a session is provided, ensure all operations join the transaction
+        const findQuery = TripSheet.findOne(query);
+        if (session) findQuery.session(session);
+        const tripSheet = await findQuery;
 
         if (!tripSheet) {
             console.error(`TripSheet not found for query: ${JSON.stringify(query)}`);
@@ -32,7 +35,11 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
             } else {
                 tripSheet.dispenses[existingDispenseIndex] = verify;
                 tripSheet.dispenses[existingDispenseIndex].cost = Number((tripSheet.hsdRate * verify.fuelQuantity).toFixed(2));
-                await tripSheet.save()
+                if (session) {
+                    await tripSheet.save({ session });
+                } else {
+                    await tripSheet.save();
+                }
                 return { success: true, message: "TripSheet updated successfully", tripSheet };
             }
         }
@@ -48,7 +55,11 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
             } else {
                 tripSheet.dispenses[existingDispenseIndex].posted = post.posted;
                 tripSheet.dispenses[existingDispenseIndex].cost = Number((tripSheet.hsdRate * post.fuelQuantity).toFixed(2));
-                await tripSheet.save()
+                if (session) {
+                    await tripSheet.save({ session });
+                } else {
+                    await tripSheet.save();
+                }
                 return { success: true, message: "TripSheet updated successfully", tripSheet };
             }
         }
@@ -109,7 +120,11 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
         tripSheet.balanceQty = tripSheet.totalLoadQuantity - tripSheet.saleQty;
         tripSheet.balanceQtyBySlip = tripSheet.totalLoadQuantityBySlip - tripSheet.saleQty;
 
-        await tripSheet.save();
+        if (session) {
+            await tripSheet.save({ session });
+        } else {
+            await tripSheet.save();
+        }
 
         return { success: true, message: "TripSheet updated successfully", tripSheet };
     } catch (error) {
@@ -118,10 +133,12 @@ const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense,
     }
 };
 
-const updateTripSheetBulk = async ({ tripSheetId, dispenses }) => {
-    const tripSheet = await TripSheet.findOne({ tripSheetId });
+const updateTripSheetBulk = async ({ tripSheetId, dispenses, session }) => {
+    const findQuery = TripSheet.findOne({ tripSheetId });
+    if (session) findQuery.session(session);
+    const tripSheet = await findQuery;
     if (!tripSheet) {
-        console.error(`TripSheet not found for query: ${JSON.stringify(query)}`);
+        console.error(`TripSheet not found for tripSheetId: ${tripSheetId}`);
         return { success: false, message: "TripSheet not found" };
     }
     try {
@@ -142,7 +159,11 @@ const updateTripSheetBulk = async ({ tripSheetId, dispenses }) => {
         tripSheet.balanceQty = tripSheet.totalLoadQuantity - tripSheet.saleQty;
         tripSheet.balanceQtyBySlip = tripSheet.totalLoadQuantityBySlip - tripSheet.saleQty;
 
-        await tripSheet.save();
+        if (session) {
+            await tripSheet.save({ session });
+        } else {
+            await tripSheet.save();
+        }
         console.log(`TripSheet updated successfully for tripSheetId: ${tripSheetId}`);
         return { success: true, message: "TripSheet updated successfully" };
     } catch (error) {

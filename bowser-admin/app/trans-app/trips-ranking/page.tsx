@@ -180,112 +180,114 @@ export default function TripsRankingPage() {
     };
 
     return (
-        <div className="p-4 space-y-4">
-            <div>
-                <h1 className="text-2xl font-bold">Trips Ranking</h1>
-                <div className="flex items-end gap-2 flex-wrap">
-                    <div className="min-w-[280px]">
-                        <Combobox
-                            options={vehicleOptions}
-                            value={selectedVehicle}
-                            onChange={(val) => {
-                                setSelectedVehicle(val);
-                                if (val) fetchTrips(val);
-                            }}
-                            placeholder={loadingVehicles ? "Loading vehicles…" : "Select vehicle…"}
-                            searchTerm={searchTerm}
-                            onSearchTermChange={setSearchTerm}
-                            width="w-[320px]"
-                        />
+        <div className="flex justify-center w-full">
+            <div className="w-full sm:max-w-xl p-4 space-y-4">
+                <div>
+                    <h1 className="text-2xl font-bold">Trips Ranking</h1>
+                    <div className="flex items-end gap-2 flex-wrap">
+                        <div className="min-w-[280px]">
+                            <Combobox
+                                options={vehicleOptions}
+                                value={selectedVehicle}
+                                onChange={(val) => {
+                                    setSelectedVehicle(val);
+                                    if (val) fetchTrips(val);
+                                }}
+                                placeholder={loadingVehicles ? "Loading vehicles…" : "Select vehicle…"}
+                                searchTerm={searchTerm}
+                                onSearchTermChange={setSearchTerm}
+                                width="w-[320px]"
+                            />
+                        </div>
                     </div>
-                </div>
 
-                {error ? <div className="text-destructive-foreground text-sm mt-3">{error}</div> : null}
+                    {error ? <div className="text-destructive-foreground text-sm mt-3">{error}</div> : null}
 
-                {loadingTrips && <div className="mt-3 text-sm">Loading trips…</div>}
+                    {loadingTrips && <div className="mt-3 text-sm">Loading trips…</div>}
 
-                {!loadingTrips && selectedVehicle && Object.keys(grouped).length === 0 && (
-                    <div className="mt-3 text-sm">No trips found for vehicle {selectedVehicle}</div>
-                )}
+                    {!loadingTrips && selectedVehicle && Object.keys(grouped).length === 0 && (
+                        <div className="mt-3 text-sm">No trips found for vehicle {selectedVehicle}</div>
+                    )}
 
-                <div className="space-y-6 mt-4">
-                    {Object.entries(grouped).map(([day, list]) => (
-                        <Card key={day}>
-                            <CardHeader className="py-3">
-                                <div className="flex items-center justify-between">
-                                    <CardTitle className="text-base font-medium">{day} — {list.length} trip(s)</CardTitle>
-                                    <AlertDialog open={confirmDay === day} onOpenChange={(open) => setConfirmDay(open ? day : null)}>
-                                        <AlertDialogTrigger asChild>
-                                            <Button size="sm" variant="outline" onClick={() => setConfirmDay(day)}>Save order</Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Save new order?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    This will update the ranking for all trips on {day}. You can change it again later.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => { persistOrder(day); setConfirmDay(null); }}>Confirm</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-0 overflow-hidden">
-                                <ul className="divide-y" onDragOver={onDragOver}>
-                                    {list.map((t, idx) => (
-                                        <li
-                                            key={t._id}
-                                            draggable
-                                            onDragStart={onDragStart(day, idx)}
-                                            onDrop={onDrop(day, idx)}
-                                            className="p-3 flex items-center gap-3 bg-background hover:bg-card"
-                                            title="Drag to reorder within this day"
-                                        >
-                                            <span className="flex flex-row-reverse items-center content-center">
-                                                <GripVertical className="cursor-grab select-none" />
-                                                {t.rankindex ? t.rankindex + 1 : 1}
-                                            </span>
-                                            <div className="felx flex-col gap-2 w-full">
-                                                <div className="flex items-center justify-between">
-                                                    <span>
-                                                        {t.VehicleNo}
-                                                    </span>
-                                                    <span className={`${t.LoadStatus === 1 ? "text-green-500" : "text-orange-400"} font-semibold text-sm`}>
-                                                        {t.LoadStatus === 1 ? "Loaded" : "Empty"}
-                                                    </span>
+                    <div className="space-y-6 mt-4">
+                        {Object.entries(grouped).map(([day, list]) => (
+                            <Card key={day}>
+                                <CardHeader className="py-3">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="text-base font-medium">{day} — {list.length} trip(s)</CardTitle>
+                                        <AlertDialog open={confirmDay === day} onOpenChange={(open) => setConfirmDay(open ? day : null)}>
+                                            <AlertDialogTrigger asChild>
+                                                <Button size="sm" variant="outline" onClick={() => setConfirmDay(day)}>Save order</Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Save new order?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This will update the ranking for all trips on {day}. You can change it again later.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => { persistOrder(day); setConfirmDay(null); }}>Confirm</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-0 overflow-hidden">
+                                    <ul className="divide-y" onDragOver={onDragOver}>
+                                        {list.map((t, idx) => (
+                                            <li
+                                                key={t._id}
+                                                draggable
+                                                onDragStart={onDragStart(day, idx)}
+                                                onDrop={onDrop(day, idx)}
+                                                className="p-3 flex items-center gap-3 bg-background hover:bg-card"
+                                                title="Drag to reorder within this day"
+                                            >
+                                                <span className="flex flex-row-reverse items-center content-center">
+                                                    <GripVertical className="cursor-grab select-none" />
+                                                    {t.rankindex ? t.rankindex + 1 : 1}
+                                                </span>
+                                                <div className="felx flex-col gap-2 w-full">
+                                                    <div className="flex items-center justify-between">
+                                                        <span>
+                                                            {t.VehicleNo}
+                                                        </span>
+                                                        <span className={`${t.LoadStatus === 1 ? "text-green-500" : "text-orange-400"} font-semibold text-sm`}>
+                                                            {t.LoadStatus === 1 ? "Loaded" : "Empty"}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span>{t.StartFrom || "?"} → {t.EndTo.split(":")[1] || t.EndTo}</span>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <span>{t.StartFrom || "?"} → {t.EndTo.split(":")[1] || t.EndTo}</span>
-                                                </div>
-                                            </div>
-                                            {t.LoadStatus === 0 &&
-                                                <AlertDialog open={confirmDeleteId === t._id} onOpenChange={(open) => setConfirmDeleteId(open ? t._id : null)}>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button size="sm" variant="destructive" onClick={() => setConfirmDeleteId(t._id)}>Delete</Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Delete this trip?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                This action cannot be undone. This will permanently delete the selected trip.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => { deleteTrip(t._id); setConfirmDeleteId(null); }}>Delete</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            }
-                                        </li>
-                                    ))}
-                                </ul>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                                {t.LoadStatus === 0 &&
+                                                    <AlertDialog open={confirmDeleteId === t._id} onOpenChange={(open) => setConfirmDeleteId(open ? t._id : null)}>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button size="sm" variant="destructive" onClick={() => setConfirmDeleteId(t._id)}>Delete</Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Delete this trip?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    This action cannot be undone. This will permanently delete the selected trip.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => { deleteTrip(t._id); setConfirmDeleteId(null); }}>Delete</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                }
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
