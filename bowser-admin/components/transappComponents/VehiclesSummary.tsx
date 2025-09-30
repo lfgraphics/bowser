@@ -217,13 +217,13 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
     const outsideStanding = reportedTrips.filter(trip => {
         const s = lastStatus(trip);
         const endTo = (trip?.EndTo ?? "").toLowerCase();
-        return !["Accident", "Breakdown", "Loaded"].includes(s) && !endTo.includes("gida") && !endTo.includes("maintenece");
+        return !["Accident", "Breakdown", "Loaded"].includes(s) && !endTo.includes("gida office") && !endTo.includes("maintenece") && trip?.driverStatus !== 0;
     });
     const otherStanding = reportedTrips.filter(trip => {
         const s = lastStatus(trip);
         const endTo = (trip?.EndTo ?? "").toLowerCase();
         // Only include reported trips that are not Accident/Breakdown and whose destination matches the specific keywords
-        return s !== "Loaded" && ["Accident", "Breakdown"].includes(s) || (endTo.includes("gida office") || endTo.includes("maintenece"));
+        return s !== "Loaded" && ["Accident", "Breakdown"].includes(s) || (endTo.includes("gida office") || endTo.includes("maintenece")) || trip?.driverStatus === 0;
     });
 
     const handleDownload = () => {
