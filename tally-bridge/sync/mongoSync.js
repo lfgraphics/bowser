@@ -69,7 +69,7 @@ export async function closeConnections() {
 
 // Client functions defination
 async function syncDriversData() {
-    const localCollection = localClient.db('TransappDataHub').collection('VehicleDriverCollection');
+    const localCollection = localClient.db('TransappDataHub').collection('DetailedDriverCollection');
     const atlasCollection = atlasClient.db('TransportData').collection('DriversCollection');
 
     addLog("---------------------------------------");
@@ -77,13 +77,124 @@ async function syncDriversData() {
 
     // Step 1: Fetch all data from Atlas and Local
     let atlasData = await atlasCollection.find(
-        { Name: { $regex: 'ITPL', $options: 'i' } }
+        { Name: { $regex: 'ITPL', $options: 'i' } },
+        { projection: { MobileNo: 0, password: 0, deviceUUID: 0, resetToken: 0, resetTokenExpiry: 0, roles: 0, verified: 0, keypad: 0, inActive: 0, pushToken: 0, generationTime: 0 } }
     ).toArray();
     let localData = await localCollection.find(
         { Name: { $regex: 'ITPL', $options: 'i' } }
     ).toArray();
 
-    // Deduplicate by ITPLID (or change to another unique field if needed)
+    // Merge duplicates in Atlas by Name into a single rich document, then delete redundant docs
+    try {
+        const authFields = ['password', 'deviceUUID', 'resetToken', 'resetTokenExpiry', 'roles', 'verified', 'keypad', 'inActive', 'pushToken', 'generationTime', 'MobileNo', 'ITPLId'];
+
+        const normalizeName = (n) => (n || '').trim();
+        const isEmpty = (v) => v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0) || (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0);
+
+        const scoreDoc = (doc) => {
+            let s = 0;
+            if (!isEmpty(doc.ITPLId)) s += 3;
+            if (!isEmpty(doc.password)) s += 3;
+            if (!isEmpty(doc.roles)) s += 1;
+            if (!isEmpty(doc.verified)) s += 1;
+            if (!isEmpty(doc.MobileNo)) s += 1;
+            if (!isEmpty(doc.generationTime)) s += 1;
+            return s;
+        };
+
+        const deepMerge = (a, b) => {
+            // Merge b into a and return a new object (shallow copies with a few deep cases)
+            const result = { ...a };
+            for (const [k, v] of Object.entries(b)) {
+                if (k === '_id') continue;
+                const av = result[k];
+                // Auth fields: prefer existing value on result (primary), only fill if missing
+                if (authFields.includes(k)) {
+                    if (isEmpty(av) && !isEmpty(v)) result[k] = v;
+                    continue;
+                }
+                if (Array.isArray(av) && Array.isArray(v)) {
+                    // Merge unique values by JSON stringify
+                    const set = new Map();
+                    for (const item of av) set.set(JSON.stringify(item), item);
+                    for (const item of v) set.set(JSON.stringify(item), item);
+                    result[k] = Array.from(set.values());
+                } else if (av && typeof av === 'object' && v && typeof v === 'object' && !Array.isArray(av) && !Array.isArray(v)) {
+                    result[k] = deepMerge(av, v);
+                } else {
+                    // Prefer non-empty value; if primary empty, take from b
+                    if (isEmpty(av) && !isEmpty(v)) result[k] = v;
+                }
+            }
+            return result;
+        };
+
+        // Fetch full docs for merging (need auth + profile fields)
+        const atlasFull = await atlasCollection.find(
+            { Name: { $regex: 'ITPL', $options: 'i' } }
+        ).toArray();
+
+        const groups = atlasFull.reduce((acc, doc) => {
+            const key = normalizeName(doc.Name);
+            if (!acc.has(key)) acc.set(key, []);
+            acc.get(key).push(doc);
+            return acc;
+        }, new Map());
+
+        const updateOps = [];
+        const idsToDelete = [];
+
+        for (const [name, docs] of groups) {
+            if (docs.length <= 1) continue;
+            // choose primary by score; tie-breaker by generationTime desc then _id desc
+            docs.sort((a, b) => {
+                const ds = scoreDoc(b) - scoreDoc(a);
+                if (ds !== 0) return ds;
+                const ta = a.generationTime ? new Date(a.generationTime).getTime() : 0;
+                const tb = b.generationTime ? new Date(b.generationTime).getTime() : 0;
+                if (tb !== ta) return tb - ta;
+                return b._id.toString().localeCompare(a._id.toString());
+            });
+            const primary = docs[0];
+            let merged = { ...primary };
+            for (let i = 1; i < docs.length; i++) {
+                merged = deepMerge(merged, docs[i]);
+                idsToDelete.push(docs[i]._id);
+            }
+            // Build $set excluding undefined and _id
+            const setObj = {};
+            for (const [k, v] of Object.entries(merged)) {
+                if (k === '_id' || v === undefined) continue;
+                setObj[k] = v;
+            }
+            updateOps.push({
+                updateOne: {
+                    filter: { _id: primary._id },
+                    update: { $set: setObj }
+                }
+            });
+        }
+
+        if (updateOps.length > 0) {
+            const res = await atlasCollection.bulkWrite(updateOps);
+            addLog(`Merged and updated ${res.modifiedCount} Atlas driver document(s) by Name.`);
+        }
+        if (idsToDelete.length > 0) {
+            const resDel = await atlasCollection.deleteMany({ _id: { $in: idsToDelete } });
+            addLog(`Deleted ${resDel.deletedCount} redundant Atlas driver document(s) after merge.`);
+        }
+
+        // Refresh atlasData after merge (use original projection to reduce payload)
+        atlasData = await atlasCollection.find(
+            { Name: { $regex: 'ITPL', $options: 'i' } },
+            { projection: { MobileNo: 0, password: 0, deviceUUID: 0, resetToken: 0, resetTokenExpiry: 0, roles: 0, verified: 0, keypad: 0, inActive: 0, pushToken: 0, generationTime: 0 } }
+        ).toArray();
+    } catch (e) {
+        console.error('Error while merging duplicate Atlas drivers: ', e);
+        addLog(`Error while merging duplicate Atlas drivers: ${e.message || e}`, 'ERROR');
+    }
+
+    // Deduplicate by provided key (e.g., Name)
     function deduplicateByKey(arr, key) {
         const seen = new Map();
         for (const doc of arr) {
@@ -97,35 +208,57 @@ async function syncDriversData() {
     atlasData = deduplicateByKey(atlasData, 'Name');
     localData = deduplicateByKey(localData, 'Name');
 
-    console.log("Fetched drivers data from Atlas: " + atlasData.length + " documents.");
-    console.log("Fetched drivers data from Local:" + localData.length + " documents.");
+    addLog("Fetched drivers data from Atlas: " + atlasData.length + " documents.");
+    addLog("Fetched drivers data from Local:" + localData.length + " documents.");
 
-    const atlasDataMap = new Map(atlasData.map(doc => [doc._id.toString(), doc]));
+    // Build Atlas map by normalized Name, not _id, to reconcile with Local
+    const normalizeName = (n) => (n || '').trim();
+    const atlasDataMap = new Map(atlasData.map(doc => [normalizeName(doc.Name), doc]));
 
     const newDocumentsToAtlas = [];
+    const updatedDocumentsToAtlas = [];
     const updateMobileInLocal = [];
     const updateMobileInAtlas = [];
 
+    // Helper: deep sort object keys for stable JSON compare
+    function sortObjectDeep(obj) {
+        if (Array.isArray(obj)) return obj.map(sortObjectDeep);
+        if (obj && typeof obj === 'object') {
+            return Object.keys(obj)
+                .sort()
+                .reduce((acc, key) => {
+                    acc[key] = sortObjectDeep(obj[key]);
+                    return acc;
+                }, {});
+        }
+        return obj;
+    }
+
     // Step 3: Iterate over Local Data to find new or mismatched data
     for (const localDoc of localData) {
-        const atlasDoc = atlasDataMap.get(localDoc._id.toString());
+        const atlasDoc = atlasDataMap.get(normalizeName(localDoc.Name));
 
         if (!atlasDoc) {
-            // Document exists in Local but not in Atlas, add to newDocumentsToAtlas
             newDocumentsToAtlas.push(localDoc);
         } else {
-            // Compare MobileNo fields
-            if (Array.isArray(localDoc.MobileNo) && Array.isArray(atlasDoc.MobileNo)) {
-                const localMobileNos = localDoc.MobileNo.filter(num => num && num.MobileNo);
-                const atlasMobileNos = atlasDoc.MobileNo.filter(num => num && num.MobileNo);
-
-                if (localMobileNos.length === 0 && atlasMobileNos.length > 0) {
-                    // Atlas has MobileNo, but Local is empty or null, update Local
-                    updateMobileInLocal.push({ _id: localDoc._id, MobileNo: atlasMobileNos });
-                } else if (atlasMobileNos.length === 0 && localMobileNos.length > 0) {
-                    // Local has MobileNo, but Atlas is empty or null, update Atlas
-                    updateMobileInAtlas.push({ _id: atlasDoc._id, MobileNo: localMobileNos });
+            // Fill missing fields from Local into Atlas doc without overwriting auth/sensitive fields
+            const banned = new Set(['_id', 'password', 'deviceUUID', 'resetToken', 'resetTokenExpiry', 'roles', 'verified', 'keypad', 'inActive', 'pushToken', 'generationTime', 'ITPLId']);
+            const setObj = {};
+            for (const [k, v] of Object.entries(localDoc)) {
+                if (banned.has(k)) continue;
+                const cur = atlasDoc[k];
+                const empty = (val) => val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
+                if (empty(cur) && !empty(v)) {
+                    setObj[k] = v;
                 }
+            }
+            if (Object.keys(setObj).length > 0) {
+                updatedDocumentsToAtlas.push({
+                    updateOne: {
+                        filter: { _id: atlasDoc._id },
+                        update: { $set: setObj }
+                    }
+                });
             }
         }
     }
@@ -135,6 +268,11 @@ async function syncDriversData() {
         await atlasCollection.insertMany(newDocumentsToAtlas);
         addLog(`Inserted ${newDocumentsToAtlas.length} new Drivers to Atlas.`);
     } else { addLog('Nothing to add in atlas') }
+
+    if (updatedDocumentsToAtlas.length > 0) {
+        await atlasCollection.bulkWrite(updatedDocumentsToAtlas);
+        addLog(`Updated ${updatedDocumentsToAtlas.length} Drivers in Atlas.`);
+    } else { addLog('Nothing to update in atlas') }
 
     // Step 5: Update Local MobileNos in bulk if there are any
     if (updateMobileInLocal.length > 0) {
@@ -487,122 +625,6 @@ async function syncTrips() {
     addLog("---------------------------------------");
 }
 
-// async function syncTransAppUsers() {
-//     const localCollection = localClient.db(localDbName).collection('UserCollection');
-//     const atlasCollection = atlasClient.db(atlasTransportDbName).collection('TransAppUsers');
-//     addLog("---------------------------------------");
-//     addLog("Syncing TransApp Users Data...");
-
-//     // 1. Fetch all users from both local and Atlas
-//     const [localUsers, atlasUsers] = await Promise.all([
-//         localCollection.find().toArray(),
-//         atlasCollection.find().toArray()
-//     ]);
-//     const atlasMap = new Map(atlasUsers.map(u => [u._id.toString(), u]));
-
-//     // 2. Prepare bulk operations
-//     const inserts = [];
-//     const updates = [];
-
-//     for (const localUser of localUsers) {
-//         const atlasUser = atlasMap.get(localUser._id.toString());
-//         if (!atlasUser) {
-//             // Not in Atlas, insert
-//             inserts.push(localUser);
-//         } else {
-//             // Exists in both, check for changes (compare relevant fields)
-//             // You can customize which fields to compare
-//             if (
-//                 localUser.UserName !== atlasUser.UserName ||
-//                 localUser.Password !== atlasUser.Password ||
-//                 localUser.Division !== atlasUser.Division
-//             ) {
-//                 updates.push({
-//                     updateOne: {
-//                         filter: { _id: localUser._id },
-//                         update: { $set: localUser }
-//                     }
-//                 });
-//             }
-//         }
-//     }
-
-//     // 3. Insert new users to Atlas
-//     if (inserts.length > 0) {
-//         await atlasCollection.insertMany(inserts);
-//         addLog(`Inserted ${inserts.length} new users to Atlas.`);
-//     } else {
-//         addLog('No new users to insert.');
-//     }
-
-//     // 4. Update changed users in Atlas
-//     if (updates.length > 0) {
-//         await atlasCollection.bulkWrite(updates);
-//         addLog(`Updated ${updates.length} users in Atlas.`);
-//     } else {
-//         addLog('No users to update.');
-//     }
-
-//     addLog("TransApp Users Data Sync Completed.");
-//     addLog("---------------------------------------");
-// }
-
-// async function syncDeactivatedVehicles() {
-//     const localCollection = localClient.db(localDbName).collection('TransMongoDeactivatedVehicleCollection');
-//     const atlasCollection = atlasClient.db(atlasTransportDbName).collection('DeactivatedVehicles');
-//     addLog("---------------------------------------");
-//     addLog("Syncing Deactivated Vehicles Data...");
-
-//     // 1. Fetch all users from both local and Atlas
-//     const [localDeactivatedVehicles, atlasDeactivatedVehicles] = await Promise.all([
-//         localCollection.find().toArray(),
-//         atlasCollection.find().toArray()
-//     ]);
-//     const atlasMap = new Map(atlasDeactivatedVehicles.map(v => [v._id.toString(), v]));
-
-//     // 2. Prepare bulk operations
-//     const inserts = [];
-//     const updates = [];
-
-//     for (const localVehicle of localDeactivatedVehicles) {
-//         const atlasVehicle = atlasMap.get(localVehicle._id.toString());
-//         if (!atlasVehicle) {
-//             // Not in Atlas, insert
-//             inserts.push(localVehicle);
-//         } else {
-//             // Exists in both, check for changes (compare relevant fields)
-//             // You can customize which fields to compare
-//             if (JSON.stringify(localVehicle) !== JSON.stringify(atlasVehicle)) {
-//                 updates.push({
-//                     updateOne: {
-//                         filter: { _id: localVehicle._id },
-//                         update: { $set: localVehicle }
-//                     }
-//                 });
-//             }
-//         }
-//     }
-
-//     // 3. Insert new users to Atlas
-//     if (inserts.length > 0) {
-//         await atlasCollection.insertMany(inserts);
-//         addLog(`Inserted ${inserts.length} new deactive vehicle to Atlas.`);
-//     } else {
-//         addLog('No new users to insert.');
-//     }
-
-//     // 4. Update changed users in Atlas
-//     if (updates.length > 0) {
-//         await atlasCollection.bulkWrite(updates);
-//         addLog(`Updated ${updates.length} deactive vehicle in Atlas.`);
-//     } else {
-//         addLog('No vehicles to update.');
-//     }
-
-//     addLog("Deactive vehicles Data Sync Completed.");
-//     addLog("---------------------------------------");
-// }
-
 async function syncTransportGoodsCollection() {
     const localCollection = localClient.db(localDbName).collection('TransportGoodsCollection');
     const atlasCollection = atlasClient.db(atlasTransportDbName).collection('TransportGoods');
@@ -722,8 +744,6 @@ export async function runSync(logger) {
         await syncAttachedVechicles();
         await syncTripData();
         await syncTrips();
-        // await syncTransAppUsers();
-        // await syncDeactivatedVehicles();
         await syncTransportGoodsCollection();
         await syncStackHolders();
     } catch (error) {
