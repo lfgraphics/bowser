@@ -223,7 +223,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
         const s = lastStatus(trip);
         const endTo = (trip?.EndTo ?? "").toLowerCase();
         // Only include reported trips that are not Accident/Breakdown and whose destination matches the specific keywords
-        return s !== "Loaded" && ["Accident", "Breakdown"].includes(s) || (endTo.includes("gida") || endTo.includes("maintenece"));
+        return s !== "Loaded" && ["Accident", "Breakdown"].includes(s) || (endTo.includes("gida office") || endTo.includes("maintenece"));
     });
 
     const handleDownload = () => {
