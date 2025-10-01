@@ -13,6 +13,16 @@ const morningUpdateSchema = new mongoose.Schema({
             remark: { type: String, required:true}
         }
     ],
+    activityLogs: {
+        type: [
+            {
+                timestamp: { type: Date, required: true },
+                type: { type: String, required: true },
+                details: { type: mongoose.Schema.Types.Mixed }
+            }
+        ],
+        default: [],
+    },
     closingTime: { type: Date, required: true, default: Date.now, timezone: "Asia/Kolkata" }
 });
 

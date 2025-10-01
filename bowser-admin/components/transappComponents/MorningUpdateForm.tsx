@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Phone, Edit, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -49,6 +49,13 @@ type VehicleRemarksMap = Record<string, VehicleRemarkState>;
 type PersistedFormData = {
     openingTime: string | null; // ISO string
     vehicleRemarks: VehicleRemarksMap;
+    activityLogs: ActivityLog[];
+};
+
+type ActivityLog = {
+    timestamp: string; // ISO string
+    type: string;
+    details?: Record<string, any>;
 };
 
 const getStorageKey = (userId: string) => {
@@ -69,6 +76,7 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
     const [openingTime, setOpeningTime] = useState<Date | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [submitting, setSubmitting] = useState<boolean>(false);
+    const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
 
     const [showMobileUpdateDialog, setShowMobileUpdateDialog] = useState<boolean>(false);
     const [selectedDriver, setSelectedDriver] = useState<{
@@ -77,8 +85,19 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
         vehicleNo: string;
     } | null>(null);
     const [newMobileNumber, setNewMobileNumber] = useState<string>("");
+    const remarkTimersRef = useRef<Record<string, number | undefined>>({});
 
     const storageKey = useMemo(() => user?._id ? getStorageKey(user._id) : "", [user?._id]);
+
+    const logActivity = useCallback((type: string, details?: Record<string, any>) => {
+        try {
+            const entry: ActivityLog = { timestamp: new Date().toISOString(), type, details };
+            setActivityLogs((prev) => [...prev, entry]);
+        } catch (e) {
+            console.warn('Failed to log activity', e);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         if (!user?._id) return; // Only check for user, not isOpen
@@ -105,8 +124,8 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
 
                     const lastRemark =
                         v?.lastStatusUpdate?.comment ||
-                        (Array.isArray(v?.latestTrip?.statusUpdate) && v.latestTrip.statusUpdate.length > 0
-                            ? v.latestTrip.statusUpdate[v.latestTrip.statusUpdate.length - 1]?.comment || ""
+                        (Array.isArray(v?.latestTrip?.statusUpdate) && v?.latestTrip?.statusUpdate.length > 0
+                            ? v?.latestTrip?.statusUpdate[v?.latestTrip?.statusUpdate.length - 1]?.comment || ""
                             : "") ||
                         v?.lastDriverLog?.leaving?.remark ||
                         "";
@@ -123,6 +142,12 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                 // Restore or capture openingTime from localforage
                 if (saved?.openingTime) {
                     setOpeningTime(new Date(saved.openingTime));
+                    // Restore activity logs if present
+                    if (Array.isArray((saved as any)?.activityLogs)) {
+                        setActivityLogs((saved as any).activityLogs as ActivityLog[]);
+                    } else {
+                        setActivityLogs([]);
+                    }
                 } else {
                     const firstOpenISO = new Date().toISOString();
                     setOpeningTime(new Date(firstOpenISO));
@@ -130,9 +155,14 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                         await saveFormData(storageKey, {
                             openingTime: firstOpenISO,
                             vehicleRemarks: initialRemarks,
+                            activityLogs: [] as ActivityLog[],
                         } as PersistedFormData);
                     } catch (e) {
                         console.warn("Failed to persist initial opening time", e);
+                    }
+                    // New session -> log form opened
+                    if (user?._id) {
+                        logActivity('form_opened', { userId: user._id, userName: user.name });
                     }
                 }
             } catch (err) {
@@ -165,7 +195,11 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
 
     useEffect(() => {
         if (!storageKey) return;
-        const persist: PersistedFormData = { openingTime: openingTime ? openingTime.toISOString() : null, vehicleRemarks };
+        const persist: PersistedFormData & { activityLogs: ActivityLog[] } = {
+            openingTime: openingTime ? openingTime.toISOString() : null,
+            vehicleRemarks,
+            activityLogs,
+        };
         (async () => {
             try {
                 await saveFormData(storageKey, persist);
@@ -173,7 +207,38 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                 console.warn("Failed to persist morning update form", e);
             }
         })();
-    }, [vehicleRemarks, openingTime, storageKey]);
+    }, [vehicleRemarks, openingTime, activityLogs, storageKey]);
+
+    // Focus/blur logging while dialog open
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const onFocus = () => logActivity('came_online', { at: new Date().toISOString() });
+        const onBlur = () => logActivity('went_offline', { at: new Date().toISOString() });
+
+        window.addEventListener('focus', onFocus);
+        window.addEventListener('blur', onBlur);
+
+        // Ensure we log when dialog opens and page is already focused
+        if (document.hasFocus()) onFocus();
+
+        // Handle tab visibility and bfcache restores
+        const onVisibility = () => (document.visibilityState === 'visible' ? onFocus() : onBlur());
+        document.addEventListener('visibilitychange', onVisibility);
+
+        const onPageShow = () => onFocus();
+        const onPageHide = () => onBlur();
+        window.addEventListener('pageshow', onPageShow);
+        window.addEventListener('pagehide', onPageHide);
+
+        return () => {
+            window.removeEventListener('focus', onFocus);
+            window.removeEventListener('blur', onBlur);
+            document.removeEventListener('visibilitychange', onVisibility);
+            window.removeEventListener('pageshow', onPageShow);
+            window.removeEventListener('pagehide', onPageHide);
+        };
+    }, [isOpen, logActivity]);
 
     const resetMobileDialog = () => {
         setShowMobileUpdateDialog(false);
@@ -194,8 +259,15 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
             return;
         }
         try {
-            await updateDriverMobile(selectedDriver.name, mobile);
+            await updateDriverMobile(selectedDriver.id, mobile);
             toast.success("Driver mobile updated", { description: `${selectedDriver.name} - ${mobile}` });
+            // Log activity
+            logActivity('driver_mobile_updated', {
+                driverId: selectedDriver.id,
+                driverName: selectedDriver.name,
+                vehicleNo: selectedDriver.vehicleNo,
+                newMobile: mobile,
+            });
             // Refresh vehicles to reflect new mobile if needed
             if (user?._id) {
                 const isAdmin = Boolean(user?.Division?.includes("Admin"));
@@ -247,11 +319,21 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                 return;
             }
 
+            // Compose submission log inline to ensure it's included in payload
+            const submissionLog: ActivityLog = {
+                timestamp: new Date().toISOString(),
+                type: 'form_submitted',
+                details: { reportCount: report.length, totalActivities: activityLogs.length + 1 },
+            };
+            const nextLogs = [...activityLogs, submissionLog];
+            setActivityLogs(nextLogs);
+
             const payload = {
                 user: { _id: user!._id, name: user!.name },
                 openingTime: (openingTime ?? new Date()).toISOString(),
                 report,
                 closingTime: new Date().toISOString(),
+                activityLogs: nextLogs,
             };
 
             const res = await fetch(`${BASE_URL}/morning-update`, {
@@ -275,7 +357,7 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
             const formattedOpening = (openingTime ?? new Date()).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
             const formattedClosing = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
             const vehiclesReport = (payload.report as { vehicleNo: string; remark: string }[]).map(({ vehicleNo, remark }) => {
-                const vmatch = vehicles.find(v => v.vehicle?.VehicleNo === vehicleNo);
+                const vmatch = vehicles.find(v => v?.vehicle?.VehicleNo === vehicleNo);
                 const route = `${vmatch?.latestTrip?.StartFrom || 'N/A'} → ${vmatch?.latestTrip?.EndTo || 'N/A'}`;
                 return { vehicleNo, route, remark };
             });
@@ -291,6 +373,7 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
             // Success: clear stored data (openingTime + remarks via localforage)
             if (storageKey) await clearFormData(storageKey);
             setOpeningTime(null);
+            setActivityLogs([]);
             toast.success("Morning update submitted successfully");
             onSuccess?.(enriched);
             onClose();
@@ -328,7 +411,7 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                             <div className="text-sm text-muted-foreground">No vehicles found.</div>
                         )}
 
-                        {!loading && anyVehicles && vehicles.filter(vehicle => vehicle?.latestTrip.LoadStatus === 0 && (!vehicle?.latestTrip?.ReportingDate || vehicle?.latestTrip?.ReportingDate == null)).map((v) => {
+                        {!loading && anyVehicles && vehicles.filter(vehicle => vehicle?.latestTrip?.LoadStatus === 0 && (!vehicle?.latestTrip?.ReportingDate || vehicle?.latestTrip?.ReportingDate == null)).map((v) => {
                             const vehicleNo = v?.vehicle?.VehicleNo;
                             if (!vehicleNo) return null;
 
@@ -340,12 +423,12 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                             const driverMobile = v?.driver?.mobile || anyV?.driver?.mobileNo || anyV?.driver?.mobile_number || anyV?.driver?.phone || anyV?.driver?.contactNo || anyV?.driver?.contact || null;
 
                             return (
-                                <Card key={v._id ?? vehicleNo}>
+                                <Card key={v?._id ?? vehicleNo}>
                                     <CardHeader className="py-3">
                                         <div className="flex flex-col sm:flex-row md:items-center justify-between gap-3">
                                             <div>
                                                 <div className="font-semibold text-base">{vehicleNo}</div>
-                                                <div className="text-xs text-muted-foreground">Route: {v.latestTrip.StartFrom} - {v.latestTrip.EndTo}</div>
+                                                <div className="text-xs text-muted-foreground">Route: {v?.latestTrip?.StartFrom} - {v?.latestTrip?.EndTo}</div>
                                             </div>
 
                                             <div className="flex items-center justify-between gap-2">
@@ -360,6 +443,7 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                                                         <a
                                                             href={`tel:${driverMobile}`}
                                                             aria-label={`Call ${driverName}`}
+                                                            onClick={() => logActivity('driver_called', { vehicleNo, driverName, driverMobile })}
                                                         ><Button variant="default" className="w-full">
                                                                 <Phone size={16} />
                                                             </Button>
@@ -395,6 +479,7 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                                                         ...prev,
                                                         [vehicleNo]: { ...state, useLastRemark: Boolean(checked) },
                                                     }));
+                                                    logActivity('use_last_remark_toggled', { vehicleNo, checked: Boolean(checked), lastRemark: state.lastRemark });
                                                 }}
                                             />
                                             <Label htmlFor={`use-last-${vehicleNo}`}>Use same remark</Label>
@@ -413,6 +498,13 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                                                         ...prev,
                                                         [vehicleNo]: { ...state, newRemark: val },
                                                     }));
+                                                    // Debounced log for remark updates
+                                                    if (remarkTimersRef.current[vehicleNo]) {
+                                                        clearTimeout(remarkTimersRef.current[vehicleNo]);
+                                                    }
+                                                    remarkTimersRef.current[vehicleNo] = window.setTimeout(() => {
+                                                        logActivity('remark_updated', { vehicleNo, newValue: val, previousValue: state.newRemark });
+                                                    }, 1000);
                                                 }}
                                             />
                                         </div>

@@ -116,7 +116,7 @@ router.get('/vehicle/:vehicleNo', async (req, res) => {
 // ✅ CREATE a new morning update
 router.post('/', async (req, res) => {
     try {
-        const { user, openingTime, report, closingTime } = req.body || {};
+        const { user, openingTime, report, closingTime, activityLogs } = req.body || {};
 
         // Basic validations
         if (!user || typeof user !== 'object') {
@@ -145,11 +145,27 @@ router.post('/', async (req, res) => {
             });
         }
 
+        // Optional activityLogs validation
+        if (activityLogs !== undefined) {
+            if (!Array.isArray(activityLogs)) {
+                return res.status(400).json({ error: 'activityLogs must be an array' });
+            }
+            const invalidLogIndex = activityLogs.findIndex(
+                (log) => !log || !log.timestamp || !log.type || typeof log.type !== 'string'
+            );
+            if (invalidLogIndex !== -1) {
+                return res.status(400).json({
+                    error: `Invalid activity log at index ${invalidLogIndex}: timestamp and type are required`
+                });
+            }
+        }
+
         const newUpdate = new MorningUpdate({
             user: { _id: user._id, name: user.name },
             openingTime,
             report,
             closingTime,
+            activityLogs: activityLogs || [],
         });
 
         await newUpdate.save();
