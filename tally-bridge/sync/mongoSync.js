@@ -436,20 +436,7 @@ async function syncTripData() {
     // Step 1: Fetch data from Local and Atlas
     const [atlasVehicles, localTrips] = await Promise.all([
         atlasCollection.find().toArray(),
-        localCollection.find(localTripFilter, {
-            projection: {
-                _id: 1,
-                VehicleNo: 1,
-                LoadStatus: 1,
-                StartDriver: 1,
-                StartDate: 1,
-                StartFrom: 1,
-                EndTo: 1,
-                'TallyLoadDetail.TripId': 1,
-                'TallyLoadDetail.Goods': 1,
-                'EmptyTripDetail.ProposedDate': 1
-            },
-        }).toArray(),
+        localCollection.find(localTripFilter).toArray(),
     ]);
 
     console.log(`Fetched ${atlasVehicles.length} vehicles from Atlas.`);
@@ -742,7 +729,7 @@ export async function runSync(logger) {
         await syncDriversData();
         await syncVechiclesData();
         await syncAttachedVechicles();
-        await syncTripData();
+        // await syncTripData();
         await syncTrips();
         await syncTransportGoodsCollection();
         await syncStackHolders();
