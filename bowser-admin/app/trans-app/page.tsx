@@ -83,7 +83,7 @@ export default function Page() {
     const hours = time.getHours();
     console.log("Current time:", hours);
     const minutes = time.getMinutes();
-    return hours < 20 || (hours === 9 && minutes < 45);
+    return hours < 9 || (hours === 9 && minutes < 45);
   };
   const getSubmissionFlagKey = () => `morningUpdate_submitted_${new Date().toISOString().split('T')[0]}`;
   const checkSubmissionStatus = async (): Promise<boolean> => {
@@ -431,7 +431,7 @@ export default function Page() {
 
       {showMorningUpdateButton && user && (
         <Button
-          className="fixed bottom-6 left-6 rounded-lg px-4 py-2 shadow-lg"
+          className="sticky bottom-6 left-6 rounded-lg px-4 py-2 shadow-lg"
           onClick={() => setIsMorningUpdateDialogOpen(true)}
           aria-label="Submit Morning Update"
           title="Submit Morning Update (before 9:45 AM)"
