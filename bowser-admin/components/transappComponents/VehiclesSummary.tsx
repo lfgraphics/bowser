@@ -217,13 +217,13 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
     const outsideStanding = reportedTrips.filter(trip => {
         const s = lastStatus(trip);
         const endTo = (trip?.EndTo ?? "").toLowerCase();
-        return !["Accident", "Breakdown", "Loaded"].includes(s) && !endTo.includes("gida office") && !endTo.includes("maintenece") && trip?.driverStatus !== 0;
+        return !["Accident", "Breakdown", "Loaded"].includes(s) && !endTo.includes("gida office") && !endTo.includes("maintenece") && !endTo.includes("maintenance") && trip?.driverStatus !== 0;
     });
     const otherStanding = reportedTrips.filter(trip => {
         const s = lastStatus(trip);
         const endTo = (trip?.EndTo ?? "").toLowerCase();
         // Only include reported trips that are not Accident/Breakdown and whose destination matches the specific keywords
-        return s !== "Loaded" && ["Accident", "Breakdown"].includes(s) || (endTo.includes("gida office") || endTo.includes("maintenece")) || trip?.driverStatus === 0;
+        return s !== "Loaded" && ["Accident", "Breakdown"].includes(s) || (endTo.includes("gida office") || endTo.includes("maintenece") || endTo.includes("maintenance")) || trip?.driverStatus === 0;
     });
 
     const handleDownload = () => {
@@ -432,7 +432,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
             toast.success("Trip status updated successfully", { richColors: true });
             setStatusUpdate(null);
 
-            // ✅ Update SWR cache instead of setData
             await globalMutate(
                 `${BASE_URL}/trans-app/vehicles/get-summary/${user?._id}?isAdmin=${user?.Division === "EthanolAdmin"}`,
                 (current: TripsSummary | undefined) => {
@@ -448,6 +447,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                         ...(updated?.empty?.standing?.trips ?? []),
                         ...(updated?.empty?.reported?.trips ?? []),
                     ];
+                    console.log('all trips: ', allTrips);
 
                     const trip = allTrips.find((t) => t._id === statusUpdate!.tripId);
                     if (trip) {
@@ -460,7 +460,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                         });
                     }
 
-                    return updated; // ✅ replaces cache immediately
+                    return updated;
                 }
             );
 
@@ -735,7 +735,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                     setViewingTrip(trip?._id)
                                                 }
-                                            }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Depot" ? "bg-yellow-200 dark:text-background hover:bg-yellow-200" : ""}>
+                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Depot" ? "bg-yellow-200 dark:text-background hover:bg-yellow-200" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{index + 1}</TableCell>
                                                 <TableCell>{highlightText(trip?.VehicleNo || "")}</TableCell>
                                                 <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>
@@ -799,7 +799,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                     setViewingTrip(trip?._id)
                                                 }
-                                            }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
+                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{index + 1}</TableCell>
                                                 {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
                                                 {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>}
@@ -865,7 +865,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                     setViewingTrip(trip?._id)
                                                 }
-                                            }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
+                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{index + 1}</TableCell>
                                                 {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
                                                 {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>}
@@ -923,7 +923,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                     setViewingTrip(trip?._id)
                                                 }
-                                            }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
+                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{index + 1}</TableCell>
                                                 {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
                                                 {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>}
@@ -981,7 +981,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                     setViewingTrip(trip?._id)
                                                 }
-                                            }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
+                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{index + 1}</TableCell>
                                                 <TableCell>{highlightText(trip?.VehicleNo || "")}</TableCell>
                                                 <TableCell>{trip?.capacity}</TableCell>
@@ -1011,7 +1011,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                     setViewingTrip(trip?._id)
                                                 }
-                                            }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
+                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{index + 1}</TableCell>
                                                 {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
                                                 {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>}
@@ -1070,7 +1070,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                     setViewingTrip(trip?._id)
                                                 }
-                                            }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
+                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{index + 1}</TableCell>
                                                 <TableCell>{highlightText(trip?.VehicleNo || "")}</TableCell>
                                                 <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>
@@ -1288,7 +1288,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                 if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                                     setViewingTrip(trip?._id)
                                                                 }
-                                                            }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
+                                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                                 <TableCell>{trip?.VehicleNo}</TableCell>
                                                                 <TableCell>{trip?.capacity}</TableCell>
                                                                 <TableCell>{trip?.status}</TableCell>
@@ -1365,7 +1365,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                 if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                                     setViewingTrip(trip?._id)
                                                                 }
-                                                            }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
+                                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                                 <TableCell>{trip?.VehicleNo}</TableCell>
                                                                 <TableCell>{trip?.capacity}</TableCell>
                                                                 <TableCell>{trip?.status === "Standing" ? "Not Programmed" : trip?.status}</TableCell>
@@ -1468,7 +1468,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                     if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                                         setViewingTrip(trip?._id)
                                                                     }
-                                                                }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
+                                                                }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                                     <TableCell>{index + 1}</TableCell>
                                                                     <TableCell>{trip?.VehicleNo}</TableCell>
                                                                     <TableCell>{trip?.capacity}</TableCell>
@@ -1564,7 +1564,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                     if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
                                                                         setViewingTrip(trip?._id)
                                                                     }
-                                                                }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""}>
+                                                                }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                                     <TableCell>{index + 1}</TableCell>
                                                                     <TableCell>{trip?.VehicleNo}</TableCell>
                                                                     <TableCell>{trip?.capacity}</TableCell>

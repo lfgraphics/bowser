@@ -4,6 +4,8 @@ const DriversLog = require("../models/VehicleDriversLog");
 const Vehicle = require("../models/vehicle");
 const TankersTrip = require("../models/VehiclesTrip");
 const { getOneTripOfVehicleByDate } = require("../utils/vehicles");
+const { withTransaction } = require("../utils/transactions");
+const { handleTransactionError, createErrorResponse } = require("../utils/errorHandler");
 
 // ---------------------------
 // Add Driver (Joining)
@@ -12,32 +14,63 @@ router.post("/join", async (req, res) => {
     try {
         const { vehicleNo, driverId, joining, driverName } = req.body;
 
+        // Pre-transaction validation
         if (!vehicleNo || !driverId || !joining?.date) {
-            return res.status(400).json({ error: "Missing required fields" });
+            return res
+                .status(400)
+                .json(createErrorResponse({ status: 400, message: "Missing required fields" }));
         }
 
-        // Attach tripId if provided (frontend will pick after confirming trip)
-        const newLog = new DriversLog({
-            vehicleNo,
-            driver: driverId,
-            joining
-        });
+        const result = await withTransaction(
+            async (sessions) => {
+                // Create driver log in transaction
+                const newLog = new DriversLog({ vehicleNo, driver: driverId, joining });
+                await newLog.save({ session: sessions.transport });
 
-        await newLog.save();
+                // Update vehicle: attach log ref and set driver name on tripDetails
+                const updatedVehicle = await Vehicle.findOneAndUpdate(
+                    { VehicleNo: vehicleNo },
+                    {
+                        $addToSet: { driverLogs: newLog._id },
+                        $set: { "tripDetails.driver": driverName },
+                    },
+                    { new: true, session: sessions.transport }
+                );
 
-        // Update Vehicle with reference to this log
-        const updatedVehicle = await Vehicle.findOneAndUpdate(
-            { VehicleNo: vehicleNo },
+                let tripId = joining?.tripId;
+                if (!tripId && joining?.date) {
+                    const tripLookup = await getOneTripOfVehicleByDate(vehicleNo, joining.date);
+                    tripId = tripLookup?.latestTrip?._id;
+                }
+                if (!tripId) {
+                    const err = new Error("No trip found for given vehicle and date");
+                    err.code = "TRIP_NOT_FOUND";
+                    throw err;
+                }
+
+                const updatedTrip = await TankersTrip.findOneAndUpdate(
+                    { _id: tripId },
+                    { $set: { driverStatus: 1 } },
+                    { new: true, session: sessions.transport }
+                );
+                if (!updatedTrip) {
+                    const err = new Error("Failed to update trip driverStatus to 1");
+                    err.code = "TRIP_UPDATE_FAILED";
+                    throw err;
+                }
+
+                return { newLog, updatedVehicle, updatedTrip };
+            },
             {
-                $push: { driverLogs: newLog._id },
-                $set: { "tripDetails.driver": driverName }
-            }, { new: true }
+                connections: ["transport"],
+                context: { route: "driversLog/join", vehicleNo, driverId },
+            }
         );
 
-        res.json({ message: "Driver joined successfully", entry: newLog, updatedVehicle });
+        return res.json({ message: "Driver joined successfully", ...result });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Failed to add driver" });
+        const errRes = handleTransactionError(error, { route: "driversLog/join" });
+        return res.status(errRes.status || 500).json(errRes);
     }
 });
 
@@ -48,41 +81,62 @@ router.post("/leave", async (req, res) => {
     try {
         const { vehicleNo, driverId, leaving } = req.body;
 
+        // Pre-transaction validation
         if (!vehicleNo || !driverId || !leaving?.from) {
-            return res.status(400).json({ error: "Missing required fields" });
+            return res
+                .status(400)
+                .json(createErrorResponse({ status: 400, message: "Missing required fields" }));
         }
 
-        // find latest log for this driver & vehicle
-        const log = await DriversLog.findOneAndUpdate(
-            { vehicleNo, driver: driverId },
+        const result = await withTransaction(
+            async (sessions) => {
+                // Update latest driver log for this driver & vehicle
+                const log = await DriversLog.findOneAndUpdate(
+                    { vehicleNo, driver: driverId },
+                    { $set: { leaving } },
+                    { new: true, upsert: true, session: sessions.transport }
+                );
+
+                // Update vehicle: mark no driver and ensure log reference exists
+                const updatedVehicle = await Vehicle.findOneAndUpdate(
+                    { VehicleNo: vehicleNo },
+                    { $set: { "tripDetails.driver": "no driver" }, $addToSet: { driverLogs: log._id } },
+                    { new: true, session: sessions.transport }
+                );
+
+                // Ensure a trip is found for the leaving time
+                const tripOnLeaving = await getOneTripOfVehicleByDate(vehicleNo, leaving.from);
+                const tripId = tripOnLeaving?.latestTrip?._id;
+                if (!tripId) {
+                    const err = new Error("No trip found for given vehicle and date");
+                    err.code = "TRIP_NOT_FOUND";
+                    throw err;
+                }
+
+                // Update TankersTrip driverStatus within transaction
+                const updatedTrip = await TankersTrip.findOneAndUpdate(
+                    { _id: tripId },
+                    { $set: { driverStatus: 0 } },
+                    { new: true, session: sessions.transport }
+                );
+                if (!updatedTrip) {
+                    const err = new Error("Failed to update trip driverStatus to 0");
+                    err.code = "TRIP_UPDATE_FAILED";
+                    throw err;
+                }
+
+                return { log, updatedVehicle, updatedTrip };
+            },
             {
-                $set: { leaving: leaving }
-            }, { new: true, upsert: true }
-        );
-
-        const updatedVehicle = await Vehicle.findOneAndUpdate(
-            { VehicleNo: vehicleNo },
-            { $set: { "tripDetails.driver": "no driver" } },
-            { new: true }
-        );
-
-        if (updatedVehicle) {
-            if (!updatedVehicle.driverLogs.includes(log._id)) {
-                updatedVehicle.driverLogs.push(log._id);
-                await updatedVehicle.save();
+                connections: ["transport"],
+                context: { route: "driversLog/leave", vehicleNo, driverId },
             }
-        }
-
-        const tripOnLeaving = await getOneTripOfVehicleByDate(vehicleNo, leaving.from)
-        await TankersTrip.findOneAndUpdate({ _id: tripOnLeaving.latestTrip._id },
-            { $set: { driverStatus: 0 } },
-            { new: true }
         );
 
-        res.json({ message: "Driver leaving updated", entry: log });
+        return res.json({ message: "Driver leaving updated", ...result });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Failed to update leaving status" });
+        const errRes = handleTransactionError(error, { route: "driversLog/leave" });
+        return res.status(errRes.status || 500).json(errRes);
     }
 });
 
@@ -93,25 +147,30 @@ router.post("/status-update", async (req, res) => {
     try {
         const { vehicleNo, remark } = req.body;
 
+        // Validation
         if (!vehicleNo || !remark) {
-            return res.status(400).json({ error: "VehicleNo and remark required" });
+            return res
+                .status(400)
+                .json(createErrorResponse({ status: 400, message: "VehicleNo and remark required" }));
         }
 
-        const newUpdate = {
-            dateTime: new Date(),
-            remark
-        };
-
-        const log = await DriversLog.findOneAndUpdate(
-            { vehicleNo },
-            { $push: { statusUpdate: newUpdate } },
-            { new: true, upsert: true }
+        const result = await withTransaction(
+            async (sessions) => {
+                const newUpdate = { dateTime: new Date(), remark };
+                const log = await DriversLog.findOneAndUpdate(
+                    { vehicleNo },
+                    { $push: { statusUpdate: newUpdate } },
+                    { new: true, upsert: true, session: sessions.transport }
+                );
+                return { log };
+            },
+            { connections: ["transport"], context: { route: "driversLog/status-update", vehicleNo } }
         );
 
-        res.json({ message: "Status updated", entry: log });
+        return res.json({ message: "Status updated", ...result });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Failed to add status update" });
+        const errRes = handleTransactionError(error, { route: "driversLog/status-update" });
+        return res.status(errRes.status || 500).json(errRes);
     }
 });
 
@@ -121,12 +180,11 @@ router.post("/status-update", async (req, res) => {
 router.get("/last-trip/:vehicleNo/:date", async (req, res) => {
     try {
         const { vehicleNo, date } = req.params;
-        let response = await getOneTripOfVehicleByDate(vehicleNo, date)
-
+        const response = await getOneTripOfVehicleByDate(vehicleNo, date);
         return res.json(response);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Failed to fetch last trip", error });
+        const errRes = handleTransactionError(error, { route: "driversLog/last-trip" });
+        return res.status(errRes.status || 500).json(errRes);
     }
 });
 

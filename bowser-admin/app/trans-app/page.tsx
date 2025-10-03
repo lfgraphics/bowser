@@ -1,6 +1,6 @@
 "use client"
 import React, { useContext, useEffect, useMemo, useState } from 'react'
-import { Trash2, ChevronUp } from 'lucide-react'
+import { Trash2, ChevronUp, ClipboardList } from 'lucide-react'
 import { toast } from 'sonner'
 import { BASE_URL } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,8 @@ import { formatDate } from '@/lib/utils'
 import { SearchModal } from '@/components/SearchModal'
 import VehiclesSummary from '@/components/transappComponents/VehiclesSummary'
 import VehicleManagement from '@/components/transappComponents/VehicleManagement'
+import MorningUpdateForm from '@/components/transappComponents/MorningUpdateForm'
+import { loadFormData, saveFormData } from '@/lib/storage'
 
 type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary"
 
@@ -30,6 +32,9 @@ export default function Page() {
   const [isVehicleAdditionDialogvisible, setIsVehicleAdditionDialogvisible] = useState(false)
   const [inactiveVehicles, setInactiveVehilesList] = useState<InactiveVehicles[]>()
   const [showBackToTop, setShowBackToTop] = useState(false)
+  const [showMorningUpdateButton, setShowMorningUpdateButton] = useState<boolean>(false)
+  const [isMorningUpdateDialogOpen, setIsMorningUpdateDialogOpen] = useState<boolean>(false)
+  const [currentTime, setCurrentTime] = useState<Date>(new Date())
   const [searchModalConfig, setSearchModalConfig] = useState<{
     isOpen: boolean;
     title: string;
@@ -72,6 +77,31 @@ export default function Page() {
     }
     return null
   }
+
+  // Morning Update helpers
+  const isBeforeCutoffTime = (time: Date): boolean => {
+    const hours = time.getHours();
+    console.log("Current time:", hours);
+    const minutes = time.getMinutes();
+    return hours < 20 || (hours === 9 && minutes < 45);
+  };
+  const getSubmissionFlagKey = () => `morningUpdate_submitted_${new Date().toISOString().split('T')[0]}`;
+  const checkSubmissionStatus = async (): Promise<boolean> => {
+    try {
+      const submitted = await loadFormData<boolean>(getSubmissionFlagKey());
+      return Boolean(submitted);
+    } catch {
+      return false;
+    }
+  };
+  const markAsSubmitted = async () => {
+    try {
+      await saveFormData(getSubmissionFlagKey(), true);
+    } catch (e) {
+      // non-blocking
+      console.warn('Failed to persist morning update submission flag', e);
+    }
+  };
 
   // Initialize tab from URL or localStorage, with fallback to allowed tabs
   useEffect(() => {
@@ -150,6 +180,29 @@ export default function Page() {
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [])
+
+  // Manage Morning Update button visibility (before 9:45 AM, not submitted yet, and user exists)
+  useEffect(() => {
+    let mounted = true;
+
+    const evaluate = async () => {
+      const now = new Date();
+      if (!mounted) return;
+      setCurrentTime(now);
+      const beforeCutoff = isBeforeCutoffTime(now);
+      const submitted = await checkSubmissionStatus();
+      if (!mounted) return;
+      setShowMorningUpdateButton(Boolean(user?._id) && beforeCutoff && !submitted);
+    };
+
+    // initial evaluate and then every minute
+    evaluate();
+    const interval = setInterval(evaluate, 60_000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [user?._id])
 
   const addVehicle = async (vehicleNumber: string) => {
     console.log('adding vehicle: ', vehicleNumber);
@@ -254,6 +307,13 @@ export default function Page() {
       toast.error("Something went Wrong", { richColors: true })
     }
   }
+
+  // On successful morning update submission
+  const handleMorningUpdateSuccess = async () => {
+    await markAsSubmitted();
+    setShowMorningUpdateButton(false);
+    // toast is already handled inside the form; optionally we could add another toast here
+  };
 
   return (
     <>
@@ -368,6 +428,24 @@ export default function Page() {
           <ChevronUp className="h-6 w-6" />
         </Button>
       )}
+
+      {showMorningUpdateButton && user && (
+        <Button
+          className="fixed bottom-6 left-6 rounded-lg px-4 py-2 shadow-lg"
+          onClick={() => setIsMorningUpdateDialogOpen(true)}
+          aria-label="Submit Morning Update"
+          title="Submit Morning Update (before 9:45 AM)"
+        >
+          <ClipboardList className="mr-2 h-4 w-4" /> Morning Update
+        </Button>
+      )}
+
+      <MorningUpdateForm
+        isOpen={isMorningUpdateDialogOpen}
+        onClose={() => setIsMorningUpdateDialogOpen(false)}
+        user={user}
+        onSuccess={handleMorningUpdateSuccess}
+      />
     </>
   )
 }

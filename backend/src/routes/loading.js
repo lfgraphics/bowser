@@ -7,55 +7,63 @@ const { mongoose } = require('mongoose');
 const Bowser = require('../models/Bowsers');
 const { updateTripSheet } = require('../utils/tripSheet')
 const { calculateQty } = require('../utils/calibration')
+const { withTransaction } = require('../utils/transactions');
+const { handleTransactionError, createErrorResponse } = require('../utils/errorHandler');
 
 // Create a new LoadingOrder
 router.post('/orders', async (req, res) => {
     try {
         const { regNo, loadingDesc, loadingLocation, petrolPump, bccAuthorizedOfficer, tripSheetId } = req.body;
-        console.log('Loading order created: ',req.body)
+        console.log('Loading order request: ', req.body)
 
-        if (!regNo || !loadingLocation || !bccAuthorizedOfficer || !bccAuthorizedOfficer.id || !bccAuthorizedOfficer.name) {
-            return res.status(400).json({ error: 'Missing required fields' });
+        // Pre-transaction validation
+        if (!regNo || !loadingLocation || !bccAuthorizedOfficer?.id || !bccAuthorizedOfficer?.name) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Missing required fields' }));
+        }
+        if (!['bcc', 'petrolPump'].includes(loadingLocation)) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid loadingLocation' }));
+        }
+        if (loadingLocation === 'petrolPump') {
+            if (!petrolPump?.phone) {
+                return res.status(400).json(createErrorResponse({ status: 400, message: 'petrolPump.phone is required for petrolPump loadingLocation' }));
+            }
         }
 
-        const newBowserLoadingOrder = new LoadingOrder({
-            regNo,
-            tripSheetId,
-            loadingDesc,
-            loadingLocation,
-            ...(petrolPump ? { petrolPump } : {}),
-            bccAuthorizedOfficer: {
-                id: bccAuthorizedOfficer.id,
-                name: bccAuthorizedOfficer.name,
-            },
-            fulfilled: false,
-        });
+        // Transaction: save LoadingOrder
+        const createdOrder = await withTransaction(async (sessions) => {
+            const order = new LoadingOrder({
+                regNo,
+                tripSheetId,
+                loadingDesc,
+                loadingLocation,
+                ...(petrolPump ? { petrolPump } : {}),
+                bccAuthorizedOfficer: { id: bccAuthorizedOfficer.id, name: bccAuthorizedOfficer.name },
+                fulfilled: false,
+            });
+            await order.save({ session: sessions.bowsers });
+            return order;
+        }, { connections: ['bowsers'], context: { route: '/orders', regNo, loadingLocation } });
 
+        // Respond after commit
+        res.status(201).json(createdOrder);
+
+        // Notifications outside transaction
         try {
-            let desc = loadingDesc ? `\nDescription: ${loadingDesc}\n` : "";
-            let message = `Bowser: ${regNo}\n${desc}Ordered by: ${bccAuthorizedOfficer.name} Id: ${bccAuthorizedOfficer.id}`;
-            let options = {
-                title: "New Bowser Loading Order Arrived",
-                url: `/loading/sheet/${newBowserLoadingOrder._id}`,
+            const desc = loadingDesc ? `\nDescription: ${loadingDesc}\n` : '';
+            const message = `Bowser: ${regNo}\n${desc}Ordered by: ${bccAuthorizedOfficer.name} Id: ${bccAuthorizedOfficer.id}`;
+            if (loadingLocation === 'bcc') {
+                const options = { title: 'New Bowser Loading Order Arrived', url: `/loading/sheet/${createdOrder._id}` };
+                await sendBulkNotifications({ groups: ['Loading Incharge'], message, options, platform: 'web' });
+            } else if (loadingLocation === 'petrolPump') {
+                const options = { title: 'New Order Arrived', url: `/loading/petrol-pump/${createdOrder._id}` };
+                await sendWebPushNotification({ mobileNumber: petrolPump.phone, message, options });
             }
-            if (loadingLocation === "bcc") {
-                await sendBulkNotifications({
-                    groups: ["Loading Incharge"],
-                    message: message,
-                    options: options,
-                    platform: "web",
-                });
-            } else if (loadingLocation === "petrolPump") {
-                await sendWebPushNotification({ mobileNumber: petrolPump.phone, message: message, options: options = { title: "New Order Arrived", url: `/loading/petrol-pump/${newBowserLoadingOrder._id}`, } })
-            }
-            await newBowserLoadingOrder.save();
-            res.status(201).json(newBowserLoadingOrder);
-        } catch (notificationError) {
-            console.error("Error sending notification:", notificationError);
+        } catch (notifyErr) {
+            console.error('Notification error (orders):', notifyErr?.message || notifyErr);
         }
     } catch (err) {
-        console.error('Error creating LoadingOrder:', err);
-        res.status(400).json({ error: 'Invalid request', details: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/orders', regNo: req?.body?.regNo, loadingLocation: req?.body?.loadingLocation });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -85,8 +93,8 @@ router.get('/orders/:id', async (req, res) => {
         // 4. Return the combined results in your desired format
         return res.status(200).json(responseData);
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ title: 'Error', details: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/orders/:id', orderId: req?.params?.id });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -125,8 +133,8 @@ router.post('/orders/get', async (req, res) => {
 
         res.status(200).json(orders);
     } catch (err) {
-        console.error('Error fetching LoadingOrders:', err);
-        res.status(500).json({ error: 'Internal Server Error', details: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/orders/get', startDate: req?.body?.startDate, endDate: req?.body?.endDate, searchParam: req?.body?.searchParam });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -136,44 +144,58 @@ router.patch('/orders/:id', async (req, res) => {
         const { id } = req.params;
         const updateData = req.body;
 
-        if (!id || Object.keys(updateData).length === 0) {
-            return res.status(400).json({ error: 'Missing required fields for update' });
+        if (!id || !updateData || typeof updateData !== 'object' || Object.keys(updateData).length === 0) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Missing or invalid fields for update' }));
+        }
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid order id' }));
         }
 
-        const updatedOrder = await LoadingOrder.findByIdAndUpdate({ _id: ObjectId(id) }, updateData, {
-            new: true, // Return the updated document
-            runValidators: true, // Validate fields
-        });
-
-        if (!updatedOrder) {
-            return res.status(404).json({ error: 'LoadingOrder not found' });
-        }
+        const updatedOrder = await withTransaction(async (sessions) => {
+            const updated = await LoadingOrder.findByIdAndUpdate(
+                new mongoose.Types.ObjectId(id),
+                updateData,
+                { new: true, runValidators: true, session: sessions.bowsers }
+            );
+            if (!updated) {
+                const e = new Error('LoadingOrder not found');
+                e.name = 'ValidationError';
+                throw e;
+            }
+            return updated;
+        }, { connections: ['bowsers'], context: { route: '/orders/:id', orderId: id } });
 
         res.status(200).json(updatedOrder);
     } catch (err) {
-        console.error('Error updating LoadingOrder:', err);
-        res.status(500).json({ error: 'Internal Server Error', details: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/orders/:id', orderId: req?.params?.id });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
 router.delete('/order/:id', async (req, res) => {
     try {
         const { id } = req.params;
-
         if (!id) {
-            return res.status(400).json({ error: 'Missing required id for deletion' });
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Missing required id for deletion' }));
+        }
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid order id' }));
         }
 
-        const deletedOrder = await LoadingOrder.findByIdAndDelete(id);
-
-        if (!deletedOrder) {
-            return res.status(404).json({ error: 'LoadingOrder not found' });
-        }
+        const deletedOrder = await withTransaction(async (sessions) => {
+            const del = await LoadingOrder.findByIdAndDelete(new mongoose.Types.ObjectId(id), { session: sessions.bowsers });
+            if (!del) {
+                const e = new Error('LoadingOrder not found');
+                e.name = 'ValidationError';
+                throw e;
+            }
+            return del;
+        }, { connections: ['bowsers'], context: { route: '/order/:id', orderId: id } });
 
         res.status(200).json({ message: 'LoadingOrder deleted successfully', deletedOrder });
     } catch (err) {
-        console.error('Error deleting LoadingOrder:', err);
-        res.status(500).json({ error: 'Internal Server Error', details: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/order/:id', orderId: req?.params?.id });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -194,9 +216,8 @@ router.post('/sheet', async (req, res) => {
             bccAuthorizedOfficer,
         } = req.body;
 
-        // Validate required fields
+        // Base validation
         const missingFields = [];
-
         if (!regNo) missingFields.push('regNo');
         if (!odoMeter) missingFields.push('odoMeter');
         if (!fuleingMachine) missingFields.push('fuleingMachine');
@@ -207,69 +228,69 @@ router.post('/sheet', async (req, res) => {
         if (!bccAuthorizedOfficer?.name) missingFields.push('bccAuthorizedOfficer.name');
 
         if (missingFields.length > 0) {
-            return res.status(400).json({
-                error: 'Missing required fields',
-                missingFields: missingFields
-            });
+            return res.status(400).json({ error: 'Missing required fields', missingFields });
+        }
+        // Additional validation
+        if (!Array.isArray(chamberwiseDipListBefore) || chamberwiseDipListBefore.length === 0) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'chamberwiseDipListBefore is required and must be a non-empty array' }));
+        }
+        if (!Array.isArray(chamberwiseDipListAfter) || chamberwiseDipListAfter.length === 0) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'chamberwiseDipListAfter is required and must be a non-empty array' }));
+        }
+        if (!Array.isArray(loadingSlips) || loadingSlips.length === 0) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'loadingSlips is required and must be a non-empty array' }));
+        }
+        if (!mongoose.Types.ObjectId.isValid(String(bccAuthorizedOfficer.orderId))) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid bccAuthorizedOfficer.orderId' }));
         }
 
-        let newLoadingSheet;
-
-        try {
-            // Fetch the Bowser document for the provided regNo
-            const bowser = await Bowser.findOne({ regNo });
+        // Transaction block
+        const resultSheet = await withTransaction(async (sessions) => {
+            // Fetch bowser with session
+            const bowser = await Bowser.findOne({ regNo }).session(sessions.bowsers);
             if (!bowser) {
-                return res.status(404).json({ error: 'Bowser not found for the provided regNo' });
+                const e = new Error('Bowser not found for the provided regNo');
+                e.name = 'ValidationError';
+                throw e;
             }
-
             const bowserChambers = bowser.chambers;
 
-            // Calculate qty for chamberwiseDipListBefore
+            // Compute dip quantities
             for (const dip of chamberwiseDipListBefore) {
                 if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
                     dip.qty = calculateQty(bowserChambers, dip.chamberId, dip.levelHeight);
                 }
             }
-
-            // Calculate qty for chamberwiseDipListAfter
             for (const dip of chamberwiseDipListAfter) {
                 if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
                     dip.qty = calculateQty(bowserChambers, dip.chamberId, dip.levelHeight);
                 }
             }
 
-            // Calculate totalLoadQuantityBySlip
-            let totalLoadQuantityBySlip = loadingSlips.reduce((total, slip) => {
-                return total + slip.qty;
-            }, 0);
-
-            // Calculate totalLoadQuantityByDip based on chamberwiseDipListAfter
-            let totalLoadQuantityByDip = chamberwiseDipListAfter.reduce((total, dip) => {
-                return total + dip.qty;
-            }, 0);
-
-
-            const totalBefore = chamberwiseDipListBefore.reduce((total, dip) => {
-                return total + dip.qty;
-            }, 0);
-
+            const totalLoadQuantityBySlip = loadingSlips.reduce((total, slip) => total + slip.qty, 0);
+            const totalLoadQuantityByDip = chamberwiseDipListAfter.reduce((total, dip) => total + dip.qty, 0);
+            const totalBefore = chamberwiseDipListBefore.reduce((total, dip) => total + dip.qty, 0);
             const tempLoadByDip = totalLoadQuantityBySlip + totalBefore;
+            const additionQty = totalLoadQuantityByDip - totalBefore;
 
-            let additionQty = totalLoadQuantityByDip - totalBefore; // Subtract total from before
-
+            // If sheetId present, update tripsheet additions in-session
             if (sheetId) {
                 const additionEntry = {
                     sheetId: new mongoose.Types.ObjectId(sheetId),
+                    quantity: additionQty,
                     quantityByDip: additionQty,
                     quantityBySlip: totalLoadQuantityBySlip,
                 };
-
-                await updateTripSheet({ sheetId, newAddition: additionEntry });
+                const updateResult = await updateTripSheet({ sheetId, newAddition: additionEntry, session: sessions.bowsers });
+                if (!updateResult?.success) {
+                    const e = new Error(updateResult?.message || 'Trip sheet update failed');
+                    e.name = 'ValidationError';
+                    throw e;
+                }
             }
 
-            // try {
-            // Send notification only if save is successful
-            newLoadingSheet = new LoadingSheet({
+            // Prepare LoadingSheet data (always persist or update existing by orderId)
+            const sheetData = {
                 regNo,
                 odoMeter,
                 tempLoadByDip,
@@ -289,54 +310,45 @@ router.post('/sheet', async (req, res) => {
                     orderId: new mongoose.Types.ObjectId(bccAuthorizedOfficer.orderId),
                 },
                 fulfilled: false,
-            });
-            const options = {
-                title: "Your Bowser Loading Order is successful",
-                url: !sheetId ? `/tripsheets/create/${newLoadingSheet?._id}` : `/tripsheets/${sheetId}`,
+                ...(sheetId ? { tripSheetId: new mongoose.Types.ObjectId(sheetId) } : {}),
             };
-            const message = `Bowser: ${regNo}\nFulfilled by: ${loadingIncharge.name} Id: ${loadingIncharge.id}`;
-            await sendWebPushNotification({ userId: bccAuthorizedOfficer.id, message, options });
 
-            // if (notificationSent.success) {
-            if (!sheetId) {
-                await newLoadingSheet.save();
-
-            }
-            let loadingOrder = await LoadingOrder.findByIdAndUpdate(
-                new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)),
-                { $set: { fulfilled: true } },
-                { new: true }
+            // Upsert LoadingSheet by LoadingOrder (ensures a sheet exists even when sheetId is provided)
+            const newLoadingSheet = await LoadingSheet.findOneAndUpdate(
+                { "bccAuthorizedOfficer.orderId": new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)) },
+                { $set: sheetData },
+                { new: true, upsert: true, setDefaultsOnInsert: true, session: sessions.bowsers }
             );
 
+            // Mark LoadingOrder fulfilled
+            const loadingOrder = await LoadingOrder.findByIdAndUpdate(
+                new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)),
+                { $set: { fulfilled: true } },
+                { new: true, session: sessions.bowsers }
+            );
             if (!loadingOrder) {
-                console.error('Loading order not found');
-                return;
+                const e = new Error('Loading order not found');
+                e.name = 'ValidationError';
+                throw e;
             }
-            console.log('Updated Loading Order:', loadingOrder);
-            res.status(200).json(newLoadingSheet);
-            // } else {
-            //     res.status(500).json({ error: 'Request failed because failed to send notification to BCC' });
-            // }
-            // } catch (notificationError) {
-            //     console.error("Error sending notification:", notificationError);
-            //     await LoadingSheet.findByIdAndDelete(newLoadingSheet._id);
-            //     res.status(500).json({
-            //         error: 'Failed to send notification. LoadingSheet creation rolled back.',
-            //         details: notificationError.message,
-            //     });
-            // }
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ error: 'Error processing request', details: error.message });
-        }
 
-        // Save the LoadingSheet
+            return newLoadingSheet;
+        }, { connections: ['bowsers'], context: { route: '/sheet', regNo, sheetId, orderId: bccAuthorizedOfficer?.orderId } });
+
+        // Respond after commit
+        res.status(200).json(resultSheet);
+
+        // Notify outside transaction
+        try {
+            const options = { title: 'Your Bowser Loading Order is successful', url: !sheetId ? `/tripsheets/create/${resultSheet?._id}` : `/tripsheets/${sheetId}` };
+            const message = `Bowser: ${regNo}\nFulfilled by: ${loadingIncharge.name} Id: ${loadingIncharge.id}`;
+            await sendWebPushNotification({ userId: bccAuthorizedOfficer.id, message, options });
+        } catch (notifyErr) {
+            console.error('Notification error (sheet):', notifyErr?.message || notifyErr);
+        }
     } catch (err) {
-        console.error('Error creating LoadingSheet:', err);
-        res.status(400).json({
-            error: 'Invalid request',
-            details: err.message,
-        });
+        const errorResponse = handleTransactionError(err, { route: '/sheet', regNo: req?.body?.regNo, sheetId: req?.body?.sheetId, orderId: req?.body?.bccAuthorizedOfficer?.orderId });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -376,24 +388,22 @@ router.post('/sheets/get', async (req, res) => {
 
         res.status(200).json(sheets);
     } catch (err) {
-        console.error('Error fetching LoadingSheets:', err);
-        res.status(500).json({ error: 'Internal Server Error', details: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/sheets/get', startDate: req?.body?.startDate, endDate: req?.body?.endDate, searchParam: req?.body?.searchParam });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
 router.get('/sheets/:id', async (req, res) => {
     try {
-        const id = req.params;
+        const { id } = req.params;
         const sheet = await LoadingSheet.findOne({ _id: new mongoose.Types.ObjectId(id) }).lean();
-
         if (!sheet) {
-            return res.status(404).json({ error: 'No Sheets found', filter });
+            return res.status(404).json({ error: 'No Sheets found' });
         }
-
         res.status(200).json(sheet);
     } catch (err) {
-        console.error('Error fetching LoadingSheets:', err);
-        res.status(500).json({ error: 'Internal Server Error', details: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/sheets/:id', sheetId: req?.params?.id });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -403,27 +413,31 @@ router.patch('/sheets/:id', async (req, res) => {
         const { id } = req.params;
         const updateData = req.body;
 
-        if (!id || Object.keys(updateData).length === 0) {
-            return res.status(400).json({ error: 'Missing required fields for update' });
+        if (!id || !updateData || typeof updateData !== 'object' || Object.keys(updateData).length === 0) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Missing or invalid fields for update' }));
+        }
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid sheet id' }));
         }
 
-        const updatedSheet = await LoadingSheet.findByIdAndUpdate(
-            { _id: ObjectId(id) },
-            updateData,
-            {
-                new: true, // Return the updated document
-                runValidators: true, // Validate fields
+        const updatedSheet = await withTransaction(async (sessions) => {
+            const updated = await LoadingSheet.findByIdAndUpdate(
+                new mongoose.Types.ObjectId(id),
+                updateData,
+                { new: true, runValidators: true, session: sessions.bowsers }
+            );
+            if (!updated) {
+                const e = new Error('LoadingSheet not found');
+                e.name = 'ValidationError';
+                throw e;
             }
-        );
-
-        if (!updatedSheet) {
-            return res.status(404).json({ error: 'LoadingSheet not found' });
-        }
+            return updated;
+        }, { connections: ['bowsers'], context: { route: '/sheets/:id', sheetId: id } });
 
         res.status(200).json(updatedSheet);
     } catch (err) {
-        console.error('Error updating LoadingSheet:', err);
-        res.status(500).json({ error: 'Internal Server Error', details: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/sheets/:id', sheetId: req?.params?.id });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -431,21 +445,27 @@ router.patch('/sheets/:id', async (req, res) => {
 router.delete('/sheet/:id', async (req, res) => {
     try {
         const { id } = req.params;
-
         if (!id) {
-            return res.status(400).json({ error: 'Missing required id for deletion' });
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Missing required id for deletion' }));
+        }
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid sheet id' }));
         }
 
-        const deletedSheet = await LoadingSheet.findByIdAndDelete({ _id: ObjectId(id) });
-
-        if (!deletedSheet) {
-            return res.status(404).json({ error: 'LoadingSheet not found' });
-        }
+        const deletedSheet = await withTransaction(async (sessions) => {
+            const del = await LoadingSheet.findByIdAndDelete(new mongoose.Types.ObjectId(id), { session: sessions.bowsers });
+            if (!del) {
+                const e = new Error('LoadingSheet not found');
+                e.name = 'ValidationError';
+                throw e;
+            }
+            return del;
+        }, { connections: ['bowsers'], context: { route: '/sheet/:id', sheetId: id } });
 
         res.status(200).json({ message: 'LoadingSheet deleted successfully', deletedSheet });
     } catch (err) {
-        console.error('Error deleting LoadingSheet:', err);
-        res.status(500).json({ error: 'Internal Server Error', details: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/sheet/:id', sheetId: req?.params?.id });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 

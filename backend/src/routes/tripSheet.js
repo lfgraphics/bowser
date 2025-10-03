@@ -8,6 +8,8 @@ const LoadingSheet = require('../models/LoadingSheet');
 const { calculateQty } = require('../utils/calibration');
 const { updateTripSheet } = require('../utils/tripSheet')
 const { sendNativePushNotification, sendBulkNotifications } = require('../utils/pushNotifications');
+const { withTransaction } = require('../utils/transactions');
+const { handleTransactionError, createErrorResponse } = require('../utils/errorHandler');
 
 const notifyDriver = async ({ phoneNumber, bowser, tripsheetId, location }) => {
     let options = {
@@ -22,28 +24,30 @@ const checkExistingTrip = async (regNo) => {
     if (bowser && bowser.currentTrip) {
         const currentTrip = await TripSheet.findById(bowser.currentTrip);
         if (currentTrip && !currentTrip.settelment?.settled) {
-            throw new Error(
+            const e = new Error(
                 `This bowser is currently on an unsettled trip. Settle the existing trip (${currentTrip.tripSheetId}) before creating a new one.`
             );
+            e.name = 'ValidationError';
+            throw e;
         }
     }
 };
 
-const updateBowserDriver = async (phoneNo, regNo) => {
+const updateBowserDriver = async (phoneNo, regNo, session = null) => {
     if (!phoneNo) return;
     await User.findOneAndUpdate(
         { phoneNumber: phoneNo },
         { $set: { bowserId: regNo } },
-        { new: true, upsert: true }
+        { new: true, upsert: true, session }
     );
 
 };
 
-const updateBowserCurrentTrip = async (regNo, tripSheetId) => {
+const updateBowserCurrentTrip = async (regNo, tripSheetId, session = null) => {
     const updatedBowser = await Bowser.findOneAndUpdate(
         { regNo },
         { $set: { currentTrip: tripSheetId } },
-        { new: true }
+        { new: true, session }
     );
     if (!updatedBowser) {
         console.warn(`No bowser found with regNo: ${regNo}`);
@@ -54,61 +58,65 @@ router.post('/create', async (req, res) => {
     try {
         const { bowser, loading, fuelingAreaDestination, proposedDepartureTime, hsdRate } = req.body;
 
-        // Check for existing unsettled trips
+        // Pre-transaction validation
+        if (!bowser?.regNo || !loading?.sheetId || !fuelingAreaDestination) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Missing required fields: bowser.regNo, loading.sheetId, fuelingAreaDestination' }));
+        }
+        const qtyDip = Number(loading.quantityByDip);
+        const qtySlip = Number(loading.quantityBySlip);
+        if (Number.isNaN(qtyDip) || Number.isNaN(qtySlip)) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid quantities: loading.quantityByDip and loading.quantityBySlip must be numbers' }));
+        }
+
+        // Check for existing unsettled trips (read-only, outside transaction)
         await checkExistingTrip(bowser.regNo);
 
-        // Create a new TripSheet instance
-        const newSheet = new TripSheet({
-            bowser,
-            hsdRate,
-            loading: {
-                sheetId: new mongoose.Types.ObjectId(loading.sheetId),
-                quantityByDip: loading.quantityByDip,
-                quantityBySlip: loading.quantityBySlip,
-                tempLoadByDip: loading.tempLoadByDip,
-            },
-            fuelingAreaDestination,
-            proposedDepartureTime,
-        });
+        // Execute multi-connection transaction
+        const newSheet = await withTransaction(async (sessions) => {
+            const sheet = new TripSheet({
+                bowser,
+                hsdRate,
+                loading: {
+                    sheetId: new mongoose.Types.ObjectId(loading.sheetId),
+                    quantityByDip: qtyDip,
+                    quantityBySlip: qtySlip,
+                    tempLoadByDip: loading.tempLoadByDip,
+                },
+                fuelingAreaDestination,
+                proposedDepartureTime,
+            });
 
-        // Save the new TripSheet
-        await newSheet.save();
+            await sheet.save({ session: sessions.bowsers });
 
-        // Update bowser driver information
-        const phoneNo = bowser.driver?.[0]?.phoneNo;
-        await updateBowserDriver(phoneNo, bowser.regNo);
-        // Update Bowser with the current trip
-        await updateBowserCurrentTrip(bowser.regNo, newSheet._id);
+            // Update bowser driver information in users DB
+            const phoneNo = bowser.driver?.[0]?.phoneNo;
+            await updateBowserDriver(phoneNo, bowser.regNo, sessions.users);
 
-        await notifyDriver({ phoneNumber: newSheet.bowser.driver[0]?.phoneNo, bowser: newSheet.bowser.regNo, tripsheetId: newSheet.tripSheetId, location: newSheet.fuelingAreaDestination })
+            // Update Bowser with the current trip in bowsers DB
+            await updateBowserCurrentTrip(bowser.regNo, sheet._id, sessions.bowsers);
 
-        try {
-            const updatedSheet = await LoadingSheet.findOneAndUpdate(
+            // Mark loading sheet fulfilled in bowsers DB
+            await LoadingSheet.findOneAndUpdate(
                 { _id: loading.sheetId },
-                { $set: { fulfilled: true } }, // Set the fulfilled field to true
-                { new: true }
+                { $set: { fulfilled: true } },
+                { new: true, session: sessions.bowsers }
             );
 
-            if (!updatedSheet) {
-                console.error('Loading order not found');
-                return;
-            }
+            return sheet;
+        }, { connections: ['bowsers', 'users'], context: { route: '/create', bowserRegNo: bowser.regNo } });
 
-        } catch (err) {
-            console.error("Error updating LoadingSheet:", err);
-        }
-
-        // Send success response
+        // Respond on success (after commit)
         res.status(201).json({ message: 'Trip Sheet created successfully', tripSheet: newSheet });
-    } catch (err) {
-        console.error('Error creating Trip Sheet:', err.message);
 
-        // Centralized error handling
-        if (err.message.includes('unsettled trip')) {
-            return res.status(405).json({ message: err.message });
+        // Notifications: outside transaction; do not affect response
+        try {
+            await notifyDriver({ phoneNumber: newSheet.bowser.driver[0]?.phoneNo, bowser: newSheet.bowser.regNo, tripsheetId: newSheet.tripSheetId, location: newSheet.fuelingAreaDestination });
+        } catch (notifyErr) {
+            console.error('Notification error (driver):', notifyErr?.message || notifyErr);
         }
-
-        res.status(500).json({ message: 'An error occurred during Trip Sheet creation', error: err.message });
+    } catch (err) {
+        const errorResponse = handleTransactionError(err, { route: '/create', bowserRegNo: req?.body?.bowser?.regNo });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -175,8 +183,8 @@ router.get('/all', async (req, res) => {
 
         res.status(200).json(tripSheets);
     } catch (err) {
-        console.error('Error fetching TripSheets:', err);
-        res.status(500).json({ message: 'Failed to fetch TripSheets', error: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/all' });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -194,9 +202,8 @@ router.get('/find-by-sheetId/:tripSheetId', async (req, res) => {
         res.status(200).json({ sheets });
 
     } catch (err) {
-        console.error('Error searching bowsers, trip details, or bowser drivers:', err);
-        console.error('Error stack:', err.stack);
-        res.status(500).json({ message: 'Server error', error: err.message, stack: err.stack });
+        const errorResponse = handleTransactionError(err, { route: '/find-by-sheetId', tripSheetId });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 router.get('/find-by-id/:id', async (req, res) => {
@@ -210,9 +217,8 @@ router.get('/find-by-id/:id', async (req, res) => {
         res.status(200).json(sheet);
 
     } catch (err) {
-        console.error('Error searching bowsers, trip details, or bowser drivers:', err);
-        console.error('Error stack:', err.stack);
-        res.status(500).json({ message: 'Server error', error: err.message, stack: err.stack });
+        const errorResponse = handleTransactionError(err, { route: '/find-by-id', id });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 router.get('/:id', async (req, res) => {
@@ -224,9 +230,8 @@ router.get('/:id', async (req, res) => {
         res.status(200).json(sheet);
 
     } catch (err) {
-        console.error('Error searching bowsers, trip details, or bowser drivers:', err);
-        console.error('Error stack:', err.stack);
-        res.status(500).json({ message: 'Server error', error: err.message, stack: err.stack });
+        const errorResponse = handleTransactionError(err, { route: '/:id', id });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -243,9 +248,8 @@ router.get('/summary/get/:id', async (req, res) => {
         res.status(200).json(sheet);
 
     } catch (err) {
-        console.error('Error loading trip summary :', err);
-        console.error('Error stack:', err.stack);
-        res.status(500).json({ message: 'Server error', error: err.message, stack: err.stack });
+        const errorResponse = handleTransactionError(err, { route: '/summary/get', id });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -257,9 +261,8 @@ router.get('/tripSheetId/:id', async (req, res) => {
         res.status(200).json(sheet);
 
     } catch (err) {
-        console.error('Error searching bowsers, trip details, or bowser drivers:', err);
-        console.error('Error stack:', err.stack);
-        res.status(500).json({ message: 'Server error', error: err.message, stack: err.stack });
+        const errorResponse = handleTransactionError(err, { route: '/tripSheetId', id });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 router.patch('/update/:id', async (req, res) => {
@@ -271,20 +274,31 @@ router.patch('/update/:id', async (req, res) => {
     }
 
     try {
-        const updatedTripSheet = await TripSheet.findByIdAndUpdate(
-            id,
-            { $set: updateData },
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedTripSheet) {
-            return res.status(404).json({ message: 'TripSheet not found.' });
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid TripSheet ID.' }));
         }
+        if (!updateData || typeof updateData !== 'object') {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid update payload.' }));
+        }
+
+        const updatedTripSheet = await withTransaction(async (sessions) => {
+            const updated = await TripSheet.findByIdAndUpdate(
+                id,
+                { $set: updateData },
+                { new: true, runValidators: true, session: sessions.bowsers }
+            );
+            if (!updated) {
+                const e = new Error('TripSheet not found.');
+                e.name = 'ValidationError';
+                throw e;
+            }
+            return updated;
+        }, { connections: ['bowsers'], context: { route: '/update', tripSheetId: id } });
 
         res.status(200).json({ message: 'TripSheet updated successfully', updatedTripSheet });
     } catch (err) {
-        console.error('Error updating TripSheet:', err);
-        res.status(500).json({ message: 'Failed to update TripSheet', error: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/update', tripSheetId: id });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -344,9 +358,9 @@ router.get('/find-sheet-id-by-userId/:id', async (req, res) => {
         }
 
         res.status(200).json(tripSheet.tripSheetId);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Internal server error' });
+    } catch (err) {
+        const errorResponse = handleTransactionError(err, { route: '/find-sheet-id-by-userId', userId: id });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -354,38 +368,48 @@ router.post('/close-trip/:id', async (req, res) => {
     const id = req.params.id;
     const { userDetails, reason, remarks, dateTime } = req.body;
     try {
-        const tripsheet = await TripSheet.findById(new mongoose.Types.ObjectId(id));
-        if (!tripsheet) {
-            throw new Error(`can't find the trip sheet`);
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid TripSheet ID.' }));
+        }
+        if (!userDetails?.id || !userDetails?.name || !reason || !dateTime) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Missing required fields: userDetails, reason, dateTime' }));
         }
 
-        let settlement = {
-            dateTime,
-            settled: true,
-            details: {
+        await withTransaction(async (sessions) => {
+            const tripsheet = await TripSheet.findById(new mongoose.Types.ObjectId(id)).session(sessions.bowsers);
+            if (!tripsheet) {
+                const e = new Error("can't find the trip sheet");
+                e.name = 'ValidationError';
+                throw e;
+            }
 
-                by: {
-                    id: userDetails.id,
-                    name: userDetails.name
+            const settlement = {
+                dateTime,
+                settled: true,
+                details: {
+                    by: {
+                        id: userDetails.id,
+                        name: userDetails.name
+                    }
                 }
-            }
-        };
-        tripsheet.settelment = settlement;
-        let closure = {
-            dateTime,
-            details: {
-                reason,
-                remarks,
-            }
-        }
+            };
+            const closure = {
+                dateTime,
+                details: { reason, remarks }
+            };
 
-        tripsheet.closure = closure;
+            tripsheet.settelment = settlement;
+            tripsheet.closure = closure;
+            await tripsheet.save({ session: sessions.bowsers });
 
-        await tripsheet.save();
+            // Clear bowser currentTrip
+            await Bowser.findOneAndUpdate({ regNo: tripsheet.bowser.regNo }, { $unset: { currentTrip: '' } }, { session: sessions.bowsers });
+        }, { connections: ['bowsers'], context: { route: '/close-trip', tripSheetId: id } });
+
         res.status(200).json({ message: 'Trip sheet closed successfully' });
-    } catch (error) {
-        console.error(error);
-        res.status(400).json({ message: error.message });
+    } catch (err) {
+        const errorResponse = handleTransactionError(err, { route: '/close-trip', tripSheetId: id });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -393,71 +417,74 @@ router.post('/settle/:id', async (req, res) => {
     let id = req.params.id;
     let { chamberwiseDipList, pumpReading, dateTime, odometer, userDetails, extras } = req.body;
     try {
-        let tripsheet = await TripSheet.findById(new mongoose.Types.ObjectId(id));
-        if (!tripsheet) {
-            throw new Error(`can't find the trip sheet`);
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid TripSheet ID.' }));
         }
-        let bowserRegNo = tripsheet.bowser.regNo;
-        let bowser = await Bowser.findOne({ regNo: bowserRegNo });
-        if (!bowser) {
-            throw new Error(`can't find the bowser`);
-        }
-        for (const dip of chamberwiseDipList) {
-            if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
-                dip.qty = calculateQty(bowser.chambers, dip.chamberId, dip.levelHeight).toFixed(2);
-            }
+        if (!Array.isArray(chamberwiseDipList) || chamberwiseDipList.length === 0 || !dateTime || !userDetails?.id || !userDetails?.name) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Missing required fields for settlement.' }));
         }
 
-        // Update the tripsheet with the new chamberwiseDipList
-        let totalQty = chamberwiseDipList.reduce((acc, chamber) => {
-            // Remove invalid characters (e.g., multiple decimals)
-            let sanitizedQty = chamber.qty.replace(/[^0-9.]/g, ''); // Remove non-numeric, non-decimal characters
-            let qty = parseFloat(sanitizedQty);
-            if (!isNaN(qty)) {
-                return acc + qty;
-            } else {
-                console.warn(`Invalid qty value after sanitization: ${chamber.qty}`);
-                return acc; // Skip invalid entries
+        const tripsheet = await withTransaction(async (sessions) => {
+            let sheet = await TripSheet.findById(new mongoose.Types.ObjectId(id)).session(sessions.bowsers);
+            if (!sheet) {
+                const e = new Error("can't find the trip sheet");
+                e.name = 'ValidationError';
+                throw e;
             }
-        }, 0);
-        let settlement = {
-            dateTime,
-            settled: true,
-            details: {
-                chamberwiseDipList,
-                pumpReading,
-                totalQty,
-                odometer,
-                extras,
-                by: {
-                    id: userDetails.id,
-                    name: userDetails.name
+            const bowserRegNo = sheet.bowser.regNo;
+            const bowser = await Bowser.findOne({ regNo: bowserRegNo }).session(sessions.bowsers);
+            if (!bowser) {
+                const e = new Error("can't find the bowser");
+                e.name = 'ValidationError';
+                throw e;
+            }
+            for (const dip of chamberwiseDipList) {
+                if (dip.qty == null || dip.qty === undefined || dip.qty === 0) {
+                    dip.qty = calculateQty(bowser.chambers, dip.chamberId, dip.levelHeight).toFixed(2);
                 }
             }
-        };
-        tripsheet.settelment = settlement;
+
+            // compute totalQty
+            const totalQty = chamberwiseDipList.reduce((acc, chamber) => {
+                const sanitizedQty = String(chamber.qty).replace(/[^0-9.]/g, '');
+                const qty = parseFloat(sanitizedQty);
+                return !isNaN(qty) ? acc + qty : acc;
+            }, 0);
+
+            const settlement = {
+                dateTime,
+                settled: true,
+                details: {
+                    chamberwiseDipList,
+                    pumpReading,
+                    totalQty,
+                    odometer,
+                    extras,
+                    by: { id: userDetails.id, name: userDetails.name }
+                }
+            };
+            sheet.settelment = settlement;
+            await sheet.save({ session: sessions.bowsers });
+            await Bowser.findOneAndUpdate({ regNo: bowserRegNo }, { $unset: { currentTrip: '' } }, { session: sessions.bowsers });
+            return sheet;
+        }, { connections: ['bowsers'], context: { route: '/settle', tripSheetId: id } });
+
+        res.status(200).json({ message: 'Settlement processed successfully' });
+
+        // Notify outside transaction
         try {
-            await tripsheet.save(); // Save the updated tripsheet
-            res.status(200).json({ message: 'Settlement processed successfully' });
-            // notify data entry department
-            let message = `${tripsheet.tripSheetId} is settled\nNow you can make your move to data entry`;
-            let options = {
-                title: "Trip Sheet Settled",
+            const message = `${tripsheet.tripSheetId} is settled\nNow you can make your move to data entry`;
+            const options = {
+                title: 'Trip Sheet Settled',
                 url: `/dispense-records?tripNumber=${tripsheet.tripSheetId}&limit=${tripsheet.dispenses.length}`,
-            }
-            await sendBulkNotifications({
-                groups: ["Data Entry"],
-                message: message,
-                options: options,
-                platform: "web",
-            });
-        } catch (error) {
-            console.error(`Error saving settlement: ${error}`);
-            res.status(500).json({ message: 'Failed to process settlement' });
+            };
+            await sendBulkNotifications({ groups: ['Data Entry'], message, options, platform: 'web' });
+        } catch (notifyErr) {
+            console.error('Notification error (data entry):', notifyErr?.message || notifyErr);
         }
-    } catch (error) {
-        console.error(error);
-        res.status(400).json({ message: error.message });
+    } catch (err) {
+        const errorResponse = handleTransactionError(err, { route: '/settle', tripSheetId: id });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 
@@ -537,16 +564,30 @@ router.post('/check-settelment/:id', async (req, res) => {
 router.post('/addition/:id', async (req, res) => {
     const sheetId = req.params.id
     const { quantity, dateTime, by } = req.body
-    let newAddition = {
-        at: dateTime,
-        by,
-        quantity
-    }
+
     try {
-        let addition = await updateTripSheet({ sheetId, newAddition })
-        addition.success && res.status(200).json({ success: true, message: `Addition to the trip with _id: ${sheetId}, addition of ${quantity} is successful` })
+        if (!sheetId) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'TripSheet ID is required.' }));
+        }
+        const qty = Number(quantity);
+        if (Number.isNaN(qty) || qty <= 0 || !dateTime || !by) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid addition payload.' }));
+        }
+
+        await withTransaction(async (sessions) => {
+            const newAddition = { at: dateTime, by, quantity: qty };
+            const addition = await updateTripSheet({ sheetId, newAddition, session: sessions.bowsers });
+            if (!addition?.success) {
+                const e = new Error(addition?.message || 'Addition failed');
+                e.name = 'ValidationError';
+                throw e;
+            }
+        }, { connections: ['bowsers'], context: { route: '/addition', sheetId } });
+
+        res.status(200).json({ success: true, message: `Addition to the trip with _id: ${sheetId}, addition of ${qty} is successful` })
     } catch (err) {
-        res.status(500).json({ success: false, message: `Couldn't perform the addition doue to some error\nPlease contact the dev team`, error: err })
+        const errorResponse = handleTransactionError(err, { route: '/addition', sheetId });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 })
 
@@ -554,20 +595,38 @@ router.delete('/delete-dispense', async (req, res) => {
     const id = req.query.id
     const sheetId = req.query.tripSheetId
 
-    const tripSheet = await TripSheet.findOne({ tripSheetId: sheetId });
-    if (!tripSheet) {
-        return res.status(404).json({ message: 'TripSheet not found' });
-    }
-    // Find the dispense record from tripSheet.dispenses[] to delete
+    try {
+        if (!id || !sheetId) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'dispense id and tripSheetId are required' }));
+        }
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid dispense id' }));
+        }
 
-    const dispense = tripSheet.dispenses.find(d => d._id.toString() === id);
-    if (!dispense) {
-        return res.status(404).json({ message: 'Dispense record not found' });
+        await withTransaction(async (sessions) => {
+            const tripSheet = await TripSheet.findOne({ tripSheetId: sheetId }).session(sessions.bowsers);
+            if (!tripSheet) {
+                const e = new Error('TripSheet not found');
+                e.name = 'ValidationError';
+                throw e;
+            }
+
+            const dispense = tripSheet.dispenses.find(d => d._id.toString() === id);
+            if (!dispense) {
+                const e = new Error('Dispense record not found');
+                e.name = 'ValidationError';
+                throw e;
+            }
+
+            tripSheet.dispenses = tripSheet.dispenses.filter(d => d._id.toString() !== id);
+            await tripSheet.save({ session: sessions.bowsers });
+        }, { connections: ['bowsers'], context: { route: '/delete-dispense', dispenseId: id, tripSheetId: sheetId } });
+
+        res.status(200).json({ message: 'Dispense record deleted successfully' })
+    } catch (err) {
+        const errorResponse = handleTransactionError(err, { route: '/delete-dispense', dispenseId: id, tripSheetId: sheetId });
+        return res.status(errorResponse.status).json(errorResponse);
     }
-    // Remove the dispense record from the array
-    tripSheet.dispenses = tripSheet.dispenses.filter(d => d._id.toString() !== id);
-    // Update the tripSheet in the database
-    await tripSheet.save();
 })
 
 router.post('/verify-opening', async (req, res) => {
@@ -589,9 +648,9 @@ router.post('/verify-opening', async (req, res) => {
             trip: trip[0],
             isSetteled: trip[0].settelment && trip[0].settelment.settled === true ? true : false
         });
-    } catch (error) {
-        console.error('Error verifying opening:', error);
-        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    } catch (err) {
+        const errorResponse = handleTransactionError(err, { route: '/verify-opening', tripSheetId });
+        return res.status(errorResponse.status).json(errorResponse);
     }
 });
 

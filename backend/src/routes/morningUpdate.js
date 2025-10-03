@@ -113,4 +113,51 @@ router.get('/vehicle/:vehicleNo', async (req, res) => {
     }
 });
 
+// ✅ CREATE a new morning update
+router.post('/', async (req, res) => {
+    try {
+        const { user, openingTime, report, closingTime } = req.body || {};
+
+        // Basic validations
+        if (!user || typeof user !== 'object') {
+            return res.status(400).json({ error: 'User object is required' });
+        }
+        if (!user._id || !user.name) {
+            return res.status(400).json({ error: 'User _id and name are required' });
+        }
+        if (!openingTime) {
+            return res.status(400).json({ error: 'openingTime is required' });
+        }
+        if (!closingTime) {
+            return res.status(400).json({ error: 'closingTime is required' });
+        }
+        if (!Array.isArray(report) || report.length === 0) {
+            return res.status(400).json({ error: 'report must be a non-empty array' });
+        }
+
+        // Validate report entries
+        const invalidIndex = report.findIndex(
+            (r) => !r || typeof r !== 'object' || !r.vehicleNo || !r.remark
+        );
+        if (invalidIndex !== -1) {
+            return res.status(400).json({
+                error: `Each report entry must include vehicleNo and remark (invalid at index ${invalidIndex})`,
+            });
+        }
+
+        const newUpdate = new MorningUpdate({
+            user: { _id: user._id, name: user.name },
+            openingTime,
+            report,
+            closingTime,
+        });
+
+        await newUpdate.save();
+        return res.status(201).json(newUpdate);
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Failed to create morning update' });
+    }
+});
+
 module.exports = router;
