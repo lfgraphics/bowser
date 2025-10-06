@@ -132,7 +132,7 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'closingTime is required' });
         }
         if (!Array.isArray(report) || report.length === 0) {
-            return res.status(400).json({ error: 'report must be a non-empty array' });
+            return res.status(400).json({ error: 'report must not be empty' });
         }
 
         // Validate report entries

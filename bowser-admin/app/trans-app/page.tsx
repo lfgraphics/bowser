@@ -1,24 +1,28 @@
 "use client"
 import React, { useContext, useEffect, useMemo, useState } from 'react'
+
 import { Trash2, ChevronUp, ClipboardList } from 'lucide-react'
 import { toast } from 'sonner'
+
+import MorningUpdateForm from '@/components/transappComponents/MorningUpdateForm'
+import MorningUpdateReport, { MorningUpdateReportData as ReportDataTypeAlias } from '@/components/transappComponents/MorningUpdateReport'
+import VehicleManagement from '@/components/transappComponents/VehicleManagement'
+import VehiclesSummary from '@/components/transappComponents/VehiclesSummary'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { BASE_URL } from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { TransAppContext } from "./layout";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import Loading from '../loading'
-import { searchItems } from '@/utils/searchUtils'
 import { InactiveVehicles, Vehicle, VehicleWithTrip } from '@/types'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { SearchModal } from '@/components/SearchModal'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { TabsTrigger, Tabs, TabsList } from '@/components/ui/tabs'
 import { formatDate } from '@/lib/utils'
-import { SearchModal } from '@/components/SearchModal'
-import VehiclesSummary from '@/components/transappComponents/VehiclesSummary'
-import VehicleManagement from '@/components/transappComponents/VehicleManagement'
-import MorningUpdateForm from '@/components/transappComponents/MorningUpdateForm'
 import { loadFormData, saveFormData } from '@/lib/storage'
+import { searchItems } from '@/utils/searchUtils'
+
+import Loading from '../loading'
+import { TransAppContext } from "./layout";
 
 type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary"
 
@@ -50,6 +54,17 @@ export default function Page() {
     renderItem: () => null,
     keyExtractor: () => "",
   });
+
+  // Morning Update Report types and state
+  type MorningUpdateReportData = {
+    user: { name: string },
+    date: string,
+    openingTime: string,
+    closingTime: string,
+    vehicles: Array<{ vehicleNo: string, route: string, remark: string }>
+  } | null;
+  const [morningUpdateReportData, setMorningUpdateReportData] = useState<MorningUpdateReportData>(null);
+  const [showMorningUpdateReport, setShowMorningUpdateReport] = useState<boolean>(false);
 
   // Determine allowed tabs based on user (Inactive Vehicles hidden for Admins)
   const allowedTabs = useMemo<Readonly<Tabslist[]>>(() => {
@@ -309,10 +324,18 @@ export default function Page() {
   }
 
   // On successful morning update submission
-  const handleMorningUpdateSuccess = async () => {
+  const handleMorningUpdateSuccess = async (reportData: ReportDataTypeAlias) => {
     await markAsSubmitted();
     setShowMorningUpdateButton(false);
+    setMorningUpdateReportData(reportData);
+    setShowMorningUpdateReport(true);
     // toast is already handled inside the form; optionally we could add another toast here
+  };
+
+  const handleCloseReport = () => {
+    setShowMorningUpdateReport(false);
+    // optional: clear data after close animation
+    setTimeout(() => setMorningUpdateReportData(null), 300);
   };
 
   return (
@@ -446,6 +469,14 @@ export default function Page() {
         user={user}
         onSuccess={handleMorningUpdateSuccess}
       />
+
+      {morningUpdateReportData && (
+        <MorningUpdateReport
+          isOpen={showMorningUpdateReport}
+          onClose={handleCloseReport}
+          reportData={morningUpdateReportData}
+        />
+      )}
     </>
   )
 }

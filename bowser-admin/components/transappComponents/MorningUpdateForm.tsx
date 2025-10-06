@@ -1,6 +1,10 @@
-"use client";
+"use client"
 
 import React, { useEffect, useMemo, useState } from "react";
+
+import { Phone, Edit, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
 import {
     Dialog,
     DialogContent,
@@ -9,27 +13,29 @@ import {
     DialogFooter,
     DialogDescription,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
-// Replaced AlertDialog with Dialog for nested modal handling
-import { Checkbox } from "@/components/ui/checkbox";
-import { Phone, Edit, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-
-import { DetailedVehicleData, TransAppUser } from "@/types";
-import { fetchUserVehicles } from "@/utils/transApp";
-import { updateDriverMobile } from "@/utils/index";
 import { BASE_URL } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DetailedVehicleData, TransAppUser } from "@/types";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { fetchUserVehicles } from "@/utils/transApp";
 import { saveFormData, loadFormData, clearFormData } from "@/lib/storage";
+import { updateDriverMobile } from "@/utils/index";
 
 type Props = {
     isOpen: boolean;
     onClose: () => void;
     user: TransAppUser | undefined;
-    onSuccess?: () => void;
+    onSuccess?: (reportData: {
+        user: { name: string },
+        date: string,
+        openingTime: string,
+        closingTime: string,
+        vehicles: Array<{ vehicleNo: string, route: string, remark: string }>
+    }) => void;
 };
 
 type VehicleRemarkState = {
@@ -49,8 +55,6 @@ const getStorageKey = (userId: string) => {
     const dateStr = new Date().toISOString().split("T")[0];
     return `morningUpdate_${userId}_${dateStr}`;
 };
-
-// openingTime is persisted with the form in localforage (no localStorage key)
 
 const formatDateHeading = (d: Date) => d.toLocaleDateString(undefined, {
     weekday: "short",
@@ -76,7 +80,6 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
 
     const storageKey = useMemo(() => user?._id ? getStorageKey(user._id) : "", [user?._id]);
 
-    // Load saved form + fetch vehicles
     useEffect(() => {
         if (!user?._id) return; // Only check for user, not isOpen
 
@@ -160,7 +163,6 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
         })();
     }, [isOpen, user?._id]);
 
-    // Auto-save to localforage (openingTime + remarks)
     useEffect(() => {
         if (!storageKey) return;
         const persist: PersistedFormData = { openingTime: openingTime ? openingTime.toISOString() : null, vehicleRemarks };
@@ -266,11 +268,31 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                 return;
             }
 
+            // Build enriched report data for parent/report view
+            const formattedDate = new Date().toLocaleDateString(undefined, {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+            const formattedOpening = (openingTime ?? new Date()).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+            const formattedClosing = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+            const vehiclesReport = (payload.report as { vehicleNo: string; remark: string }[]).map(({ vehicleNo, remark }) => {
+                const vmatch = vehicles.find(v => v.vehicle?.VehicleNo === vehicleNo);
+                const route = `${vmatch?.latestTrip?.StartFrom || 'N/A'} → ${vmatch?.latestTrip?.EndTo || 'N/A'}`;
+                return { vehicleNo, route, remark };
+            });
+
+            const enriched = {
+                user: { name: user!.name },
+                date: formattedDate,
+                openingTime: formattedOpening,
+                closingTime: formattedClosing,
+                vehicles: vehiclesReport,
+            };
+
             // Success: clear stored data (openingTime + remarks via localforage)
             if (storageKey) await clearFormData(storageKey);
             setOpeningTime(null);
             toast.success("Morning update submitted successfully");
-            onSuccess?.();
+            onSuccess?.(enriched);
             onClose();
         } catch (err) {
             console.error(err);
@@ -294,9 +316,6 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                         </DialogTitle>
                     </DialogHeader>
                     <DialogDescription />
-                    {/* <div className="text-sm text-muted-foreground mb-2">
-                        Opening Time: {openingTime ? new Date(openingTime).toLocaleString() : "—"}
-                    </div> */}
 
                     <div className="flex-1 overflow-y-auto space-y-3 pr-1" style={{ maxHeight: "60svh" }}>
                         {loading && (
@@ -412,7 +431,6 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                 </DialogContent>
             </Dialog>
 
-            {/* Mobile Update Dialog (migrated from AlertDialog) */}
             <Dialog open={showMobileUpdateDialog} onOpenChange={(o) => { if (!o) resetMobileDialog(); }}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>

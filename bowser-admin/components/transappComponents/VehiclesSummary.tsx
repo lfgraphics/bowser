@@ -1,23 +1,28 @@
+"use client"
+
+import React, { useEffect, useState } from 'react'
+
+import Link from 'next/link';
 import useSWR, { mutate as globalMutate } from "swr";
-import { useCache } from "@/src/context/CacheContext";
+import { Eye, Pen, X } from 'lucide-react';
+import { toast } from 'sonner';
+
 import Loading from '@/app/loading';
 import { BASE_URL } from '@/lib/api'
 import { TankersTrip, TransAppUser, TripsSummary, TripStatusUpdateEnums, tripStatusUpdateVars } from '@/types'
-import React, { useEffect, useState } from 'react'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { camelToWords, formatDate } from '@/lib/utils';
 import { generateTripsReport } from "@/utils/excel";
-import { Button } from '../ui/button';
-import { toast } from 'sonner';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { useCache } from "@/src/context/CacheContext";
+
+import CustomDrawer from "../custom-drawer";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader } from '../ui/alert-dialog';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Eye, Pen, X } from 'lucide-react';
-import Link from 'next/link';
-import CustomDrawer from "../custom-drawer";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -217,13 +222,13 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
     const outsideStanding = reportedTrips.filter(trip => {
         const s = lastStatus(trip);
         const endTo = (trip?.EndTo ?? "").toLowerCase();
-        return !["Accident", "Breakdown", "Loaded"].includes(s) && !endTo.includes("gida office") && !endTo.includes("maintenece") && !endTo.includes("maintenance") && trip?.driverStatus !== 0;
+        return !["Accident", "Breakdown", "Loaded"].includes(s) && !endTo.includes("gida office") && !endTo.includes("maintenece") && !endTo.includes("indian tanker") && !endTo.includes("maintenance") && trip?.driverStatus !== 0;
     });
     const otherStanding = reportedTrips.filter(trip => {
         const s = lastStatus(trip);
         const endTo = (trip?.EndTo ?? "").toLowerCase();
         // Only include reported trips that are not Accident/Breakdown and whose destination matches the specific keywords
-        return s !== "Loaded" && ["Accident", "Breakdown"].includes(s) || (endTo.includes("gida office") || endTo.includes("maintenece") || endTo.includes("maintenance")) || trip?.driverStatus === 0;
+        return s !== "Loaded" && ["Accident", "Breakdown"].includes(s) || (endTo.includes("gida office") || endTo.includes("maintenece") || endTo.includes("indian tanker") || endTo.includes("maintenance")) ||  trip?.driverStatus === 0;
     });
 
     const handleDownload = () => {
@@ -1647,24 +1652,24 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                     <div className="max-h-[60svh] overflow-y-auto">
                         <div className='flex flex-col gap-1 mb-4'>
                             <div className='flex gap-2'>
-                                <strong>Route: </strong> {findTripById(viewingTrip)?.StartFrom} to {findTripById(viewingTrip).EndTo}
+                                <strong>Route: </strong> {findTripById(viewingTrip)?.StartFrom} to {findTripById(viewingTrip)?.EndTo}
                             </div>
                             <div className='flex gap-2'>
-                                <strong>Started at: </strong> {formatDate(findTripById(viewingTrip).StartDate).split(",")[0]} <span className={findTripById(viewingTrip).LoadStatus === 0 ? "text-red-500" : "text-green-500"}>{findTripById(viewingTrip).LoadStatus === 0 ? "Empty" : "Loaded"}</span>
+                                <strong>Started at: </strong> {formatDate(findTripById(viewingTrip)?.StartDate).split(",")[0]} <span className={findTripById(viewingTrip)?.LoadStatus === 0 ? "text-red-500" : "text-green-500"}>{findTripById(viewingTrip)?.LoadStatus === 0 ? "Empty" : "Loaded"}</span>
                             </div>
                             <div className='flex gap-2'>
-                                <strong>Start Driver: </strong> {findTripById(viewingTrip).StartDriver}
+                                <strong>Start Driver: </strong> {findTripById(viewingTrip)?.StartDriver}
                             </div>
-                            {findTripById(viewingTrip).TallyLoadDetail && <>
+                            {findTripById(viewingTrip)?.TallyLoadDetail && <>
                                 <div className='flex gap-2'>
-                                    <strong>Start Odometer: </strong> {findTripById(viewingTrip).TallyLoadDetail.StartOdometer}
+                                    <strong>Start Odometer: </strong> {findTripById(viewingTrip)?.TallyLoadDetail.StartOdometer}
                                 </div>
                                 <div className='flex gap-2'>
-                                    <strong>Product: </strong> {findTripById(viewingTrip).TallyLoadDetail.Goods}
+                                    <strong>Product: </strong> {findTripById(viewingTrip)?.TallyLoadDetail.Goods}
                                 </div>
                             </>}
-                            {findTripById(viewingTrip).ReportingDate && <div className='flex gap-2'>
-                                <strong>Reported at: </strong> {formatDate(findTripById(viewingTrip).ReportingDate)}
+                            {findTripById(viewingTrip)?.ReportingDate && <div className='flex gap-2'>
+                                <strong>Reported at: </strong> {formatDate(findTripById(viewingTrip)?.ReportingDate)}
                             </div>}
                         </div>
                         {findTripById(viewingTrip)?.TravelHistory &&
