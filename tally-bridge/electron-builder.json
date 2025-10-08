@@ -1,0 +1,66 @@
+{
+  "productName": "Tally Bridge",
+  "appId": "com.itplfirebase.tallybridge",
+  "directories": {
+    "output": "dist"
+  },
+  "files": [
+    "preload.js",
+    "main.js", 
+    "server",
+    "sync",
+    "cli",
+    "logger.js",
+    "windowManager.js",
+    "assets",
+    ".env",
+    "env.production"
+  ],
+  "extraResources": [
+    ".next/standalone/**/*",
+    ".next/static/**/*"
+  ],
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "lfgraphics",
+      "repo": "bowser"
+    }
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "assets/icon.ico"
+  },
+  "portable": {
+    "artifactName": "${productName}.${ext}"
+  },
+  "linux": {
+    "target": [
+      {
+        "target": "AppImage",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "assets/icon.png",
+    "category": "Utility"
+  },
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      }
+    ],
+    "icon": "assets/icon.icns",
+    "category": "public.app-category.utilities"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  }
+}

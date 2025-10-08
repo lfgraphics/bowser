@@ -9,6 +9,15 @@ export function addLog(message, level = 'info') {
     console.log(`[${timestamp}] [${level.toUpperCase()}] ${message}`);
     logs.push(entry);
     if (logs.length > 100) logs.shift();
+    // Notify renderer to refresh logs in real-time
+    try {
+        const win = getMainWindow();
+        if (win) {
+            win.webContents.send('refresh-logs');
+        }
+    } catch (e) {
+        // ignore if window not ready
+    }
 }
 
 export function getLogs() {

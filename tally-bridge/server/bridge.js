@@ -20,8 +20,11 @@ export function startBridgeServer(port = 4000) {
         next();
     });
 
-    // ✅ Handle XML/text bodies
-    app.use(bodyParser.text({ type: '*/*' }));
+    // ✅ Handle XML bodies specifically for Tally endpoints
+    app.use(bodyParser.text({ type: 'application/xml' }));
+    
+    // ✅ Handle JSON bodies for potential JSON endpoints
+    app.use(express.json());
 
     // ✅ Mount your actual route handlers
     app.use('/', routes);

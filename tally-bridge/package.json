@@ -1,27 +1,54 @@
 {
   "name": "tally-bridge",
-  "version": "2.3.0",
+  "version": "3.0.0",
   "description": "A bridge between Local data (tally, mongodb) and your web app",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "sync": "node ./cli/syncRunner.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node dev-runner.js",
+    "dev:next": "node -e \"const p=process.env.ELECTRON_NEXT_PORT||3000;require('child_process').spawn(process.execPath,[require('path').join(process.cwd(),'node_modules','next','dist','bin','next'),'dev','-p',String(p)],{stdio:'inherit'});\"",
+    "dev:electron": "electron .",
+    "build:next": "cross-env NODE_ENV=production next build",
+    "build": "cross-env NODE_ENV=production next build && electron-builder",
+    "start:prod": "cross-env NODE_ENV=production electron .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "sync": "node ./cli/syncRunner.js"
   },
-  "keywords": [],
+  "keywords": [
+    "electron",
+    "tally",
+    "bridge",
+    "nodejs",
+    "express",
+    "nextjs",
+    "tailwindcss"
+  ],
   "author": "Taha Kazmi",
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "axios": "^1.8.4",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@tailwindcss/postcss": "^4.1.14",
+    "axios": "^1.12.0",
     "body-parser": "^2.2.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "electron-is-dev": "^3.0.1",
     "electron-updater": "^6.6.2",
     "express": "^5.1.0",
+    "get-port": "^7.1.0",
+    "lucide-react": "^0.468.0",
     "mongodb": "^6.20.0",
     "mongoose": "^8.13.2",
+    "next": "^15.5.0",
+    "next-themes": "^0.3.0",
+    "postcss": "^8.5.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^2.6.0",
+    "tailwindcss-animate": "^1.0.7",
     "update-electron-app": "^3.1.1",
     "xml2js": "^0.6.2"
   },
@@ -30,8 +57,20 @@
     "url": "git+https://github.com/lfgraphics/bowser.git"
   },
   "devDependencies": {
-    "electron": "^35.1.3",
-    "electron-builder": "^26.0.12"
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "cross-env": "^10.1.0",
+    "electron": "^35.7.5",
+    "electron-builder": "^26.0.12",
+    "tailwindcss": "^4.1.14",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "^5.7.2"
+  },
+  "overrides": {
+    "form-data": "^4.0.4",
+    "tmp": "^0.2.4",
+    "brace-expansion": "^2.0.2"
   },
   "build": {
     "productName": "Tally Bridge",
@@ -60,10 +99,22 @@
     },
     "files": [
       "**/*",
-      "env.production"
+      "env.production",
+      "user-config.json",
+      "!.next/cache/**/*",
+      "!.next/trace"
     ],
     "extraResources": [
-      "env.production"
+      {
+        "from": ".next/standalone",
+        "to": "standalone"
+      },
+      {
+        "from": ".next/static", 
+        "to": "static"
+      },
+      "env.production",
+      "user-config.json"
     ]
   }
 }

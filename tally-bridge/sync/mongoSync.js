@@ -4,13 +4,39 @@ import { config } from 'dotenv';
 import { join } from 'path';
 import isDev from 'electron-is-dev';
 import { addLog } from '../logger.js';
+import { getConfig } from './config.js';
 
+// Load environment variables for atlasUri (fixed, not user-configurable)
 const envPath = isDev ? '.env' : join(process.resourcesPath, 'env.production');
-
 config({ path: envPath });
 
-const localUri = process.env.localUri;
-const atlasUri = process.env.atlasUri;
+// Get URIs: atlasUri from environment, localUri from user config with fallback
+const atlasUri = process.env.atlasUri || 'mongodb+srv://default-atlas-uri'; // Fallback if env not loaded
+const localUri = getConfig('localUri') || process.env.localUri || 'mongodb://localhost:27017';
+
+console.log('🔍 MongoDB Configuration:');
+console.log(`  - Environment file: ${envPath}`);
+console.log(`  - Environment loaded: ${!!process.env.atlasUri}`);
+console.log(`  - Atlas URI: ${atlasUri ? 'CONFIGURED' : 'MISSING'}`);
+console.log(`  - Local URI: ${localUri}`);
+console.log(`  - Local URI source: ${getConfig('localUri') ? 'USER_CONFIG' : process.env.localUri ? 'ENVIRONMENT' : 'DEFAULT'}`);
+
+addLog(`MongoDB URIs configured - Atlas: ${atlasUri ? 'OK' : 'MISSING'}, Local: ${localUri}`);
+
+// Export function to update local URI configuration
+export async function updateLocalUri(newLocalUri) {
+    const { saveConfig } = await import('./config.js');
+    const success = saveConfig({ localUri: newLocalUri });
+    if (success) {
+        addLog(`Local URI updated to: ${newLocalUri}`);
+        // Note: Application restart required for changes to take effect
+        return true;
+    } else {
+        addLog('Failed to save local URI configuration', 'ERROR');
+        return false;
+    }
+}
+
 const localDbName = "TransappDataHub";
 const localTripCollectionName = "TripDataCollection";
 const atlasTransportDbName = "TransportData";
@@ -44,8 +70,12 @@ function setLogger(customLogger) {
 
 // Function to establish connections
 async function connectToDatabases() {
+    if (!localUri || !atlasUri) {
+        throw new Error(`Missing required environment variables: ${!localUri ? 'localUri' : ''} ${!atlasUri ? 'atlasUri' : ''}`);
+    }
+
     if (!localClient || !localClient.topology || !localClient.topology.isConnected()) {
-        localClient = new MongoClient(localUri, { useUnifiedTopology: true });
+        localClient = new MongoClient(localUri);
         await localClient.connect();
         addLog("Connected to local DB Successfully");
     } else {
@@ -53,7 +83,7 @@ async function connectToDatabases() {
     }
 
     if (!atlasClient || !atlasClient.topology || !atlasClient.topology.isConnected()) {
-        atlasClient = new MongoClient(atlasUri, { useUnifiedTopology: true });
+        atlasClient = new MongoClient(atlasUri);
         await atlasClient.connect();
         addLog("Connected to Atlas DB Successfully");
     } else {
@@ -647,23 +677,23 @@ async function syncTransportGoodsCollection() {
         }
     }
 
-    // 3. Insert new users to Atlas
+    // 3. Insert new goods to Atlas
     if (inserts.length > 0) {
         await atlasCollection.insertMany(inserts);
-        addLog(`Inserted ${inserts.length} new deactive vehicle to Atlas.`);
+        addLog(`Inserted ${inserts.length} new goods to Atlas.`);
     } else {
-        addLog('No new users to insert.');
+        addLog('No new goods to insert.');
     }
 
-    // 4. Update changed users in Atlas
+    // 4. Update changed goods in Atlas
     if (updates.length > 0) {
         await atlasCollection.bulkWrite(updates);
-        addLog(`Updated ${updates.length} deactive vehicle in Atlas.`);
+        addLog(`Updated ${updates.length} goods in Atlas.`);
     } else {
-        addLog('No vehicles to update.');
+        addLog('No goods to update.');
     }
 
-    addLog("Deactive vehicles Data Sync Completed.");
+    addLog("Goods Data Sync Completed.");
     addLog("---------------------------------------");
 }
 
@@ -705,20 +735,20 @@ async function syncStackHolders() {
     // 3. Insert new users to Atlas
     if (inserts.length > 0) {
         await atlasCollection.insertMany(inserts);
-        addLog(`Inserted ${inserts.length} new deactive vehicle to Atlas.`);
+        addLog(`Inserted ${inserts.length} new stackHolders to Atlas.`);
     } else {
-        addLog('No new users to insert.');
+        addLog('No new stackHolders to insert.');
     }
 
     // 4. Update changed users in Atlas
     if (updates.length > 0) {
         await atlasCollection.bulkWrite(updates);
-        addLog(`Updated ${updates.length} deactive vehicle in Atlas.`);
+        addLog(`Updated ${updates.length} stackHolders in Atlas.`);
     } else {
-        addLog('No vehicles to update.');
+        addLog('No stackHolders to update.');
     }
 
-    addLog("Deactive vehicles Data Sync Completed.");
+    addLog("StackHolders Data Sync Completed.");
     addLog("---------------------------------------");
 }
 
