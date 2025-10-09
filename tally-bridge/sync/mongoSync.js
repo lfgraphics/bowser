@@ -12,27 +12,42 @@ config({ path: envPath });
 
 // Get URIs: atlasUri from environment, localUri from user config with fallback
 const atlasUri = process.env.atlasUri || 'mongodb+srv://default-atlas-uri'; // Fallback if env not loaded
-const localUri = getConfig('localUri') || process.env.localUri || 'mongodb://localhost:27017';
 
-console.log('🔍 MongoDB Configuration:');
+console.log('🔍 MongoDB Environment Configuration:');
 console.log(`  - Environment file: ${envPath}`);
 console.log(`  - Environment loaded: ${!!process.env.atlasUri}`);
 console.log(`  - Atlas URI: ${atlasUri ? 'CONFIGURED' : 'MISSING'}`);
-console.log(`  - Local URI: ${localUri}`);
-console.log(`  - Local URI source: ${getConfig('localUri') ? 'USER_CONFIG' : process.env.localUri ? 'ENVIRONMENT' : 'DEFAULT'}`);
 
-addLog(`MongoDB URIs configured - Atlas: ${atlasUri ? 'OK' : 'MISSING'}, Local: ${localUri}`);
+// Function to get current local URI (dynamic, reloads from config each time)
+function getCurrentLocalUri() {
+    return getConfig('localUri') || process.env.localUri || 'mongodb://localhost:27017';
+}
+
+addLog(`MongoDB Atlas URI configured: ${atlasUri ? 'OK' : 'MISSING'}`);
 
 // Export function to update local URI configuration
 export async function updateLocalUri(newLocalUri) {
-    const { saveConfig } = await import('./config.js');
-    const success = saveConfig({ localUri: newLocalUri });
-    if (success) {
-        addLog(`Local URI updated to: ${newLocalUri}`);
-        // Note: Application restart required for changes to take effect
-        return true;
-    } else {
-        addLog('Failed to save local URI configuration', 'ERROR');
+    try {
+        const { saveConfig } = await import('./config.js');
+        const success = saveConfig({ localUri: newLocalUri });
+        if (success) {
+            addLog(`Local URI updated to: ${newLocalUri}`);
+            
+            // Force close existing local connection to use new URI on next sync
+            if (localClient) {
+                console.log('🔄 Closing existing local connection due to URI change...');
+                await localClient.close();
+                localClient = null;
+                addLog('Local DB connection closed - will reconnect with new URI on next sync');
+            }
+            
+            return true;
+        } else {
+            addLog('Failed to save local URI configuration', 'ERROR');
+            return false;
+        }
+    } catch (error) {
+        addLog(`Error updating local URI: ${error.message}`, 'ERROR');
         return false;
     }
 }
@@ -70,14 +85,28 @@ function setLogger(customLogger) {
 
 // Function to establish connections
 async function connectToDatabases() {
-    if (!localUri || !atlasUri) {
-        throw new Error(`Missing required environment variables: ${!localUri ? 'localUri' : ''} ${!atlasUri ? 'atlasUri' : ''}`);
+    // Get current URIs (localUri is dynamic, atlasUri is static)
+    const currentLocalUri = getCurrentLocalUri();
+    
+    console.log('🔄 Connection attempt with:');
+    console.log(`  - Local URI: ${currentLocalUri}`);
+    console.log(`  - Local URI source: ${getConfig('localUri') ? 'USER_CONFIG' : process.env.localUri ? 'ENVIRONMENT' : 'DEFAULT'}`);
+    
+    if (!currentLocalUri || !atlasUri) {
+        throw new Error(`Missing required URIs: ${!currentLocalUri ? 'localUri' : ''} ${!atlasUri ? 'atlasUri' : ''}`);
+    }
+
+    // Check if local URI changed - if so, close existing connection
+    if (localClient && localClient.options && localClient.options.hosts[0].host !== new URL(currentLocalUri).hostname) {
+        console.log('🔄 Local URI changed, closing existing connection...');
+        await localClient.close();
+        localClient = null;
     }
 
     if (!localClient || !localClient.topology || !localClient.topology.isConnected()) {
-        localClient = new MongoClient(localUri);
+        localClient = new MongoClient(currentLocalUri);
         await localClient.connect();
-        addLog("Connected to local DB Successfully");
+        addLog(`Connected to local DB Successfully: ${currentLocalUri}`);
     } else {
         addLog("Reusing existing Local DB connection.");
     }

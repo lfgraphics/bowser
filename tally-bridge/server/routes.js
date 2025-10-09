@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { checkTallyStatus } from './tallyStatus.js';
+import { updateLocalUri } from '../sync/mongoSync.js';
+import { getConfig } from '../sync/config.js';
 import axios from 'axios';
 import xml2js from 'xml2js'; // Add this package for XML parsing
 
@@ -49,6 +51,48 @@ router.post('/tally', async (req, res) => {
     } catch (err) {
         console.error('❌ Error in /tally:', err);
         res.status(500).json({ error: 'Error connecting to Tally', message: err.message });
+    }
+});
+
+// Get current MongoDB configuration
+router.get('/config/mongodb', (req, res) => {
+    try {
+        const localUri = getConfig('localUri') || 'mongodb://localhost:27017';
+        res.json({ localUri });
+    } catch (error) {
+        console.error('❌ Error getting MongoDB config:', error);
+        res.status(500).json({ error: 'Failed to get configuration', message: error.message });
+    }
+});
+
+// Update local MongoDB URI
+router.post('/config/mongodb/local-uri', async (req, res) => {
+    try {
+        const { localUri } = req.body;
+        
+        if (!localUri || typeof localUri !== 'string') {
+            return res.status(400).json({ error: 'Invalid localUri provided' });
+        }
+
+        // Basic validation for MongoDB URI format
+        if (!localUri.startsWith('mongodb://') && !localUri.startsWith('mongodb+srv://')) {
+            return res.status(400).json({ error: 'Invalid MongoDB URI format' });
+        }
+
+        const success = await updateLocalUri(localUri);
+        
+        if (success) {
+            res.json({ 
+                success: true, 
+                message: 'Local URI updated successfully. Connection will be refreshed on next sync.',
+                localUri 
+            });
+        } else {
+            res.status(500).json({ error: 'Failed to save configuration' });
+        }
+    } catch (error) {
+        console.error('❌ Error updating local URI:', error);
+        res.status(500).json({ error: 'Failed to update local URI', message: error.message });
     }
 });
 

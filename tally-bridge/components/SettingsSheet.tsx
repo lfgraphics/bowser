@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from 'react'
-import { Settings, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Settings, X, RefreshCw } from 'lucide-react'
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -9,23 +9,102 @@ import { Card, CardContent } from './ui/card'
 import ThemeToggle from './ThemeToggle'
 
 interface SettingsSheetProps {
-    localUri: string
-    setLocalUri: (uri: string) => void
-    localUriStatus: 'idle' | 'saving' | 'success' | 'error'
-    localUriMessage: string
     bridgeReady: boolean
-    onSaveLocalUri: () => Promise<void>
 }
 
 export default function SettingsSheet({
-    localUri,
-    setLocalUri,
-    localUriStatus,
-    localUriMessage,
-    bridgeReady,
-    onSaveLocalUri
+    bridgeReady
 }: SettingsSheetProps) {
     const [open, setOpen] = useState(false)
+    const [localUri, setLocalUri] = useState('mongodb://localhost:27017')
+    const [localUriStatus, setLocalUriStatus] = useState<'idle' | 'loading' | 'saving' | 'success' | 'error'>('idle')
+    const [localUriMessage, setLocalUriMessage] = useState('')
+
+    // Load current configuration when component mounts or opens
+    const loadCurrentConfig = async () => {
+        if (!bridgeReady) {
+            console.log('Bridge not ready, skipping config load')
+            return
+        }
+        
+        console.log('Loading current MongoDB configuration using bridge API...')
+        setLocalUriStatus('loading')
+        try {
+            if (!window?.bridge) {
+                throw new Error('Bridge not available')
+            }
+            
+            const uri = await window?.bridge?.getLocalUri()
+            console.log('Bridge API Response:', uri)
+            
+            if (typeof uri === 'string') {
+                setLocalUri(uri || 'mongodb://localhost:27017')
+                setLocalUriStatus('idle')
+                console.log('Successfully loaded config via bridge:', uri)
+            } else {
+                throw new Error('Invalid response from bridge API')
+            }
+        } catch (error: any) {
+            console.error('Failed to load MongoDB config via bridge:', error)
+            setLocalUriStatus('error')
+            setLocalUriMessage(`Failed to load configuration: ${error?.message || 'Unknown error'}`)
+            setTimeout(() => {
+                setLocalUriStatus('idle')
+                setLocalUriMessage('')
+            }, 5000)
+        }
+    }
+
+    // Save configuration
+    const onSaveLocalUri = async () => {
+        if (!bridgeReady) return
+        
+        setLocalUriStatus('saving')
+        setLocalUriMessage('')
+        
+        try {
+            // Simple validation
+            if (!/^mongodb(\+srv)?:\/\//.test(localUri)) {
+                throw new Error('URI must start with mongodb:// or mongodb+srv://')
+            }
+
+            if (!window?.bridge) {
+                throw new Error('Bridge not available')
+            }
+
+            console.log('Saving MongoDB configuration via bridge API:', localUri)
+            const result = await window?.bridge?.setLocalUri(localUri)
+            console.log('Bridge API save result:', result)
+
+            if (result?.success) {
+                setLocalUriStatus('success')
+                setLocalUriMessage('Configuration saved successfully! Changes apply immediately.')
+            } else {
+                throw new Error(result?.error || 'Failed to save configuration')
+            }
+        } catch (error: any) {
+            console.error('Failed to save MongoDB config via bridge:', error)
+            setLocalUriStatus('error')
+            setLocalUriMessage(error?.message || 'Failed to save configuration')
+        } finally {
+            setTimeout(() => {
+                setLocalUriStatus('idle')
+                setLocalUriMessage('')
+            }, 3000)
+        }
+    }
+
+    // Load config when component mounts and when opened
+    useEffect(() => {
+        loadCurrentConfig()
+    }, [bridgeReady])
+
+    // Reload config when sheet opens
+    useEffect(() => {
+        if (open && bridgeReady) {
+            loadCurrentConfig()
+        }
+    }, [open, bridgeReady])
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
@@ -53,9 +132,20 @@ export default function SettingsSheet({
                     </div>
 
                     <div className="grid gap-4">
-                        <div>
-                            <h3 className="text-sm font-medium mb-2">MongoDB Configuration</h3>
-                            <label className="text-xs text-muted-foreground">Local URI</label>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-sm font-medium mb-2">MongoDB Configuration</h3>
+                                <label className="text-xs text-muted-foreground">Local URI</label>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={loadCurrentConfig}
+                                disabled={!bridgeReady || localUriStatus === 'loading'}
+                                className="h-8 w-8 p-0"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${localUriStatus === 'loading' ? 'animate-spin' : ''}`} />
+                            </Button>
                         </div>
                         <div className="flex gap-2">
                             <Input
@@ -63,10 +153,11 @@ export default function SettingsSheet({
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocalUri(e.target.value)}
                                 placeholder="mongodb://localhost:27017"
                                 className="flex-1"
+                                disabled={localUriStatus === 'loading'}
                             />
                             <Button
                                 onClick={onSaveLocalUri}
-                                disabled={!bridgeReady || localUriStatus === 'saving'}
+                                disabled={!bridgeReady || localUriStatus === 'saving' || localUriStatus === 'loading'}
                                 size="sm"
                             >
                                 {localUriStatus === 'saving' ? 'Saving…' : 'Save'}
@@ -82,7 +173,7 @@ export default function SettingsSheet({
                             </div>
                         )}
                         <p className="text-xs text-muted-foreground">
-                            Enter your MongoDB connection string. Changes may require app restart.
+                            Configuration is synced with user-config.json and applies immediately on save.
                         </p>
                     </div>
 

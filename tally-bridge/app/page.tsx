@@ -21,9 +21,6 @@ export default function HomePage() {
   const [bridgeReady, setBridgeReady] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [bridgeError, setBridgeError] = useState<string | null>(null)
-  const [localUri, setLocalUri] = useState('')
-  const [localUriStatus, setLocalUriStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
-  const [localUriMessage, setLocalUriMessage] = useState('')
   const [syncing, setSyncing] = useState(false)
 
   // Initialize and refresh functions
@@ -115,13 +112,6 @@ export default function HomePage() {
         setBridgeError(null)
         refreshStatus()
         refreshLogs()
-        // Load current Local URI
-        try {
-          const uri = await window.bridge.getLocalUri()
-          if (typeof uri === 'string') setLocalUri(uri)
-        } catch (e) {
-          console.warn('Failed to fetch localUri', e)
-        }
         dispose = window.bridge.onRefreshLogs(handleRefreshLogs)
       } else if (!cancelled) {
         console.warn('[Renderer] Bridge not available')
@@ -147,35 +137,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-center flex-1">Tally Bridge</h2>
             <SettingsSheet
-              localUri={localUri}
-              setLocalUri={setLocalUri}
-              localUriStatus={localUriStatus}
-              localUriMessage={localUriMessage}
               bridgeReady={bridgeReady}
-              onSaveLocalUri={async () => {
-                setLocalUriStatus('saving')
-                setLocalUriMessage('')
-                try {
-                  // Simple validation
-                  if (!/^mongodb(\+srv)?:\/\//.test(localUri)) {
-                    throw new Error('URI must start with mongodb:// or mongodb+srv://')
-                  }
-                  const res = await window.bridge?.setLocalUri(localUri)
-                  if (res?.success) {
-                    setLocalUriStatus('success')
-                    setLocalUriMessage('Saved successfully. Some changes may require app restart.')
-                  } else {
-                    throw new Error(res?.error || 'Failed to save')
-                  }
-                } catch (err: any) {
-                  setLocalUriStatus('error')
-                  setLocalUriMessage(err?.message || 'Invalid URI')
-                } finally {
-                  setTimeout(() => {
-                    setLocalUriStatus('idle')
-                  }, 2500)
-                }
-              }}
             />
           </div>
 

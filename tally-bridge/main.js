@@ -90,6 +90,7 @@ async function startNextjsServer() {
       for (const candidate of staticCandidates) {
         if (fs.existsSync(candidate)) {
           resourcesStaticPath = candidate;
+          console.log(`📁 Found static files at: ${candidate}`);
           break;
         }
       }
@@ -106,9 +107,31 @@ async function startNextjsServer() {
         // Create junction/symlink to static files
         try {
           fs.symlinkSync(resourcesStaticPath, staticPath, 'junction');
+          console.log('✅ Static files linked successfully');
         } catch (error) {
-          console.warn('Could not create static symlink:', error.message);
+          console.warn('⚠️  Could not create static symlink:', error.message);
+          // Try copying instead of symlinking
+          try {
+            const copyRecursiveSync = (src, dest) => {
+              if (fs.statSync(src).isDirectory()) {
+                if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+                fs.readdirSync(src).forEach(file => {
+                  copyRecursiveSync(join(src, file), join(dest, file));
+                });
+              } else {
+                fs.copyFileSync(src, dest);
+              }
+            };
+            copyRecursiveSync(resourcesStaticPath, staticPath);
+            console.log('✅ Static files copied successfully');
+          } catch (copyError) {
+            console.error('❌ Failed to copy static files:', copyError.message);
+          }
         }
+      } else if (fs.existsSync(staticPath)) {
+        console.log('✅ Static files already exist in standalone directory');
+      } else if (!resourcesStaticPath) {
+        console.warn('⚠️  No static files found to link');
       }
     }
 
@@ -284,26 +307,43 @@ const envFilePath = isDev ? join(__dirname, '.env') : join(process.resourcesPath
 
 ipcMain.handle('get-local-uri', async () => {
   try {
-    const envContent = fs.readFileSync(envFilePath, 'utf-8');
-    const match = envContent.match(/localUri\s*=\s*["']?([^"\r\n]*)["']?/);
-    return match ? match[1] : "mongodb://192.168.165.72:27017";
-  } catch {
-    return "mongodb://192.168.165.72:27017";
+    // Use the config system to get the current local URI
+    const { getConfig } = await import('./sync/config.js');
+    const localUri = getConfig('localUri') || process.env.localUri || 'mongodb://localhost:27017';
+    addLog(`Bridge API: Retrieved local URI: ${localUri}`);
+    return localUri;
+  } catch (error) {
+    addLog(`Bridge API: Error getting local URI: ${error.message}`, 'ERROR');
+    return 'mongodb://localhost:27017';
   }
 });
 
 ipcMain.handle('set-local-uri', async (event, newUri) => {
   try {
-    let envContent = fs.readFileSync(envFilePath, 'utf-8');
-    if (envContent.match(/localUri\s*=/)) {
-      envContent = envContent.replace(/localUri\s*=\s*["']?([^"\r\n]*)["']?/, `localUri = "${newUri}"`);
+    // Use the config system to save the new local URI
+    const { saveConfig } = await import('./sync/config.js');
+    const { updateLocalUri } = await import('./sync/mongoSync.js');
+    
+    addLog(`Bridge API: Setting local URI to: ${newUri}`);
+    
+    // Save to config file and update MongoDB connection
+    const configSaved = saveConfig({ localUri: newUri });
+    if (configSaved) {
+      const mongoUpdated = await updateLocalUri(newUri);
+      if (mongoUpdated) {
+        addLog(`Bridge API: Successfully updated local URI and MongoDB connection`);
+        return { success: true };
+      } else {
+        addLog(`Bridge API: Config saved but MongoDB update failed`, 'ERROR');
+        return { success: false, error: 'Failed to update MongoDB connection' };
+      }
     } else {
-      envContent = `localUri = "${newUri}"\n` + envContent;
+      addLog(`Bridge API: Failed to save config`, 'ERROR');
+      return { success: false, error: 'Failed to save configuration' };
     }
-    fs.writeFileSync(envFilePath, envContent, 'utf-8');
-    return { success: true };
-  } catch (err) {
-    return { success: false, error: err.message };
+  } catch (error) {
+    addLog(`Bridge API: Error setting local URI: ${error.message}`, 'ERROR');
+    return { success: false, error: error.message };
   }
 });
 

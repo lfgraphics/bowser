@@ -105,14 +105,8 @@
       "!.next/trace"
     ],
     "extraResources": [
-      {
-        "from": ".next/standalone",
-        "to": "standalone"
-      },
-      {
-        "from": ".next/static", 
-        "to": "static"
-      },
+      ".next/standalone/**/*",
+      ".next/static/**/*",
       "env.production",
       "user-config.json"
     ]
