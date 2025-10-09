@@ -266,7 +266,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
         statuses.forEach(({ key, label }) => {
             const statusData = data[key];
             if (statusData?.trips?.length) {
-                statusData.trips.forEach((trip) => {
+                statusData?.trips.forEach((trip) => {
                     const endTo = trip?.EndTo || "Unknown";
                     // Filter based on search term
                     if (searchTerm && !endTo.toLowerCase().includes(searchTerm.toLowerCase())) {
@@ -336,7 +336,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
         statuses.forEach(({ key, label }) => {
             const statusData = data[key];
             if (statusData?.trips?.length) {
-                statusData.trips.forEach((trip) => {
+                statusData?.trips.forEach((trip) => {
                     const supervisor = trip?.superwiser || "Unknown";
                     // Filter based on search term
                     if (searchTerm && !supervisor.toLowerCase().includes(searchTerm.toLowerCase())) {
@@ -486,7 +486,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
                         <Card>
                             <CardHeader>
-                                <CardTitle>Loaded Vehicles {data?.loaded?.onWay.count + data?.loaded?.reported.count}</CardTitle>
+                                <CardTitle>Loaded Vehicles {data?.loaded?.onWay.count + data?.loaded?.reported?.count}</CardTitle>
                             </CardHeader>
                             <CardContent className='grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2'>
                                 <Button
@@ -501,14 +501,14 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                     className={`w-40 ${filter !== 'all' && filter === 'loadedReported' ? 'bg-card text-card-foreground border-white' : ''}`}
                                     onClick={() => setFilter('loadedReported')}
                                 >
-                                    <strong>Reported: </strong><span>{data?.loaded?.reported.count}</span>
+                                    <strong>Reported: </strong><span>{data?.loaded?.reported?.count}</span>
                                 </Button>
                             </CardContent>
                             {/* <CardFooter></CardFooter> */}
                         </Card>
                         <Card>
                             <CardHeader>
-                                <CardTitle>Empty Vehicles {data?.empty?.onWay.count + data?.empty?.reported.count + data?.empty?.standing.count}</CardTitle>
+                                <CardTitle>Empty Vehicles {data?.empty?.onWay.count + data?.empty?.reported?.count + data?.empty?.standing.count}</CardTitle>
                             </CardHeader>
                             <CardContent className='grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2'>
                                 <Button
@@ -530,7 +530,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                     className={`w-40 ${filter !== 'all' && filter === 'outsideStandingVehicles' ? 'bg-card text-card-foreground border-white' : ''}`}
                                     onClick={() => setFilter("outsideStandingVehicles")}
                                 >
-                                    {/* <strong>Outside Standing: </strong> {data.empty.reported.trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status !== "In Distillery").length - data.empty.reported.trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Loaded").length} */}
+                                    {/* <strong>Outside Standing: </strong> {data?.empty?.reported?.trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status !== "In Distillery").length - data?.empty?.reported?.trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Loaded").length} */}
                                     <strong>Outside Standing: </strong> {outsideStanding.length || 0}
                                 </Button>
                                 <Button
@@ -538,7 +538,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                     className={`w-40 ${filter !== 'all' && filter === 'loaded' ? 'bg-card text-card-foreground border-white' : ''}`}
                                     onClick={() => setFilter("loaded")}
                                 >
-                                    <strong>Loaded: </strong> {data.empty.reported.trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Loaded").length}
+                                    <strong>Loaded: </strong> {data?.empty?.reported?.trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Loaded").length}
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -666,7 +666,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                             </TableHeader>
                             <TableBody>
                                 {filter == 'loadedOnWay' &&
-                                    data.loaded.onWay.trips
+                                    data?.loaded.onWay.trips
                                         .filter(matchesSearch)
                                         .sort((a, b) => a.EndTo.localeCompare(b.EndTo))
                                         .map((trip, index) =>
@@ -723,7 +723,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                         )
                                 }
                                 {filter == 'loadedReported' &&
-                                    data.loaded.reported.trips
+                                    data?.loaded.reported?.trips
                                         .filter(matchesSearch)
                                         .sort((a, b) => a.EndTo.localeCompare(b.EndTo)).sort((a, b) => Math.round(
                                             Math.abs(
@@ -794,7 +794,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                         )
                                 }
                                 {filter == 'emptyOnWay' &&
-                                    data.empty.onWay.trips
+                                    data?.empty?.onWay.trips
                                         .filter(matchesSearch)
                                         .sort((a, b) => a.EndTo.localeCompare(b.EndTo))
                                         .map((trip, index) =>
@@ -975,7 +975,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                         )
                                 }
                                 {filter == 'loaded' &&
-                                    data.empty.reported.trips
+                                    data?.empty?.reported?.trips
                                         .filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Loaded")
                                         .filter(matchesSearch)
                                         .sort((a, b) => a.EndTo.localeCompare(b.EndTo))
@@ -1006,7 +1006,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                         )
                                 }
                                 {filter == 'emptyReported' &&
-                                    data.empty.reported.trips
+                                    data?.empty?.reported?.trips
                                         .filter(matchesSearch)
                                         .sort((a, b) => a.EndTo.localeCompare(b.EndTo))
                                         .map((trip, index) =>
@@ -1065,7 +1065,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                         )
                                 }
                                 {filter == 'emptyStanding' &&
-                                    data.empty.standing.trips
+                                    data?.empty?.standing.trips
                                         .filter(matchesSearch)
                                         .sort((a, b) => a.EndTo.localeCompare(b.EndTo))
                                         .map((trip, index) =>
@@ -1152,7 +1152,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {Object.entries(groupTripsByEndTo(data.empty, "empty"))
+                                            {Object.entries(groupTripsByEndTo(data?.empty, "empty"))
                                                 .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
                                                 .map(([endTo, trips], index) => (
                                                     <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("empty"); setSearchTerm(endTo) }}>
@@ -1177,7 +1177,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {Object.entries(groupTripsByEndTo(data.loaded, "loaded"))
+                                            {Object.entries(groupTripsByEndTo(data?.loaded, "loaded"))
                                                 .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
                                                 .map(([endTo, trips], index) => (
                                                     <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("loaded"); setSearchTerm(endTo) }}>
@@ -1202,7 +1202,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {Object.entries(groupTripsByEndTo(data.empty, "loaded")).map(([endTo, trips], index) => (
+                                    {Object.entries(groupTripsByEndTo(data?.empty, "loaded")).map(([endTo, trips], index) => (
                                         <TableRow key={endTo} id={endTo}>
                                             <TableHead>{index + 1}</TableHead>
                                             <TableHead>{endTo}</TableHead>
@@ -1232,7 +1232,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             <TableRow>
                                                 <TableCell className='text-center font-semibold text-lg' colSpan={5}>Empty Vehicles</TableCell>
                                             </TableRow>
-                                            {Object.entries(groupBySupervisors(data.empty, "empty"))
+                                            {Object.entries(groupBySupervisors(data?.empty, "empty"))
                                                 .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
                                                 .map(([endTo, trips], index) => (
                                                     <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("supervisors"); setSearchTerm(endTo) }}>
@@ -1246,7 +1246,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             <TableRow>
                                                 <TableCell className='text-center font-semibold text-lg' colSpan={5}>Loaded Vehicles</TableCell>
                                             </TableRow>
-                                            {Object.entries(groupBySupervisors(data.loaded, "loaded"))
+                                            {Object.entries(groupBySupervisors(data?.loaded, "loaded"))
                                                 .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
                                                 .map(([endTo, trips], index) => (
                                                     <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("supervisors"); setSearchTerm(endTo) }}>
@@ -1270,7 +1270,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                             <AccordionItem value="loaded">
                                 <AccordionTrigger className="text-lg font-semibold">Loaded Vehicles</AccordionTrigger>
                                 <AccordionContent>
-                                    {Object.entries(groupTripsByEndTo(data.loaded, "loaded")).map(([endTo, trips]: [string, GroupedTrip[]]) => (
+                                    {Object.entries(groupTripsByEndTo(data?.loaded, "loaded")).map(([endTo, trips]: [string, GroupedTrip[]]) => (
                                         <Card key={endTo} className="mb-4">
                                             <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
                                             <CardContent>
@@ -1346,7 +1346,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                             <AccordionItem value="empty">
                                 <AccordionTrigger className="text-lg font-semibold">Empty Vehicles</AccordionTrigger>
                                 <AccordionContent>
-                                    {Object.entries(groupTripsByEndTo(data.empty, "empty")).map(([endTo, trips]: [string, GroupedTrip[]]) => (
+                                    {Object.entries(groupTripsByEndTo(data?.empty, "empty")).map(([endTo, trips]: [string, GroupedTrip[]]) => (
                                         <Card key={endTo} className="mb-4">
                                             <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
                                             <CardContent>
@@ -1446,7 +1446,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                     <AccordionTrigger className="text-lg font-semibold">Supervisor Wise Data</AccordionTrigger>
                                     <AccordionContent>
                                         <div className='text-center font-semibold text-lg'>Empty Vehicles</div>
-                                        {Object.entries(groupBySupervisors(data.empty, "empty")).map(([endTo, trips]: [string, GroupedTrip[]]) => (
+                                        {Object.entries(groupBySupervisors(data?.empty, "empty")).map(([endTo, trips]: [string, GroupedTrip[]]) => (
                                             <Card key={endTo} className="mb-4">
                                                 <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
                                                 <CardContent>
@@ -1544,7 +1544,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             </Card>
                                         ))}
                                         <div className='text-center font-semibold text-lg'>Loaded Vehicles</div>
-                                        {Object.entries(groupBySupervisors(data.loaded, "loaded")).map(([endTo, trips]: [string, GroupedTrip[]]) => (
+                                        {Object.entries(groupBySupervisors(data?.loaded, "loaded")).map(([endTo, trips]: [string, GroupedTrip[]]) => (
                                             <Card key={endTo} className="mb-4">
                                                 <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
                                                 <CardContent>

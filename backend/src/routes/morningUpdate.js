@@ -27,7 +27,11 @@ router.get('/', async (req, res) => {
         const dateQuery = buildDateRangeQuery(startDate, endDate);
 
         const [data, total] = await Promise.all([
-            MorningUpdate.find(dateQuery).skip(skip).limit(limit),
+            MorningUpdate.find(dateQuery)
+                .populate('report.trip')
+                .populate('report.driver')
+                .skip(skip)
+                .limit(limit),
             MorningUpdate.countDocuments(dateQuery),
         ]);
 
@@ -46,7 +50,9 @@ router.get('/', async (req, res) => {
 // ✅ GET update by ID (no pagination needed)
 router.get('/:id', async (req, res) => {
     try {
-        const update = await MorningUpdate.findById(req.params.id);
+        const update = await MorningUpdate.findById(req.params.id)
+            .populate('report.trip')
+            .populate('report.driver');
         if (!update) return res.status(404).json({ error: 'Update not found' });
         res.json(update);
     } catch (err) {
@@ -68,7 +74,11 @@ router.get('/user/:userId', async (req, res) => {
         };
 
         const [data, total] = await Promise.all([
-            MorningUpdate.find(query).skip(skip).limit(limit),
+            MorningUpdate.find(query)
+                .populate('report.trip')
+                .populate('report.driver')
+                .skip(skip)
+                .limit(limit),
             MorningUpdate.countDocuments(query),
         ]);
 
@@ -97,7 +107,11 @@ router.get('/vehicle/:vehicleNo', async (req, res) => {
         };
 
         const [data, total] = await Promise.all([
-            MorningUpdate.find(matchStage).skip(skip).limit(limit),
+            MorningUpdate.find(matchStage)
+                .populate('report.trip')
+                .populate('report.driver')
+                .skip(skip)
+                .limit(limit),
             MorningUpdate.countDocuments(matchStage),
         ]);
 
@@ -135,13 +149,13 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'report must not be empty' });
         }
 
-        // Validate report entries
+        // Validate report entries - remark can be empty for reported vehicles
         const invalidIndex = report.findIndex(
-            (r) => !r || typeof r !== 'object' || !r.vehicleNo || !r.remark
+            (r) => !r || typeof r !== 'object' || !r.vehicleNo || !r.location || typeof r.remark !== 'string'
         );
         if (invalidIndex !== -1) {
             return res.status(400).json({
-                error: `Each report entry must include vehicleNo and remark (invalid at index ${invalidIndex})`,
+                error: `Each report entry must include vehicleNo and location (invalid at index ${invalidIndex})`,
             });
         }
 
@@ -168,8 +182,14 @@ router.post('/', async (req, res) => {
             activityLogs: activityLogs || [],
         });
 
-        await newUpdate.save();
-        return res.status(201).json(newUpdate);
+        const savedUpdate = await newUpdate.save();
+
+        // Populate the saved document before returning
+        const populatedUpdate = await MorningUpdate.findById(savedUpdate._id)
+            .populate('report.trip')
+            .populate('report.driver');
+
+        return res.status(201).json(populatedUpdate);
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: 'Failed to create morning update' });

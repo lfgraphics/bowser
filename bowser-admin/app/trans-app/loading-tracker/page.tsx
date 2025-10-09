@@ -58,7 +58,7 @@ const LoadingTracker = () => {
       {loading && <Loading />}
       <div className="flex flex-col gap-4">
         <div className="actions">
-          {!loading && data && <UnloadedPlannedVehicleTracker query={query} tripsData={data} />}
+          {!loading && data && user && <UnloadedPlannedVehicleTracker query={query} tripsData={data} user={user} />}
         </div>
       </div>
     </>

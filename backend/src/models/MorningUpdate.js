@@ -10,7 +10,10 @@ const morningUpdateSchema = new mongoose.Schema({
     report: [
         {
             vehicleNo: { type: String, required: true },
-            remark: { type: String, required:true}
+            remark: { type: String },
+            location: { type: String, required: true },
+            trip: { type: mongoose.Schema.Types.ObjectId, ref: 'TankersTrip' },
+            driver: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver' },
         }
     ],
     activityLogs: {

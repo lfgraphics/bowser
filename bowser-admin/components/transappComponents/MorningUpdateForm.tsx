@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { Phone, Edit, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { fetchUserVehicles } from "@/utils/transApp";
 import { saveFormData, loadFormData, clearFormData } from "@/lib/storage";
 import { updateDriverMobile } from "@/utils/index";
+import Link from "next/link";
 
 type Props = {
     isOpen: boolean;
@@ -34,7 +35,16 @@ type Props = {
         date: string,
         openingTime: string,
         closingTime: string,
-        vehicles: Array<{ vehicleNo: string, route: string, remark: string }>
+        vehicles: Array<{
+            vehicleNo: string,
+            remark: string,
+            location: string,
+            plannedFor: string,
+            unloadedAt: string,
+            driverName: string,
+            driverPhone?: string,
+            isReported: boolean
+        }>
     }) => void;
 };
 
@@ -42,6 +52,8 @@ type VehicleRemarkState = {
     lastRemark: string;
     newRemark: string;
     useLastRemark: boolean;
+    location: string;
+    isReported: boolean;
 };
 
 type VehicleRemarksMap = Record<string, VehicleRemarkState>;
@@ -96,7 +108,6 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
         } catch (e) {
             console.warn('Failed to log activity', e);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -135,6 +146,8 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                         lastRemark: lastRemark || "",
                         newRemark: savedState?.newRemark ?? "",
                         useLastRemark: savedState?.useLastRemark ?? false,
+                        location: savedState?.location ?? "",
+                        isReported: savedState?.isReported ?? false,
                     };
                 }
                 setVehicleRemarks(initialRemarks);
@@ -173,11 +186,15 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
             }
         })();
 
+
         return () => {
             cancelled = true;
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?._id]);
+    }, [user?._id, storageKey, logActivity]);
+
+    useEffect(() => {
+        console.log("current vehicles:", vehicles.length);
+    }, [vehicles])
 
     useEffect(() => {
         if (!isOpen || !user?._id) return;
@@ -195,18 +212,22 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
 
     useEffect(() => {
         if (!storageKey) return;
-        const persist: PersistedFormData & { activityLogs: ActivityLog[] } = {
-            openingTime: openingTime ? openingTime.toISOString() : null,
-            vehicleRemarks,
-            activityLogs,
-        };
-        (async () => {
+
+        // Debounce persistence to prevent excessive saves
+        const timeoutId = setTimeout(async () => {
+            const persist: PersistedFormData & { activityLogs: ActivityLog[] } = {
+                openingTime: openingTime ? openingTime.toISOString() : null,
+                vehicleRemarks,
+                activityLogs,
+            };
             try {
                 await saveFormData(storageKey, persist);
             } catch (e) {
                 console.warn("Failed to persist morning update form", e);
             }
-        })();
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
     }, [vehicleRemarks, openingTime, activityLogs, storageKey]);
 
     // Focus/blur logging while dialog open
@@ -240,6 +261,13 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
         };
     }, [isOpen, logActivity]);
 
+    useLayoutEffect(() => {
+        if (!isOpen) return;
+        return () => {
+            logActivity('went_offline', { at: new Date().toISOString() });
+        }
+    }, [logActivity]);
+
     const resetMobileDialog = () => {
         setShowMobileUpdateDialog(false);
         setSelectedDriver(null);
@@ -261,11 +289,11 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
         try {
             await updateDriverMobile(selectedDriver.id, mobile);
             toast.success("Driver mobile updated", { description: `${selectedDriver.name} - ${mobile}` });
-            // Log activity
+            // Log activity with vehicle number
             logActivity('driver_mobile_updated', {
+                vehicleNo: selectedDriver.vehicleNo,
                 driverId: selectedDriver.id,
                 driverName: selectedDriver.name,
-                vehicleNo: selectedDriver.vehicleNo,
                 newMobile: mobile,
             });
             // Refresh vehicles to reflect new mobile if needed
@@ -282,15 +310,52 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
     };
 
     const validateForm = () => {
-        const entries = Object.entries(vehicleRemarks);
+        // Only validate vehicles that are currently shown in the UI (filteredVehicles)
+        const entries = Object.entries(vehicleRemarks).filter(([vehicleNo]) =>
+            vehicles.filter(vehicle => vehicle?.latestTrip?.LoadStatus === 0 && (!vehicle?.latestTrip?.ReportingDate || vehicle?.latestTrip?.ReportingDate == null))?.map(v => v?.vehicle?.VehicleNo).includes(vehicleNo)
+        );
+
+        // Check validation rules: remark required only when not reported, location always required
+        const incompleteVehicles = entries.filter(([vehicleNo, state]) => {
+            if (!state) return true;
+
+            // Location is always required
+            const hasLocation = Boolean(state.location?.trim());
+            if (!hasLocation) return true;
+
+            // Remark is only required when not reported
+            if (!state.isReported) {
+                const hasRemark = state.useLastRemark ? Boolean(state.lastRemark?.trim()) : Boolean(state.newRemark?.trim());
+                if (!hasRemark) return true;
+            }
+
+            return false;
+        });
+
+        if (incompleteVehicles?.length > 0) {
+            const vehicleNos = incompleteVehicles?.map(([vehicleNo]) => vehicleNo).join(', ');
+            const missingFields = incompleteVehicles?.map(([vehicleNo, state]) => {
+                const missing = [];
+                if (!Boolean(state?.location?.trim())) missing.push('location');
+                if (!state?.isReported) {
+                    const hasRemark = state?.useLastRemark ? Boolean(state?.lastRemark?.trim()) : Boolean(state?.newRemark?.trim());
+                    if (!hasRemark) missing.push('remark');
+                }
+                return `${vehicleNo} (${missing.join(', ')})`;
+            }).join(', ');
+            return { isValid: false, error: `Please provide missing fields for: ${missingFields}` };
+        }
+
         const hasAnyRemark = entries.some(([vehicleNo, state]) => {
             if (!state) return false;
             if (state.useLastRemark) return Boolean(state.lastRemark?.trim());
             return Boolean(state.newRemark?.trim());
         });
+
         if (!hasAnyRemark) {
             return { isValid: false, error: "Add at least one remark to submit." };
         }
+
         if (!user?._id || !user?.name) {
             return { isValid: false, error: "User information is missing." };
         }
@@ -306,16 +371,38 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
 
         try {
             setSubmitting(true);
-            // Build report
+            // Build report with trip and driver IDs - only include filtered vehicles
+            const filteredVehicleNos = vehicles.filter(vehicle => vehicle?.latestTrip?.LoadStatus === 0 && (!vehicle?.latestTrip?.ReportingDate || vehicle?.latestTrip?.ReportingDate == null))?.map(v => v?.vehicle?.VehicleNo).filter(Boolean);
             const report = Object.entries(vehicleRemarks)
+                .filter(([vehicleNo]) => filteredVehicleNos.includes(vehicleNo))
                 .map(([vehicleNo, state]) => {
+                    const location = state.location?.trim();
+                    if (!location) return null;
+
+                    // For reported vehicles, remark is optional; for others, it's required
                     const remark = state.useLastRemark ? state.lastRemark?.trim() : state.newRemark?.trim();
-                    return remark ? { vehicleNo, remark } : null;
+                    if (!state.isReported && !remark) return null;
+
+                    const vehicleData = vehicles?.find(v => v?.vehicle?.VehicleNo === vehicleNo);
+
+                    return {
+                        vehicleNo,
+                        remark: remark || "", // Allow empty remark for reported vehicles
+                        location,
+                        trip: vehicleData?.latestTrip?._id || null,
+                        driver: vehicleData?.driver?._id || null
+                    };
                 })
-                .filter(Boolean) as { vehicleNo: string; remark: string }[];
+                .filter(Boolean) as Array<{
+                    vehicleNo: string;
+                    remark: string;
+                    location: string;
+                    trip: string | null;
+                    driver: string | null;
+                }>;
 
             if (report.length === 0) {
-                toast.error("No remarks to submit");
+                toast.error("No vehicles to submit");
                 return;
             }
 
@@ -323,7 +410,11 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
             const submissionLog: ActivityLog = {
                 timestamp: new Date().toISOString(),
                 type: 'form_submitted',
-                details: { reportCount: report.length, totalActivities: activityLogs.length + 1 },
+                details: {
+                    reportCount: report.length,
+                    totalActivities: activityLogs.length + 1,
+                    vehiclesSubmitted: report.map(r => r.vehicleNo)
+                },
             };
             const nextLogs = [...activityLogs, submissionLog];
             setActivityLogs(nextLogs);
@@ -356,10 +447,26 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
             });
             const formattedOpening = (openingTime ?? new Date()).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
             const formattedClosing = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-            const vehiclesReport = (payload.report as { vehicleNo: string; remark: string }[]).map(({ vehicleNo, remark }) => {
-                const vmatch = vehicles.find(v => v?.vehicle?.VehicleNo === vehicleNo);
-                const route = `${vmatch?.latestTrip?.StartFrom || 'N/A'} → ${vmatch?.latestTrip?.EndTo || 'N/A'}`;
-                return { vehicleNo, route, remark };
+            const vehiclesReport = report.map(({ vehicleNo, remark, location }) => {
+                const vmatch = vehicles?.find(v => v?.vehicle?.VehicleNo === vehicleNo);
+                const state = vehicleRemarks[vehicleNo];
+                const plannedFor = vmatch?.latestTrip?.EndTo || 'N/A';
+                const unloadedAt = vmatch?.latestTrip?.StartFrom || 'N/A';
+                const driverName = vmatch?.driver?.name || vmatch?.vehicle?.tripDetails?.driver || 'N/A';
+                const driverPhone = vmatch?.driver?.mobile || undefined;
+                const isReported = state?.isReported || false;
+                const currentlyAt = location || 'N/A';
+
+                return {
+                    vehicleNo,
+                    remark,
+                    location: currentlyAt,
+                    plannedFor,
+                    unloadedAt,
+                    driverName,
+                    driverPhone,
+                    isReported: isReported || (currentlyAt === plannedFor)
+                };
             });
 
             const enriched = {
@@ -385,9 +492,12 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
         }
     };
 
-    const currentDateHeading = useMemo(() => formatDateHeading(new Date()), []);
+    const currentDateHeading = useMemo(() => {
+        const today = new Date();
+        return formatDateHeading(today);
+    }, []);
 
-    const anyVehicles = vehicles && vehicles.length > 0;
+    const anyVehicles = vehicles && vehicles?.length > 0;
 
     return (
         <>
@@ -411,7 +521,7 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                             <div className="text-sm text-muted-foreground">No vehicles found.</div>
                         )}
 
-                        {!loading && anyVehicles && vehicles.filter(vehicle => vehicle?.latestTrip?.LoadStatus === 0 && (!vehicle?.latestTrip?.ReportingDate || vehicle?.latestTrip?.ReportingDate == null)).map((v) => {
+                        {!loading && anyVehicles && vehicles.filter(vehicle => vehicle?.latestTrip?.LoadStatus === 0 && (!vehicle?.latestTrip?.ReportingDate || vehicle?.latestTrip?.ReportingDate == null))?.map((v) => {
                             const vehicleNo = v?.vehicle?.VehicleNo;
                             if (!vehicleNo) return null;
 
@@ -428,7 +538,7 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                                         <div className="flex flex-col sm:flex-row md:items-center justify-between gap-3">
                                             <div>
                                                 <div className="font-semibold text-base">{vehicleNo}</div>
-                                                <div className="text-xs text-muted-foreground">Route: {v?.latestTrip?.StartFrom} - {v?.latestTrip?.EndTo}</div>
+                                                <div className="text-xs text-muted-foreground">Route: {v?.latestTrip?.StartFrom} → {v?.latestTrip?.EndTo.split(':')[1] || v?.latestTrip?.EndTo}</div>
                                             </div>
 
                                             <div className="flex items-center justify-between gap-2">
@@ -440,14 +550,14 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                                                 </div>
                                                 {driverMobile ? (
                                                     <div className="flex flex-col gap-1">
-                                                        <a
+                                                        <Link
                                                             href={`tel:${driverMobile}`}
                                                             aria-label={`Call ${driverName}`}
                                                             onClick={() => logActivity('driver_called', { vehicleNo, driverName, driverMobile })}
                                                         ><Button variant="default" className="w-full">
                                                                 <Phone size={16} />
                                                             </Button>
-                                                        </a>
+                                                        </Link>
                                                         <span className="text-xs text-blue-500 cursor-pointer" onClick={() => onClickUpdateMobile(driverId, driverName, vehicleNo)}>Edit mobile</span>
                                                     </div>
                                                 ) : driverId ? (
@@ -470,6 +580,65 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                                             <span className="font-medium">Last Status:</span> {state.lastRemark || "—"}
                                         </div>
 
+                                        {/* Location Field */}
+                                        <div className="space-y-1 mb-3">
+                                            <div className="flex items-center justify-between">
+                                                <Label htmlFor={`location-${vehicleNo}`}>Current Location</Label>
+                                                <Button
+                                                    type="button"
+                                                    variant={state.isReported ? "default" : "outline"}
+                                                    size="sm"
+                                                    className="text-xs px-3 py-1 h-7"
+                                                    onClick={() => {
+                                                        const newReported = !state.isReported;
+                                                        let newLocation: string;
+
+                                                        if (newReported) {
+                                                            // When marking as reported, set to planned destination
+                                                            newLocation = v?.latestTrip?.EndTo || "";
+                                                        } else {
+                                                            // When unmarking as reported, clear the location so user can enter manually
+                                                            newLocation = "";
+                                                        }
+
+                                                        setVehicleRemarks((prev) => ({
+                                                            ...prev,
+                                                            [vehicleNo]: {
+                                                                ...state,
+                                                                isReported: newReported,
+                                                                location: newLocation
+                                                            },
+                                                        }));
+                                                        logActivity('reported_toggled', {
+                                                            vehicleNo,
+                                                            isReported: newReported,
+                                                            location: newLocation
+                                                        });
+                                                    }}
+                                                >
+                                                    {state.isReported ? "Reported ✓" : "Reported"}
+                                                </Button>
+                                            </div>
+                                            <Input
+                                                id={`location-${vehicleNo}`}
+                                                placeholder="Enter current location"
+                                                value={state.location.split(':')[1] || state.location}
+                                                readOnly={state.isReported}
+                                                className={`${!state.location?.trim() ? "border-destructive bg-destructive/10" : ""} ${state.isReported ? "bg-muted" : ""}`}
+                                                onChange={(e) => {
+                                                    setVehicleRemarks((prev) => ({
+                                                        ...prev,
+                                                        [vehicleNo]: { ...state, location: e.target.value },
+                                                    }));
+                                                }}
+                                            />
+                                            {state.isReported && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    Location set to planned destination: {v?.latestTrip?.EndTo.split(':')[1] || v?.latestTrip?.EndTo}
+                                                </div>
+                                            )}
+                                        </div>
+
                                         <div className="flex items-center gap-2 mb-2">
                                             <Checkbox
                                                 id={`use-last-${vehicleNo}`}
@@ -479,32 +648,52 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                                                         ...prev,
                                                         [vehicleNo]: { ...state, useLastRemark: Boolean(checked) },
                                                     }));
-                                                    logActivity('use_last_remark_toggled', { vehicleNo, checked: Boolean(checked), lastRemark: state.lastRemark });
+                                                    logActivity('use_last_remark_toggled', {
+                                                        vehicleNo,
+                                                        checked: Boolean(checked),
+                                                        lastRemark: state.lastRemark
+                                                    });
                                                 }}
                                             />
                                             <Label htmlFor={`use-last-${vehicleNo}`}>Use same remark</Label>
                                         </div>
 
                                         <div className="space-y-1">
-                                            <Label htmlFor={`remark-${vehicleNo}`}>New Remark</Label>
+                                            <Label htmlFor={`remark-${vehicleNo}`}>
+                                                Remark {!state.isReported && "*"}
+                                                {state.isReported && <span className="text-xs text-muted-foreground ml-1">(optional when reported)</span>}
+                                            </Label>
                                             <Textarea
                                                 id={`remark-${vehicleNo}`}
                                                 placeholder={`Enter morning update remark for ${vehicleNo}`}
                                                 value={state.useLastRemark ? (state.lastRemark || "") : state.newRemark}
                                                 disabled={state.useLastRemark}
+                                                className={`${!state.isReported &&
+                                                    ((!state.useLastRemark && !state.newRemark?.trim()) || (state.useLastRemark && !state.lastRemark?.trim()))
+                                                    ? "border-destructive bg-destructive/10" : ""
+                                                    }`}
                                                 onChange={(e) => {
                                                     const val = e.target.value;
                                                     setVehicleRemarks((prev) => ({
                                                         ...prev,
                                                         [vehicleNo]: { ...state, newRemark: val },
                                                     }));
-                                                    // Debounced log for remark updates
+                                                    // Clear existing timer for this vehicle
                                                     if (remarkTimersRef.current[vehicleNo]) {
                                                         clearTimeout(remarkTimersRef.current[vehicleNo]);
+                                                        delete remarkTimersRef.current[vehicleNo];
                                                     }
-                                                    remarkTimersRef.current[vehicleNo] = window.setTimeout(() => {
-                                                        logActivity('remark_updated', { vehicleNo, newValue: val, previousValue: state.newRemark });
-                                                    }, 1000);
+                                                }}
+                                                onBlur={(e) => {
+                                                    const val = e.target.value.trim();
+                                                    // Only log if there's actual content
+                                                    if (val && val !== state.newRemark.trim()) {
+                                                        logActivity('remark_updated', {
+                                                            vehicleNo,
+                                                            newValue: val,
+                                                            previousValue: state.newRemark.trim()
+                                                        });
+                                                    }
                                                 }}
                                             />
                                         </div>

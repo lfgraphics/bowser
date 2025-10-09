@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import MorningUpdateForm from '@/components/transappComponents/MorningUpdateForm'
 import MorningUpdateReport, { MorningUpdateReportData as ReportDataTypeAlias } from '@/components/transappComponents/MorningUpdateReport'
+import MorningUpdatesView from '@/components/transappComponents/MorningUpdatesView'
 import VehicleManagement from '@/components/transappComponents/VehicleManagement'
 import VehiclesSummary from '@/components/transappComponents/VehiclesSummary'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
@@ -24,7 +25,7 @@ import { searchItems } from '@/utils/searchUtils'
 import Loading from '../loading'
 import { TransAppContext } from "./layout";
 
-type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary"
+type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary" | "Morning Updates"
 
 export default function Page() {
   const { user, photo } = useContext(TransAppContext);
@@ -38,7 +39,6 @@ export default function Page() {
   const [showBackToTop, setShowBackToTop] = useState(false)
   const [showMorningUpdateButton, setShowMorningUpdateButton] = useState<boolean>(false)
   const [isMorningUpdateDialogOpen, setIsMorningUpdateDialogOpen] = useState<boolean>(false)
-  const [currentTime, setCurrentTime] = useState<Date>(new Date())
   const [searchModalConfig, setSearchModalConfig] = useState<{
     isOpen: boolean;
     title: string;
@@ -61,7 +61,15 @@ export default function Page() {
     date: string,
     openingTime: string,
     closingTime: string,
-    vehicles: Array<{ vehicleNo: string, route: string, remark: string }>
+    vehicles: Array<{ 
+      vehicleNo: string, 
+      remark: string,
+      location: string,
+      plannedFor: string,
+      unloadedAt: string,
+      driverName: string,
+      isReported: boolean
+    }>
   } | null;
   const [morningUpdateReportData, setMorningUpdateReportData] = useState<MorningUpdateReportData>(null);
   const [showMorningUpdateReport, setShowMorningUpdateReport] = useState<boolean>(false);
@@ -69,7 +77,7 @@ export default function Page() {
   // Determine allowed tabs based on user (Inactive Vehicles hidden for Admins)
   const allowedTabs = useMemo<Readonly<Tabslist[]>>(() => {
     const isAdmin = !!user?.Division?.includes('Admin')
-    return isAdmin ? ["Summary", "Vehicles"] : ["Summary", "Vehicles", "Inactive Vehicles"]
+    return isAdmin ? ["Summary", "Vehicles", "Morning Updates"] : ["Summary", "Vehicles", "Inactive Vehicles"]
   }, [user])
 
   // Utility to map between tabs and URL slugs
@@ -77,6 +85,7 @@ export default function Page() {
     Summary: 'summary',
     Vehicles: 'vehicles',
     'Inactive Vehicles': 'inactive-vehicles',
+    'Morning Updates': 'morning-updates',
   } as const), [])
 
   const parseTabFromParam = (raw: string | null, allowed: Readonly<Tabslist[]>): Tabslist | null => {
@@ -96,7 +105,6 @@ export default function Page() {
   // Morning Update helpers
   const isBeforeCutoffTime = (time: Date): boolean => {
     const hours = time.getHours();
-    console.log("Current time:", hours);
     const minutes = time.getMinutes();
     return hours < 9 || (hours === 9 && minutes < 45);
   };
@@ -196,26 +204,29 @@ export default function Page() {
     }
   }, [])
 
-  // Manage Morning Update button visibility (before 9:45 AM, not submitted yet, and user exists)
+  // Manage Morning Update button visibility (check only once per mount)
   useEffect(() => {
+    if (!user?._id) {
+      setShowMorningUpdateButton(false);
+      return;
+    }
+
     let mounted = true;
 
     const evaluate = async () => {
-      const now = new Date();
       if (!mounted) return;
-      setCurrentTime(now);
+      const now = new Date();
       const beforeCutoff = isBeforeCutoffTime(now);
       const submitted = await checkSubmissionStatus();
       if (!mounted) return;
-      setShowMorningUpdateButton(Boolean(user?._id) && beforeCutoff && !submitted);
+      setShowMorningUpdateButton(beforeCutoff && !submitted);
     };
 
-    // initial evaluate and then every minute
+    // Evaluate only once on mount
     evaluate();
-    const interval = setInterval(evaluate, 60_000);
+    
     return () => {
       mounted = false;
-      clearInterval(interval);
     };
   }, [user?._id])
 
@@ -342,63 +353,70 @@ export default function Page() {
     <>
       {loading && <Loading />}
       {tabReady && (
-      <div className='mx-4 mt-4 flex flex-col gap-4'>
-        <Tabs
-          value={tab}
-          onValueChange={(v) => setTab(v as Tabslist)}
-          className="sm:mb-2 flex flex-col md:flex-row items-start md:items-center justify-between"
-        >
-          <TabsList>
-            <TabsTrigger value="Summary">Vehicles Summary</TabsTrigger>
-            <TabsTrigger value="Vehicles">{!user?.Division?.includes('Admin') ? "My Vehicles" : "All Vehicles"}</TabsTrigger>
-            {!user?.Division?.includes('Admin') &&
-              <TabsTrigger value="Inactive Vehicles">Inactive Vehicles</TabsTrigger>
-            }
-          </TabsList>
-          {tab == "Vehicles" && <Button className='my-2 sm:my-0' onClick={() => setIsVehicleAdditionDialogvisible(true)}>Add Vehicle</Button>}
-        </Tabs>
-        {
-          tab == "Vehicles" && vehicles &&
-          <VehicleManagement user={user} />
-        }
-        {
-          tab === "Inactive Vehicles" &&
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Sn</TableHead>
-                <TableHead>Vehicle no.</TableHead>
-                <TableHead>Deactivated by</TableHead>
-                <TableHead>Deactivation date</TableHead>
-                <TableHead>Modified by</TableHead>
-                <TableHead>Modification date</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {inactiveVehicles && inactiveVehicles.map((vehicle, index) =>
-                <TableRow key={index}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{vehicle.VehicleNo}</TableCell>
-                  <TableCell>{vehicle.UserInfo.CreatedBy}</TableCell>
-                  <TableCell>{formatDate(vehicle.UserInfo.Created)}</TableCell>
-                  <TableCell>{vehicle.UserInfo.ModifiedBy}</TableCell>
-                  <TableCell>{formatDate(vehicle.UserInfo.Modified)}</TableCell>
-                  <TableCell>
-                    <div className='flex gap-2 max-w-max text-center'>
-                      <Button onClick={() => { let confirmation = confirm(`Do you want to reactivate the vehicle ${vehicle.VehicleNo}?`); if (confirmation) reactivateVehicle(vehicle.VehicleNo) }} variant="destructive"><Trash2 /></Button>
-                    </div>
-                  </TableCell>
+        <div className='mx-4 mt-4 flex flex-col gap-4'>
+          <Tabs
+            value={tab}
+            onValueChange={(v) => setTab(v as Tabslist)}
+            className="sm:mb-2 flex flex-col md:flex-row items-start md:items-center justify-between"
+          >
+            <TabsList>
+              <TabsTrigger value="Summary">Vehicles Summary</TabsTrigger>
+              <TabsTrigger value="Vehicles">{!user?.Division?.includes('Admin') ? "My Vehicles" : "All Vehicles"}</TabsTrigger>
+              {user?.Division?.includes('Admin') &&
+                <TabsTrigger value="Morning Updates">Morning Updates</TabsTrigger>
+              }
+              {!user?.Division?.includes('Admin') &&
+                <TabsTrigger value="Inactive Vehicles">Inactive Vehicles</TabsTrigger>
+              }
+            </TabsList>
+            {tab == "Vehicles" && <Button className='my-2 sm:my-0' onClick={() => setIsVehicleAdditionDialogvisible(true)}>Add Vehicle</Button>}
+          </Tabs>
+          {
+            tab == "Vehicles" && vehicles &&
+            <VehicleManagement user={user} />
+          }
+          {
+            tab === "Inactive Vehicles" &&
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Sn</TableHead>
+                  <TableHead>Vehicle no.</TableHead>
+                  <TableHead>Deactivated by</TableHead>
+                  <TableHead>Deactivation date</TableHead>
+                  <TableHead>Modified by</TableHead>
+                  <TableHead>Modification date</TableHead>
+                  <TableHead>Action</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        }
-        {
-          tab === "Summary" &&
-          <VehiclesSummary user={user} />
-        }
-      </div>
+              </TableHeader>
+              <TableBody>
+                {inactiveVehicles && inactiveVehicles.map((vehicle, index) =>
+                  <TableRow key={index}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{vehicle.VehicleNo}</TableCell>
+                    <TableCell>{vehicle.UserInfo.CreatedBy}</TableCell>
+                    <TableCell>{formatDate(vehicle.UserInfo.Created)}</TableCell>
+                    <TableCell>{vehicle.UserInfo.ModifiedBy}</TableCell>
+                    <TableCell>{formatDate(vehicle.UserInfo.Modified)}</TableCell>
+                    <TableCell>
+                      <div className='flex gap-2 max-w-max text-center'>
+                        <Button onClick={() => { let confirmation = confirm(`Do you want to reactivate the vehicle ${vehicle.VehicleNo}?`); if (confirmation) reactivateVehicle(vehicle.VehicleNo) }} variant="destructive"><Trash2 /></Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          }
+          {
+            tab === "Summary" &&
+            <VehiclesSummary user={user} />
+          }
+          {
+            tab === "Morning Updates" &&
+            <MorningUpdatesView />
+          }
+        </div>
       )}
       <SearchModal
         isOpen={searchModalConfig.isOpen}
@@ -452,7 +470,7 @@ export default function Page() {
         </Button>
       )}
 
-      {showMorningUpdateButton && user && (
+      {showMorningUpdateButton && user && !user?.Division?.includes("Admin") && (
         <Button
           className="sticky bottom-6 left-6 rounded-lg px-4 py-2 shadow-lg"
           onClick={() => setIsMorningUpdateDialogOpen(true)}

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 
-import { Share2, Loader2 } from "lucide-react";
+import { Share2, Loader2, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { toJpeg } from 'html-to-image';
 import {
@@ -14,11 +14,17 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
+import { formatVehicleRemark, toProperTitleCase } from "@/utils";
 
 type VehicleReportItem = {
     vehicleNo: string;
-    route: string; // "StartFrom - EndTo"
     remark: string;
+    location: string;
+    plannedFor: string;
+    unloadedAt: string;
+    driverName: string;
+    driverPhone?: string;
+    isReported: boolean;
 };
 
 export type MorningUpdateReportData = {
@@ -102,8 +108,8 @@ const MorningUpdateReport: React.FC<Props> = ({ isOpen, onClose, reportData }) =
                     ref={snapshotRef}
                     className="mx-auto"
                     style={{
-                        width: 600,
-                        minWidth: 600,
+                        width: 500,
+                        minWidth: 500,
                         backgroundColor: "white",
                         padding: 24,
                         color: "#111827",
@@ -119,50 +125,80 @@ const MorningUpdateReport: React.FC<Props> = ({ isOpen, onClose, reportData }) =
                         <div className="mt-1 text-xs text-gray-600">Morning Update</div>
                     </div>
 
-                    {/* Vehicles Grid */}
-                    <div className="grid grid-cols-1 gap-4">
+                    {/* Vehicles Table */}
+                    <div className="space-y-6">
                         {reportData.vehicles?.map((v, idx) => (
-                            <div key={`${v.vehicleNo}-${idx}`} className="border rounded-md p-2 flex flex-row gap-2 justify-between">
-                                <div className="basis-[50%]">
-                                    <div className="text-lg font-bold tracking-wide">{v.vehicleNo}</div>
-                                    <div className="text-sm mt-2 font-bold">
-                                        <span className="font-normal">Status: </span>
-                                        <span className="whitespace-pre-wrap break-words text-lg">{v.remark}</span>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col items-start basis-[50%]">
-                                    <div className="flex flex-col items-start basis-[50%]">
-                                        {(() => {
-                                            const getFromTo = (route: string) => {
-                                                if (!route) return { from: "", to: "" };
-                                                if (route.includes("→")) {
-                                                    const parts = route.split("→");
-                                                    const from = (parts[0] || "").trim().replace(/^From:\s*/i, "");
-                                                    const rightPart = (parts[1] || "").trim();
-                                                    const to = rightPart.includes(":") ? rightPart.split(":")[1].trim() : rightPart;
-                                                    return { from, to };
-                                                }
-                                                if (route.includes(" - ")) {
-                                                    const [from, to] = route.split(" - ").map((s) => s.trim());
-                                                    return { from, to };
-                                                }
-                                                return { from: route, to: "" };
-                                            };
-                                            const { from, to } = getFromTo(v.route || "");
-                                            return (
-                                                <>
-                                                    <div className="flex flex-row items-end gap-2">
-                                                        <div className="text-lg text-black mt-1 font-bold">{to || "—"}</div>
-                                                    </div>
-                                                    <div className="flex flex-row items-end gap-2">
-                                                        <span>From: </span>
-                                                        <span>{from || "—"}</span>
-                                                    </div>
-                                                </>
-                                            );
-                                        })()}
-                                    </div>
-                                </div>
+                            <div key={`${v.vehicleNo}-${idx}`} className="border rounded-md px-4">
+                                <table className="w-full">
+                                    <tbody>
+                                        {/* Row 1: Vehicle No. with reported status */}
+                                        <tr>
+                                            <td className="py-1 align-mid" style={{ fontSize: '12px', width: '18%' }}>Vehicle No.</td>
+                                            <td className="font-bold py-1" style={{ fontSize: '36px', width: '33%' }}>{v.vehicleNo}</td>
+                                            <td className="py-1 text-right align-mid" style={{ width: '33%' }}>
+                                                <div
+                                                    className={`inline-flex items-end justify-end px-3 py-1 text-white font-medium text-right ${v.isReported ? 'bg-green-600' : 'bg-orange-600'
+                                                        }`}
+                                                    style={{
+                                                        fontSize: '12px',
+                                                        clipPath: 'polygon(25% 0%, 100% 0%, 100% 100%, 25% 100%, 0% 50%)',
+                                                        minWidth: '100px'
+                                                    }}
+                                                >
+                                                    {v.isReported ? 'REPORTED' : 'ON WAY'}
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        {/* Row 2: Planned for */}
+                                        <tr className="bg-blue-600/30">
+                                            <td className="py-1 align-mid" style={{ fontSize: '12px', width: '18%' }}>Planned for</td>
+                                            <td className="font-semibold py-1" style={{ fontSize: '18px' }} colSpan={2}>{v.plannedFor.split(':')[1] || v.plannedFor.split(':')[0] || v.plannedFor}</td>
+                                        </tr>
+
+                                        {/* Row 3: Currently at */}
+                                        <tr>
+                                            <td className="py-1 align-mid" style={{ fontSize: '12px', width: '18%' }}>Currently at</td>
+                                            <td className="font-semibold py-1" style={{ fontSize: '18px' }} colSpan={2}>{toProperTitleCase(v.location.split(':')[1] || v.location.split(':')[0])}</td>
+                                        </tr>
+
+                                        {/* Row 4: Unloaded at */}
+                                        <tr className="bg-muted/10">
+                                            <td className="py-1 align-mid" style={{ fontSize: '12px', width: '18%' }}>Unloaded at</td>
+                                            <td className="font-semibold py-1" style={{ fontSize: '18px' }} colSpan={2}>{toProperTitleCase(v.unloadedAt)}</td>
+                                        </tr>
+
+                                        {v.remark &&
+                                            <>
+                                                {/* Row 5: Remark label */}
+                                                <tr>
+                                                    <td className="py-1 align-mid" style={{ fontSize: '12px', width: '18%' }}>Remark</td>
+                                                    <td className="py-1" colSpan={2}></td>
+                                                </tr>
+                                                <tr className="bg-muted/10">
+                                                    <td className="py-1" style={{ fontSize: '18px' }} colSpan={3}>
+                                                        {formatVehicleRemark(v.remark)}
+                                                    </td>
+                                                </tr>
+                                            </>
+                                        }
+
+                                        {/* Row 6: Driver */}
+                                        <tr>
+                                            <td className="py-1 align-mid" style={{ fontSize: '12px', width: '18%' }}>Driver</td>
+                                            <td className="font-semibold py-1 flex" style={{ fontSize: '12px' }}>
+                                                {`${v.driverName}`}
+                                            </td>
+                                            {v.driverPhone &&
+                                                <td>
+                                                    <span className="flex gap-2 items-center justify-end">
+                                                        <Phone size={12} /> {v.driverPhone}
+                                                    </span>
+                                                </td>
+                                            }
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         ))}
                     </div>
