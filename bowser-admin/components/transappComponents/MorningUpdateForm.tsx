@@ -65,7 +65,7 @@ type PersistedFormData = {
 };
 
 type ActivityLog = {
-    timestamp: string; // ISO string
+    timestamp: string;
     type: string;
     details?: Record<string, any>;
 };
@@ -111,7 +111,7 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
     }, []);
 
     useEffect(() => {
-        if (!user?._id) return; // Only check for user, not isOpen
+        if (!user?._id || !isOpen) return;
 
         let cancelled = false;
 
@@ -190,25 +190,7 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
         return () => {
             cancelled = true;
         };
-    }, [user?._id, storageKey, logActivity]);
-
-    useEffect(() => {
-        console.log("current vehicles:", vehicles.length);
-    }, [vehicles])
-
-    useEffect(() => {
-        if (!isOpen || !user?._id) return;
-
-        (async () => {
-            try {
-                const isAdmin = Boolean(user?.Division?.includes("Admin"));
-                const data = await fetchUserVehicles(user._id, isAdmin);
-                setVehicles(data);
-            } catch (err) {
-                console.error("Failed to refresh vehicles:", err);
-            }
-        })();
-    }, [isOpen, user?._id]);
+    }, [user?._id, isOpen, storageKey, logActivity]);
 
     useEffect(() => {
         if (!storageKey) return;
@@ -310,16 +292,34 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
     };
 
     const validateForm = () => {
-        // Only validate vehicles that are currently shown in the UI (filteredVehicles)
-        const entries = Object.entries(vehicleRemarks).filter(([vehicleNo]) =>
-            vehicles.filter(vehicle => vehicle?.latestTrip?.LoadStatus === 0 && (!vehicle?.latestTrip?.ReportingDate || vehicle?.latestTrip?.ReportingDate == null))?.map(v => v?.vehicle?.VehicleNo).includes(vehicleNo)
-        );
+        // Only validate vehicles that have user input (location or remark filled)
+        const filteredVehicleNos = vehicles.filter(vehicle =>
+            vehicle?.latestTrip?.LoadStatus === 0 &&
+            (!vehicle?.latestTrip?.ReportingDate || vehicle?.latestTrip?.ReportingDate == null)
+        )?.map(v => v?.vehicle?.VehicleNo).filter(Boolean);
 
-        // Check validation rules: remark required only when not reported, location always required
-        const incompleteVehicles = entries.filter(([vehicleNo, state]) => {
+        const vehiclesWithInput = Object.entries(vehicleRemarks).filter(([vehicleNo, state]) => {
+            // Only include vehicles that are shown in UI and have some user input
+            if (!filteredVehicleNos.includes(vehicleNo)) return false;
+            if (!state) return false;
+
+            // Has input if location is filled OR any remark is provided
+            const hasLocation = Boolean(state.location?.trim());
+            const hasRemark = state.useLastRemark ? Boolean(state.lastRemark?.trim()) : Boolean(state.newRemark?.trim());
+
+            return hasLocation || hasRemark;
+        });
+
+        // If no vehicles have any input, don't allow submission
+        if (vehiclesWithInput.length === 0) {
+            return { isValid: false, error: "Please provide details for at least one vehicle to submit the morning update." };
+        }
+
+        // Check validation rules for vehicles with input: remark required only when not reported, location always required
+        const incompleteVehicles = vehiclesWithInput.filter(([vehicleNo, state]) => {
             if (!state) return true;
 
-            // Location is always required
+            // Location is always required for vehicles with input
             const hasLocation = Boolean(state.location?.trim());
             if (!hasLocation) return true;
 
@@ -333,27 +333,16 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
         });
 
         if (incompleteVehicles?.length > 0) {
-            const vehicleNos = incompleteVehicles?.map(([vehicleNo]) => vehicleNo).join(', ');
             const missingFields = incompleteVehicles?.map(([vehicleNo, state]) => {
                 const missing = [];
                 if (!Boolean(state?.location?.trim())) missing.push('location');
                 if (!state?.isReported) {
                     const hasRemark = state?.useLastRemark ? Boolean(state?.lastRemark?.trim()) : Boolean(state?.newRemark?.trim());
-                    if (!hasRemark) missing.push('remark');
+                    if (!hasRemark) missing.push('remark (required when not reported)');
                 }
                 return `${vehicleNo} (${missing.join(', ')})`;
             }).join(', ');
-            return { isValid: false, error: `Please provide missing fields for: ${missingFields}` };
-        }
-
-        const hasAnyRemark = entries.some(([vehicleNo, state]) => {
-            if (!state) return false;
-            if (state.useLastRemark) return Boolean(state.lastRemark?.trim());
-            return Boolean(state.newRemark?.trim());
-        });
-
-        if (!hasAnyRemark) {
-            return { isValid: false, error: "Add at least one remark to submit." };
+            return { isValid: false, error: `Please complete the following vehicles: ${missingFields}` };
         }
 
         if (!user?._id || !user?.name) {
@@ -371,29 +360,38 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
 
         try {
             setSubmitting(true);
-            // Build report with trip and driver IDs - only include filtered vehicles
-            const filteredVehicleNos = vehicles.filter(vehicle => vehicle?.latestTrip?.LoadStatus === 0 && (!vehicle?.latestTrip?.ReportingDate || vehicle?.latestTrip?.ReportingDate == null))?.map(v => v?.vehicle?.VehicleNo).filter(Boolean);
+            // Build report with trip and driver IDs - only include vehicles with actual input
+            const filteredVehicleNos = vehicles.filter(vehicle =>
+                vehicle?.latestTrip?.LoadStatus === 0 &&
+                (!vehicle?.latestTrip?.ReportingDate || vehicle?.latestTrip?.ReportingDate == null)
+            )?.map(v => v?.vehicle?.VehicleNo).filter(Boolean);
+
             const report = Object.entries(vehicleRemarks)
-                .filter(([vehicleNo]) => filteredVehicleNos.includes(vehicleNo))
+                .filter(([vehicleNo, state]) => {
+                    // Only include vehicles that are shown in UI and have user input
+                    if (!filteredVehicleNos.includes(vehicleNo)) return false;
+                    if (!state) return false;
+
+                    // Has input if location is filled OR any remark is provided
+                    const hasLocation = Boolean(state.location?.trim());
+                    const hasRemark = state.useLastRemark ? Boolean(state.lastRemark?.trim()) : Boolean(state.newRemark?.trim());
+
+                    return hasLocation || hasRemark;
+                })
                 .map(([vehicleNo, state]) => {
                     const location = state.location?.trim();
-                    if (!location) return null;
-
-                    // For reported vehicles, remark is optional; for others, it's required
                     const remark = state.useLastRemark ? state.lastRemark?.trim() : state.newRemark?.trim();
-                    if (!state.isReported && !remark) return null;
-
                     const vehicleData = vehicles?.find(v => v?.vehicle?.VehicleNo === vehicleNo);
 
                     return {
                         vehicleNo,
                         remark: remark || "", // Allow empty remark for reported vehicles
-                        location,
+                        location: location || "",
                         trip: vehicleData?.latestTrip?._id || null,
                         driver: vehicleData?.driver?._id || null
                     };
                 })
-                .filter(Boolean) as Array<{
+                .filter(item => Boolean(item.location) || Boolean(item.remark)) as Array<{
                     vehicleNo: string;
                     remark: string;
                     location: string;
@@ -402,7 +400,9 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                 }>;
 
             if (report.length === 0) {
-                toast.error("No vehicles to submit");
+                toast.error("No vehicle updates to submit", {
+                    description: "Please provide location or remark for at least one vehicle."
+                });
                 return;
             }
 
@@ -498,6 +498,26 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
     }, []);
 
     const anyVehicles = vehicles && vehicles?.length > 0;
+
+    // Check if there are any vehicles with user input
+    const hasVehicleUpdates = useMemo(() => {
+        const filteredVehicleNos = vehicles.filter(vehicle =>
+            vehicle?.latestTrip?.LoadStatus === 0 &&
+            (!vehicle?.latestTrip?.ReportingDate || vehicle?.latestTrip?.ReportingDate == null)
+        )?.map(v => v?.vehicle?.VehicleNo).filter(Boolean);
+
+        return Object.entries(vehicleRemarks).some(([vehicleNo, state]) => {
+            // Only include vehicles that are shown in UI and have some user input
+            if (!filteredVehicleNos.includes(vehicleNo)) return false;
+            if (!state) return false;
+
+            // Has input if location is filled OR any remark is provided
+            const hasLocation = Boolean(state.location?.trim());
+            const hasRemark = state.useLastRemark ? Boolean(state.lastRemark?.trim()) : Boolean(state.newRemark?.trim());
+
+            return hasLocation || hasRemark;
+        });
+    }, [vehicles, vehicleRemarks]);
 
     return (
         <>
@@ -705,7 +725,7 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
 
                     <DialogFooter className="mt-3">
                         <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>Cancel</Button>
-                        <Button type="button" onClick={handleSubmit} disabled={submitting || !anyVehicles}>
+                        <Button type="button" onClick={handleSubmit} disabled={submitting || !hasVehicleUpdates}>
                             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit Update
                         </Button>
                     </DialogFooter>
