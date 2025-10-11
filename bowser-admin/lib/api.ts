@@ -217,3 +217,27 @@ export const getTripSheets = async (): Promise<TripSheet[]> => {
   if (!response.ok) throw new Error('Failed to fetch roles')
   return response.json()
 }
+
+// StackHolders Management
+export interface StackHolder {
+  _id: string
+  InstitutionName: string
+  IsBillingParty?: boolean
+  IsConsignee?: boolean
+  IsConsigner?: boolean
+  Location: string
+  shortName?: string
+  loadingSupervisor?: string
+}
+
+export const getStackHolders = async (searchTerm: string = ''): Promise<StackHolder[]> => {
+  const response = await fetch(`${BASE_URL}/trans-app/stack-holders?params=${encodeURIComponent(searchTerm)}`)
+  if (!response.ok) throw new Error('Failed to fetch stack holders')
+  return response.json()
+}
+
+export const getAllStackHolders = async (): Promise<StackHolder[]> => {
+  const response = await fetch(`${BASE_URL}/trans-app/stack-holders?params=`)
+  if (!response.ok) throw new Error('Failed to fetch all stack holders')
+  return response.json()
+}

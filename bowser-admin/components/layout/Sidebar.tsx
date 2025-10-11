@@ -443,6 +443,33 @@ export function Sidebar() {
                     </Link>
                   </li>
                 </OnlyAllowed>
+                {/* Camp Management - Available for Trans App Admins and Camp Admins */}
+                <OnlyAllowed allowedRoles={["Admin", "Trans App", "admin", "officer", "supervisor"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/camp/admin/dashboard">
+                      <Button
+                        variant="ghost"
+                        className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/camp/admin/dashboard" ? "bg-primary text-primary-foreground" : ""}`}
+                      >
+                        <LayoutDashboard className="mr-2 w-4 h-4" />
+                        Camp Dashboard
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed allowedRoles={["Admin", "Trans App", "admin"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/camp/admin/users">
+                      <Button
+                        variant="ghost"
+                        className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/camp/admin/users" ? "bg-primary text-primary-foreground" : ""}`}
+                      >
+                        <UserRoundCog className="mr-2 w-4 h-4" />
+                        Manage Camp Users
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
                 <OnlyAllowed allowedRoles={["Admin", "BCC Authorized Officer", "Diesel Control Center Staff", "Data Entry", "Loading Incharge", "Petrol Pump Personnel", "Calibration Staff", "Diesel Average"]}>
                   <li onClick={toggleSidebar}>
                     <Link href="/profile">
@@ -452,6 +479,20 @@ export function Sidebar() {
                       >
                         <User2 className="mr-2 w-4 h-4" />
                         Profile
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                {/* Camp User Profile */}
+                <OnlyAllowed allowedRoles={["admin", "officer", "supervisor"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/camp/profile">
+                      <Button
+                        variant="ghost"
+                        className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/camp/profile" ? "bg-primary text-primary-foreground" : ""}`}
+                      >
+                        <User2 className="mr-2 w-4 h-4" />
+                        My Profile
                       </Button>
                     </Link>
                   </li>

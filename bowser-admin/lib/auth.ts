@@ -175,3 +175,71 @@ export async function verifyToken() {
     return []
   }
 }
+
+// Camp authentication functions
+export async function campSignup(userData: {
+  userId: string
+  password: string
+  name: string
+  phone: string
+  email?: string
+}): Promise<SignupResponse> {
+  try {
+    const response = await axios.post<SignupResponse>(
+      `${BASE_URL}/auth/camp/signup`,
+      {
+        userId: userData.userId,
+        password: userData.password,
+        name: userData.name,
+        phone: userData.phone,
+        email: userData.email
+      }
+    )
+    if (response.data.token) {
+      localStorage.setItem('adminToken', response.data.token)
+      localStorage.setItem('adminUser', JSON.stringify(response.data.user))
+      return response.data
+    }
+    throw new Error('Camp signup failed')
+  } catch (error) {
+    throw error
+  }
+}
+
+export async function campLogin(
+  userId: string,
+  password: string
+): Promise<LoginResponse> {
+  try {
+    const response = await axios.post<LoginResponse>(
+      `${BASE_URL}/auth/camp/login`,
+      {
+        userId,
+        password,
+        appName: 'Bowser Admin'
+      },
+      { withCredentials: true } // Include cookies in requests
+    )
+    if (response.data.token) {
+      localStorage.setItem('adminToken', response.data.token)
+      localStorage.setItem('adminUser', JSON.stringify(response.data.user))
+      localStorage.setItem('isLoggedIn', 'true')
+
+      if (response.data.user.phone) {
+        let groups = response.data.user.roles
+        if (response.data.user.department) groups.push(response.data.user.department)
+        if (response.data.user.Division) groups.push(response.data.user.Division)
+        const userIdentifier = response.data.user.userId || response.data.user.id || response.data.user.phone
+        await registerPushSubscription(
+          response.data.user.phone,
+          userIdentifier,
+          groups
+        )
+      }
+      return response.data
+    }
+    throw new Error('Camp login failed')
+  } catch (error) {
+    throw error
+  }
+}

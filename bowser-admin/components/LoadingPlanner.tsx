@@ -242,6 +242,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
                         searchTerm={vehicleSearch}
                         onSearchTermChange={setVehicleSearch}
                         placeholder="Select Vehicle"
+                        showAddButton={false}
                     />
                     <div className={tripId == "" ? "hidden" : ""}>
                         <Label htmlFor="driver">Driver</Label>

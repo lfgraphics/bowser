@@ -35,6 +35,9 @@ const userRoutes = require('./users');
 const bowserRoutes = require('./bowsers');
 const vehicleRoutes = require('./vehicle')
 const vehicleDriverAuth = require('./vehicleDriversAuth')
+const campAuthRoutes = require('./camp/auth');
+const campAdminRoutes = require('./camp/admin');
+const campProfileRoutes = require('./camp/profile');
 
 router.get('/', (req, res) => {
     res.send('landing page');
@@ -95,5 +98,8 @@ router.use('/bowsers', bowserRoutes);
 router.use('/updates', updateRoutes);
 router.use('/vehicle', vehicleRoutes);
 router.use('/auth/driver', vehicleDriverAuth);
+router.use('/auth/camp', campAuthRoutes);
+router.use('/camp/admin', campAdminRoutes);
+router.use('/camp/profile', campProfileRoutes);
 
 module.exports = router;

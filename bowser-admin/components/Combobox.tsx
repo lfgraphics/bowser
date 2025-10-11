@@ -19,7 +19,8 @@ type ComboboxProps = {
     onSearchTermChange: (term: string) => void;
     className?: string;
     width?: string;
-    onAddOption?: (option: ComboboxOption) => void;
+    showAddButton?: boolean;
+    onAddOption?: (searchTerm: string) => void;
 };
 
 const Combobox = ({
@@ -31,6 +32,8 @@ const Combobox = ({
     onSearchTermChange,
     className,
     width = "w-[200px]",
+    showAddButton = true,
+    onAddOption,
 }: ComboboxProps) => {
     const [highlightedIndex, setHighlightedIndex] = React.useState<number>(-1);
     const inputRef = React.useRef<HTMLInputElement>(null);
@@ -130,15 +133,21 @@ const Combobox = ({
                     {filteredOptions.length === 0 ? (
                         <div className="p-2 text-sm text-muted-foreground">
                             No option found.
-                            <Button
-                                className="ml-2"
-                                onClick={() => {
-                                    onChange(searchTerm);
-                                    setOpen(false);
-                                }}
-                            >
-                                Add {searchTerm}
-                            </Button>
+                            {showAddButton && (onAddOption) && searchTerm.trim() && (
+                                <Button
+                                    className="ml-2"
+                                    size="sm"
+                                    onClick={() => {
+                                        const trimmedSearchTerm = searchTerm.trim();
+                                        if (onAddOption) {
+                                            onAddOption(trimmedSearchTerm);
+                                        }
+                                        setOpen(false);
+                                    }}
+                                >
+                                    Add "{searchTerm.trim()}"
+                                </Button>
+                            )}
                         </div>
                     ) : (
                         filteredOptions.map((item, index) => (

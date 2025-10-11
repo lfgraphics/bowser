@@ -2,7 +2,10 @@ import React from 'react'
 import { jwtDecode } from 'jwt-decode'
 
 type DecodedToken = {
-    roles: string[]
+    roles?: string[]
+    role?: string
+    type?: string
+    userId?: string
 }
 
 type WithRoleProps = {
@@ -21,16 +24,37 @@ export default function OnlyAllowed({ allowedRoles, children }: WithRoleProps) {
 
     try {
         const decoded: DecodedToken = jwtDecode(token)
-        const userRoles = decoded.roles
+        
+        // For camp users, the role is not in the JWT token, so we need to get it from localStorage
+        if (decoded.type === 'camp') {
+            const adminUserData = typeof window !== 'undefined' ? localStorage.getItem('adminUser') : null
+            if (adminUserData) {
+                try {
+                    const userData = JSON.parse(adminUserData)
+                    const userRole = userData.role
+                    if (userRole && allowedRoles.includes(userRole)) {
+                        return <>{children}</>
+                    }
+                } catch (e) {
+                    console.error('Error parsing adminUser data:', e)
+                }
+            }
+            return null
+        }
+        
+        // For regular admin tokens, check roles in the token
+        const userRoles = Array.isArray(decoded.roles) ? decoded.roles : 
+                         decoded.role ? [decoded.role] : []
 
         // check if there's intersection
-        const hasRole = userRoles.some((role) => allowedRoles.includes(role))
+        const hasRole = userRoles.some((role: string) => allowedRoles.includes(role))
         if (!hasRole) {
             return null // or <div>Not authorized</div>
         }
 
         return <>{children}</>
     } catch (error) {
+        console.error('Error decoding token:', error)
         return null // bad token
     }
 }
