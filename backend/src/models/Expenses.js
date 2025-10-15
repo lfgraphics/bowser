@@ -16,7 +16,7 @@ const campUsersSchema = new Schema({
         default: () => new Map([
             ['allowedExpenses', {
                 hotel: 200,
-                fooding: 100,
+                fooding: 200,
                 petrol: 2, // rupees per liter
                 readonly: true
             }],
