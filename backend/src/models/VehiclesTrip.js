@@ -144,7 +144,8 @@ tankerTripSchema.pre(['save', 'findOneAndUpdate', 'updateOne', 'updateMany', 'bu
             if (update.VehicleNo || update.$set?.VehicleNo) {
                 vehicleNo = update.VehicleNo || update.$set.VehicleNo;
                 // Get the existing document to merge with updates
-                const existingDoc = await this.model.findOne(query).lean();
+                const ModelRef = getModelReference(this);
+                const existingDoc = await ModelRef.findOne(query).lean();
                 if (existingDoc) {
                     currentTripId = existingDoc._id;
                     // Merge existing document with updates to get final state
@@ -160,7 +161,8 @@ tankerTripSchema.pre(['save', 'findOneAndUpdate', 'updateOne', 'updateMany', 'bu
                 }
             } else {
                 // Fetch existing document to get VehicleNo and merge updates
-                const existingDoc = await this.model.findOne(query).lean();
+                const ModelRef = getModelReference(this);
+                const existingDoc = await ModelRef.findOne(query).lean();
                 if (existingDoc) {
                     vehicleNo = existingDoc.VehicleNo;
                     currentTripId = existingDoc._id;
@@ -193,7 +195,14 @@ tankerTripSchema.pre(['save', 'findOneAndUpdate', 'updateOne', 'updateMany', 'bu
         // Create a comprehensive query to find the actual latest trip after this operation
         // We need to simulate what the database will look like after this operation completes
 
-        await updateVehicleLatestTrip(vehicleNo, currentTripId, doc, isUpdateOperation, this.model);
+        // Get the model reference properly
+        try {
+            const ModelRef = getModelReference(this);
+            await updateVehicleLatestTrip(vehicleNo, currentTripId, doc, isUpdateOperation, ModelRef);
+        } catch (modelError) {
+            console.error('Error getting model reference for vehicle:', vehicleNo, modelError);
+            // Continue without updating - don't fail the main operation
+        }
 
         next();
     } catch (error) {
@@ -218,7 +227,8 @@ tankerTripSchema.post(['save', 'findOneAndUpdate', 'updateOne', 'deleteOne', 'de
             // For bulk operations, extract all affected vehicle numbers
             if (this.result && this.result.insertedIds) {
                 // Get inserted documents
-                const insertedDocs = await this.model.find({
+                const ModelRef = getModelReference(this);
+                const insertedDocs = await ModelRef.find({
                     _id: { $in: Object.values(this.result.insertedIds) }
                 }, { VehicleNo: 1 }).lean();
                 insertedDocs.forEach(d => {
@@ -233,8 +243,14 @@ tankerTripSchema.post(['save', 'findOneAndUpdate', 'updateOne', 'deleteOne', 'de
         }
 
         // Update latest trip reference for all affected vehicles
-        for (const vehicleNo of vehicleNumbers) {
-            await recalculateVehicleLatestTrip(vehicleNo, this.model);
+        try {
+            const ModelRef = getModelReference(this);
+            for (const vehicleNo of vehicleNumbers) {
+                await recalculateVehicleLatestTrip(vehicleNo, ModelRef);
+            }
+        } catch (modelError) {
+            console.error('Error getting model reference for bulk operation:', modelError);
+            // Continue without updating - don't fail the main operation
         }
 
         if (next) next();
@@ -244,9 +260,40 @@ tankerTripSchema.post(['save', 'findOneAndUpdate', 'updateOne', 'deleteOne', 'de
     }
 });
 
+// Helper function to get the correct model reference in different middleware contexts
+function getModelReference(context) {
+    // Try different ways to get the model reference depending on the middleware context
+    if (context.model && typeof context.model.find === 'function') {
+        return context.model;
+    }
+    if (context.constructor?.model && typeof context.constructor.model.find === 'function') {
+        return context.constructor.model;
+    }
+    if (context.constructor && typeof context.constructor.find === 'function') {
+        return context.constructor;
+    }
+    
+    // Fallback: try to get the model from the connection
+    try {
+        const connection = getTransportDatabaseConnection();
+        if (connection.models.TankersTrip) {
+            return connection.models.TankersTrip;
+        }
+    } catch (error) {
+        console.error('Error getting model reference:', error);
+    }
+    
+    throw new Error('Could not find valid model reference in middleware context');
+}
+
 // Helper function to determine and update the latest trip for a vehicle
 async function updateVehicleLatestTrip(vehicleNo, currentTripId, currentDoc, isUpdate, model) {
     try {
+        // Validate that we have a proper model with find function
+        if (!model || typeof model.find !== 'function') {
+            throw new Error('Invalid model provided to updateVehicleLatestTrip');
+        }
+        
         // Get all trips for this vehicle to determine the latest one
         // This includes the current document state for accurate comparison
         const allTrips = await model.find(

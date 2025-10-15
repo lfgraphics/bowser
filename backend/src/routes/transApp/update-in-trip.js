@@ -1,5 +1,4 @@
-import joiPkg from 'joi';
-const { object, string, date, number, boolean, alternatives } = joiPkg;
+import Joi from 'joi';
 import momentTz from 'moment-timezone';
 const { tz } = momentTz;
 import { Router } from 'express';
@@ -80,23 +79,23 @@ router.post('/report', async (req, res) => {
 router.post('/destination-change', async (req, res) => {
     const { tripId, data } = req.body;
 
-    const schema = object({
-        tripId: string().regex(/^[0-9a-fA-F]{24}$/).required(),
-        data: object({
-            VehicleNo: string().required(),
-            driverName: string().min(1).required(),
-            driverMobile: string().pattern(/^\d{10}$/).optional(),
-            stackHolder: string().required(),
-            proposedDate: date().iso().required(),
-            targetTime: string().optional(),
-            odometer: number().min(0).optional(),
-            orderedBy: string().required(),
-            proposedBy: string().required(),
-            previousTripId: string().regex(/^[0-9a-fA-F]{24}$/).required(),
-            StartFrom: string().required(),
-            division: string().required(),
-            modificationCheck: boolean().required(),
-            ManagerComment: string().required()
+    const schema = Joi.object({
+        tripId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(),
+        data: Joi.object({
+            VehicleNo: Joi.string().required(),
+            driverName: Joi.string().min(1).required(),
+            driverMobile: Joi.string().pattern(/^\d{10}$/).optional(),
+            stackHolder: Joi.string().required(),
+            proposedDate: Joi.date().iso().required(),
+            targetTime: Joi.string().optional(),
+            odometer: Joi.number().min(0).optional(),
+            orderedBy: Joi.string().required(),
+            proposedBy: Joi.string().required(),
+            previousTripId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(),
+            StartFrom: Joi.string().required(),
+            division: Joi.string().required(),
+            modificationCheck: Joi.boolean().required(),
+            ManagerComment: Joi.string().required()
             // ManagerComment: Joi.string().allow('').optional()
         }).required()
     });
@@ -185,32 +184,32 @@ router.post('/loaded', async (req, res) => {
 
     console.log(data)
 
-    const schema = object({
-        tripId: string().regex(/^[0-9a-fA-F]{24}$/).required(),
-        data: object({
-            driverName: string().min(1).required(),
-            driverMobile: string().pattern(/^\d{10}$/).required(),
-            EndDestination: string().required(),
-            EndLocation: string().required(),
-            EndDate: alternatives().try(
-                date().required(),
-                string().required()
+    const schema = Joi.object({
+        tripId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(),
+        data: Joi.object({
+            driverName: Joi.string().min(1).required(),
+            driverMobile: Joi.string().pattern(/^\d{10}$/).required(),
+            EndDestination: Joi.string().required(),
+            EndLocation: Joi.string().required(),
+            EndDate: Joi.alternatives().try(
+                Joi.date().required(),
+                Joi.string().required()
             ).required(),
-            GoodsLoaded: string().required(),
-            QtyLoaded: number().min(0).required(),
-            OdometerOnTrackUpdate: number().min(0).required(),
-            LocationOnTrackUpdate: string().required(),
-            TrackUpdateDate: alternatives().try(
-                date().required(),
-                string().required()
+            GoodsLoaded: Joi.string().required(),
+            QtyLoaded: Joi.number().min(0).required(),
+            OdometerOnTrackUpdate: Joi.number().min(0).required(),
+            LocationOnTrackUpdate: Joi.string().required(),
+            TrackUpdateDate: Joi.alternatives().try(
+                Joi.date().required(),
+                Joi.string().required()
             ).required(),
-            ManagerComment: string().required(),
-            targetTime: alternatives().try(
-                date().required(),
-                string().required()
+            ManagerComment: Joi.string().required(),
+            targetTime: Joi.alternatives().try(
+                Joi.date().required(),
+                Joi.string().required()
             ).required(),
-            orderedBy: string().required(),
-            proposedBy: string().required(),
+            orderedBy: Joi.string().required(),
+            proposedBy: Joi.string().required(),
         }).required()
     });
 
