@@ -1,10 +1,11 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const FuelingOrder = require("../models/fuelingOrders");
-const WebSocket = require("ws");
+import { Router } from "express";
+import { Types } from "mongoose";
+import { findByIdAndUpdate as updateFuelingOrder } from "../models/fuelingOrders.js";
+import WebSocket from "ws";
+const { OPEN } = WebSocket;
 
-module.exports = (wss) => {
-    const router = express.Router();
+export default (wss) => {
+    const router = Router();
     const activeOrders = new Map(); // Stores last known locations
     const clientRooms = new Map(); // Stores which room each client is connected to
 
@@ -17,11 +18,11 @@ module.exports = (wss) => {
                 const { action, orderId, longLat } = JSON.parse(message);
 
                 // ✅ Ensure orderId is valid
-                if (!mongoose.Types.ObjectId.isValid(orderId)) {
+                if (!Types.ObjectId.isValid(orderId)) {
                     ws.send(JSON.stringify({ error: "Invalid Order ID format" }));
                     return;
                 }
-                const objectId = new mongoose.Types.ObjectId(String(orderId));
+                const objectId = new Types.ObjectId(String(orderId));
 
                 // ✅ Handle Room Joining (Receive Updates)
                 if (action === "join") {
@@ -57,7 +58,7 @@ module.exports = (wss) => {
                     if (lastKnownLocation === longLat) return; // Skip if no location change
 
                     // Update Order Location in MongoDB
-                    const fuelingOrder = await FuelingOrder.findByIdAndUpdate(
+                    const fuelingOrder = await updateFuelingOrder(
                         objectId,
                         { "allocation.bowser.driver.location": longLat },
                         { new: true }
@@ -74,7 +75,7 @@ module.exports = (wss) => {
 
                     // ✅ Broadcast update only to clients in the same room
                     wss.clients.forEach((client) => {
-                        if (client !== ws && client.readyState === WebSocket.OPEN) {
+                        if (client !== ws && client.readyState === OPEN) {
                             if (clientRooms.get(client) === orderId) {
                                 client.send(JSON.stringify({ orderId, longLat }));
                             }

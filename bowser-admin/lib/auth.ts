@@ -186,7 +186,7 @@ export async function campSignup(userData: {
 }): Promise<SignupResponse> {
   try {
     const response = await axios.post<SignupResponse>(
-      `${BASE_URL}/auth/camp/signup`,
+      `${BASE_URL}/camp/auth/signup`,
       {
         userId: userData.userId,
         password: userData.password,
@@ -212,7 +212,7 @@ export async function campLogin(
 ): Promise<LoginResponse> {
   try {
     const response = await axios.post<LoginResponse>(
-      `${BASE_URL}/auth/camp/login`,
+      `${BASE_URL}/camp/auth/login`,
       {
         userId,
         password,

@@ -1,15 +1,15 @@
-const express = require('express');
-const router = express.Router();
-const { TripSheet } = require('../models/TripSheets');
-const mongoose = require('mongoose');
-const User = require('../models/user');
-const Bowser = require('../models/Bowsers');
-const LoadingSheet = require('../models/LoadingSheet');
-const { calculateQty } = require('../utils/calibration');
-const { updateTripSheet } = require('../utils/tripSheet')
-const { sendNativePushNotification, sendBulkNotifications } = require('../utils/pushNotifications');
-const { withTransaction } = require('../utils/transactions');
-const { handleTransactionError, createErrorResponse } = require('../utils/errorHandler');
+import { Router } from 'express';
+const router = Router();
+import { TripSheet } from '../models/TripSheets.js';
+import { Types } from 'mongoose';
+import { findOneAndUpdate as updateUser } from '../models/user.js';
+import { findOne as findOneBowser, findOneAndUpdate as updateBowser } from '../models/Bowsers.js';
+import { findOneAndUpdate as updateLoadingSheet } from '../models/LoadingSheet.js';
+import { calculateQty } from '../utils/calibration.js';
+import { updateTripSheet } from '../utils/tripSheet.js';
+import { sendNativePushNotification, sendBulkNotifications } from '../utils/pushNotifications.js';
+import { withTransaction } from '../utils/transactions.js';
+import { handleTransactionError, createErrorResponse } from '../utils/errorHandler.js';
 
 const notifyDriver = async ({ phoneNumber, bowser, tripsheetId, location }) => {
     let options = {
@@ -20,7 +20,7 @@ const notifyDriver = async ({ phoneNumber, bowser, tripsheetId, location }) => {
 }
 
 const checkExistingTrip = async (regNo) => {
-    const bowser = await Bowser.findOne({ regNo });
+    const bowser = await findOneBowser({ regNo });
     if (bowser && bowser.currentTrip) {
         const currentTrip = await TripSheet.findById(bowser.currentTrip);
         if (currentTrip && !currentTrip.settelment?.settled) {
@@ -35,7 +35,7 @@ const checkExistingTrip = async (regNo) => {
 
 const updateBowserDriver = async (phoneNo, regNo, session = null) => {
     if (!phoneNo) return;
-    await User.findOneAndUpdate(
+    await updateUser(
         { phoneNumber: phoneNo },
         { $set: { bowserId: regNo } },
         { new: true, upsert: true, session }
@@ -44,7 +44,7 @@ const updateBowserDriver = async (phoneNo, regNo, session = null) => {
 };
 
 const updateBowserCurrentTrip = async (regNo, tripSheetId, session = null) => {
-    const updatedBowser = await Bowser.findOneAndUpdate(
+    const updatedBowser = await updateBowser(
         { regNo },
         { $set: { currentTrip: tripSheetId } },
         { new: true, session }
@@ -77,7 +77,7 @@ router.post('/create', async (req, res) => {
                 bowser,
                 hsdRate,
                 loading: {
-                    sheetId: new mongoose.Types.ObjectId(loading.sheetId),
+                    sheetId: new Types.ObjectId(loading.sheetId),
                     quantityByDip: qtyDip,
                     quantityBySlip: qtySlip,
                     tempLoadByDip: loading.tempLoadByDip,
@@ -96,7 +96,7 @@ router.post('/create', async (req, res) => {
             await updateBowserCurrentTrip(bowser.regNo, sheet._id, sessions.bowsers);
 
             // Mark loading sheet fulfilled in bowsers DB
-            await LoadingSheet.findOneAndUpdate(
+            await updateLoadingSheet(
                 { _id: loading.sheetId },
                 { $set: { fulfilled: true } },
                 { new: true, session: sessions.bowsers }
@@ -206,12 +206,13 @@ router.get('/find-by-sheetId/:tripSheetId', async (req, res) => {
         return res.status(errorResponse.status).json(errorResponse);
     }
 });
+
 router.get('/find-by-id/:id', async (req, res) => {
     const id = req.params.id;
 
     try {
         // First, find all bowsers with the given registration number.
-        const sheet = await TripSheet.findById(new mongoose.Types.ObjectId(id));
+        const sheet = await TripSheet.findById(new Types.ObjectId(id));
 
 
         res.status(200).json(sheet);
@@ -221,12 +222,13 @@ router.get('/find-by-id/:id', async (req, res) => {
         return res.status(errorResponse.status).json(errorResponse);
     }
 });
+
 router.get('/:id', async (req, res) => {
     const id = req.params.id;
 
     try {
         // First, find all bowsers with the given registration number.
-        const sheet = await TripSheet.findById(new mongoose.Types.ObjectId(id)).populate('loading.sheetId');
+        const sheet = await TripSheet.findById(new Types.ObjectId(id)).populate('loading.sheetId');
         res.status(200).json(sheet);
 
     } catch (err) {
@@ -265,6 +267,7 @@ router.get('/tripSheetId/:id', async (req, res) => {
         return res.status(errorResponse.status).json(errorResponse);
     }
 });
+
 router.patch('/update/:id', async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
@@ -274,7 +277,7 @@ router.patch('/update/:id', async (req, res) => {
     }
 
     try {
-        if (!mongoose.Types.ObjectId.isValid(id)) {
+        if (!Types.ObjectId.isValid(id)) {
             return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid TripSheet ID.' }));
         }
         if (!updateData || typeof updateData !== 'object') {
@@ -368,7 +371,7 @@ router.post('/close-trip/:id', async (req, res) => {
     const id = req.params.id;
     const { userDetails, reason, remarks, dateTime } = req.body;
     try {
-        if (!mongoose.Types.ObjectId.isValid(id)) {
+        if (!Types.ObjectId.isValid(id)) {
             return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid TripSheet ID.' }));
         }
         if (!userDetails?.id || !userDetails?.name || !reason || !dateTime) {
@@ -376,7 +379,7 @@ router.post('/close-trip/:id', async (req, res) => {
         }
 
         await withTransaction(async (sessions) => {
-            const tripsheet = await TripSheet.findById(new mongoose.Types.ObjectId(id)).session(sessions.bowsers);
+            const tripsheet = await TripSheet.findById(new Types.ObjectId(id)).session(sessions.bowsers);
             if (!tripsheet) {
                 const e = new Error("can't find the trip sheet");
                 e.name = 'ValidationError';
@@ -403,7 +406,7 @@ router.post('/close-trip/:id', async (req, res) => {
             await tripsheet.save({ session: sessions.bowsers });
 
             // Clear bowser currentTrip
-            await Bowser.findOneAndUpdate({ regNo: tripsheet.bowser.regNo }, { $unset: { currentTrip: '' } }, { session: sessions.bowsers });
+            await updateBowser({ regNo: tripsheet.bowser.regNo }, { $unset: { currentTrip: '' } }, { session: sessions.bowsers });
         }, { connections: ['bowsers'], context: { route: '/close-trip', tripSheetId: id } });
 
         res.status(200).json({ message: 'Trip sheet closed successfully' });
@@ -417,7 +420,7 @@ router.post('/settle/:id', async (req, res) => {
     let id = req.params.id;
     let { chamberwiseDipList, pumpReading, dateTime, odometer, userDetails, extras } = req.body;
     try {
-        if (!mongoose.Types.ObjectId.isValid(id)) {
+        if (!Types.ObjectId.isValid(id)) {
             return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid TripSheet ID.' }));
         }
         if (!Array.isArray(chamberwiseDipList) || chamberwiseDipList.length === 0 || !dateTime || !userDetails?.id || !userDetails?.name) {
@@ -425,14 +428,14 @@ router.post('/settle/:id', async (req, res) => {
         }
 
         const tripsheet = await withTransaction(async (sessions) => {
-            let sheet = await TripSheet.findById(new mongoose.Types.ObjectId(id)).session(sessions.bowsers);
+            let sheet = await TripSheet.findById(new Types.ObjectId(id)).session(sessions.bowsers);
             if (!sheet) {
                 const e = new Error("can't find the trip sheet");
                 e.name = 'ValidationError';
                 throw e;
             }
             const bowserRegNo = sheet.bowser.regNo;
-            const bowser = await Bowser.findOne({ regNo: bowserRegNo }).session(sessions.bowsers);
+            const bowser = await findOneBowser({ regNo: bowserRegNo }).session(sessions.bowsers);
             if (!bowser) {
                 const e = new Error("can't find the bowser");
                 e.name = 'ValidationError';
@@ -465,7 +468,7 @@ router.post('/settle/:id', async (req, res) => {
             };
             sheet.settelment = settlement;
             await sheet.save({ session: sessions.bowsers });
-            await Bowser.findOneAndUpdate({ regNo: bowserRegNo }, { $unset: { currentTrip: '' } }, { session: sessions.bowsers });
+            await updateBowser({ regNo: bowserRegNo }, { $unset: { currentTrip: '' } }, { session: sessions.bowsers });
             return sheet;
         }, { connections: ['bowsers'], context: { route: '/settle', tripSheetId: id } });
 
@@ -492,12 +495,12 @@ router.post('/check-settelment/:id', async (req, res) => {
     let id = req.params.id;
     let { chamberwiseDipList, pumpReading, dateTime, odometer, userDetails, extras } = req.body;
     try {
-        let tripsheet = await TripSheet.findById(new mongoose.Types.ObjectId(id)).populate('loading.sheetId');
+        let tripsheet = await TripSheet.findById(new Types.ObjectId(id)).populate('loading.sheetId');
         if (!tripsheet) {
             throw new Error(`can't find the trip sheet`);
         }
         let bowserRegNo = tripsheet.bowser.regNo;
-        let bowser = await Bowser.findOne({ regNo: bowserRegNo });
+        let bowser = await findOneBowser({ regNo: bowserRegNo });
         if (!bowser) {
             throw new Error(`can't find the bowser`);
         }
@@ -599,7 +602,7 @@ router.delete('/delete-dispense', async (req, res) => {
         if (!id || !sheetId) {
             return res.status(400).json(createErrorResponse({ status: 400, message: 'dispense id and tripSheetId are required' }));
         }
-        if (!mongoose.Types.ObjectId.isValid(id)) {
+        if (!Types.ObjectId.isValid(id)) {
             return res.status(400).json(createErrorResponse({ status: 400, message: 'Invalid dispense id' }));
         }
 
@@ -654,4 +657,4 @@ router.post('/verify-opening', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

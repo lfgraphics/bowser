@@ -1,9 +1,11 @@
-const express = require('express');
-const router = express.Router();
-const jwt = require('jsonwebtoken');
-const TransUser = require('../../models/TransUser');
-const { division } = require('./utils');
-const argon2 = require('argon2');
+import { Router } from 'express';
+const router = Router();
+import jwtPkg from 'jsonwebtoken';
+const { sign } = jwtPkg;
+import { findOne as findOneTransUser } from '../../models/TransUser.js';
+import { division } from './utils.js';
+import argon2Pkg from 'argon2';
+const { verify } = argon2Pkg;
 
 router.post('/', async (req, res) => {
     const { userId, password } = req.body;
@@ -12,7 +14,7 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ error: 'User ID and password are required.' });
     }
     // find by username first (case-insensitive)
-    let user = await TransUser.findOne({ UserName: { $regex: userId, $options: 'i' } });
+    let user = await findOneTransUser({ UserName: { $regex: userId, $options: 'i' } });
 
     if (user) {
         if (user.hashed) {
@@ -20,7 +22,7 @@ router.post('/', async (req, res) => {
             const hash = user.Password;
             let isPasswordValid = false;
             try {
-                isPasswordValid = await argon2.verify(hash, password);
+                isPasswordValid = await verify(hash, password);
             } catch (err) {
                 isPasswordValid = false;
             }
@@ -32,13 +34,13 @@ router.post('/', async (req, res) => {
         }
     } else {
         // fallback to original behavior if no user found by username alone
-        user = await TransUser.findOne({ UserName: { $regex: userId, $options: 'i' }, Password: { $regex: password, $options: 'i' } });
+        user = await findOneTransUser({ UserName: { $regex: userId, $options: 'i' }, Password: { $regex: password, $options: 'i' } });
     }
     if (!user) {
         return res.status(401).json({ error: 'User Not found' });
     }
 
-    const token = jwt.sign(
+    const token = sign(
         { userId: user.UserName, roles: ["Trans App"] },
         process.env.JWT_SECRET,
         { expiresIn: '7d' }
@@ -68,4 +70,4 @@ router.post('/', async (req, res) => {
     });
 });
 
-module.exports = router;
+export default router;

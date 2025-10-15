@@ -1,11 +1,11 @@
-const express = require('express');
-const router = express.Router();
-const Role = require('../models/role');
+import { Router } from 'express';
+const router = Router();
+import Role, { find as findRoles, findByIdAndUpdate as updateRole, findByIdAndDelete as deleteRole } from '../models/role.js';
 
 // Get all roles
 router.get('/', async (req, res) => {
     try {
-        const roles = await Role.find();
+        const roles = await findRoles();
         res.status(200).json(roles);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch roles', details: error });
@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     const { name, permissions } = req.body;
     try {
-        const role = await Role.findByIdAndUpdate(
+        const role = await updateRole(
             req.params.id,
             { name, permissions },
             { new: true }
@@ -43,7 +43,7 @@ router.put('/:id', async (req, res) => {
 // Delete a role
 router.delete('/:id', async (req, res) => {
     try {
-        const role = await Role.findByIdAndDelete(req.params.id);
+        const role = await deleteRole(req.params.id);
         if (!role) return res.status(404).json({ error: 'Role not found' });
         res.status(200).json({ message: 'Role deleted', role });
     } catch (error) {
@@ -51,4 +51,4 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

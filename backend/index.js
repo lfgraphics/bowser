@@ -1,19 +1,27 @@
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const cookieParser = require("cookie-parser");
-const helmet = require('helmet');
-const hpp = require('hpp');
-require('dotenv').config();
+import express, { json, urlencoded } from 'express';
+import cors from 'cors';
+import bodyParserPkg from 'body-parser';
+const { json: _json } = bodyParserPkg;
+import cookieParser from "cookie-parser";
+import helmet from 'helmet';
+import hpp from 'hpp';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-const http = require("http");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: join(__dirname, '.env') });
+
+import { createServer } from "http";
 // const WebSocket = require("ws");
-const { connectDatabases } = require('./config/database');
-const routes = require('./src/routes');
-const { requestContext, errorHandler } = require('./src/middleware/errorHandler');
+import { connectDatabases } from './config/database.js';
+import routes from './src/routes/index.js';
+import { requestContext, errorHandler } from './src/middleware/errorHandler.js';
 
 const app = express();
-const server = http.createServer(app); // Shared HTTP server
+const server = createServer(app); // Shared HTTP server
 // const wss = new WebSocket.Server({ server });
 
 const PORT = process.env.PORT || 5000;
@@ -39,9 +47,9 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(bodyParser.json());
+app.use(json({ limit: '10mb' }));
+app.use(urlencoded({ limit: '10mb', extended: true }));
+app.use(_json());
 app.use(cookieParser());
 
 // Attach request context for correlation

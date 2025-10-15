@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
-const { transportDatabaseConnection } = require('../../config/database');
+import { Schema } from 'mongoose';
+import { getTransportDatabaseConnection } from '../../config/database.js';
 
-const vehicleSchema = new mongoose.Schema({
+const vehicleSchema = new Schema({
     VehicleNo: String,
     tripDetails: {
-        id: { type: mongoose.Schema.Types.ObjectId, ref: "TankersTrip", required: false },
+        id: { type: Schema.Types.ObjectId, ref: "TankersTrip", required: false },
         driver: { type: String, required: true },
         open: { type: Boolean, required: false },
         from: { type: String, required: false },
@@ -16,7 +16,7 @@ const vehicleSchema = new mongoose.Schema({
     capacity: String,
     GoodsCategory: String,
     manager: String,
-    driverLogs: [{ type: mongoose.Schema.Types.ObjectId, ref: "DriversLog" }]
+    driverLogs: [{ type: Schema.Types.ObjectId, ref: "DriversLog" }]
 });
 
 vehicleSchema.virtual("lastDriverLog", {
@@ -29,4 +29,23 @@ vehicleSchema.virtual("lastDriverLog", {
 vehicleSchema.set("toObject", { virtuals: true });
 vehicleSchema.set("toJSON", { virtuals: true });
 
-module.exports = transportDatabaseConnection.model('Vehicle', vehicleSchema, 'VehiclesCollection');
+const Vehicle = getTransportDatabaseConnection().model('Vehicle', vehicleSchema, 'VehiclesCollection');
+
+// Export model methods as named exports
+export const find = Vehicle.find.bind(Vehicle);
+export const findOne = Vehicle.findOne.bind(Vehicle);
+export const findById = Vehicle.findById.bind(Vehicle);
+export const findOneAndUpdate = Vehicle.findOneAndUpdate.bind(Vehicle);
+export const findByIdAndUpdate = Vehicle.findByIdAndUpdate.bind(Vehicle);
+export const updateOne = Vehicle.updateOne.bind(Vehicle);
+export const updateMany = Vehicle.updateMany.bind(Vehicle);
+export const deleteOne = Vehicle.deleteOne.bind(Vehicle);
+export const deleteMany = Vehicle.deleteMany.bind(Vehicle);
+export const create = Vehicle.create.bind(Vehicle);
+export const insertMany = Vehicle.insertMany.bind(Vehicle);
+export const countDocuments = Vehicle.countDocuments.bind(Vehicle);
+export const distinct = Vehicle.distinct.bind(Vehicle);
+export const aggregate = Vehicle.aggregate.bind(Vehicle);
+export const bulkWrite = Vehicle.bulkWrite.bind(Vehicle);
+
+export default Vehicle;

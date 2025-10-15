@@ -1,9 +1,11 @@
-const Joi = require('joi');
-const moment = require('moment-timezone');
-const express = require('express');
-const router = express.Router();
-const TankersTrip = require('../../models/VehiclesTrip');
-const { createEmptyTrip, updateEmptyTrip } = require('./utils');
+import joiPkg from 'joi';
+const { object, string, date, number, boolean, alternatives } = joiPkg;
+import momentTz from 'moment-timezone';
+const { tz } = momentTz;
+import { Router } from 'express';
+const router = Router();
+import { findById as findTripById, findByIdAndUpdate as updateTripById } from '../../models/VehiclesTrip.js';
+import { createEmptyTrip, updateEmptyTrip } from './utils.js';
 
 // const { getCurrentTrip, getAllTrips } = require('./utils');
 
@@ -11,11 +13,11 @@ router.post('/update', async (req, res) => {
     const { tripId, data } = req.body;
 
     if (!tripId || !data) {
-        return res.status(400).json({ error: 'Trip ID and travel history are required.' });
+        return res.status(400).json({ error: 'Trip ID and data are required.' });
     }
 
     try {
-        const trip = await TankersTrip.findById(tripId);
+        const trip = await findTripById(tripId);
         if (!trip) {
             return res.status(404).json({ error: 'Trip not found.' });
         }
@@ -43,7 +45,7 @@ router.post('/report', async (req, res) => {
     }
 
     try {
-        const trip = await TankersTrip.findById(tripId);
+        const trip = await findTripById(tripId);
         if (!trip) {
             return res.status(404).json({ error: 'Trip not found.' });
         }
@@ -78,28 +80,28 @@ router.post('/report', async (req, res) => {
 router.post('/destination-change', async (req, res) => {
     const { tripId, data } = req.body;
 
-    const schema = Joi.object({
-        tripId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(),
-        data: Joi.object({
-            VehicleNo: Joi.string().required(),
-            driverName: Joi.string().min(1).required(),
-            driverMobile: Joi.string().pattern(/^\d{10}$/).optional(),
-            stackHolder: Joi.string().required(),
-            proposedDate: Joi.date().iso().required(),
-            targetTime: Joi.string().optional(),
-            odometer: Joi.number().min(0).optional(),
-            orderedBy: Joi.string().required(),
-            proposedBy: Joi.string().required(),
-            previousTripId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(),
-            StartFrom: Joi.string().required(),
-            division: Joi.string().required(),
-            modificationCheck: Joi.boolean().required(),
-            ManagerComment: Joi.string().required()
+    const schema = object({
+        tripId: string().regex(/^[0-9a-fA-F]{24}$/).required(),
+        data: object({
+            VehicleNo: string().required(),
+            driverName: string().min(1).required(),
+            driverMobile: string().pattern(/^\d{10}$/).optional(),
+            stackHolder: string().required(),
+            proposedDate: date().iso().required(),
+            targetTime: string().optional(),
+            odometer: number().min(0).optional(),
+            orderedBy: string().required(),
+            proposedBy: string().required(),
+            previousTripId: string().regex(/^[0-9a-fA-F]{24}$/).required(),
+            StartFrom: string().required(),
+            division: string().required(),
+            modificationCheck: boolean().required(),
+            ManagerComment: string().required()
             // ManagerComment: Joi.string().allow('').optional()
         }).required()
     });
 
-    const nowInIST = moment.tz('Asia/Kolkata').toDate();
+    const nowInIST = tz('Asia/Kolkata').toDate();
 
     const { error } = schema.validate(req.body);
     if (error) {
@@ -110,7 +112,7 @@ router.post('/destination-change', async (req, res) => {
         let updatedTrip = null;
         let newTrip = null;
 
-        const tripExists = await TankersTrip.findById(tripId)
+        const tripExists = await findTripById(tripId)
         if (!tripExists) {
             throw new Error('Trip not found.');
         }
@@ -183,32 +185,32 @@ router.post('/loaded', async (req, res) => {
 
     console.log(data)
 
-    const schema = Joi.object({
-        tripId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(),
-        data: Joi.object({
-            driverName: Joi.string().min(1).required(),
-            driverMobile: Joi.string().pattern(/^\d{10}$/).required(),
-            EndDestination: Joi.string().required(),
-            EndLocation: Joi.string().required(),
-            EndDate: Joi.alternatives().try(
-                Joi.date().required(),
-                Joi.string().required()
+    const schema = object({
+        tripId: string().regex(/^[0-9a-fA-F]{24}$/).required(),
+        data: object({
+            driverName: string().min(1).required(),
+            driverMobile: string().pattern(/^\d{10}$/).required(),
+            EndDestination: string().required(),
+            EndLocation: string().required(),
+            EndDate: alternatives().try(
+                date().required(),
+                string().required()
             ).required(),
-            GoodsLoaded: Joi.string().required(),
-            QtyLoaded: Joi.number().min(0).required(),
-            OdometerOnTrackUpdate: Joi.number().min(0).required(),
-            LocationOnTrackUpdate: Joi.string().required(),
-            TrackUpdateDate: Joi.alternatives().try(
-                Joi.date().required(),
-                Joi.string().required()
+            GoodsLoaded: string().required(),
+            QtyLoaded: number().min(0).required(),
+            OdometerOnTrackUpdate: number().min(0).required(),
+            LocationOnTrackUpdate: string().required(),
+            TrackUpdateDate: alternatives().try(
+                date().required(),
+                string().required()
             ).required(),
-            ManagerComment: Joi.string().required(),
-            targetTime: Joi.alternatives().try(
-                Joi.date().required(),
-                Joi.string().required()
+            ManagerComment: string().required(),
+            targetTime: alternatives().try(
+                date().required(),
+                string().required()
             ).required(),
-            orderedBy: Joi.string().required(),
-            proposedBy: Joi.string().required(),
+            orderedBy: string().required(),
+            proposedBy: string().required(),
         }).required()
     });
 
@@ -217,7 +219,7 @@ router.post('/loaded', async (req, res) => {
         return res.status(400).json({ error: error.details[0].message });
     }
     try {
-        const tripToUpdate = await TankersTrip.findByIdAndUpdate(tripId,
+        const tripToUpdate = await updateTripById(tripId,
             {
                 $set: {
                     EndTo: data.EndLocation,
@@ -262,7 +264,7 @@ router.post('/unload', async (req, res) => {
     }
 
     try {
-        const trip = await TankersTrip.findById(tripId);
+        const trip = await findTripById(tripId);
         if (!trip) {
             return res.status(404).json({ error: 'Trip not found.' });
         }
@@ -310,7 +312,7 @@ router.post('/update-trip-status/:tripId', async (req, res) => {
         if (!statusUpdate || !statusUpdate.status || !statusUpdate.dateTime || !statusUpdate.user || !statusUpdate.user._id || !statusUpdate.user.name) {
             return res.status(400).json({ error: 'Invalid status update data.' });
         }
-        const trip = await TankersTrip.findById(tripId);
+        const trip = await findTripById(tripId);
         if (!trip) {
             return res.status(404).json({ error: 'Trip not found.' });
         }
@@ -371,7 +373,7 @@ router.post('/update-trip/:tripId', async (req, res) => {
             console.warn('Normalization warning (update-trip):', normErr?.message || normErr);
         }
 
-        const trip = await TankersTrip.findByIdAndUpdate(tripId, update, { new: true });
+        const trip = await updateTripById(tripId, update, { new: true });
         if (!trip) {
             return res.status(404).json({ error: 'Trip not found.' });
         }
@@ -382,4 +384,4 @@ router.post('/update-trip/:tripId', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

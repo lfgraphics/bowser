@@ -1,9 +1,9 @@
-const express = require('express');
-const router = express.Router();
-const { FuelingTransaction } = require('../models/Transaction');
-const { TripSheet } = require('../models/TripSheets')
-const { updateTripSheet } = require('../utils/tripSheet')
-const { mongoose } = require('mongoose');
+import { Router } from 'express';
+const router = Router();
+import { FuelingTransaction } from '../models/Transaction.js';
+import { TripSheet } from '../models/TripSheets.js';
+import { updateTripSheet } from '../utils/tripSheet.js';
+import { mongoose } from 'mongoose';
 
 router.get('/', async (req, res) => {
     const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'fuelingDateTime', order = 'desc', verified, category, vehicleNo, allocator } = req.query;
@@ -511,4 +511,4 @@ router.post('/refresh-post-status', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

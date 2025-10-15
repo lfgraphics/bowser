@@ -1,7 +1,7 @@
-const mongoose = require('mongoose');
-const { bowsersDatabaseConnection } = require('../../config/database');
+import { Schema } from 'mongoose';
+import { getBowsersDatabaseConnection } from '../../config/database.js';
 
-const externalPumpSchema = new mongoose.Schema({
+const externalPumpSchema = new Schema({
     company: { type: String, required: true },
     branches: [
         {
@@ -16,4 +16,4 @@ const externalPumpSchema = new mongoose.Schema({
     ]
 }, { timestamps: true });
 
-module.exports = bowsersDatabaseConnection.model('ExternalPump', externalPumpSchema, 'ExternalPumps');
+export default getBowsersDatabaseConnection().model('ExternalPump', externalPumpSchema, 'ExternalPumps');

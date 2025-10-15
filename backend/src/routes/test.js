@@ -1,17 +1,17 @@
-const express = require('express');
-const { calculateQty } = require('../utils/calibration');
-const Bowsers = require('../models/Bowsers');
-const TankersTrip = require('../models/VehiclesTrip');
-const { getNewSummary } = require('./transApp/utils')
+import { Router } from 'express';
+import { calculateQty } from '../utils/calibration.js';
+import { findOne as findOneBowser } from '../models/Bowsers.js';
+import { updateMany as updateManyVehicleTrips, find as findVehicleTrips, bulkWrite as bulkWriteVehicleTrips } from '../models/VehiclesTrip.js';
+import { getNewSummary } from './transApp/utils.js';
 
-const router = express.Router();
+const router = Router();
 
 router.post('/calib-calc', async (req, res) => {
     const { bowser, chamberId, levelHeight } = req.body;
 
     try {
         // Extract chambers from the bowser object
-        const bowserData = await Bowsers.findOne({ regNo: { $regex: bowser, $options: "i" } }, 'chambers');
+        const bowserData = await findOne({ regNo: { $regex: bowser, $options: "i" } }, 'chambers');
         if (!bowserData || !bowserData.chambers) {
             return res.status(404).json({ success: false, message: "Bowser not found or has no chambers." });
         }
@@ -28,7 +28,7 @@ router.post('/calib-calc', async (req, res) => {
 
 router.post('/fix-unloadingDates', async (req, res) => {
     try {
-        const result = await TankersTrip.updateMany(
+        const result = await updateMany(
             { 'TallyLoadDetail.UnloadingDate': { $ne: null } },
             [
                 {
@@ -68,7 +68,7 @@ router.get('/fix-trips-date/:vehicleNo', async (req, res) => {
         return res.status(400).json({ error: 'VehicleNo is required' });
     }
     try {
-        const trips = await TankersTrip.find();
+        const trips = await find();
         console.log(`Found ${trips.length} trips for vehicle ${vehicleNo}`);
 
         const updates = trips.map(trip => {
@@ -86,7 +86,7 @@ router.get('/fix-trips-date/:vehicleNo', async (req, res) => {
         });
 
         if (updates.length > 0) {
-            const result = await TankersTrip.bulkWrite(updates);
+            const result = await bulkWrite(updates);
             console.log({ message: 'StartDates updated', modifiedCount: result.modifiedCount, result });
             return res.json({ message: 'StartDates updated', modifiedCount: result.modifiedCount });
         } else {
@@ -98,4 +98,4 @@ router.get('/fix-trips-date/:vehicleNo', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
-const chamberLevelSchema = require('./ChamberLevel')
+import { Schema } from 'mongoose';
+import chamberLevelSchema from './ChamberLevel.js';
 
-const chamberSchema = new mongoose.Schema({
+const chamberSchema = new Schema({
     chamberId: { type: String, required: true },
     levels: [chamberLevelSchema]
 }, { _id: false });
 
-module.exports = chamberSchema
+export default chamberSchema

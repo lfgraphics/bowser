@@ -1,7 +1,7 @@
-const mongoose = require('mongoose');
-const { bowsersDatabaseConnection } = require('../../config/database');
+import { Schema } from 'mongoose';
+import { bowsersDatabaseConnection } from '../../config/database.js';
 
-const chamberLevelSchema = new mongoose.Schema({
+const chamberLevelSchema = new Schema({
     levelNo: { type: Number, required: true },
     levelHeight: { type: Number, required: true },
     levelAdditionQty: { type: Number, required: true },
@@ -9,12 +9,12 @@ const chamberLevelSchema = new mongoose.Schema({
     levelCalibrationQty: { type: Number }      // Will be auto-calculated
 }, { _id: false });
 
-const chamberSchema = new mongoose.Schema({
+const chamberSchema = new Schema({
     chamberId: { type: String, required: true },
     levels: [chamberLevelSchema]
 }, { _id: false });
 
-const bowserSchema = new mongoose.Schema({
+const bowserSchema = new Schema({
     regNo: String,
     odometerReading: String,
     fuelingMachineID: String,
@@ -22,7 +22,7 @@ const bowserSchema = new mongoose.Schema({
     pumpReadingAfterLoadingEnd: String,
     chamberSealList: [String],
     currentTrip: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'TripSheet'
     },
     pumpSlips: [{
@@ -69,4 +69,4 @@ bowserSchema.pre('save', function (next) {
     next();
 });
 
-module.exports = bowsersDatabaseConnection.model('Bowser', bowserSchema, 'BowsersCollection');
+export default bowsersDatabaseConnection.model('Bowser', bowserSchema, 'BowsersCollection');

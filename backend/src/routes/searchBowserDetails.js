@@ -1,13 +1,13 @@
-const express = require('express');
-const router = express.Router();
-const Bowser = require('../models/Bowsers');
-const {TripSheet} = require('../models/TripSheets');
+import { Router } from 'express';
+const router = Router();
+import { find as findBowsers } from '../models/Bowsers.js';
+import { TripSheet } from '../models/TripSheets.js';
 
 router.get('/:regNo', async (req, res) => {
     const regNo = req.params.regNo;
 
     try {
-        const bowsers = await Bowser.find({
+        const bowsers = await findBowsers({
             regNo: { $regex: regNo, $options: 'i' }
         });
 
@@ -64,4 +64,4 @@ router.get('/trip/:bowser', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

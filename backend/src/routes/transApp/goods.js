@@ -1,11 +1,11 @@
-const express = require('express');
-const router = express.Router();
-const Goods = require('../../models/Goods');
+import { Router } from 'express';
+const router = Router();
+import Goods, { find as findGoods, findOne as findOneGoods, findByIdAndUpdate as updateGoodsById, findByIdAndDelete as deleteGoodsById } from '../../models/Goods.js';
 
 router.get('/', async (req, res) => {
     const { params } = req.query;
     try {
-        const goods = await Goods.find({ GoodsName: { $regex: params, $options: 'i' } }).sort({ _id: -1 }).limit(20).lean();
+        const goods = await findGoods({ GoodsName: { $regex: params, $options: 'i' } }).sort({ _id: -1 }).limit(20).lean();
         res.status(200).json(goods);
     } catch (error) {
         console.error('Error fetching stack holders:', error);
@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        const existingStation = await Goods.findOne(data);
+        const existingStation = await findOneGoods(data);
         if (existingStation) {
             return res.status(400).json({ error: 'Stack Holder already exists' });
         }
@@ -43,7 +43,7 @@ router.patch('/:id', async (req, res) => {
     }
 
     try {
-        const updatedStation = await Goods.findByIdAndUpdate(id, data, { new: true });
+        const updatedStation = await updateGoodsById(id, data, { new: true });
         if (!updatedStation) {
             return res.status(404).json({ error: 'Stack Holder not found' });
         }
@@ -58,7 +58,7 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        const deletedStation = await Goods.findByIdAndDelete(id);
+        const deletedStation = await deleteGoodsById(id);
         if (!deletedStation) {
             return res.status(404).json({ error: 'Stack Holder not found' });
         }
@@ -69,4 +69,4 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

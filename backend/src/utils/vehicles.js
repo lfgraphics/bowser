@@ -1,10 +1,10 @@
-const TankersTrip = require("../models/VehiclesTrip");
-const DriversLog = require('../models/VehicleDriversLog');
-const MorningUpdate = require('../models/MorningUpdate');
+import { findOne as findOneTrip, find as findTrips } from "../models/VehiclesTrip.js";
+import { aggregate as aggregateDriverLogs } from '../models/VehicleDriversLog.js';
+import { aggregate as aggregateMorningUpdates } from '../models/MorningUpdate.js';
 
 const getOneTripOfVehicleByDate = async (vehicelno, date) => {
     try {
-        const trip = await TankersTrip.findOne({
+        const trip = await findOneTrip({
             VehicleNo: vehicelno,
             StartDate: { $lte: new Date(date) }
         }).sort({ StartDate: -1 });
@@ -28,7 +28,7 @@ const getLatestVehicleUpdates = async (vehicleNumbers = []) => {
     const updatesMap = new Map();
 
     // 1. Get TankersTrip data
-    const tankerTrips = await TankersTrip.find({ VehicleNo: { $in: vehicleNumbers } })
+    const tankerTrips = await findTrips({ VehicleNo: { $in: vehicleNumbers } })
         .select('VehicleNo TravelHistory statusUpdate')
         .sort({ StartDate: -1 }); // assumes newest trips first
 
@@ -65,7 +65,7 @@ const getLatestVehicleUpdates = async (vehicleNumbers = []) => {
     }
 
     // 2. Get DriversLog data
-    const driverLogs = await DriversLog.aggregate([
+    const driverLogs = await aggregateDriverLogs([
         { $match: { vehicleNo: { $in: vehicleNumbers } } },
         { $sort: { creationDate: -1 } }, // newest first by creationDate
         {
@@ -141,7 +141,7 @@ const getLatestVehicleUpdates = async (vehicleNumbers = []) => {
     }
 
     // 3. Get MorningUpdate data
-    const morningUpdates = await MorningUpdate.aggregate([
+    const morningUpdates = await aggregateMorningUpdates([
         { $match: { 'report.vehicleNo': { $in: vehicleNumbers } } },
         { $unwind: '$report' },
         { $match: { 'report.vehicleNo': { $in: vehicleNumbers } } },
@@ -184,4 +184,8 @@ const getLatestVehicleUpdates = async (vehicleNumbers = []) => {
     }));
 };
 
-module.exports = { getOneTripOfVehicleByDate, getLatestVehicleUpdates };
+// Named exports
+export { getOneTripOfVehicleByDate, getLatestVehicleUpdates };
+
+// Default export for backward compatibility
+export default { getOneTripOfVehicleByDate, getLatestVehicleUpdates };

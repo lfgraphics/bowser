@@ -1,6 +1,6 @@
 "use strict";
 
-const util = require("util");
+import { inspect } from "util";
 
 const Severity = Object.freeze({
   debug: "debug",
@@ -64,7 +64,7 @@ function logError(err, context = {}) {
     code: err?.code,
     labels: err?.errorLabels,
   };
-  const serialized = util.inspect({ ...base, context }, { depth: 5, breakLength: 120 });
+  const serialized = inspect({ ...base, context }, { depth: 5, breakLength: 120 });
   if (severity === Severity.fatal || severity === Severity.error) {
     console.error(serialized, err?.stack);
   } else if (severity === Severity.warn) {
@@ -85,10 +85,7 @@ function handleTransactionError(err, context) {
   });
 }
 
-module.exports = {
-  Severity,
-  createErrorResponse,
-  classifyError,
-  logError,
-  handleTransactionError,
-};
+export { Severity, createErrorResponse, classifyError, logError, handleTransactionError };
+
+// Also export as default for backward compatibility
+export default { Severity, createErrorResponse, classifyError, logError, handleTransactionError };

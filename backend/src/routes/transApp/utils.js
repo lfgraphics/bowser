@@ -1,9 +1,9 @@
-const TransUser = require('../../models/TransUser');
-const TankersTrip = require('../../models/VehiclesTrip');
-const DeactivatedVehicle = require('../../models/DeactivatedVehicles');
-const Vehicle = require('../../models/vehicle');
-const { mongoose } = require('mongoose');
-const { getLatestVehicleUpdates } = require('../../utils/vehicles');
+import { findOne as findOneTransUser, find as findTransUsers } from '../../models/TransUser.js';
+import TankersTrip, { findOne as findOneTrip, find as findTrips, findById as findTripById, aggregate as aggregateTrips, findByIdAndUpdate as updateTripById } from '../../models/VehiclesTrip.js';
+import { find as findDeactivatedVehicles } from '../../models/DeactivatedVehicles.js';
+import { find as findVehicles } from '../../models/vehicle.js';
+import { mongoose } from 'mongoose';
+import { getLatestVehicleUpdates } from '../../utils/vehicles.js';
 
 const division = {
     "0": "Ethanol",
@@ -33,7 +33,7 @@ function getDivisionKeyByValue(value) {
  */
 const getCurrentTrip = async (vehicleNumber) => {
     try {
-        const trip = await TankersTrip.findOne({ VehicleNo: vehicleNumber }).sort({ StartDate: -1 }).lean();
+        const trip = await findOneTrip({ VehicleNo: vehicleNumber }).sort({ StartDate: -1 }).lean();
         if (!trip) {
             throw new Error('No current trip found for this vehicle.');
         }
@@ -46,7 +46,7 @@ const getCurrentTrip = async (vehicleNumber) => {
 
 const getCurrentTripByDriverId = async (driverId) => {
     try {
-        const trip = await TankersTrip.findOne({ StartDriver: { $regex: driverId } }).sort({ StartDate: -1 }).lean();
+        const trip = await findOneTrip({ StartDriver: { $regex: driverId } }).sort({ StartDate: -1 }).lean();
         if (!trip) {
             throw new Error('No current trip found for this vehicle.');
         }
@@ -67,7 +67,7 @@ const getCurrentTripByDriverId = async (driverId) => {
  */
 const getAllTrips = async (vehicleNumber) => {
     try {
-        const trips = await TankersTrip.find({ VehicleNo: vehicleNumber });
+        const trips = await findTrips({ VehicleNo: vehicleNumber });
         return trips;
     } catch (error) {
         console.error('Error fetching trips:', error);
@@ -80,7 +80,7 @@ const getTripById = async (tripId) => {
         if (!mongoose.Types.ObjectId.isValid(tripId)) {
             throw new Error('Invalid tripId');
         }
-        const trip = await TankersTrip.findById(tripId);
+        const trip = await findTripById(tripId);
         return trip;
     } catch (error) {
         console.error('Error fetching trip by ID:', error);
@@ -99,17 +99,17 @@ const getTripById = async (tripId) => {
  */
 async function getUserVehicles(userId) {
     try {
-        const user = await TransUser.findOne({ _id: userId });
+        const user = await findOneTransUser({ _id: userId });
         if (!user) throw new Error('User not found');
         if (user.Division == 4) {
-            const divisionVehicles = await Vehicle.find({}, 'VehicleNo');
+            const divisionVehicles = await findVehicles({}, 'VehicleNo');
             const vehiclesArray = divisionVehicles.map((vehicle) => vehicle.VehicleNo)
             return vehiclesArray || []
         } else if (user.Division >= 10) {
             let adminDivisionName = division[user.Division]
             let divisionName = adminDivisionName?.replace('Admin', "")
             let divisionKey = getDivisionKeyByValue(divisionName)
-            const divisionUsers = await TransUser.find({ Division: divisionKey }, 'myVehicles')
+            const divisionUsers = await findTransUsers({ Division: divisionKey }, 'myVehicles')
             const vehiclesArray = divisionUsers.map(user => user.myVehicles || []).flat();
             return vehiclesArray || []
         } else {
@@ -123,8 +123,7 @@ async function getUserVehicles(userId) {
 
 const getAllTripsForVehicle = async (vehicleNo) => {
     try {
-        const trips = await TankersTrip
-            .find({ VehicleNo: vehicleNo })
+        const trips = await findTrips({ VehicleNo: vehicleNo })
             .sort({ StartDate: -1, rankindex: 1 })
             .lean();
         return trips;
@@ -146,10 +145,10 @@ const getAllTripsForVehicle = async (vehicleNo) => {
  */
 async function getUsersDeactivatedVehicles(userId) {
     try {
-        const user = await TransUser.findOne({ _id: userId });
+        const user = await findOneTransUser({ _id: userId });
         const userVehicles = user.myVehicles || [];
         const userName = user.UserName;
-        const deactivatedVehiclesList = await DeactivatedVehicle.find({ 'UserInfo.CreatedBy': userName, VehicleNo: { $in: userVehicles } });
+        const deactivatedVehiclesList = await findDeactivatedVehicles({ 'UserInfo.CreatedBy': userName, VehicleNo: { $in: userVehicles } });
         return deactivatedVehiclesList.map(vehicle => vehicle.VehicleNo);
     } catch (error) {
         console.error('Error fetching deactivated vehicles:', error);
@@ -227,94 +226,6 @@ async function getUnloadedPlannedVehicles(userId) {
     });
 }
 
-async function getSummary(userId, isAdmin) {
-    try {
-        let loadedVehicles = await getLoadedNotUnloadedVehicles(userId);
-        let emptyVehicles = await getUnloadedPlannedVehicles(userId);
-        let emptyStanding = await getUnloadedNotPlannedVehicles(userId);
-
-        // Deduplication helper
-        const uniqueByVehicle = (arr) =>
-            arr.filter((v, i, self) => i === self.findIndex(t => t.VehicleNo === v.VehicleNo));
-
-        // Split cleanly into 5 exclusive buckets
-        let loadedOnway = uniqueByVehicle(
-            loadedVehicles.filter(trip => !trip.TallyLoadDetail?.ReportedDate)
-        );
-
-        let loadedReported = uniqueByVehicle(
-            loadedVehicles.filter(trip => trip.TallyLoadDetail?.ReportedDate)
-        );
-
-        let emptyOnWay = uniqueByVehicle(
-            emptyVehicles.filter(trip => !trip.ReportingDate)
-        );
-
-        let emptyReported = uniqueByVehicle(
-            emptyVehicles.filter(trip => trip.ReportingDate)
-        );
-
-        let emptyStandingUnique = uniqueByVehicle(emptyStanding);
-
-        if (isAdmin) {
-            const allvehiclesArray = [
-                ...loadedOnway.map((t) => t.VehicleNo),
-                ...loadedReported.map((t) => t.VehicleNo),
-                ...emptyOnWay.map((t) => t.VehicleNo),
-                ...emptyReported.map((t) => t.VehicleNo),
-                ...emptyStandingUnique.map((t) => t.VehicleNo)
-            ];
-
-            const users = await TransUser.find(
-                { Division: { $in: [0, 1, 2, 3] }, myVehicles: { $in: allvehiclesArray } },
-                { UserName: 1, myVehicles: 1, Division: 1 }
-            ).lean();
-
-            const attachSuperviser = (trips) => {
-                trips.forEach((trip) => {
-                    const matchedUsers = users.filter((u) => u.myVehicles.includes(trip.VehicleNo));
-                    trip.superwiser = matchedUsers.map((u) => u.UserName).join(", ") || "Not found";
-                });
-            };
-
-            attachSuperviser(loadedOnway);
-            attachSuperviser(loadedReported);
-            attachSuperviser(emptyOnWay);
-            attachSuperviser(emptyReported);
-            attachSuperviser(emptyStandingUnique);
-        }
-
-        return {
-            loaded: {
-                onWay: {
-                    count: loadedOnway.length,
-                    trips: loadedOnway
-                },
-                reported: {
-                    count: loadedReported.length,
-                    trips: loadedReported
-                }
-            },
-            empty: {
-                onWay: {
-                    count: emptyOnWay.length,
-                    trips: emptyOnWay
-                },
-                standing: {
-                    count: emptyStandingUnique.length,
-                    trips: emptyStandingUnique
-                },
-                reported: {
-                    count: emptyReported.length,
-                    trips: emptyReported
-                }
-            }
-        };
-    } catch (error) {
-        throw new Error(error);
-    }
-}
-
 async function getNewSummary(userId, isAdmin) {
     try {
         const vehicles = await getUserVehicles(userId);
@@ -333,7 +244,7 @@ async function getNewSummary(userId, isAdmin) {
         latestUpdates.forEach(u => updatesMap.set(u.vehicleNo, u));
 
         // Aggregate all latest trips per vehicle and facet them
-        const result = await TankersTrip.aggregate([
+        const result = await aggregateTrips([
             {
                 $match: {
                     VehicleNo: { $in: activeVehicleNos }
@@ -458,7 +369,7 @@ async function getNewSummary(userId, isAdmin) {
                 ...unloadedNotPlannedWithStatus.map(t => t.VehicleNo)
             ];
 
-            const users = await TransUser.find(
+            const users = await findTransUsers(
                 {
                     Division: { $in: [0, 1, 2, 3] },
                     myVehicles: { $in: allVehicleNos }
@@ -466,7 +377,7 @@ async function getNewSummary(userId, isAdmin) {
                 { UserName: 1, myVehicles: 1, Division: 1 }
             ).lean();
 
-            const veicleWiseCapacity = await Vehicle.find(
+            const veicleWiseCapacity = await findVehicles(
                 { VehicleNo: { $in: allVehicleNos } },
                 { VehicleNo: 1, capacity: 1 }
             ).lean();
@@ -616,7 +527,7 @@ async function updateEmptyTrip(tripId, postData) {
     }
 
     // Find and update the existing trip
-    const updatedTrip = await TankersTrip.findByIdAndUpdate(
+    const updatedTrip = await updateTripById(
         tripId,
         {
             $set: {
@@ -654,7 +565,8 @@ async function updateEmptyTrip(tripId, postData) {
 }
 
 
-module.exports = {
+// Named exports
+export {
     getCurrentTrip,
     getCurrentTripByDriverId,
     getAllTrips,
@@ -668,7 +580,25 @@ module.exports = {
     getDivisionKeyByValue,
     createEmptyTrip,
     updateEmptyTrip,
-    getSummary,
+    getNewSummary,
+    getTripById
+};
+
+// Default export for backward compatibility
+export default {
+    getCurrentTrip,
+    getCurrentTripByDriverId,
+    getAllTrips,
+    getAllTripsForVehicle,
+    getUserVehicles,
+    getUsersDeactivatedVehicles,
+    getLoadedNotUnloadedVehicles,
+    getUnloadedNotPlannedVehicles,
+    getUnloadedPlannedVehicles,
+    division,
+    getDivisionKeyByValue,
+    createEmptyTrip,
+    updateEmptyTrip,
     getNewSummary,
     getTripById
 };

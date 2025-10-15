@@ -1,9 +1,12 @@
-const express = require('express');
-const router = express.Router();
-const jwt = require('jsonwebtoken');
-const CampUser = require('../../models/CampUsers');
-const argon2 = require('argon2');
-const crypto = require('crypto');
+import { Router } from 'express';
+import jwtPkg from 'jsonwebtoken';
+const { sign, verify } = jwtPkg;
+import CampUser, { findOne as findCampUser, findById as findCampUserById } from '../../models/CampUsers.js';
+import argon2Pkg from 'argon2';
+const { hash, verify: verifyPassword } = argon2Pkg;
+import { randomBytes } from 'crypto';
+
+const router = Router();
 
 function isTokenValid(decodedToken) {
     const now = Date.now();
@@ -13,7 +16,7 @@ function isTokenValid(decodedToken) {
 }
 
 const generateResetToken = () => {
-    return crypto.randomBytes(10).toString('hex');
+    return randomBytes(10).toString('hex');
 };
 
 // Camp User Signup
@@ -22,20 +25,20 @@ router.post('/signup', async (req, res) => {
         const { userId, password, name, phone, email } = req.body;
 
         // Check if user already exists
-        const existingUserByPhone = await CampUser.findOne({ phone });
+        const existingUserByPhone = await findCampUser({ phone });
         if (existingUserByPhone) {
             return res.status(400).json({ message: 'User with this phone number already exists' });
         }
 
         if (email) {
-            const existingUserByEmail = await CampUser.findOne({ email });
+            const existingUserByEmail = await findCampUser({ email });
             if (existingUserByEmail) {
                 return res.status(400).json({ message: 'User with this email already exists' });
             }
         }
 
         // Hash the password
-        const hashedPassword = await argon2.hash(password);
+        const hashedPassword = await hash(password);
 
         // Create new camp user
         const newUser = new CampUser({
@@ -50,13 +53,13 @@ router.post('/signup', async (req, res) => {
         await newUser.save();
 
         // Create and send JWT token
-        const token = jwt.sign(
-            { 
-                userId: newUser._id, 
+        const token = sign(
+            {
+                userId: newUser._id,
                 phone: newUser.phone,
-                type: 'camp' 
-            }, 
-            process.env.JWT_SECRET, 
+                type: 'camp'
+            },
+            process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
 
@@ -86,7 +89,7 @@ router.post('/login', async (req, res) => {
         const { userId, password } = req.body;
 
         // Find user by phone (using userId as phone for camp users)
-        const user = await CampUser.findOne({ 
+        const user = await findCampUser({
             $or: [
                 { phone: userId },
                 { email: userId }
@@ -99,30 +102,30 @@ router.post('/login', async (req, res) => {
 
         // Check if account is locked
         if (user.isLocked) {
-            return res.status(423).json({ 
-                message: 'Account is locked. Please try again later.' 
+            return res.status(423).json({
+                message: 'Account is locked. Please try again later.'
             });
         }
 
         // Check if user is active
         if (user.status !== 'active') {
-            return res.status(403).json({ 
-                message: 'Account is not active. Please contact admin for approval.' 
+            return res.status(403).json({
+                message: 'Account is not active. Please contact admin for approval.'
             });
         }
 
         // Verify password
-        const isPasswordValid = await argon2.verify(user.password, password);
+        const isPasswordValid = await verifyPassword(user.password, password);
         if (!isPasswordValid) {
             // Increment login attempts
             user.loginAttempts += 1;
-            
+
             // Lock account after 5 failed attempts
             if (user.loginAttempts >= 5) {
                 user.accountLocked = true;
                 user.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // Lock for 15 minutes
             }
-            
+
             await user.save();
             return res.status(401).json({ message: 'Invalid credentials' });
         }
@@ -139,13 +142,13 @@ router.post('/login', async (req, res) => {
         await user.save();
 
         // Create JWT token
-        const token = jwt.sign(
-            { 
-                userId: user._id, 
+        const token = sign(
+            {
+                userId: user._id,
                 phone: user.phone,
                 type: 'camp'
-            }, 
-            process.env.JWT_SECRET, 
+            },
+            process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
 
@@ -174,18 +177,18 @@ router.post('/login', async (req, res) => {
 router.get('/verify', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
-        
+
         if (!token) {
             return res.status(401).json({ message: 'No token provided' });
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
+        const decoded = verify(token, process.env.JWT_SECRET);
+
         if (!isTokenValid(decoded) || decoded.type !== 'camp') {
             return res.status(401).json({ message: 'Invalid or expired token' });
         }
 
-        const user = await CampUser.findById(decoded.userId);
+        const user = await findCampUserById(decoded.userId);
         if (!user || user.status !== 'active') {
             return res.status(401).json({ message: 'User not found or inactive' });
         }
@@ -219,24 +222,24 @@ router.post('/change-password', async (req, res) => {
             return res.status(401).json({ message: 'No token provided' });
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = verify(token, process.env.JWT_SECRET);
         if (!isTokenValid(decoded) || decoded.type !== 'camp') {
             return res.status(401).json({ message: 'Invalid or expired token' });
         }
 
-        const user = await CampUser.findById(decoded.userId);
+        const user = await findCampUserById(decoded.userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
         // Verify current password
-        const isCurrentPasswordValid = await argon2.verify(user.password, currentPassword);
+        const isCurrentPasswordValid = await verifyPassword(user.password, currentPassword);
         if (!isCurrentPasswordValid) {
             return res.status(400).json({ message: 'Current password is incorrect' });
         }
 
         // Hash new password
-        const hashedNewPassword = await argon2.hash(newPassword);
+        const hashedNewPassword = await hash(newPassword);
         user.password = hashedNewPassword;
         await user.save();
 
@@ -252,7 +255,7 @@ router.post('/reset-password-request', async (req, res) => {
     try {
         const { phone } = req.body;
 
-        const user = await CampUser.findOne({ phone });
+        const user = await findCampUser({ phone });
         if (!user) {
             // Don't reveal if user exists or not
             return res.json({ message: 'If the phone number exists, a reset code will be sent.' });
@@ -261,7 +264,7 @@ router.post('/reset-password-request', async (req, res) => {
         const resetToken = generateResetToken();
         user.setConfig('passwordResetToken', resetToken);
         user.setConfig('passwordResetExpires', Date.now() + 10 * 60 * 1000); // 10 minutes
-        
+
         await user.save();
 
         // TODO: Implement SMS sending logic here
@@ -279,7 +282,7 @@ router.post('/reset-password', async (req, res) => {
     try {
         const { phone, resetToken, newPassword } = req.body;
 
-        const user = await CampUser.findOne({ phone });
+        const user = await findCampUser({ phone });
         if (!user) {
             return res.status(400).json({ message: 'Invalid reset request' });
         }
@@ -296,13 +299,13 @@ router.post('/reset-password', async (req, res) => {
         }
 
         // Hash new password
-        const hashedPassword = await argon2.hash(newPassword);
+        const hashedPassword = await hash(newPassword);
         user.password = hashedPassword;
-        
+
         // Clear reset token
         user.configs.delete('passwordResetToken');
         user.configs.delete('passwordResetExpires');
-        
+
         await user.save();
 
         res.json({ message: 'Password reset successfully' });
@@ -312,4 +315,4 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const { TripSheet } = require('../models/TripSheets')
+import { Types } from 'mongoose';
+import { TripSheet } from '../models/TripSheets.js';
 /**
  * @function updateTripSheet
  * @description This function updates the trip sheet with new addition and dispense details. And performs the necessary calculations right thier and updates the Tripsheet\nIt receaves the details as an object
@@ -12,7 +12,7 @@ const { TripSheet } = require('../models/TripSheets')
 const updateTripSheet = async ({ sheetId, tripSheetId, newAddition, newDispense, removeDispenseId, verify, post, session }) => {
     try {
         // Build the query based on the identifier provided
-        const query = sheetId ? { _id: new mongoose.Types.ObjectId(sheetId) } : { tripSheetId };
+        const query = sheetId ? { _id: new Types.ObjectId(sheetId) } : { tripSheetId };
 
         // If a session is provided, ensure all operations join the transaction
         const findQuery = TripSheet.findOne(query);
@@ -172,4 +172,8 @@ const updateTripSheetBulk = async ({ tripSheetId, dispenses, session }) => {
     }
 };
 
-module.exports = { updateTripSheet, updateTripSheetBulk };
+// Named exports
+export { updateTripSheet, updateTripSheetBulk };
+
+// Default export for backward compatibility
+export default { updateTripSheet, updateTripSheetBulk };

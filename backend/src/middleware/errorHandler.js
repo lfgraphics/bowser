@@ -1,7 +1,7 @@
 "use strict";
 
-const { createErrorResponse, classifyError, logError } = require("../utils/errorHandler");
-const { randomUUID } = require("crypto");
+import { createErrorResponse, classifyError, logError } from "../utils/errorHandler.js";
+import { randomUUID } from "crypto";
 
 // Request context middleware to add a requestId for correlation
 function requestContext(req, _res, next) {
@@ -42,7 +42,11 @@ function errorHandler(err, req, res, _next) {
   res.status(status).json({ requestId: req.requestId, ...body });
 }
 
-module.exports = {
+// Named exports
+export { requestContext, asyncHandler, errorHandler };
+
+// Default export for backward compatibility
+export default {
   requestContext,
   asyncHandler,
   errorHandler,

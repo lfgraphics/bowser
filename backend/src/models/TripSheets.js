@@ -1,17 +1,17 @@
-const mongoose = require('mongoose');
-const { bowsersDatabaseConnection } = require('../../config/database');
-const bowserDriverSchema = require('./subSchemas/BowserDriver');
+import { Schema } from 'mongoose';
+import { getBowsersDatabaseConnection } from '../../config/database.js';
+import bowserDriverSchema from './subSchemas/BowserDriver.js';
 // const dispensesSchema = require('./subSchemas/Dispenses');
-const { fuelingTransactionSchema } = require('./Transaction');
+import { fuelingTransactionSchema } from './Transaction.js';
 
-const counterSchema = new mongoose.Schema({
+const counterSchema = new Schema({
     _id: { type: String, required: true },
     seq: { type: Number, default: 0 },
 }, { __v: false });
 
-const Counter = bowsersDatabaseConnection.model('TripSheetCounter', counterSchema, 'CountersCollection');
+const Counter = getBowsersDatabaseConnection().model('TripSheetCounter', counterSchema, 'CountersCollection');
 
-const tripSheetSchema = new mongoose.Schema({
+const tripSheetSchema = new Schema({
     tripSheetId: { type: Number },
     createdAt: { type: Date, default: Date.now, timezone: "Asia/Kolkata" },
     bowser: {
@@ -22,7 +22,7 @@ const tripSheetSchema = new mongoose.Schema({
     fuelingAreaDestination: { type: String, required: false },
     proposedDepartureTime: { type: Date, required: false },
     loading: {
-        sheetId: { type: mongoose.Schema.Types.ObjectId, ref: 'LoadingSheet', required: true },
+        sheetId: { type: Schema.Types.ObjectId, ref: 'LoadingSheet', required: true },
         quantityByDip: { type: Number, required: true },
         quantityBySlip: { type: Number, required: true },
         fullLoaded: { type: Number }
@@ -122,7 +122,7 @@ tripSheetSchema.pre('save', async function (next) {
         // check for each dispense if all has been posted (posted?.status == true) then make this.posted = true
         const allDispensesPosted = this.dispenses?.every(dispense => dispense.posted?.status === true);
         this.posted = allDispensesPosted;
-        
+
         next();
     } catch (err) {
         console.error('Error in pre-save hook for TripSheet:', err);
@@ -130,6 +130,10 @@ tripSheetSchema.pre('save', async function (next) {
     }
 });
 
-const TripSheet = bowsersDatabaseConnection.model('TripSheet', tripSheetSchema, 'TripSheetsCollection');
+const TripSheet = getBowsersDatabaseConnection().model('TripSheet', tripSheetSchema, 'TripSheetsCollection');
 
-module.exports = { TripSheet, Counter };
+// Named exports
+export { TripSheet, Counter };
+
+// Default export for backward compatibility
+export default { TripSheet, Counter };

@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
+import { Schema } from 'mongoose';
 
-const chamberLevelSchema = new mongoose.Schema({
+const chamberLevelSchema = new Schema({
     levelNo: { type: Number, required: true },
     levelHeight: { type: Number, required: true },
     levelAdditionQty: { type: Number, required: true },
@@ -8,4 +8,4 @@ const chamberLevelSchema = new mongoose.Schema({
     levelCalibrationQty: { type: Number },     // Auto-calculated
 }, { _id: false });
 
-module.exports = chamberLevelSchema;
+export default chamberLevelSchema;

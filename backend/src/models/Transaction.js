@@ -1,8 +1,8 @@
-const mongoose = require('mongoose');
-const { bowsersDatabaseConnection } = require('../../config/database');
+import { Schema } from 'mongoose';
+import { getBowsersDatabaseConnection } from '../../config/database.js';
 
-const fuelingTransactionSchema = new mongoose.Schema({
-    orderId: { type: mongoose.Schema.Types.ObjectId, required: false, ref: 'FuelingOrder' },
+const fuelingTransactionSchema = new Schema({
+    orderId: { type: Schema.Types.ObjectId, required: false, ref: 'FuelingOrder' },
     tripId: { type: String, required: false },
     category: {
         type: String, require: false,
@@ -18,10 +18,10 @@ const fuelingTransactionSchema = new mongoose.Schema({
     odometer: { type: Number },
     tripSheetId: { type: Number, require: true },
     vehicleNumberPlateImage: { type: String, required: false },
-    vehicleNumber: { type: String, required: true },
-    driverId: { type: String, required: true },
-    driverName: { type: String, required: true },
-    driverMobile: { type: String, required: true },
+    vehicleNumber: { type: String, required: false },
+    driverId: { type: String, required: false },
+    driverName: { type: String, required: false },
+    driverMobile: { type: String, required: false },
     fuelMeterImage: { type: [String], _id: false, required: false },
     quantityType: {
         type: String,
@@ -67,7 +67,7 @@ const fuelingTransactionSchema = new mongoose.Schema({
 });
 
 fuelingTransactionSchema.post('deleteOne', async function (doc) {
-    const { TripSheet } = require('./TripSheets');
+    const { TripSheet } = await import('./TripSheets.js').then(module => module.default);
     try {
         const tripSheet = await TripSheet.findOne({ 'dispenses.transaction': doc._id });
         if (tripSheet) {
@@ -90,10 +90,13 @@ fuelingTransactionSchema.post('deleteOne', async function (doc) {
 });
 
 // Define the model
-const FuelingTransaction = bowsersDatabaseConnection.model('FuelingTransaction', fuelingTransactionSchema, 'FuelingRecordsCollection');
+const FuelingTransaction = getBowsersDatabaseConnection().model('FuelingTransaction', fuelingTransactionSchema, 'FuelingRecordsCollection');
 
-// Export both the model and the schema
-module.exports = {
+// Named exports
+export { FuelingTransaction, fuelingTransactionSchema };
+
+// Default export for backward compatibility
+export default {
     FuelingTransaction,
     fuelingTransactionSchema
 };

@@ -1,14 +1,14 @@
-const express = require('express');
-const router = express.Router();
-const { FuelingTransaction } = require('../models/Transaction');
-const FuelingOrder = require('../models/fuelingOrders');
-const FuelRequest = require('../models/FuelRequest');
-const { fetchLocationData } = require('../utils/fuelTransactions');
-const { updateTripSheet, updateTripSheetBulk } = require('../utils/tripSheet')
-const { sendWebPushNotification } = require('../utils/pushNotifications');
-const mongoose = require('mongoose');
-const { withTransaction, defaultTxnOptions } = require('../utils/transactions');
-const { handleTransactionError } = require('../utils/errorHandler');
+import { Router } from 'express';
+const router = Router();
+import { FuelingTransaction } from '../models/Transaction.js';
+import { findById as findFuelingOrderById } from '../models/fuelingOrders.js';
+import { findById as findFuelRequestById } from '../models/FuelRequest.js';
+import { fetchLocationData } from '../utils/fuelTransactions.js';
+import { updateTripSheet, updateTripSheetBulk } from '../utils/tripSheet.js';
+import { sendWebPushNotification } from '../utils/pushNotifications.js';
+import { Types } from 'mongoose';
+import { withTransaction, defaultTxnOptions } from '../utils/transactions.js';
+import { handleTransactionError } from '../utils/errorHandler.js';
 
 // Transaction timeout (ms). Can be overridden via env if needed.
 const TXN_TIMEOUT_MS = Number(process.env.TXN_TIMEOUT_MS || 35000);
@@ -55,7 +55,7 @@ router.post('/', async (req, res) => {
 
             // Update fueling order if applicable
             if (fuelingTransaction.orderId) {
-                const fuelingOrder = await FuelingOrder.findById(new mongoose.Types.ObjectId(fuelingTransaction.orderId)).session(sessions.bowsers);
+                const fuelingOrder = await findFuelingOrderById(new Types.ObjectId(fuelingTransaction.orderId)).session(sessions.bowsers);
                 if (fuelingOrder) {
                     fuelingOrder.fulfilled = true;
                     await fuelingOrder.save({ session: sessions.bowsers });
@@ -64,7 +64,7 @@ router.post('/', async (req, res) => {
             // Store for post-commit side-effects
             savedTransaction = fuelingTransaction;
             return { ok: true };
-    }, { connections: ['bowsers'], txnOptions, context: { route: 'addFuelingTransaction.POST' }, signal: ac.signal });
+        }, { connections: ['bowsers'], txnOptions, context: { route: 'addFuelingTransaction.POST' }, signal: ac.signal });
 
         // Enforce an overall timeout for the transaction block
         let timeoutId;
@@ -125,7 +125,7 @@ router.put('/update-from-driver/:id', async (req, res) => {
         const ac = new AbortController();
         const txnPromise = withTransaction(async (sessions) => {
             // Read inside the transaction to avoid stale state
-            const fuelRequest = await FuelRequest.findById(id).populate('allocation').session(sessions.bowsers);
+            const fuelRequest = await findFuelRequestById(id).populate('allocation').session(sessions.bowsers);
             if (!fuelRequest) {
                 const err = new Error('Fuel request not found');
                 err.status = 404;
@@ -163,14 +163,14 @@ router.put('/update-from-driver/:id', async (req, res) => {
                 allocationAdmin: allocation.allocationAdmin,
             });
 
-            const fuelingOrder = await FuelingOrder.findById(orderId).session(sessions.bowsers);
+            const fuelingOrder = await findFuelingOrderById(orderId).session(sessions.bowsers);
             if (fuelingOrder) {
                 fuelingOrder.fuelQuantity = fuelQuantity;
                 fuelingOrder.fulfilled = true;
                 await fuelingOrder.save({ session: sessions.bowsers });
             }
             await fuelingTransaction.save({ session: sessions.bowsers });
-    }, { connections: ['bowsers'], txnOptions, context: { route: 'addFuelingTransaction.PUT.update-from-driver' }, signal: ac.signal });
+        }, { connections: ['bowsers'], txnOptions, context: { route: 'addFuelingTransaction.PUT.update-from-driver' }, signal: ac.signal });
 
         let timeoutId;
         try {
@@ -261,4 +261,4 @@ router.post('/bulk', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

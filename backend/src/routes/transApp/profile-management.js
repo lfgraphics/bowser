@@ -1,18 +1,18 @@
-const express = require('express');
-const router = express.Router();
-const TransUser = require('../../models/TransUser');
-const DeactivatedVehicle = require('../../models/DeactivatedVehicles')
-const argon2 = require('argon2');
-const {division} = require('./utils');
+import { Router } from 'express';
+const router = Router();
+import { findOne as findOneTransUser } from '../../models/TransUser.js';
+import DeactivatedVehicle, { find as findDeactivatedVehicles, deleteMany as deleteManyDeactivatedVehicles } from '../../models/DeactivatedVehicles.js';
+import { hash } from 'argon2';
+import { division } from './utils.js';
 
 router.get('/inactive-vehicles/:userId', async (req, res) => {
     const userId = req.params.userId;
     if (!userId) return res.status(400).json({ message: "User id is required." })
     try {
-        const user = await TransUser.findOne({ _id: userId });
+        const user = await findOneTransUser({ _id: userId });
         const userVehicles = user.myVehicles || [];
         const userName = user.UserName;
-        const deactivatedVehiclesList = await DeactivatedVehicle.find({ 'UserInfo.CreatedBy': userName, VehicleNo: { $in: userVehicles } });
+        const deactivatedVehiclesList = await findDeactivatedVehicles({ 'UserInfo.CreatedBy': userName, VehicleNo: { $in: userVehicles } });
         return res.status(200).json({ deactivatedVehiclesList })
     } catch (error) {
         console.error('Error fetching deactivated vehicles:', error);
@@ -24,7 +24,7 @@ router.get('/reactivate-vehicle/:vehicleNo', async (req, res) => {
     const vehicleNo = req.params.vehicleNo;
     if (!vehicleNo) return res.status(400).json({ message: "vehicle number is required." })
     try {
-        await DeactivatedVehicle.deleteMany({ VehicleNo: vehicleNo })
+        await deleteManyDeactivatedVehicles({ VehicleNo: vehicleNo })
         return res.status(200).json({ message: "Deleted successfully" })
     } catch (error) {
         console.error('Error activating vehicle:', error);
@@ -64,7 +64,7 @@ router.post('/delete-vehicle', async (req, res) => {
         return res.status(400).json({ error: "vehicle number and userName both are required." })
     }
     try {
-        let user = await TransUser.findOne({ UserName: userName });
+        let user = await findOneTransUser({ UserName: userName });
         if (!user) {
             return res.status(404).json({ error: "User not found." });
         }
@@ -90,7 +90,7 @@ router.post('/add-vehicle', async (req, res) => {
     }
 
     try {
-        const user = await TransUser.findOne({ UserName: userName });
+        const user = await findOneTransUser({ UserName: userName });
 
         if (!user) {
             return res.status(404).json({ message: "User not found." });
@@ -120,7 +120,7 @@ router.post('/update-profile', async (req, res) => {
         return res.status(400).json({ message: "userName, phoneNumber and id are required." });
     }
     try {
-        const user = await TransUser.findOne({ _id: id });
+        const user = await findOneTransUser({ _id: id });
         if (!user) {
             return res.status(404).json({ message: "User not found." });
         }
@@ -129,7 +129,7 @@ router.post('/update-profile', async (req, res) => {
         user.phoneNumber = phoneNumber;
 
         if (password) {
-            const hashedPassword = await argon2.hash(password);
+            const hashedPassword = await hash(password);
             user.Password = hashedPassword;
             user.hashed = true;
         }
@@ -161,4 +161,4 @@ router.post('/update-profile', async (req, res) => {
 });
 
 
-module.exports = router;
+export default router;

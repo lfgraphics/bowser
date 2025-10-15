@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
-const { transportDatabaseConnection } = require('../../config/database');
-const { getCurrentTrip } = require('../routes/transApp/utils');
+import mongoose from 'mongoose';
+import { getTransportDatabaseConnection } from '../../config/database.js';
+import { getCurrentTrip } from '../routes/transApp/utils.js';
 
 const { Schema, Types } = mongoose;
 
@@ -52,4 +52,4 @@ driversUpdatesSchema.pre('save', async function (next) {
     next();
 });
 
-module.exports = transportDatabaseConnection.model('DriversUpdate', driversUpdatesSchema, 'DriversUpdates');
+export default getTransportDatabaseConnection().model('DriversUpdate', driversUpdatesSchema, 'DriversUpdates');

@@ -1,12 +1,12 @@
-const express = require('express');
-const router = express.Router();
-const PetrolPump = require('../models/PetrolPumps');
+import { Router } from 'express';
+const router = Router();
+import { find as findPetrolPumps, countDocuments as countPetrolPumpDocuments, insertMany as insertManyPetrolPumps } from '../models/PetrolPumps.js';
 
 router.get('/', async (req, res) => {
     const { name } = req.query
     if (!name) return res.status(400).json({ error: 'Please provide a search term.' });
     try {
-        const petrolPumps = await PetrolPump.find({ $or: [{ name: { $regex: name, $options: 'i' } }, { state: { $regex: name, $options: 'i' } }] }).limit(10);
+        const petrolPumps = await findPetrolPumps({ $or: [{ name: { $regex: name, $options: 'i' } }, { state: { $regex: name, $options: 'i' } }] }).limit(10);
         res.status(200).json(petrolPumps);
     } catch (error) {
         console.error(error);
@@ -17,11 +17,11 @@ router.get('/', async (req, res) => {
 router.get('/get', async (req, res) => {
     const { page = 1, limit = 20 } = req.query;
     try {
-        const totalDocs = await PetrolPump.countDocuments();
+        const totalDocs = await countPetrolPumpDocuments();
         const totalPages = Math.ceil(totalDocs / limit);
         const startIndex = (page - 1) * limit;
         const endIndex = page * limit;
-        const paginatedDocs = await PetrolPump.find().skip(startIndex).limit(limit);
+        const paginatedDocs = await findPetrolPumps().skip(startIndex).limit(limit);
         res.status(200).json({
             totalDocs,
             totalPages,
@@ -39,7 +39,7 @@ router.get('/get', async (req, res) => {
 router.post('/', async (req, res) => {
     const petrolPumps = req.body;
     try {
-        await PetrolPump.insertMany(petrolPumps);
+        await insertManyPetrolPumps(petrolPumps);
         res.status(201).json({ message: 'Petrol pumps added successfully.' });
     } catch (error) {
         console.error(error);
@@ -47,4 +47,4 @@ router.post('/', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

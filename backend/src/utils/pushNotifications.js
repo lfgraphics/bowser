@@ -1,16 +1,21 @@
-const webpush = require('web-push');
-const PushSubscription = require('../models/pushSubscription');
-const RequestTransfer = require('../models/RequestTransfer');
-const { Expo } = require('expo-server-sdk');
+import pkg from 'web-push';
+const { setVapidDetails, sendNotification } = pkg;
+import PushSubscription from '../models/pushSubscription.js';
+import RequestTransfer from '../models/RequestTransfer.js';
+import { Expo } from 'expo-server-sdk';
 
 const expo = new Expo();
 
-// VAPID keys setup
-webpush.setVapidDetails(
-    'mailto:itplfirebase@gmail.com',
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-);
+// VAPID keys setup - only if environment variables are provided
+if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    setVapidDetails(
+        'mailto:itplfirebase@gmail.com',
+        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        process.env.VAPID_PRIVATE_KEY
+    );
+} else {
+    console.warn('VAPID keys not found in environment variables. Web push notifications will not be available.');
+}
 
 async function registerSubscription({ mobileNumber, userId, subscription, platform, groups }) {
     try {
@@ -50,6 +55,10 @@ async function sendWebPushNotification({ mobileNumber, userId, message, options 
         return { success: false, message: 'Either mobileNumber or userId must be provided.' };
     }
 
+    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+        return { success: false, message: 'VAPID keys not configured. Web push notifications are not available.' };
+    }
+
     try {
         // Find ALL subscriptions for this user/mobile/platform
         const subscriptions = await PushSubscription.find({
@@ -74,7 +83,7 @@ async function sendWebPushNotification({ mobileNumber, userId, message, options 
         let results = [];
         for (const sub of subscriptions) {
             try {
-                await webpush.sendNotification(sub.subscription, payload);
+                await sendNotification(sub.subscription, payload);
                 results.push({ success: true, subscription: sub });
             } catch (error) {
                 console.error('Failed to send web notification:', error);
@@ -246,4 +255,8 @@ async function getActiveTransferTargetUserId(userId) {
 }
 
 
-module.exports = { sendWebPushNotification, sendNativePushNotification, sendBulkNotifications, registerSubscription, getActiveTransferTargetUserId };
+// Named exports
+export { sendWebPushNotification, sendNativePushNotification, sendBulkNotifications, registerSubscription, getActiveTransferTargetUserId };
+
+// Default export for backward compatibility
+export default { sendWebPushNotification, sendNativePushNotification, sendBulkNotifications, registerSubscription, getActiveTransferTargetUserId };

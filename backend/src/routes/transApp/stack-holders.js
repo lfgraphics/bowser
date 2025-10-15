@@ -1,11 +1,11 @@
-const express = require('express');
-const router = express.Router();
-const StackHolder = require('../../models/StackHolders');
+import { Router } from 'express';
+const router = Router();
+import StackHolder, { find as findStackHolders, findOne as findOneStackHolder, findByIdAndUpdate as updateStackHolderById, findByIdAndDelete as deleteStackHolderById } from '../../models/StackHolders.js';
 
 router.get('/', async (req, res) => {
     const { params } = req.query;
     try {
-        const stackHolders = await StackHolder.find({
+        const stackHolders = await findStackHolders({
             $and: [
                 { Location: { $exists: true } },
                 { Location: { $ne: null } },
@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
 router.get('/system/:params', async (req, res) => {
     const { params } = req.params;
     try {
-        const stackHolders = await StackHolder.find({
+        const stackHolders = await findStackHolders({
             $or: [
                 { InstitutionName: params },
                 { Location: params },
@@ -48,7 +48,7 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        const existingStation = await StackHolder.findOne(data);
+        const existingStation = await findOneStackHolder(data);
         if (existingStation) {
             return res.status(400).json({ message: 'Stack Holder already exists' });
         }
@@ -70,7 +70,7 @@ router.patch('/:id', async (req, res) => {
     }
 
     try {
-        const updatedStation = await StackHolder.findByIdAndUpdate(id, data, { new: true });
+        const updatedStation = await updateStackHolderById(id, data, { new: true });
         if (!updatedStation) {
             return res.status(404).json({ message: 'Stack Holder not found' });
         }
@@ -89,7 +89,7 @@ router.patch('/update-loading-supervisor/:id', async (req, res) => {
     }
 
     try {
-        const updatedStation = await StackHolder.findByIdAndUpdate(
+        const updatedStation = await updateStackHolderById(
             id,
             { loadingSupervisor: loadingSupervisor },
             { new: true }
@@ -107,7 +107,7 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        const deletedStation = await StackHolder.findByIdAndDelete(id);
+        const deletedStation = await deleteStackHolderById(id);
         if (!deletedStation) {
             return res.status(404).json({ message: 'Stack Holder not found' });
         }
@@ -117,4 +117,4 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

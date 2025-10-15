@@ -31,6 +31,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
     const [search, setSearch] = useState<string>("")
     const [stackHolders, setStackHolders] = useState<ComboboxOption[]>([])
     const [stackHolder, setStackHolder] = useState<string>("")
+    const [currentTrip, setCurrentTrip] = useState<TankersTrip | null>(null)
     const vehicles: ComboboxOption[] = useMemo(() => {
         return data.map(trip => ({
             label: trip?.VehicleNo,
@@ -61,7 +62,12 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
     }, [])
 
     useEffect(() => {
-        searchDriver(data.find((trip) => trip._id === tripId)?.StartDriver!)
+        const crTtip = data.find(trip => trip?._id === tripId);
+        setCurrentTrip(crTtip || null);
+        searchDriver(crTtip?.StartDriver!)
+        setOdometer(crTtip?.TallyLoadDetail?.EndOdometer || crTtip?.LoadTripDetail?.EndOdometer || crTtip?.EmptyTripDetail?.EndOdometer || 0);
+        setDriver(crTtip?.StartDriver || "");
+        setDriverMobile(crTtip?.StartDriverMobile || "");
     }, [data, tripId])
 
     const resetForm = () => {

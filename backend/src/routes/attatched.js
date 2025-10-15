@@ -1,12 +1,12 @@
-const express = require('express');
-const router = express.Router();
-const AttachedVehicle = require('../models/attatchedVehicle');
+import { Router } from 'express';
+const router = Router();
+import { find as findAttachedVehicle } from '../models/attatchedVehicle.js';
 
 router.get('/search/:vehicleNumber', async (req, res) => {
     const vehicleNumber = req.params.vehicleNumber;
 
     try {
-        const vehicles = await AttachedVehicle.find({
+        const vehicles = await findAttachedVehicle({
             VehicleNo: { $regex: vehicleNumber, $options: 'i' }
         }).exec();
 
@@ -21,4 +21,4 @@ router.get('/search/:vehicleNumber', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

@@ -1,6 +1,6 @@
-const express = require('express');
-const router = express.Router();
-const TankersTrip = require('../../models/VehiclesTrip');
+import { Router } from 'express';
+const router = Router();
+import TankersTrip from '../../models/VehiclesTrip';
 
 
-module.exports = router;
+export default router;

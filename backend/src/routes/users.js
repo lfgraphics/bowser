@@ -1,9 +1,11 @@
-const express = require('express');
-const Department = require('../models/Department');
-const router = express.Router();
-const User = require('../models/user');
-const UnAuthorizedLogin = require('../models/unauthorizedLogin');
-const mongoose = require('mongoose')
+import { Router } from 'express';
+import { findOne as findOneDepartment } from '../models/Department.js';
+const router = Router();
+import { find as findUsers, findOneAndUpdate as updateUser, findOne as findOneUser, findByIdAndDelete as deleteUserById } from '../models/user.js';
+import { find as findUnauthorizedLogins, findByIdAndDelete as deleteUnauthorizedLoginById } from '../models/unauthorizedLogin.js';
+import { Types } from 'mongoose';
+import { withTransaction } from '../utils/transactions.js';
+import { handleTransactionError, createErrorResponse } from '../utils/errorHandler.js';
 
 // Get all users with roles populated
 router.get('/', async (req, res) => {
@@ -23,7 +25,7 @@ router.get('/', async (req, res) => {
                     { verified: true },
                 ]
             };
-            const users = await User.find(filter, { phoneNumber: 1, name: 1, bowserId: 1, _id: 0, roles: 1, department: 1 }).populate(['roles', 'department']).lean();
+            const users = await findUsers(filter, { phoneNumber: 1, name: 1, bowserId: 1, _id: 0, roles: 1, department: 1 }).populate(['roles', 'department']).lean();
             if (users.length === 0) {
                 return res.status(404).json({
                     title: "Error",
@@ -33,146 +35,292 @@ router.get('/', async (req, res) => {
 
             return res.status(200).json(users);
         } else {
-            const users = await User.find().populate(['roles', 'department']).sort({ generationTime: -1 });
+            const users = await findUsers().populate(['roles', 'department']).sort({ generationTime: -1 });
             return res.status(200).json(users);
         }
     } catch (error) {
         console.error('Error fetching users:', error);
-        return res.status(500).json({ error: 'Failed to fetch users', details: error });
+        const errorResponse = handleTransactionError(error, { route: '/', searchParam });
+        return res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
 
 // Update verification status
 router.put('/:phoneNo/verify', async (req, res) => {
-    const { verified } = req.body;
     try {
-        const user = await User.findOneAndUpdate(
-            { phoneNumber: req.params.phoneNo },
-            { verified },
-            { new: true } // Ensure the updated document is returned
-        ).populate('roles'); // Populate any referenced fields like roles
+        const { verified } = req.body;
+        const { phoneNo } = req.params;
 
-        if (!user) return res.status(404).json({ error: 'User not found' });
+        // Pre-transaction validation
+        if (!phoneNo) {
+            const errorResponse = createErrorResponse(400, 'Phone number is required');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
 
-        res.status(200).json(user); // Send the fully updated user object
+        if (typeof verified !== 'boolean') {
+            const errorResponse = createErrorResponse(400, 'Verified must be a boolean value');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        // Wrap database operations in transaction
+        const user = await withTransaction(async (sessions) => {
+            const updatedUser = await updateUser(
+                { phoneNumber: phoneNo },
+                { verified },
+                { new: true, session: sessions.users }
+            ).populate('roles');
+
+            if (!updatedUser) {
+                throw new Error('User not found');
+            }
+
+            return updatedUser;
+        }, { connections: ['users'] });
+
+        res.status(200).json(user);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to update verification status', details: error });
+        console.error('Error updating verification status:', error);
+        const errorResponse = handleTransactionError(error, { route: '/:phoneNo/verify', phoneNo: req.params.phoneNo });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
 
 // Update or add roles
-router.put('/update/roles', async (req, res) => {
-    const { roles, phoneNumber } = req.body;
+router.patch('/roles', async (req, res) => {
     try {
-        const user = await User.findOne({ phoneNumber });
-        if (!user) return res.status(404).json({ error: 'User not found' });
+        const { roles, phoneNumber } = req.body;
 
-        const roleObjectIds = roles.map((role) => new mongoose.Types.ObjectId(role));
+        // Pre-transaction validation
+        if (!roles || !Array.isArray(roles) || roles.length === 0) {
+            const errorResponse = createErrorResponse(400, 'Roles array is required and cannot be empty');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
 
-        user.roles = roleObjectIds;
-        await user.save();
+        if (!phoneNumber) {
+            const errorResponse = createErrorResponse(400, 'Phone number is required');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
 
-        const updatedUser = await User.findOne({ phoneNumber }).populate(["roles", "department"]);
-        if (!updatedUser) return res.status(404).json({ error: "User not found" });
+        // Find user before transaction to fail fast
+        const user = await findOneUser({ phoneNumber });
+        if (!user) {
+            const errorResponse = createErrorResponse(404, 'User not found');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        // Wrap database operations in transaction
+        const updatedUser = await withTransaction(async (sessions) => {
+            // Convert roles to ObjectIds
+            const roleObjectIds = roles.map((role) => new Types.ObjectId(role));
+            
+            user.roles = roleObjectIds;
+            await user.save({ session: sessions.users });
+
+            // Find updated user with populated fields
+            const result = await findOneUser({ phoneNumber }).populate(["roles", "department"]).session(sessions.users);
+            if (!result) {
+                throw new Error("User not found after update");
+            }
+
+            return result;
+        }, { connections: ['users'] });
+
         res.status(200).json(updatedUser);
-
     } catch (error) {
         console.error('Error updating roles:', error);
-        res.status(500).json({ error: 'Failed to update roles', details: error });
+        const errorResponse = handleTransactionError(error, { route: '/roles', phoneNumber: req.body.phoneNumber });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
+
 // update or add department
 router.put('/update/department', async (req, res) => {
-    const { department, phoneNumber } = req.body;
     try {
-        const user = await User.findOne({ phoneNumber });
-        if (!user) return res.status(404).json({ error: 'User not found' });
+        const { department, phoneNumber } = req.body;
 
-        user.department = department;
-        await user.save();
+        // Pre-transaction validation
+        if (!department || !phoneNumber) {
+            const errorResponse = createErrorResponse(400, 'Department and phone number are required');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
 
-        const updatedUser = await User.findOne({ phoneNumber }).populate(["roles", "department"]);
-        if (!updatedUser) return res.status(404).json({ error: "User not found" });
+        // Find user before transaction to fail fast
+        const user = await findOneUser({ phoneNumber });
+        if (!user) {
+            const errorResponse = createErrorResponse(404, 'User not found');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        // Wrap database operations in transaction
+        const updatedUser = await withTransaction(async (sessions) => {
+            user.department = department;
+            await user.save({ session: sessions.users });
+
+            // Find updated user with populated fields
+            const result = await findOneUser({ phoneNumber }).populate(["roles", "department"]).session(sessions.users);
+            if (!result) {
+                throw new Error("User not found after update");
+            }
+
+            return result;
+        }, { connections: ['users'] });
+
         res.status(200).json(updatedUser);
-
     } catch (error) {
         console.error('Error updating department:', error);
-        res.status(500).json({ error: 'Failed to update department', details: error });
+        const errorResponse = handleTransactionError(error, { route: '/update/department', phoneNumber: req.body.phoneNumber });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
 
 // Delete a user
 router.delete('/:id', async (req, res) => {
     try {
-        const user = await User.findByIdAndDelete(req.params.id);
-        if (!user) return res.status(404).json({ error: 'User not found' });
+        const { id } = req.params;
+
+        // Pre-transaction validation
+        if (!id) {
+            const errorResponse = createErrorResponse(400, 'User ID is required');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        // Validate ObjectId format
+        if (!Types.ObjectId.isValid(id)) {
+            const errorResponse = createErrorResponse(400, 'Invalid user ID format');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        // Wrap database operations in transaction
+        const user = await withTransaction(async (sessions) => {
+            const deletedUser = await deleteUserById(id, { session: sessions.users });
+            if (!deletedUser) {
+                throw new Error('User not found');
+            }
+            return deletedUser;
+        }, { connections: ['users'] });
+
         res.status(200).json({ message: 'User deleted', user });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to delete user', details: error });
+        console.error('Error deleting user:', error);
+        const errorResponse = handleTransactionError(error, { route: '/:id', userId: req.params.id });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
 
 router.get('/un-authorized-logins', async (req, res) => {
     try {
-        const unAuthorizedLogins = await UnAuthorizedLogin.find().sort({ timestamp: -1 }).exec();
+        const unAuthorizedLogins = await findUnauthorizedLogins().sort({ timestamp: -1 }).exec();
         if (!unAuthorizedLogins || unAuthorizedLogins.length < 1) {
             return res.status(404).json({ message: 'No Un Authorized logins found' });
         } else {
             return res.status(200).json(unAuthorizedLogins);
         }
     } catch (error) {
-        console.error('Error', error);
-        return res.status(500).json({ message: `An error occured`, error: error.message });
+        console.error('Error fetching unauthorized logins:', error);
+        const errorResponse = handleTransactionError(error, { route: '/un-authorized-logins' });
+        return res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 })
 
 router.patch('/update-device', async (req, res) => {
-    const { phoneNumber, newDeviceUUID } = req.body;
-
     try {
-        const user = await User.findOne({ phoneNumber });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+        const { phoneNumber, newDeviceUUID } = req.body;
+
+        // Pre-transaction validation
+        if (!phoneNumber || !newDeviceUUID) {
+            const errorResponse = createErrorResponse(400, 'Phone number and new device UUID are required');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
         }
 
-        user.deviceUUID = newDeviceUUID;
-        await user.save();
+        // Find user before transaction to fail fast
+        const user = await findOneUser({ phoneNumber });
+        if (!user) {
+            const errorResponse = createErrorResponse(404, 'User not found');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        // Wrap database operations in transaction
+        await withTransaction(async (sessions) => {
+            user.deviceUUID = newDeviceUUID;
+            await user.save({ session: sessions.users });
+        }, { connections: ['users'] });
 
         return res.status(200).json({ message: 'Device UUID updated successfully' });
     } catch (error) {
         console.error('Error updating device UUID:', error);
-        return res.status(500).json({ message: 'An error occurred while updating device UUID', error: error.message });
+        const errorResponse = handleTransactionError(error, { route: '/update-device', phoneNumber: req.body.phoneNumber });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
 
 router.delete('/un-authorized-request/:id', async (req, res) => {
     try {
-        let requestId = req.params.id
-        const anAuthorizedDoc = await UnAuthorizedLogin.findByIdAndDelete(requestId);
-        if (!anAuthorizedDoc) return res.status(404).json({ message: "Invalid id or document not found" })
-        res.status(200).json({ message: "Requested un authorized data delted successfully" })
+        const requestId = req.params.id;
+
+        // Pre-transaction validation
+        if (!requestId) {
+            const errorResponse = createErrorResponse(400, 'Request ID is required');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        // Validate ObjectId format
+        if (!Types.ObjectId.isValid(requestId)) {
+            const errorResponse = createErrorResponse(400, 'Invalid request ID format');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        // Wrap database operations in transaction
+        const anAuthorizedDoc = await withTransaction(async (sessions) => {
+            const deletedDoc = await deleteUnauthorizedLoginById(requestId, { session: sessions.users });
+            if (!deletedDoc) {
+                throw new Error('Document not found');
+            }
+            return deletedDoc;
+        }, { connections: ['users'] });
+
+        res.status(200).json({ message: "Requested un authorized data deleted successfully" });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to delete requested un authorized datauser', details: error });
+        console.error('Error deleting unauthorized request:', error);
+        const errorResponse = handleTransactionError(error, { route: '/un-authorized-request/:id', requestId: req.params.id });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 })
 
 router.put('/update', async (req, res) => {
-    const { userId, name, phoneNumber } = req.body;
-
     try {
-        const updatedUser = await User.findOneAndUpdate(
-            { userId },
-            { name, phoneNumber },
-            { new: true, select: 'name phoneNumber' }
-        );
+        const { userId, name, phoneNumber } = req.body;
 
-        if (!updatedUser) {
-            return res.status(404).json({ message: 'User not found' });
+        // Pre-transaction validation
+        if (!userId) {
+            const errorResponse = createErrorResponse(400, 'User ID is required');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
         }
+
+        if (!name && !phoneNumber) {
+            const errorResponse = createErrorResponse(400, 'At least one field (name or phoneNumber) must be provided for update');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        // Wrap database operations in transaction
+        const updatedUser = await withTransaction(async (sessions) => {
+            const result = await updateUser(
+                { userId },
+                { name, phoneNumber },
+                { new: true, select: 'name phoneNumber', session: sessions.users }
+            );
+
+            if (!result) {
+                throw new Error('User not found');
+            }
+
+            return result;
+        }, { connections: ['users'] });
 
         res.status(200).json({ message: 'User updated successfully', user: { name: updatedUser.name, phoneNumber: updatedUser.phoneNumber } });
     } catch (error) {
-        res.status(500).json({ message: 'Error updating user', error: error.message });
+        console.error('Error updating user:', error);
+        const errorResponse = handleTransactionError(error, { route: '/update', userId: req.body.userId });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
 
@@ -181,14 +329,14 @@ router.get('/allocators', async (req, res) => {
     let filter = { roles: '676ff015f63b19048c04649a' };
     try {
         if (department && typeof department !== 'undefined') {
-            const deptDoc = await Department.findOne({ name: department });
+            const deptDoc = await findOneDepartment({ name: department });
             if (!deptDoc) {
                 return res.status(404).json({ message: 'Department not found' });
             }
             filter.department = deptDoc._id;
         }
 
-        const allocators = await User.find(
+        const allocators = await findUsers(
             filter,
             { name: 1, userId: 1, department: 1 }
         ).populate('department').lean();
@@ -200,8 +348,9 @@ router.get('/allocators', async (req, res) => {
         res.status(200).json(allocators);
     } catch (error) {
         console.error('Error fetching allocators:', error);
-        res.status(500).json({ message: 'Internal server error', error: error.message });
+        const errorResponse = handleTransactionError(error, { route: '/allocators', department: req.query.department });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
 
-module.exports = router;
+export default router;

@@ -1,6 +1,6 @@
-const express = require('express');
-const router = express.Router();
-const { TripSheet } = require('../models/TripSheets');
+import { Router } from 'express';
+const router = Router();
+import { TripSheet } from '../models/TripSheets.js';
 
 router.get('/', async (req, res) => {
     const {
@@ -91,4 +91,4 @@ router.get('/', async (req, res) => {
 });
 
 
-module.exports = router;
+export default router;

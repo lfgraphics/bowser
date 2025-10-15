@@ -1,18 +1,9 @@
-const express = require('express');
-const router = express.Router();
-const {
-    getUserVehicles,
-    getLoadedNotUnloadedVehicles,
-    getUnloadedNotPlannedVehicles,
-    getUnloadedPlannedVehicles,
-    getNewSummary,
-    getTripById,
-    getCurrentTripByDriverId,
-    getAllTripsForVehicle
-} = require('./utils');
-const { getLatestVehicleUpdates } = require('../../utils/vehicles');
-const { getVehiclesFullDetails } = require('../../utils/enrichVehicles');
-const mongoose = require('mongoose');
+import { Router } from 'express';
+const router = Router();
+import { getUserVehicles, getLoadedNotUnloadedVehicles, getUnloadedNotPlannedVehicles, getUnloadedPlannedVehicles, getNewSummary, getTripById, getCurrentTripByDriverId, getAllTripsForVehicle } from './utils.js';
+import { getLatestVehicleUpdates } from '../../utils/vehicles.js';
+import { getVehiclesFullDetails } from '../../utils/enrichVehicles.js';
+import { Types } from 'mongoose';
 
 // Get latest status update for each vehicle of a user by userId
 router.get('/latest-vehicle-updates', async (req, res) => {
@@ -189,7 +180,7 @@ router.post('/trips/reorder', async (req, res) => {
     try {
         const ops = orderedTripIds.map((id, idx) => ({
             updateOne: {
-                filter: { _id: new mongoose.Types.ObjectId(id) },
+                filter: { _id: new Types.ObjectId(id) },
                 update: { $set: { rankindex: idx } }
             }
         }));
@@ -201,7 +192,8 @@ router.post('/trips/reorder', async (req, res) => {
                 op.updateOne.filter.StartDate = { $gte: start, $lte: end };
             });
         }
-        const result = await require('../../models/VehiclesTrip').bulkWrite(ops);
+        const { default: VehiclesTripModel } = await import('../../models/VehiclesTrip.js');
+        const result = await VehiclesTripModel.bulkWrite(ops);
         return res.status(200).json({ success: true, result });
     } catch (error) {
         console.error('Error reordering trips:', error);
@@ -213,10 +205,11 @@ router.post('/trips/reorder', async (req, res) => {
 router.delete('/trip/:tripId', async (req, res) => {
     const { tripId } = req.params;
     try {
-        if (!mongoose.Types.ObjectId.isValid(tripId)) {
+        if (!Types.ObjectId.isValid(tripId)) {
             return res.status(400).json({ error: 'Invalid trip id' });
         }
-        const TankersTrip = require('../../models/VehiclesTrip');
+        const { default: VehiclesTripModel } = await import('../../models/VehiclesTrip.js');
+        const TankersTrip = VehiclesTripModel;
         const deleted = await TankersTrip.findByIdAndDelete(tripId);
         if (!deleted) return res.status(404).json({ error: 'Trip not found' });
         return res.status(200).json({ success: true });
@@ -226,4 +219,4 @@ router.delete('/trip/:tripId', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

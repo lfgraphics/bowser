@@ -1,11 +1,11 @@
-const express = require('express');
-const router = express.Router();
-const FuelStation = require('../models/FuelStations');
+import { Router } from 'express';
+const router = Router();
+import FuelStation, { find as findFuelStations, findOne as findOneFuelStation, findByIdAndUpdate as updateFuelStation, findByIdAndDelete as deleteFuelStation } from '../models/FuelStations.js';
 
 router.get('/', async (req, res) => {
-    const {name} = req.query;
+    const { name } = req.query;
     try {
-        const fuelStations = await FuelStation.find({name: { $regex: name, $options: 'i' }}).sort({ _id: -1 }).limit(20).lean();
+        const fuelStations = await findFuelStations({ name: { $regex: name, $options: 'i' } }).sort({ _id: -1 }).limit(20).lean();
         res.status(200).json(fuelStations);
     } catch (error) {
         console.error('Error fetching fuel stations:', error);
@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        const existingStation = await FuelStation.findOne({ name });
+        const existingStation = await findOneFuelStation({ name });
         if (existingStation) {
             return res.status(400).json({ error: 'Fuel station already exists' });
         }
@@ -43,7 +43,7 @@ router.patch('/:id', async (req, res) => {
     }
 
     try {
-        const updatedStation = await FuelStation.findByIdAndUpdate(id, { name }, { new: true });
+        const updatedStation = await updateFuelStation(id, { name }, { new: true });
         if (!updatedStation) {
             return res.status(404).json({ error: 'Fuel station not found' });
         }
@@ -58,7 +58,7 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        const deletedStation = await FuelStation.findByIdAndDelete(id);
+        const deletedStation = await deleteFuelStation(id);
         if (!deletedStation) {
             return res.status(404).json({ error: 'Fuel station not found' });
         }
@@ -69,4 +69,4 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

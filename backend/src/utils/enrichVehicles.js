@@ -1,10 +1,10 @@
 // utils/vehicleAggregator.js
-const Vehicle = require('../models/vehicle');
-const Driver = require('../models/driver');
-const TankersTrip = require('../models/VehiclesTrip');
-const DriversLog = require('../models/VehicleDriversLog');
-const TransUser = require('../models/TransUser');
-const { getLatestVehicleUpdates } = require('./vehicles');
+import { find as findVehicles } from '../models/vehicle.js';
+import { find as findDrivers } from '../models/driver.js';
+import { aggregate as aggregateVehicleTrips } from '../models/VehiclesTrip.js';
+import { find as findVehicleDriversLogs } from '../models/VehicleDriversLog.js';
+import { find as findTransUsers } from '../models/TransUser.js';
+import { getLatestVehicleUpdates } from './vehicles.js';
 
 /**
  * Extract ITPL number from driver string
@@ -18,7 +18,7 @@ function extractITPL(driverString) {
  * Fetch vehicles and related drivers in bulk
  */
 async function fetchAndEnrichVehicles(vehicleNumbers) {
-    const vehicles = await Vehicle.find({ VehicleNo: { $in: vehicleNumbers } }).populate({
+    const vehicles = await findVehicles({ VehicleNo: { $in: vehicleNumbers } }).populate({
         path: "lastDriverLog",
         populate: { path: "driver" }
     });
@@ -30,7 +30,7 @@ async function fetchAndEnrichVehicles(vehicleNumbers) {
     const validNames = driverStrings.filter(name => name && name !== 'no driver');
 
     // Fetch all drivers in one query
-    const drivers = await Driver.find({
+    const drivers = await findDrivers({
         Name: { $in: validNames }
     });
 
@@ -64,7 +64,7 @@ async function fetchAndEnrichVehicles(vehicleNumbers) {
  * Fetch latest trips for multiple vehicles in one query
  */
 async function getLatestTrips(vehicleNumbers) {
-    const trips = await TankersTrip.aggregate([
+    const trips = await aggregateVehicleTrips([
         { $match: { VehicleNo: { $in: vehicleNumbers } } },
         // Sort by date desc, then rankindex asc (0 highest priority)
         { $sort: { StartDate: -1, rankindex: 1 } },
@@ -83,7 +83,7 @@ async function getLatestTrips(vehicleNumbers) {
  * Fetch driver leaving status for vehicles with "no driver"
  */
 async function getDriverFromLog(vehicleNumbers) {
-    const logs = await DriversLog.find({
+    const logs = await findVehicleDriversLogs({
         vehicleNo: { $in: vehicleNumbers }
     }).populate("driver", "_id Name MobileNo")
         .sort({ creationDate: -1 });
@@ -128,7 +128,7 @@ async function getVehiclesFullDetails(vehicleNumbers, isAdmin = false) {
     if (isAdmin) {
         try {
             const allVehicleNos = enrichedVehicles.map(v => v.vehicle.VehicleNo);
-            const users = await TransUser.find(
+            const users = await findTransUsers(
                 {
                     Division: { $in: [0, 1, 2, 3] },
                     myVehicles: { $in: allVehicleNos }
@@ -179,6 +179,8 @@ async function getVehiclesFullDetails(vehicleNumbers, isAdmin = false) {
     });
 }
 
-module.exports = {
-    getVehiclesFullDetails
-};
+// Named exports
+export { getVehiclesFullDetails };
+
+// Default export for backward compatibility
+export default { getVehiclesFullDetails };

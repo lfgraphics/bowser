@@ -1,13 +1,13 @@
-const express = require('express');
-const router = express.Router();
-const Driver = require('../models/driver');
-const User = require('../models/user');
+import { Router } from 'express';
+const router = Router();
+import { find as findDrivers, findOne as findOneDriver, findOneAndUpdate as updateDriver } from '../models/driver.js';
+import { find as findUsers } from '../models/user.js';
 
 router.get('/:searchTerm', async (req, res) => {
     const searchTerm = req.params.searchTerm;
 
     try {
-        const drivers = await Driver.find({
+        const drivers = await find({
             $or: [
                 { Name: { $regex: searchTerm, $options: 'i' } },
                 { Name: searchTerm },
@@ -33,7 +33,7 @@ router.get('/bowser-drivers/:parameter', async (req, res) => {
     const bowserDriverRoleId = '6710ddc21e5c7dc410e64e34';
 
     try {
-        const users = await User.find({ $or: [{ userId: { $regex: parameter, $options: 'i' } }, { phoneNumber: { $regex: parameter, $options: "i" } }, { name: { $regex: parameter, $options: "i" } }] }, 'userId name phoneNumber roles verified');
+        const users = await _find({ $or: [{ userId: { $regex: parameter, $options: 'i' } }, { phoneNumber: { $regex: parameter, $options: "i" } }, { name: { $regex: parameter, $options: "i" } }] }, 'userId name phoneNumber roles verified');
 
         if (users.length === 0) {
             return res.status(404).json({ message: 'No users found' });
@@ -67,13 +67,13 @@ router.post('/updateDriverMobile', async (req, res) => {
 
     try {
         // Step 1: Find the driver by Name (case-insensitive match)
-        const driver = await Driver.findOne({ Name: { $regex: driverId, $options: 'i' } });
+        const driver = await findOne({ Name: { $regex: driverId, $options: 'i' } });
 
         if (!driver) {
             return res.status(404).json({ message: 'Driver not found.' });
         }
 
-        const updatedDriver = await Driver.findOneAndUpdate(
+        const updatedDriver = await findOneAndUpdate(
             { _id: driver._id },
             [
                 {
@@ -121,7 +121,7 @@ router.get('/petrolPump/:parameter', async (req, res) => {
     const petrolPumpPersonalRolId = '676ff0aef63b19048c04649b';
 
     try {
-        const users = await User.find({ $or: [{ userId: { $regex: parameter, $options: 'i' } }, { phoneNumber: { $regex: parameter, $options: "i" } }, { name: { $regex: parameter, $options: "i" } }] }, 'userId name phoneNumber roles verified');
+        const users = await _find({ $or: [{ userId: { $regex: parameter, $options: 'i' } }, { phoneNumber: { $regex: parameter, $options: "i" } }, { name: { $regex: parameter, $options: "i" } }] }, 'userId name phoneNumber roles verified');
 
         if (users.length === 0) {
             return res.status(404).json({ message: 'No users found' });
@@ -146,4 +146,4 @@ router.get('/petrolPump/:parameter', async (req, res) => {
     }
 })
 
-module.exports = router;
+export default router;

@@ -1,11 +1,8 @@
 "use strict";
 
-const {
-  bowsersDatabaseConnection,
-  transportDatabaseConnection,
-  UsersAndRolesDatabaseConnection,
-} = require("../../config/database");
-const { logError } = require("./errorHandler");
+import { getBowsersDatabaseConnection, getTransportDatabaseConnection, getUsersAndRolesDatabaseConnection } from "../../config/database.js";
+import errorHandler from "./errorHandler.js";
+const { logError } = errorHandler;
 
 // Default transaction configuration
 const defaultTxnOptions = Object.freeze({
@@ -17,9 +14,9 @@ const defaultTxnOptions = Object.freeze({
 
 // Supported connection keys
 const CONNECTIONS = Object.freeze({
-  bowsers: bowsersDatabaseConnection,
-  transport: transportDatabaseConnection,
-  users: UsersAndRolesDatabaseConnection,
+  bowsers: getBowsersDatabaseConnection,
+  transport: getTransportDatabaseConnection,
+  users: getUsersAndRolesDatabaseConnection,
 });
 
 /**
@@ -28,8 +25,9 @@ const CONNECTIONS = Object.freeze({
  * @returns {Promise<import("mongodb").ClientSession>}
  */
 async function createSession(key) {
-  const conn = CONNECTIONS[key];
-  if (!conn) throw new Error(`Unknown connection key: ${key}`);
+  const connGetter = CONNECTIONS[key];
+  if (!connGetter) throw new Error(`Unknown connection key: ${key}`);
+  const conn = connGetter();
   return conn.startSession();
 }
 
@@ -188,7 +186,7 @@ async function withTransaction(callback, opts = {}) {
       if (signal && abortListenerAttached && sessions.__abortHandler) {
         try {
           signal.removeEventListener("abort", sessions.__abortHandler);
-        } catch (_) {}
+        } catch (_) { }
       }
       endAll(sessions);
     }
@@ -228,7 +226,11 @@ function isTransientTransactionError(err) {
   );
 }
 
-module.exports = {
+// Named exports
+export { createSession, withTransaction, executeInTransaction, defaultTxnOptions, isTransientTransactionError };
+
+// Default export for backward compatibility
+export default {
   createSession,
   withTransaction,
   executeInTransaction,

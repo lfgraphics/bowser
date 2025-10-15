@@ -1,12 +1,12 @@
-const express = require('express');
-const router = express.Router();
-const Driver = require('../models/driver');
-const argon2 = require('argon2');
+import { Router } from 'express';
+const router = Router();
+import { find as findDriver, findOneAndUpdate as updateDriver } from '../models/driver.js';
+import { hash } from 'argon2';
 
 router.get('/', async (req, res) => {
     const { params } = req.query;
     try {
-        const drivers = await Driver.find({
+        const drivers = await findDriver({
             $and: [
                 { $or: [{ Name: { $regex: params, $options: 'i' } }, { 'MobileNo.MobileNo': { $regex: params } }] },
                 {
@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     const id = req.params.id;
     try {
-        const deletedDriver = await Driver.findOneAndUpdate(
+        const deletedDriver = await updateDriver(
             { _id: id },
             { $set: { inActive: true } },
             { new: true }
@@ -52,8 +52,8 @@ router.post('/change-password/:id', async (req, res) => {
     const { password } = req.body;
     if (!id) return res.status(401).json({ message: "id is required!" });
     try {
-        const hashedPassword = await argon2.hash(password);
-        const updatedDriver = await Driver.findOneAndUpdate(
+        const hashedPassword = await hash(password);
+        const updatedDriver = await updateDriver(
             { Name: { $regex: id } },
             { password: hashedPassword },
             { new: true }
@@ -72,7 +72,7 @@ router.get('/block-driver/:id', async (req, res) => {
     const id = req.params.id;
     if (!id) return res.status(401).json({ message: "id is required!" });
     try {
-        const updatedDriver = await Driver.findOneAndUpdate(
+        const updatedDriver = await updateDriver(
             { _id: id },
             { verified: false },
             { new: true }
@@ -91,7 +91,7 @@ router.get('/unblock-driver/:id', async (req, res) => {
     const id = req.params.id;
     if (!id) return res.status(401).json({ message: "id is required!" });
     try {
-        const updatedDriver = await Driver.findOneAndUpdate(
+        const updatedDriver = await updateDriver(
             { _id: id },
             { verified: true },
             { new: true }
@@ -110,7 +110,7 @@ router.get('/mark-as-keypd/:id', async (req, res) => {
     const id = req.params.id;
     if (!id) return res.status(401).json({ message: "id is required!" });
     try {
-        const updatedDriver = await Driver.findOneAndUpdate(
+        const updatedDriver = await updateDriver(
             { Name: id },
             { $set: { keypad: true } },
             { new: true }
@@ -125,4 +125,4 @@ router.get('/mark-as-keypd/:id', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

@@ -444,7 +444,7 @@ export function Sidebar() {
                   </li>
                 </OnlyAllowed>
                 {/* Camp Management - Available for Trans App Admins and Camp Admins */}
-                <OnlyAllowed allowedRoles={["Admin", "Trans App", "admin", "officer", "supervisor"]}>
+                <OnlyAllowed allowedRoles={["Admin", "Trans App", "admin"]}>
                   <li onClick={toggleSidebar}>
                     <Link href="/camp/admin/dashboard">
                       <Button
@@ -453,6 +453,19 @@ export function Sidebar() {
                       >
                         <LayoutDashboard className="mr-2 w-4 h-4" />
                         Camp Dashboard
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed allowedRoles={["officer"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/camp/dashboard">
+                      <Button
+                        variant="ghost"
+                        className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/camp/dashboard" ? "bg-primary text-primary-foreground" : ""}`}
+                      >
+                        <LayoutDashboard className="mr-2 w-4 h-4" />
+                        Dashboard
                       </Button>
                     </Link>
                   </li>

@@ -1,14 +1,14 @@
-const express = require('express');
-const router = express.Router();
-const LoadingOrder = require('../models/LoadingOrder');
-const LoadingSheet = require('../models/LoadingSheet')
-const { sendBulkNotifications, sendWebPushNotification } = require('../utils/pushNotifications');
-const { mongoose } = require('mongoose');
-const Bowser = require('../models/Bowsers');
-const { updateTripSheet } = require('../utils/tripSheet')
-const { calculateQty } = require('../utils/calibration')
-const { withTransaction } = require('../utils/transactions');
-const { handleTransactionError, createErrorResponse } = require('../utils/errorHandler');
+import { Router } from 'express';
+const router = Router();
+import LoadingOrder, { findById as findLoadingOrderById, find as findLoadingOrders, findByIdAndUpdate as updateLoadingOrder, findByIdAndDelete as deleteLoadingOrder } from '../models/LoadingOrder.js';
+import { findOneAndUpdate as updateLoadingSheet, find as findLoadingSheets, findOne as findOneLoadingSheet, findByIdAndUpdate as updateLoadingSheetById, findByIdAndDelete as deleteLoadingSheetById } from '../models/LoadingSheet.js';
+import { sendBulkNotifications, sendWebPushNotification } from '../utils/pushNotifications.js';
+import { mongoose } from 'mongoose';
+import { findOne as findOneBowser } from '../models/Bowsers.js';
+import { updateTripSheet } from '../utils/tripSheet.js';
+import { calculateQty } from '../utils/calibration.js';
+import { withTransaction } from '../utils/transactions.js';
+import { handleTransactionError, createErrorResponse } from '../utils/errorHandler.js';
 
 // Create a new LoadingOrder
 router.post('/orders', async (req, res) => {
@@ -72,7 +72,7 @@ router.get('/orders/:id', async (req, res) => {
         const { id } = req.params;
 
         // 1. Fetch the loading order
-        const loadingOrder = await LoadingOrder.findById(id).lean();
+        const loadingOrder = await findById(id).lean();
         if (!loadingOrder) {
             return res.status(404).json({
                 title: 'Error',
@@ -81,7 +81,7 @@ router.get('/orders/:id', async (req, res) => {
         }
 
         // 2. Fetch the bowser based on regNo
-        const bowser = await Bowser.findOne({ regNo: loadingOrder.regNo }).populate('currentTrip').lean();
+        const bowser = await _findOne({ regNo: loadingOrder.regNo }).populate('currentTrip').lean();
 
         // 3. Construct the desired response format
         //    - an array containing a single object
@@ -125,7 +125,7 @@ router.post('/orders/get', async (req, res) => {
             ];
         }
 
-        const orders = await LoadingOrder.find(filter).sort({ createdAt: -1 }).limit(20).lean();
+        const orders = await find(filter).sort({ createdAt: -1 }).limit(20).lean();
 
         if (!orders.length) {
             return res.status(404).json({ error: 'No Orders found', filter });
@@ -152,7 +152,7 @@ router.patch('/orders/:id', async (req, res) => {
         }
 
         const updatedOrder = await withTransaction(async (sessions) => {
-            const updated = await LoadingOrder.findByIdAndUpdate(
+            const updated = await findByIdAndUpdate(
                 new mongoose.Types.ObjectId(id),
                 updateData,
                 { new: true, runValidators: true, session: sessions.bowsers }
@@ -183,7 +183,7 @@ router.delete('/order/:id', async (req, res) => {
         }
 
         const deletedOrder = await withTransaction(async (sessions) => {
-            const del = await LoadingOrder.findByIdAndDelete(new mongoose.Types.ObjectId(id), { session: sessions.bowsers });
+            const del = await findByIdAndDelete(new mongoose.Types.ObjectId(id), { session: sessions.bowsers });
             if (!del) {
                 const e = new Error('LoadingOrder not found');
                 e.name = 'ValidationError';
@@ -247,7 +247,7 @@ router.post('/sheet', async (req, res) => {
         // Transaction block
         const resultSheet = await withTransaction(async (sessions) => {
             // Fetch bowser with session
-            const bowser = await Bowser.findOne({ regNo }).session(sessions.bowsers);
+            const bowser = await _findOne({ regNo }).session(sessions.bowsers);
             if (!bowser) {
                 const e = new Error('Bowser not found for the provided regNo');
                 e.name = 'ValidationError';
@@ -314,14 +314,14 @@ router.post('/sheet', async (req, res) => {
             };
 
             // Upsert LoadingSheet by LoadingOrder (ensures a sheet exists even when sheetId is provided)
-            const newLoadingSheet = await LoadingSheet.findOneAndUpdate(
+            const newLoadingSheet = await findOneAndUpdate(
                 { "bccAuthorizedOfficer.orderId": new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)) },
                 { $set: sheetData },
                 { new: true, upsert: true, setDefaultsOnInsert: true, session: sessions.bowsers }
             );
 
             // Mark LoadingOrder fulfilled
-            const loadingOrder = await LoadingOrder.findByIdAndUpdate(
+            const loadingOrder = await findByIdAndUpdate(
                 new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)),
                 { $set: { fulfilled: true } },
                 { new: true, session: sessions.bowsers }
@@ -380,7 +380,7 @@ router.post('/sheets/get', async (req, res) => {
             ];
         }
 
-        const sheets = await LoadingSheet.find(filter).sort({ createdAt: -1 }).limit(20).lean();
+        const sheets = await _find(filter).sort({ createdAt: -1 }).limit(20).lean();
 
         if (!sheets.length) {
             return res.status(404).json({ error: 'No Sheets found', filter });
@@ -396,7 +396,7 @@ router.post('/sheets/get', async (req, res) => {
 router.get('/sheets/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const sheet = await LoadingSheet.findOne({ _id: new mongoose.Types.ObjectId(id) }).lean();
+        const sheet = await findOne({ _id: new mongoose.Types.ObjectId(id) }).lean();
         if (!sheet) {
             return res.status(404).json({ error: 'No Sheets found' });
         }
@@ -421,7 +421,7 @@ router.patch('/sheets/:id', async (req, res) => {
         }
 
         const updatedSheet = await withTransaction(async (sessions) => {
-            const updated = await LoadingSheet.findByIdAndUpdate(
+            const updated = await _findByIdAndUpdate(
                 new mongoose.Types.ObjectId(id),
                 updateData,
                 { new: true, runValidators: true, session: sessions.bowsers }
@@ -453,7 +453,7 @@ router.delete('/sheet/:id', async (req, res) => {
         }
 
         const deletedSheet = await withTransaction(async (sessions) => {
-            const del = await LoadingSheet.findByIdAndDelete(new mongoose.Types.ObjectId(id), { session: sessions.bowsers });
+            const del = await _findByIdAndDelete(new mongoose.Types.ObjectId(id), { session: sessions.bowsers });
             if (!del) {
                 const e = new Error('LoadingSheet not found');
                 e.name = 'ValidationError';
@@ -469,4 +469,4 @@ router.delete('/sheet/:id', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

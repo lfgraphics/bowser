@@ -1,20 +1,22 @@
-const express = require('express');
+import { Router } from 'express';
 // const mongoose = require('mongoose');
-const router = express.Router();
-const jwt = require('jsonwebtoken');
-const Driver = require('../models/driver');
-const UnAuthorizedLogin = require('../models/unauthorizedLogin');
-const argon2 = require('argon2');
+const router = Router();
+import jwtPkg from 'jsonwebtoken';
+const { sign, verify } = jwtPkg;
+import { find as findDrivers, findOneAndUpdate as updateDriver, findOne as findOneDriver } from '../models/driver.js';
+import UnAuthorizedLogin from '../models/unauthorizedLogin.js';
+import argon2Pkg from 'argon2';
+const { hash, verify: verifyPassword } = argon2Pkg;
 // const Role = require('../models/role');
-const moment = require('moment-timezone');
-const vehicle = require('../models/vehicle');
-const SignupRequest = require('../models/SignupRequest');
+import moment from 'moment-timezone';
+import { find as findVehicles } from '../models/vehicle.js';
+import SignupRequest, { deleteOne as deleteSignupRequest, findOne as findOneSignupRequest, find as findSignupRequests, findOneAndDelete as deleteOneSignupRequest } from '../models/SignupRequest.js';
 
 router.post('/signup', async (req, res) => {
     try {
         const { password, phoneNumber, name, deviceUUID, requestId } = req.body;
 
-        const driver = await Driver.find({
+        const driver = await findDrivers({
             $and: [{ Name: { $regex: name, $options: 'i' } }, {
                 $or: [
                     { inActive: { $exists: false } },
@@ -47,9 +49,9 @@ router.post('/signup', async (req, res) => {
 
         let id = recognizedId || cleanName;
 
-        const hashedPassword = await argon2.hash(password);
+        const hashedPassword = await hash(password);
 
-        const updatedDriver = await Driver.findOneAndUpdate(
+        const updatedDriver = await updateDriver(
             { Name: { $regex: name, $options: "i" } },
             {
                 $set: {
@@ -66,10 +68,10 @@ router.post('/signup', async (req, res) => {
 
         console.log(JSON.stringify(updatedDriver))
 
-        const token = jwt.sign({ user: updatedDriver }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        const token = sign({ user: updatedDriver }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
         if (requestId && requestId !== undefined) {
-            await SignupRequest.deleteOne({ _id: requestId });
+            await deleteSignupRequest({ _id: requestId });
         }
 
         return res.status(201).json({
@@ -88,7 +90,7 @@ router.post('/login', async (req, res) => {
     try {
         const { phoneNumber, password, deviceUUID } = req.body;
 
-        const user = await Driver.findOne({
+        const user = await findOneDriver({
             "MobileNo.MobileNo": phoneNumber,
             $or: [
                 { inActive: { $exists: false } },
@@ -105,14 +107,14 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'आप को लॉग इन करने की अनुमति नहीं है' })
         }
 
-        const isPasswordValid = await argon2.verify(user.password, password);
+        const isPasswordValid = await verifyPassword(user.password, password);
 
         if (!isPasswordValid) {
             return res.status(400).json({ message: 'ग़लत पासवर्ड डाला गया|' });
         }
         let roleNames = ['Wehicle Driver'];
 
-        const token = jwt.sign({ phoneNumber: user.phoneNumber, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        const token = sign({ phoneNumber: user.phoneNumber, iat: Date.now() }, process.env.JWT_SECRET, { expiresIn: '7d' });
         const loginTime = new Date().toISOString();
 
         const idMatch = user.Name.match(/(?:ITPL-?\d+|\(ITPL-?\d+\))/i);
@@ -123,7 +125,7 @@ router.post('/login', async (req, res) => {
             cleanName = cleanName.replace(/(?:\s*[-\s]\s*|\s*\(|\)\s*)(?:ITPL-?\d+|\(ITPL-?\d+\))/i, '').trim();
         }
 
-        let driversVehicle = await vehicle.find({ 'tripDetails.driver': { $regex: user.ITPLId } });
+        let driversVehicle = await findVehicles({ 'tripDetails.driver': { $regex: user.ITPLId } });
 
         console.log(user);
 
@@ -165,7 +167,7 @@ router.post('/verify-token', async (req, res) => {
             return res.status(401).json({ valid: false, message: 'No token provided' });
         }
 
-        jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+        verify(token, process.env.JWT_SECRET, async (err, decoded) => {
             if (err) {
                 return res.status(401).json({ valid: false, message: 'Invalid token' });
             }
@@ -173,7 +175,7 @@ router.post('/verify-token', async (req, res) => {
             if (!isTokenValid(decoded)) {
                 return res.status(401).json({ valid: false, message: 'Token expired' });
             }
-            const user = await Driver.findOne({
+            const user = await findOneDriver({
                 'MobileNo.MobileNo': decoded.phoneNumber, $or: [
                     { inActive: { $exists: false } },
                     { inActive: true }
@@ -222,7 +224,7 @@ router.post('/signup-request', async (req, res) => {
             pushToken,
             generationTime: moment().tz("Asia/Kolkata").toDate()
         })
-        const existingRequest = await SignupRequest.findOne({
+        const existingRequest = await findOneSignupRequest({
             vehicleNo: name,
             phoneNumber,
         });
@@ -242,7 +244,7 @@ router.post('/signup-request', async (req, res) => {
 router.get('/signup-requests', async (req, res) => {
     const { searchParam } = req.query;
     try {
-        const signupRequests = await SignupRequest.find({ phoneNumber: { $regex: searchParam } }).sort({ _id: -1 }).lean();
+        const signupRequests = await findSignupRequests({ phoneNumber: { $regex: searchParam } }).sort({ _id: -1 }).lean();
         return res.status(200).json(signupRequests);
     } catch (err) {
         console.error(err)
@@ -253,7 +255,7 @@ router.get('/signup-requests', async (req, res) => {
 router.delete('/signup-request/:id', async (req, res) => {
     const id = req.params.id;
     try {
-        const deletedRequest = await SignupRequest.findOneAndDelete({ _id: id });
+        const deletedRequest = await deleteOneSignupRequest({ _id: id });
         if (!deletedRequest) {
             return res.status(400).json({ message: "Request not found." })
         } else {
@@ -318,4 +320,4 @@ router.delete('/signup-request/:id', async (req, res) => {
 //     }
 // });
 
-module.exports = router;
+export default router;

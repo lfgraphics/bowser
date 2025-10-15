@@ -1,7 +1,7 @@
-const mongoose = require('mongoose');
-const { transportDatabaseConnection } = require('../../config/database');
+import { Schema } from 'mongoose';
+import { getTransportDatabaseConnection } from '../../config/database.js';
 
-const driverSchema = new mongoose.Schema({
+const driverSchema = new Schema({
     Name: String,
     ITPLId: String,
     MobileNo: [{
@@ -21,4 +21,23 @@ const driverSchema = new mongoose.Schema({
     generationTime: { type: Date },
 });
 
-module.exports = transportDatabaseConnection.model('Driver', driverSchema, 'DriversCollection');
+const Driver = getTransportDatabaseConnection().model('Driver', driverSchema, 'DriversCollection');
+
+// Export model methods as named exports
+export const find = Driver.find.bind(Driver);
+export const findOne = Driver.findOne.bind(Driver);
+export const findById = Driver.findById.bind(Driver);
+export const findOneAndUpdate = Driver.findOneAndUpdate.bind(Driver);
+export const findByIdAndUpdate = Driver.findByIdAndUpdate.bind(Driver);
+export const updateOne = Driver.updateOne.bind(Driver);
+export const updateMany = Driver.updateMany.bind(Driver);
+export const deleteOne = Driver.deleteOne.bind(Driver);
+export const deleteMany = Driver.deleteMany.bind(Driver);
+export const create = Driver.create.bind(Driver);
+export const insertMany = Driver.insertMany.bind(Driver);
+export const countDocuments = Driver.countDocuments.bind(Driver);
+export const distinct = Driver.distinct.bind(Driver);
+export const aggregate = Driver.aggregate.bind(Driver);
+export const bulkWrite = Driver.bulkWrite.bind(Driver);
+
+export default Driver;

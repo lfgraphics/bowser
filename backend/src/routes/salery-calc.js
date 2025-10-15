@@ -1,16 +1,16 @@
-const express = require('express');
-const router = express.Router();
-const SaleryCalc = require('../models/SaleryCalc');
-const { mongoose } = require('mongoose');
+import { Router } from 'express';
+const router = Router();
+import { findById as findSaleryCalcById, findOneAndUpdate as updateSaleryCalc } from '../models/SaleryCalc.js';
+import { mongoose } from 'mongoose';
 
 router.get('/', async (req, res) => {
-    let saleryCalc = await SaleryCalc.findById('679e27701c5931b42c74e5b0')
+    let saleryCalc = await findSaleryCalcById('679e27701c5931b42c74e5b0')
     res.status(200).json({ saleryCalc, message: 'Welcome to Bowser Fuel Management System!' });
 });
 
 router.post('/', async (req, res) => {
     const { foodingRate, saleryRate, rewardRate } = req.body
-    let saleryCalc = await SaleryCalc.findOneAndUpdate(
+    let saleryCalc = await updateSaleryCalc(
         { _id: "679e27701c5931b42c74e5b0" },
         {
             foodingRate: foodingRate,
@@ -23,4 +23,4 @@ router.post('/', async (req, res) => {
     res.status(200).json({ message: 'Salery calculation updated successfully', saleryCalc });
 });
 
-module.exports = router;
+export default router;

@@ -1,13 +1,14 @@
-const express = require('express');
-const router = express.Router();
-const mongoose = require('mongoose');
-const { sendNativePushNotification } = require('../utils/pushNotifications');
-const fuelingOrders = require('../models/fuelingOrders');
-const Vehicle = require('../models/vehicle');
-const FuelRequest = require('../models/FuelRequest');
-const { withTransaction } = require('../utils/transactions');
-const { handleTransactionError, createErrorResponse } = require('../utils/errorHandler');
-const { asyncHandler } = require('../middleware/errorHandler');
+import { Router } from 'express';
+import { Types } from 'mongoose';
+import { sendNativePushNotification } from '../utils/pushNotifications.js';
+import fuelingOrders, { findByIdAndUpdate as updateFuelingOrder } from '../models/fuelingOrders.js';
+import { findOne as findVehicle } from '../models/vehicle.js';
+import { findByIdAndUpdate as updateFuelRequest } from '../models/FuelRequest.js';
+import { withTransaction } from '../utils/transactions.js';
+import { handleTransactionError, createErrorResponse } from '../utils/errorHandler.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+
+const router = Router();
 
 router.post('/', asyncHandler(async (req, res) => {
     console.log('allocation body: ', req.body);
@@ -51,18 +52,18 @@ router.post('/', asyncHandler(async (req, res) => {
         const errBody = createErrorResponse({ status: 400, message: 'Missing required driver/allocationAdmin fields' });
         return res.status(errBody.status).json(errBody);
     }
-        if (requestId && !mongoose.Types.ObjectId.isValid(String(requestId))) {
-            const errBody = createErrorResponse({ status: 400, message: 'Invalid requestId' });
-            return res.status(errBody.status).json(errBody);
-        }
+    if (requestId && !Types.ObjectId.isValid(String(requestId))) {
+        const errBody = createErrorResponse({ status: 400, message: 'Invalid requestId' });
+        return res.status(errBody.status).json(errBody);
+    }
 
     let persistedOrder = null;
     let updatedFuelRequest = null;
 
     try {
         // Use transactions across bowsers and transport (transport reserved for future related ops)
-            const result = await withTransaction(async (sessions) => {
-                const order = new fuelingOrders({
+        const result = await withTransaction(async (sessions) => {
+            const order = new fuelingOrders({
                 allocationType,
                 pumpAllocationType,
                 fuelProvider,
@@ -70,8 +71,8 @@ router.post('/', asyncHandler(async (req, res) => {
                 category,
                 party,
                 vehicleNumber,
-                    odoMeter: odometer,
-                    tripId,
+                odoMeter: odometer,
+                tripId,
                 driverId,
                 driverName,
                 driverMobile,
@@ -88,39 +89,39 @@ router.post('/', asyncHandler(async (req, res) => {
                     name: allocationAdmin.name,
                     id: allocationAdmin.id,
                 },
-                request: requestId ? new mongoose.Types.ObjectId(String(requestId)) : null,
+                request: requestId ? new Types.ObjectId(String(requestId)) : null,
             });
 
             await order.save({ session: sessions.bowsers });
 
-                    let fr = null;
-                    if (requestId) {
-                        fr = await FuelRequest.findByIdAndUpdate(
-                            new mongoose.Types.ObjectId(String(requestId)),
-                            { $set: { fulfilled: true, allocation: order._id } },
-                            { new: true, session: sessions.bowsers, maxTimeMS: 15000 }
-                        );
-                        if (!fr) {
-                            const e = new Error('Fuel request not found');
-                            e.code = 'FUEL_REQUEST_NOT_FOUND';
-                            e.httpStatus = 404;
-                            throw e;
-                        }
-                    }
+            let fr = null;
+            if (requestId) {
+                fr = await updateFuelRequest(
+                    new Types.ObjectId(String(requestId)),
+                    { $set: { fulfilled: true, allocation: order._id } },
+                    { new: true, session: sessions.bowsers, maxTimeMS: 15000 }
+                );
+                if (!fr) {
+                    const e = new Error('Fuel request not found');
+                    e.code = 'FUEL_REQUEST_NOT_FOUND';
+                    e.httpStatus = 404;
+                    throw e;
+                }
+            }
 
             return { order, fr };
         }, { connections: ['bowsers', 'transport'], context: { requestId: req.requestId } });
 
         persistedOrder = result.order;
         updatedFuelRequest = result.fr;
-        } catch (err) {
-            if (err && err.code === 'FUEL_REQUEST_NOT_FOUND') {
-                const body = createErrorResponse({ status: 404, message: err.message, code: err.code });
-                return res.status(404).json(body);
-            }
-            const body = handleTransactionError(err, { requestId: req.requestId, route: 'addFuelingAllocation' });
-            return res.status(body.status).json(body);
+    } catch (err) {
+        if (err && err.code === 'FUEL_REQUEST_NOT_FOUND') {
+            const body = createErrorResponse({ status: 404, message: err.message, code: err.code });
+            return res.status(404).json(body);
         }
+        const body = handleTransactionError(err, { requestId: req.requestId, route: 'addFuelingAllocation' });
+        return res.status(body.status).json(body);
+    }
 
     // Notification phase (outside transaction)
     let notificationSent = false;
@@ -229,7 +230,7 @@ router.post('/updateTripDriver', asyncHandler(async (req, res) => {
 
     try {
         const result = await withTransaction(async (sessions) => {
-            const vehicle = await Vehicle.findOne({ VehicleNo: vehicleNo }).session(sessions.transport).maxTimeMS(15000);
+            const vehicle = await findVehicle({ VehicleNo: vehicleNo }).session(sessions.transport).maxTimeMS(15000);
             if (!vehicle) return { updatedVehicle: null };
             vehicle.tripDetails = vehicle.tripDetails || {};
             vehicle.tripDetails.driver = driver;
@@ -237,10 +238,10 @@ router.post('/updateTripDriver', asyncHandler(async (req, res) => {
             return { updatedVehicle };
         }, { connections: ['transport'], context: { requestId: req.requestId, route: 'updateTripDriver' } });
 
-            if (!result.updatedVehicle) {
-                const body = createErrorResponse({ status: 404, message: 'Vehicle not found' });
-                return res.status(404).json(body);
-            }
+        if (!result.updatedVehicle) {
+            const body = createErrorResponse({ status: 404, message: 'Vehicle not found' });
+            return res.status(404).json(body);
+        }
         return res.status(200).json({ message: 'Driver details updated successfully', updatedVehicle: result.updatedVehicle });
     } catch (err) {
         const body = handleTransactionError(err, { requestId: req.requestId, route: 'updateTripDriver' });
@@ -250,21 +251,21 @@ router.post('/updateTripDriver', asyncHandler(async (req, res) => {
 
 router.patch('/update/:id', asyncHandler(async (req, res) => {
     const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!Types.ObjectId.isValid(id)) {
         const errBody = createErrorResponse({ status: 400, message: 'Invalid order id' });
         return res.status(errBody.status).json(errBody);
     }
 
     try {
         const result = await withTransaction(async (sessions) => {
-            const order = await fuelingOrders.findByIdAndUpdate(id, req.body, { new: true, session: sessions.bowsers, maxTimeMS: 15000 });
+            const order = await updateFuelingOrder(id, req.body, { new: true, session: sessions.bowsers, maxTimeMS: 15000 });
             return { order };
         }, { connections: ['bowsers'], context: { requestId: req.requestId, route: 'updateFuelingOrder' } });
 
-            if (!result.order) {
-                const body = createErrorResponse({ status: 404, message: 'Fueling order not found' });
-                return res.status(404).json(body);
-            }
+        if (!result.order) {
+            const body = createErrorResponse({ status: 404, message: 'Fueling order not found' });
+            return res.status(404).json(body);
+        }
         return res.status(200).json({ message: 'Fueling order updated successfully', order: result.order });
     } catch (err) {
         const body = handleTransactionError(err, { requestId: req.requestId, route: 'updateFuelingOrder' });
@@ -272,4 +273,4 @@ router.patch('/update/:id', asyncHandler(async (req, res) => {
     }
 }));
 
-module.exports = router;
+export default router;

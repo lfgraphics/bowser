@@ -81,4 +81,8 @@ const calculateChamberLevels = (chambers) => {
     return chambers;
 };
 
-module.exports = { calculateQty, calculateChamberLevels };
+// Named exports
+export { calculateQty, calculateChamberLevels };
+
+// Default export for backward compatibility
+export default { calculateQty, calculateChamberLevels };

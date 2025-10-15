@@ -1,8 +1,8 @@
-const mongoose = require('mongoose');
-const moment = require("moment-timezone");
-const { bowsersDatabaseConnection } = require('../../config/database');
+import { Schema, Types } from 'mongoose';
+import moment from "moment-timezone";
+import { getBowsersDatabaseConnection } from '../../config/database.js';
 
-const fuelingOrderSchema = new mongoose.Schema({
+const fuelingOrderSchema = new Schema({
   allocationType: {
     type: String,
     enum: ["bowser", "external", "internal"],
@@ -41,7 +41,7 @@ const fuelingOrderSchema = new mongoose.Schema({
     name: { type: String, required: true },
     id: { type: String, required: true },
   },
-  request: { type: mongoose.Types.ObjectId, ref: 'FuelRequest' },
+  request: { type: Types.ObjectId, ref: 'FuelRequest' },
   seen: { type: Boolean, default: false },
   fulfilled: { type: Boolean, default: false },
   createdAt: { type: Date, default: () => moment().tz("Asia/Kolkata").toDate() },
@@ -52,4 +52,24 @@ fuelingOrderSchema.methods.validateQuantityType = function () {
   return ['Full', 'Part'].includes(this.quantityType);
 };
 
-module.exports = bowsersDatabaseConnection.model('FuelingOrder', fuelingOrderSchema, 'FuelingOrdersCollection');
+const FuelingOrder = getBowsersDatabaseConnection().model('FuelingOrder', fuelingOrderSchema, 'FuelingOrdersCollection');
+
+// Export model methods as named exports
+export const find = FuelingOrder.find.bind(FuelingOrder);
+export const findOne = FuelingOrder.findOne.bind(FuelingOrder);
+export const findById = FuelingOrder.findById.bind(FuelingOrder);
+export const findOneAndUpdate = FuelingOrder.findOneAndUpdate.bind(FuelingOrder);
+export const findByIdAndUpdate = FuelingOrder.findByIdAndUpdate.bind(FuelingOrder);
+export const findByIdAndDelete = FuelingOrder.findByIdAndDelete.bind(FuelingOrder);
+export const updateOne = FuelingOrder.updateOne.bind(FuelingOrder);
+export const updateMany = FuelingOrder.updateMany.bind(FuelingOrder);
+export const deleteOne = FuelingOrder.deleteOne.bind(FuelingOrder);
+export const deleteMany = FuelingOrder.deleteMany.bind(FuelingOrder);
+export const create = FuelingOrder.create.bind(FuelingOrder);
+export const insertMany = FuelingOrder.insertMany.bind(FuelingOrder);
+export const countDocuments = FuelingOrder.countDocuments.bind(FuelingOrder);
+export const distinct = FuelingOrder.distinct.bind(FuelingOrder);
+export const aggregate = FuelingOrder.aggregate.bind(FuelingOrder);
+export const bulkWrite = FuelingOrder.bulkWrite.bind(FuelingOrder);
+
+export default FuelingOrder;

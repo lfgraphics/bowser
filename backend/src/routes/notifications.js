@@ -1,7 +1,7 @@
-const express = require('express');
-const router = express.Router();
-const PushSubscription = require('../models/pushSubscription');
-const { sendWebPushNotification, sendNativePushNotification, sendBulkNotifications, registerSubscription } = require('../utils/pushNotifications');
+import { Router } from 'express';
+const router = Router();
+import { deleteOne as deleteSubscription, find as findSubscriptions } from '../models/pushSubscription.js';
+import { sendWebPushNotification, sendNativePushNotification, sendBulkNotifications, registerSubscription } from '../utils/pushNotifications.js';
 
 // Register subscription (web or native)
 router.post('/register', async (req, res) => {
@@ -25,8 +25,8 @@ router.post('/unregister', async (req, res) => {
     }
 
     try {
-        if (mobileNumber) await PushSubscription.deleteOne({ mobileNumber, platform });
-        if (userId) await PushSubscription.deleteOne({ userId, platform });
+        if (mobileNumber) await deleteSubscription({ mobileNumber, platform });
+        if (userId) await deleteSubscription({ userId, platform });
         res.status(200).json({ success: true, message: 'Subscription unregistered successfully.' });
     } catch (error) {
         console.error('Error unregistering subscription:', error);
@@ -44,10 +44,10 @@ router.post('/', async (req, res) => {
 
     try {
         if (phoneNo) {
-            let sucscription = await PushSubscription.find({ mobileNumber: phoneNo, ...(platform ? { platform } : {}), })
+            let sucscription = await findSubscriptions({ mobileNumber: phoneNo, ...(platform ? { platform } : {}), })
             res.status(200).json(sucscription);
         } else {
-            let sucscription = await PushSubscription.find({ userId })
+            let sucscription = await findSubscriptions({ userId })
             res.status(200).json(sucscription);
         }
     } catch (error) {
@@ -101,4 +101,4 @@ router.post('/bulk-send', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

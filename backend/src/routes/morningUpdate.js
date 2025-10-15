@@ -1,6 +1,6 @@
-const express = require('express');
-const router = express.Router();
-const MorningUpdate = require('../models/MorningUpdate');
+import { Router } from 'express';
+const router = Router();
+import MorningUpdate, { find as findMorningUpdates, countDocuments as countMorningUpdateDocuments, findById as findMorningUpdateById } from '../models/MorningUpdate.js';
 
 // Utility: build date range query
 const buildDateRangeQuery = (startDate, endDate) => {
@@ -27,12 +27,12 @@ router.get('/', async (req, res) => {
         const dateQuery = buildDateRangeQuery(startDate, endDate);
 
         const [data, total] = await Promise.all([
-            MorningUpdate.find(dateQuery)
+            findMorningUpdates(dateQuery)
                 .populate('report.trip')
                 .populate('report.driver')
                 .skip(skip)
                 .limit(limit),
-            MorningUpdate.countDocuments(dateQuery),
+            countMorningUpdateDocuments(dateQuery),
         ]);
 
         res.json({
@@ -50,7 +50,7 @@ router.get('/', async (req, res) => {
 // ✅ GET update by ID (no pagination needed)
 router.get('/:id', async (req, res) => {
     try {
-        const update = await MorningUpdate.findById(req.params.id)
+        const update = await findMorningUpdateById(req.params.id)
             .populate('report.trip')
             .populate('report.driver');
         if (!update) return res.status(404).json({ error: 'Update not found' });
@@ -74,12 +74,12 @@ router.get('/user/:userId', async (req, res) => {
         };
 
         const [data, total] = await Promise.all([
-            MorningUpdate.find(query)
+            findMorningUpdates(query)
                 .populate('report.trip')
                 .populate('report.driver')
                 .skip(skip)
                 .limit(limit),
-            MorningUpdate.countDocuments(query),
+            countMorningUpdateDocuments(query),
         ]);
 
         res.json({
@@ -107,12 +107,12 @@ router.get('/vehicle/:vehicleNo', async (req, res) => {
         };
 
         const [data, total] = await Promise.all([
-            MorningUpdate.find(matchStage)
+            findMorningUpdates(matchStage)
                 .populate('report.trip')
                 .populate('report.driver')
                 .skip(skip)
                 .limit(limit),
-            MorningUpdate.countDocuments(matchStage),
+            countMorningUpdateDocuments(matchStage),
         ]);
 
         res.json({
@@ -185,7 +185,7 @@ router.post('/', async (req, res) => {
         const savedUpdate = await newUpdate.save();
 
         // Populate the saved document before returning
-        const populatedUpdate = await MorningUpdate.findById(savedUpdate._id)
+        const populatedUpdate = await findMorningUpdateById(savedUpdate._id)
             .populate('report.trip')
             .populate('report.driver');
 
@@ -196,4 +196,4 @@ router.post('/', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

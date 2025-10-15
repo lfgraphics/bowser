@@ -1,9 +1,9 @@
-const express = require('express');
-const router = express.Router();
-const Bowser = require('../models/Bowsers');
-const { TripSheet } = require('../models/TripSheets');
-const mongoose = require('mongoose')
-const { calculateChamberLevels } = require('../utils/calibration');
+import { Router } from 'express';
+const router = Router();
+import Bowser, { find as findBowsers, findById as findBowserById, findByIdAndUpdate as updateBowser, findByIdAndDelete as deleteBowser } from '../models/Bowsers.js';
+import { TripSheet } from '../models/TripSheets.js';
+import { Types } from 'mongoose';
+import { calculateChamberLevels } from '../utils/calibration.js';
 
 // Create a bowser
 router.post('/create', async (req, res) => {
@@ -48,7 +48,7 @@ router.post('/create', async (req, res) => {
 // Get all users with roles populated
 router.get('/', async (req, res) => {
     try {
-        const bowsers = await Bowser.find().sort({ createdAt: -1 }).lean().populate('currentTrip').exec();
+        const bowsers = await findBowsers().sort({ createdAt: -1 }).lean().populate('currentTrip').exec();
         res.status(200).json(bowsers);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch Bowsers', details: error });
@@ -58,7 +58,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     let bowserId = req.params.id
     try {
-        const bowsers = await Bowser.findById(new mongoose.Types.ObjectId(bowserId)).populate('currentTrip');
+        const bowsers = await findBowserById(new Types.ObjectId(bowserId)).populate('currentTrip');
         res.status(200).json(bowsers);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch users', details: error });
@@ -79,7 +79,7 @@ router.put('/:id', async (req, res) => {
         const updatedChambers = calculateChamberLevels(chambers);
 
         // Update the Bowser document
-        const updatedBowser = await Bowser.findByIdAndUpdate(
+        const updatedBowser = await updateBowser(
             id,
             { $set: { chambers: updatedChambers, regNo } },
             { new: true } // Return the updated document
@@ -100,7 +100,7 @@ router.put('/:id', async (req, res) => {
 // Delete a user
 router.delete('/:id', async (req, res) => {
     try {
-        const bowser = await Bowser.findByIdAndDelete(new mongoose.Types.ObjectId(req.params.id));
+        const bowser = await deleteBowser(new Types.ObjectId(req.params.id));
         if (!bowser) return res.status(404).json({ error: 'Bowser not found' });
         res.status(200).json({ message: 'Bowser deleted', bowser });
     } catch (error) {
@@ -130,4 +130,4 @@ router.get('/trips/:bowserNumber', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

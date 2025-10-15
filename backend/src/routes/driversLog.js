@@ -1,11 +1,11 @@
-const express = require("express");
-const router = express.Router();
-const DriversLog = require("../models/VehicleDriversLog");
-const Vehicle = require("../models/vehicle");
-const TankersTrip = require("../models/VehiclesTrip");
-const { getOneTripOfVehicleByDate } = require("../utils/vehicles");
-const { withTransaction } = require("../utils/transactions");
-const { handleTransactionError, createErrorResponse } = require("../utils/errorHandler");
+import { Router } from "express";
+const router = Router();
+import DriversLog, { findOneAndUpdate as updateDriversLog } from "../models/VehicleDriversLog.js";
+import { findOneAndUpdate as updateVehicle } from "../models/vehicle.js";
+import { findOneAndUpdate as updateVehicleTrip } from "../models/VehiclesTrip.js";
+import { getOneTripOfVehicleByDate } from "../utils/vehicles.js";
+import { withTransaction } from "../utils/transactions.js";
+import { handleTransactionError, createErrorResponse } from "../utils/errorHandler.js";
 
 // ---------------------------
 // Add Driver (Joining)
@@ -28,7 +28,7 @@ router.post("/join", async (req, res) => {
                 await newLog.save({ session: sessions.transport });
 
                 // Update vehicle: attach log ref and set driver name on tripDetails
-                const updatedVehicle = await Vehicle.findOneAndUpdate(
+                const updatedVehicle = await updateVehicle(
                     { VehicleNo: vehicleNo },
                     {
                         $addToSet: { driverLogs: newLog._id },
@@ -48,7 +48,7 @@ router.post("/join", async (req, res) => {
                     throw err;
                 }
 
-                const updatedTrip = await TankersTrip.findOneAndUpdate(
+                const updatedTrip = await updateVehicleTrip(
                     { _id: tripId },
                     { $set: { driverStatus: 1 } },
                     { new: true, session: sessions.transport }
@@ -91,14 +91,14 @@ router.post("/leave", async (req, res) => {
         const result = await withTransaction(
             async (sessions) => {
                 // Update latest driver log for this driver & vehicle
-                const log = await DriversLog.findOneAndUpdate(
+                const log = await updateDriversLog(
                     { vehicleNo, driver: driverId },
                     { $set: { leaving } },
                     { new: true, upsert: true, session: sessions.transport }
                 );
 
                 // Update vehicle: mark no driver and ensure log reference exists
-                const updatedVehicle = await Vehicle.findOneAndUpdate(
+                const updatedVehicle = await updateVehicle(
                     { VehicleNo: vehicleNo },
                     { $set: { "tripDetails.driver": "no driver" }, $addToSet: { driverLogs: log._id } },
                     { new: true, session: sessions.transport }
@@ -114,7 +114,7 @@ router.post("/leave", async (req, res) => {
                 }
 
                 // Update TankersTrip driverStatus within transaction
-                const updatedTrip = await TankersTrip.findOneAndUpdate(
+                const updatedTrip = await updateVehicleTrip(
                     { _id: tripId },
                     { $set: { driverStatus: 0 } },
                     { new: true, session: sessions.transport }
@@ -157,7 +157,7 @@ router.post("/status-update", async (req, res) => {
         const result = await withTransaction(
             async (sessions) => {
                 const newUpdate = { dateTime: new Date(), remark };
-                const log = await DriversLog.findOneAndUpdate(
+                const log = await updateDriversLog(
                     { vehicleNo },
                     { $push: { statusUpdate: newUpdate } },
                     { new: true, upsert: true, session: sessions.transport }
@@ -188,4 +188,4 @@ router.get("/last-trip/:vehicleNo/:date", async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

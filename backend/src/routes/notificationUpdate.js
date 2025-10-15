@@ -1,7 +1,7 @@
-const express = require('express');
-const router = express.Router();
-const fuelingOrders = require('../models/fuelingOrders');
-const FuelRequest = require('../models/FuelRequest');
+import { Router } from 'express';
+const router = Router();
+import { findByIdAndUpdate as updateFuelingOrder } from '../models/fuelingOrders.js';
+import { updateMany as updateManyFuelRequests } from '../models/FuelRequest.js';
 
 router.post('/request-seen', async (req, res) => {
     const { ids } = req.body;
@@ -9,7 +9,7 @@ router.post('/request-seen', async (req, res) => {
         return res.status(400).json({ error: 'IDs are required' });
     }
     try {
-        const updatedRequests = await FuelRequest.updateMany(
+        const updatedRequests = await updateManyFuelRequests(
             { _id: { $in: ids } },
             { $set: { seen: true } },
             { new: true }
@@ -30,7 +30,7 @@ router.post('/order-seen', async (req, res) => {
         return res.status(400).json({ error: 'ID is required' });
     }
     try {
-        const updatedOrder = await fuelingOrders.findByIdAndUpdate(
+        const updatedOrder = await updateFuelingOrder(
             id,
             { $set: { seen: true } },
             { new: true }
@@ -45,4 +45,4 @@ router.post('/order-seen', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

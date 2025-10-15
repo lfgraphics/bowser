@@ -1,55 +1,17 @@
-const express = require('express');
-const router = express.Router();
-const jwt = require('jsonwebtoken');
-const CampUser = require('../../models/CampUsers');
-const argon2 = require('argon2');
+import { Router } from 'express';
+import { 
+    findById as findCampUserById, 
+    find as findCampUsers, 
+    countDocuments as countCampUsers, 
+    findByIdAndUpdate as updateCampUser, 
+    findByIdAndDelete as deleteCampUser, 
+    aggregate as aggregateCampUsers, 
+    insertMany as createManyCampUsers 
+} from '../../models/CampUsers.js';
+import { hash } from 'argon2';
+import { verifyAdminToken, verifyCampUserToken, checkAdminAccess } from '../../middleware/auth.js';
 
-// Middleware to verify admin token
-const verifyAdminToken = (req, res, next) => {
-    try {
-        const token = req.headers.authorization?.split(' ')[1];
-
-        if (!token) {
-            return res.status(401).json({ message: 'No token provided' });
-        }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (error) {
-        console.error('Token verification error:', error);
-        res.status(401).json({ message: 'Invalid token' });
-    }
-};
-
-// Check if user is admin or trans app admin
-const checkAdminAccess = async (req, res, next) => {
-    try {
-        const { user } = req;
-
-        // Check if it's a camp admin
-        if (user.type === 'camp') {
-            const campUser = await CampUser.findById(user.userId);
-            if (campUser && campUser.role === 'admin') {
-                req.isCampAdmin = true;
-                return next();
-            }
-        }
-
-        // Check if it's a trans app admin (would need to check trans app user model)
-        // For now, we'll assume trans app users with admin role are allowed
-        if (user.type === 'transapp' || !user.type) {
-            // This would need to be validated against trans app user model
-            req.isTransAppAdmin = true;
-            return next();
-        }
-
-        return res.status(403).json({ message: 'Admin access required' });
-    } catch (error) {
-        console.error('Admin access check error:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-};
+const router = Router();
 
 // Get all camp users (paginated)
 router.get('/users', verifyAdminToken, checkAdminAccess, async (req, res) => {
@@ -78,13 +40,13 @@ router.get('/users', verifyAdminToken, checkAdminAccess, async (req, res) => {
             searchQuery.role = role;
         }
 
-        const users = await CampUser.find(searchQuery)
+        const users = await findCampUsers(searchQuery)
             .select('-password')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
-        const total = await CampUser.countDocuments(searchQuery);
+        const total = await countCampUsers(searchQuery);
         const totalPages = Math.ceil(total / limit);
 
         res.json({
@@ -106,7 +68,7 @@ router.get('/users', verifyAdminToken, checkAdminAccess, async (req, res) => {
 // Get single camp user
 router.get('/users/:id', verifyAdminToken, checkAdminAccess, async (req, res) => {
     try {
-        const user = await CampUser.findById(req.params.id).select('-password');
+        const user = await findCampUserById(req.params.id).select('-password');
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -130,7 +92,7 @@ router.put('/users/:id', verifyAdminToken, checkAdminAccess, async (req, res) =>
         if (status) updateData.status = status;
         if (locations) updateData.locations = locations;
 
-        const user = await CampUser.findByIdAndUpdate(
+        const user = await updateCampUser(
             req.params.id,
             updateData,
             { new: true, runValidators: true }
@@ -155,7 +117,7 @@ router.put('/users/:id/configs', verifyAdminToken, checkAdminAccess, async (req,
     try {
         const { configs } = req.body;
 
-        const user = await CampUser.findById(req.params.id);
+        const user = await findCampUserById(req.params.id);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -179,7 +141,7 @@ router.put('/users/:id/configs', verifyAdminToken, checkAdminAccess, async (req,
         await user.save();
 
         res.json({
-            user: await CampUser.findById(req.params.id).select('-password'),
+            user: await findCampUserById(req.params.id).select('-password'),
             message: 'User configs updated successfully'
         });
     } catch (error) {
@@ -191,7 +153,7 @@ router.put('/users/:id/configs', verifyAdminToken, checkAdminAccess, async (req,
 // Delete camp user
 router.delete('/users/:id', verifyAdminToken, checkAdminAccess, async (req, res) => {
     try {
-        const user = await CampUser.findByIdAndDelete(req.params.id);
+        const user = await deleteCampUser(req.params.id);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -211,9 +173,9 @@ router.post('/users/:id/reset-password', verifyAdminToken, checkAdminAccess, asy
             return res.status(400).json({ message: 'Password must be at least 6 characters long' });
         }
 
-        const hashedPassword = await argon2.hash(newPassword);
+        const hashedPassword = await hash(newPassword);
 
-        const user = await CampUser.findByIdAndUpdate(
+        const user = await updateCampUser(
             req.params.id,
             {
                 password: hashedPassword,
@@ -238,7 +200,7 @@ router.post('/users/:id/reset-password', verifyAdminToken, checkAdminAccess, asy
 // Verify/Approve camp user
 router.post('/users/:id/verify', verifyAdminToken, checkAdminAccess, async (req, res) => {
     try {
-        const user = await CampUser.findByIdAndUpdate(
+        const user = await updateCampUser(
             req.params.id,
             { status: 'active' },
             { new: true }
@@ -258,7 +220,7 @@ router.post('/users/:id/verify', verifyAdminToken, checkAdminAccess, async (req,
 // Suspend camp user
 router.post('/users/:id/suspend', verifyAdminToken, checkAdminAccess, async (req, res) => {
     try {
-        const user = await CampUser.findByIdAndUpdate(
+        const user = await updateCampUser(
             req.params.id,
             { status: 'suspended' },
             { new: true }
@@ -278,16 +240,16 @@ router.post('/users/:id/suspend', verifyAdminToken, checkAdminAccess, async (req
 // Get dashboard stats
 router.get('/dashboard/stats', verifyAdminToken, checkAdminAccess, async (req, res) => {
     try {
-        const totalUsers = await CampUser.countDocuments();
-        const activeUsers = await CampUser.countDocuments({ status: 'active' });
-        const inactiveUsers = await CampUser.countDocuments({ status: 'inactive' });
-        const suspendedUsers = await CampUser.countDocuments({ status: 'suspended' });
+        const totalUsers = await countCampUsers();
+        const activeUsers = await countCampUsers({ status: 'active' });
+        const inactiveUsers = await countCampUsers({ status: 'inactive' });
+        const suspendedUsers = await countCampUsers({ status: 'suspended' });
 
-        const usersByRole = await CampUser.aggregate([
+        const usersByRole = await aggregateCampUsers([
             { $group: { _id: '$role', count: { $sum: 1 } } }
         ]);
 
-        const recentUsers = await CampUser.find()
+        const recentUsers = await findCampUsers()
             .select('-password')
             .sort({ createdAt: -1 })
             .limit(5);
@@ -351,7 +313,7 @@ router.post('/seed-users', verifyAdminToken, checkAdminAccess, async (req, res) 
             // Hash password
             let hashedPassword;
             try {
-                hashedPassword = await argon2.hash(user.password);
+                hashedPassword = await hash(user.password);
             } catch (hashError) {
                 errors.push(`User at index ${i}: Error hashing password`);
                 continue;
@@ -396,7 +358,7 @@ router.post('/seed-users', verifyAdminToken, checkAdminAccess, async (req, res) 
         }
 
         // Check for existing phone numbers in database
-        const existingPhones = await CampUser.find({
+        const existingPhones = await findCampUsers({
             phone: { $in: Array.from(phoneNumbers) }
         }).select('phone');
 
@@ -411,7 +373,7 @@ router.post('/seed-users', verifyAdminToken, checkAdminAccess, async (req, res) 
         }
 
         // Bulk insert users
-        const insertedUsers = await CampUser.insertMany(formattedUsers, {
+        const insertedUsers = await createManyCampUsers(formattedUsers, {
             ordered: false, // Continue inserting even if some fail
             lean: true
         });
@@ -445,4 +407,4 @@ router.post('/seed-users', verifyAdminToken, checkAdminAccess, async (req, res) 
     }
 });
 
-module.exports = router;
+export default router;

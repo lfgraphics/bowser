@@ -1,42 +1,17 @@
-const express = require('express');
-const router = express.Router();
-const jwt = require('jsonwebtoken');
-const CampUser = require('../../models/CampUsers');
-const argon2 = require('argon2');
+import { Router } from 'express';
+import { findById as findCampUserById, findByIdAndUpdate } from '../../models/CampUsers.js';
+import argon2Pkg from 'argon2';
+const { verify: verifyPassword, hash } = argon2Pkg;
+import { verifyCampUserToken } from '../../middleware/auth.js';
 
-// Middleware to verify camp user token
-const verifyCampUserToken = async (req, res, next) => {
-    try {
-        const token = req.headers.authorization?.split(' ')[1];
-        
-        if (!token) {
-            return res.status(401).json({ message: 'No token provided' });
-        }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
-        if (decoded.type !== 'camp') {
-            return res.status(401).json({ message: 'Invalid token type' });
-        }
-
-        const user = await CampUser.findById(decoded.userId);
-        if (!user) {
-            return res.status(401).json({ message: 'User not found' });
-        }
-
-        req.user = user;
-        next();
-    } catch (error) {
-        console.error('Token verification error:', error);
-        res.status(401).json({ message: 'Invalid token' });
-    }
-};
+const router = Router();
 
 // Get current user profile
 router.get('/profile', verifyCampUserToken, async (req, res) => {
     try {
-        const user = await CampUser.findById(req.user._id).select('-password');
-        res.json(user);
+        // User is already fetched by middleware, just exclude password
+        const { password, ...userWithoutPassword } = req.user.toObject();
+        res.json(userWithoutPassword);
     } catch (error) {
         console.error('Get profile error:', error);
         res.status(500).json({ message: 'Internal server error' });
@@ -47,13 +22,13 @@ router.get('/profile', verifyCampUserToken, async (req, res) => {
 router.put('/profile', verifyCampUserToken, async (req, res) => {
     try {
         const { name, email, locations } = req.body;
-        
+
         const updateData = {};
         if (name) updateData.name = name;
         if (email) updateData.email = email;
         if (locations && Array.isArray(locations)) updateData.locations = locations;
 
-        const user = await CampUser.findByIdAndUpdate(
+        const user = await findByIdAndUpdate(
             req.user._id,
             updateData,
             { new: true, runValidators: true }
@@ -90,10 +65,11 @@ router.put('/profile/configs', verifyCampUserToken, async (req, res) => {
 
         await user.save();
 
-        const updatedUser = await CampUser.findById(user._id).select('-password');
-        res.json({ 
-            user: updatedUser,
-            message: 'Profile configs updated successfully' 
+        // Return updated user without password (user object is already updated)
+        const { password, ...userWithoutPassword } = user.toObject();
+        res.json({
+            user: userWithoutPassword,
+            message: 'Profile configs updated successfully'
         });
     } catch (error) {
         console.error('Update profile configs error:', error);
@@ -108,7 +84,7 @@ router.put('/profile/change-password', verifyCampUserToken, async (req, res) => 
         const user = req.user;
 
         // Verify current password
-        const isCurrentPasswordValid = await argon2.verify(user.password, currentPassword);
+        const isCurrentPasswordValid = await verifyPassword(user.password, currentPassword);
         if (!isCurrentPasswordValid) {
             return res.status(400).json({ message: 'Current password is incorrect' });
         }
@@ -118,7 +94,7 @@ router.put('/profile/change-password', verifyCampUserToken, async (req, res) => 
         }
 
         // Hash new password
-        const hashedNewPassword = await argon2.hash(newPassword);
+        const hashedNewPassword = await hash(newPassword);
         user.password = hashedNewPassword;
         await user.save();
 
@@ -132,8 +108,8 @@ router.put('/profile/change-password', verifyCampUserToken, async (req, res) => 
 // Get user locations
 router.get('/profile/locations', verifyCampUserToken, async (req, res) => {
     try {
-        const user = await CampUser.findById(req.user._id).select('locations');
-        res.json({ locations: user.locations || [] });
+        // User is already available from middleware
+        res.json({ locations: req.user.locations || [] });
     } catch (error) {
         console.error('Get locations error:', error);
         res.status(500).json({ message: 'Internal server error' });
@@ -144,7 +120,7 @@ router.get('/profile/locations', verifyCampUserToken, async (req, res) => {
 router.get('/profile/activity', verifyCampUserToken, async (req, res) => {
     try {
         const user = req.user;
-        
+
         const activity = {
             lastLogin: user.lastLogin,
             accountCreated: user.createdAt,
@@ -161,4 +137,4 @@ router.get('/profile/activity', verifyCampUserToken, async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

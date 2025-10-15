@@ -1,14 +1,14 @@
-const express = require('express');
-const router = express.Router();
-const Vehicle = require('../models/vehicle');
-const Driver = require('../models/driver');
+import { Router } from 'express';
+const router = Router();
+import { find as findVehicles, countDocuments as countVehicleDocuments } from '../models/vehicle.js';
+import { findOne as findOneDriver } from '../models/driver.js';
 
 router.get('/:vehicleNumber', async (req, res) => {
     const vehicleNumber = req.params.vehicleNumber;
 
     try {
         // Step 1: Fetch vehicles based on vehicle number and existing driver info
-        const vehicles = await Vehicle.find({ VehicleNo: { $regex: vehicleNumber, $options: 'i' } }).limit(20);
+        const vehicles = await findVehicles({ VehicleNo: { $regex: vehicleNumber, $options: 'i' } }).limit(20);
         // , "tripDetails.driver": { $exists: true } 
 
         if (vehicles.length === 0) {
@@ -26,7 +26,7 @@ router.get('/:vehicleNumber', async (req, res) => {
                 const itplNumber = itplMatch ? itplMatch[0].replace(/[()]/g, '').toUpperCase() : driverName;
 
                 // Fetch driver details from the drivers collection using the extracted ITPL number
-                const driver = await Driver.findOne({
+                const driver = await findOne({
                     Name: { $regex: itplNumber, $options: 'i' }
                 });
 
@@ -70,10 +70,10 @@ router.get('/managed/:userId', async (req, res) => {
 
     try {
         // Get total count for pagination
-        const totalVehicles = await Vehicle.countDocuments({ manager });
+        const totalVehicles = await countVehicleDocuments({ manager });
 
         // Step 1: Fetch vehicles based on vehicle number with pagination
-        const vehicles = await Vehicle.find({ manager })
+        const vehicles = await findVehicles({ manager })
             .skip(skip)
             .limit(limit);
 
@@ -93,7 +93,7 @@ router.get('/managed/:userId', async (req, res) => {
                 const itplNumber = itplMatch ? itplMatch[0].replace(/[()]/g, '').toUpperCase() : driverName;
 
                 // Fetch driver details from the drivers collection using the extracted ITPL number
-                const driver = await Driver.findOne({
+                const driver = await findOne({
                     Name: `${vehicle.tripDetails.driver}`
                 });
 
@@ -139,4 +139,4 @@ router.get('/managed/:userId', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

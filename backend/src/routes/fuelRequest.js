@@ -1,19 +1,31 @@
-const express = require('express');
-const router = express.Router();
-const FuelRequest = require('../models/FuelRequest');
-require('../models/fuelingOrders');
-const { sendWebPushNotification, sendBulkNotifications, getActiveTransferTargetUserId } = require('../utils/pushNotifications');
-const Vehicle = require('../models/vehicle');
-const Driver = require('../models/driver');
+import { Router } from 'express';
+const router = Router();
+import FuelRequest, { find as findFuelRequests, countDocuments as countFuelRequestDocuments, findById as findFuelRequestById, updateMany as updateManyFuelRequests, findByIdAndUpdate as updateFuelRequest } from '../models/FuelRequest.js';
+import '../models/fuelingOrders.js';
+import { sendWebPushNotification, sendBulkNotifications, getActiveTransferTargetUserId } from '../utils/pushNotifications.js';
+import { findOne as findOneVehicle, find as findVehicles } from '../models/vehicle.js';
+import { findOne as findOneDriver } from '../models/driver.js';
+import { withTransaction } from '../utils/transactions.js';
+import { handleTransactionError, createErrorResponse } from '../utils/errorHandler.js';
 
 router.post('/', async (req, res) => {
-    const { driverId, driverName, driverMobile, location, vehicleNumber, odometer } = req.body;
     try {
-        let requestVehicle = await Vehicle.findOne({ VehicleNo: vehicleNumber })
-        if (!requestVehicle) {
-            return res.status(404).json({ error: 'Vehicle not found' });
+        const { driverId, driverName, driverMobile, location, vehicleNumber, odometer } = req.body;
+
+        // Pre-transaction validation
+        if (!driverId || !driverName || !driverMobile || !location || !vehicleNumber || !odometer) {
+            const errorResponse = createErrorResponse(400, 'All fields are required: driverId, driverName, driverMobile, location, vehicleNumber, odometer');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
         }
 
+        // Find vehicle before transaction to fail fast
+        let requestVehicle = await findOneVehicle({ VehicleNo: vehicleNumber });
+        if (!requestVehicle) {
+            const errorResponse = createErrorResponse(404, 'Vehicle not found');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        // Get managers before transaction
         let managers = await getActiveTransferTargetUserId(requestVehicle.manager) || ['none'];
         if (!Array.isArray(managers)) {
             managers = [requestVehicle.manager];
@@ -34,57 +46,76 @@ router.post('/', async (req, res) => {
             tripId: requestVehicle.tripDetails.id
         });
 
-        const existingRequest = await FuelRequest.find({
+        // Check for existing request before transaction to fail fast
+        const existingRequest = await findFuelRequests({
             vehicleNumber: requestVehicle.VehicleNo,
             tripId: requestVehicle.tripDetails.id,
             loadStatus: requestVehicle.tripDetails.loadStatus || 'Not found',
             driverMobile,
             fulfilled: false
-        })
+        });
 
-        console.log('Fuel request :', fuelRequest)
-
-        if (!existingRequest.length) {
-            await fuelRequest.save();
-            let requestId = fuelRequest._id;
-            res.status(201).json({ message: 'Fuel request created successfully', requestId });
-        } else {
-            res.status(400).json({ message: 'आप का अनुरोध पहले ही दर्ज किया जा चुका है कृपया इंतज़ार करें' });
+        if (existingRequest.length > 0) {
+            const errorResponse = createErrorResponse(400, 'आप का अनुरोध पहले ही दर्ज किया जा चुका है कृपया इंतज़ार करें');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
         }
 
-        const options = { title: 'New Fuel Request', url: `/fuel-request`, id: String(fuelRequest._id) };
-        const message = `New fuel request for: ${requestVehicle.VehicleNo} from ${driverName} - ${driverId}`
-        let notificationSent;
-        const notify = async () => {
-            if (managers.includes('all')) {
-                notificationSent = await sendBulkNotifications({
-                    groups: ['Diesel Control Center Staff'],
-                    message,
-                    platform: "web",
-                    options
-                });
-            } else if (managers.length === 1) {
-                notificationSent = await sendWebPushNotification({
-                    userId: managers[0],
-                    message,
-                    options
-                });
-            } else {
-                notificationSent = await sendBulkNotifications({
-                    recipients: managers.map(userId => ({ userId })),
-                    message,
-                    platform: "web",
-                    options
-                });
-            }
+        console.log('Fuel request :', fuelRequest);
+
+        // Wrap database operations in transaction
+        const result = await withTransaction(async (sessions) => {
+            await fuelRequest.save({ session: sessions.bowsers });
+
+            return {
+                requestId: fuelRequest._id,
+                vehicleNo: requestVehicle.VehicleNo,
+                driverName,
+                driverId
+            };
+        }, { connections: ['bowsers'] });
+
+        // Send response immediately after transaction commits
+        res.status(201).json({ message: 'Fuel request created successfully', requestId: result.requestId });
+
+        // Send notifications outside transaction (don't affect the response if notifications fail)
+        try {
+            const options = { title: 'New Fuel Request', url: `/fuel-request`, id: String(result.requestId) };
+            const message = `New fuel request for: ${result.vehicleNo} from ${result.driverName} - ${result.driverId}`;
+            let notificationSent;
+            
+            const notify = async () => {
+                if (managers.includes('all')) {
+                    notificationSent = await sendBulkNotifications({
+                        groups: ['Diesel Control Center Staff'],
+                        message,
+                        platform: "web",
+                        options
+                    });
+                } else if (managers.length === 1) {
+                    notificationSent = await sendWebPushNotification({
+                        userId: managers[0],
+                        message,
+                        options
+                    });
+                } else {
+                    notificationSent = await sendBulkNotifications({
+                        recipients: managers.map(userId => ({ userId })),
+                        message,
+                        platform: "web",
+                        options
+                    });
+                }
+            };
+
+            await notify();
+            console.log('notificationSent status: ', JSON.stringify(notificationSent));
+        } catch (notificationError) {
+            console.error('Notification error (request still created):', notificationError);
         }
-
-        await notify();
-
-        console.log('notificationSent status: ', JSON.stringify(notificationSent));
     } catch (err) {
         console.error('Error creating fuel request:', err);
-        res.status(500).json({ message: 'Server error', error: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/fuelRequest', vehicleNumber: req.body.vehicleNumber, driverId: req.body.driverId });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
 
@@ -111,12 +142,12 @@ router.get('/', async (req, res) => {
 
     try {
         const skip = (page - 1) * limit;
-        const fuelRequests = await FuelRequest.find(query)
+        const fuelRequests = await findFuelRequests(query)
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(parseInt(limit));
 
-        const totalRecords = await FuelRequest.countDocuments(query);
+        const totalRecords = await countFuelRequestDocuments(query);
         const totalPages = Math.ceil(totalRecords / limit);
 
         res.status(200).json({
@@ -130,18 +161,19 @@ router.get('/', async (req, res) => {
         });
     } catch (err) {
         console.error('Error fetching fuel requests:', err);
-        res.status(500).json({ message: 'Server error', error: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/', fulfilled: req.query.fulfilled, param: req.query.param, manager: req.query.manager });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
 
 router.get('/driver', async (req, res) => {
     const { driverId } = req.query;
     try {
-        const driver = await Driver.findOne({ Name: { $regex: driverId } }).lean()
+        const driver = await findOneDriver({ Name: { $regex: driverId } }).lean()
         if (driver && typeof driver.verified !== 'undefined' && !driver.verified) {
             return res.status(400).json('आप को ऐप चलने की अनुमति नहीं है')
         } else {
-            const driversVehicles = await Vehicle.find({ 'tripDetails.driver': { $regex: driverId } });
+            const driversVehicles = await findVehicles({ 'tripDetails.driver': { $regex: driverId } });
             if (!driversVehicles || driversVehicles.length === 0) {
                 return res.status(404).json({ message: 'No vehicles found for this driver' });
             }
@@ -150,80 +182,199 @@ router.get('/driver', async (req, res) => {
         }
     } catch (err) {
         console.error('Error fetching vehicles for driver:', err);
-        return res.status(500).json({ message: 'Server error', error: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/driver', driverId: req.query.driverId });
+        return res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 })
 
 router.get('/vehicle-driver/:id', async (req, res) => {
     try {
-        const fuelRequests = await FuelRequest.findById(req.params.id).populate('allocation');
+        const fuelRequests = await findFuelRequestById(req.params.id).populate('allocation');
         if (!fuelRequests) {
             return res.status(404).json({ message: 'No fuel request found' });
         }
         res.status(200).json(fuelRequests);
     } catch (err) {
         console.error('Error fetching fuel requests:', err);
-        res.status(500).json({ message: 'Server error', error: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/vehicle-driver/:id', requestId: req.params.id });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
 
 router.put('/bulk-delete', async (req, res) => {
-    const { ids } = req.body;
     try {
-        const fuelRequests = await FuelRequest.updateMany(
-            { _id: { $in: ids } },
-            { fulfilled: true, message: 'ईंधन प्रबंधक द्वारा ईंधन भरवाई आवश्यक नहीं थी या फोन पर की गई थी, हिस्ट्री साफ़ कर दिया गया' }
-        );
-        if (!fuelRequests) {
-            return res.status(404).json({ message: 'Fuel requests not found' });
+        const { ids } = req.body;
+
+        // Pre-transaction validation
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+            const errorResponse = createErrorResponse(400, 'IDs array is required and cannot be empty');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
         }
+
+        // Validate all IDs are valid ObjectIds
+        const mongoose = await import('mongoose');
+        const invalidIds = ids.filter(id => !mongoose.Types.ObjectId.isValid(id));
+        if (invalidIds.length > 0) {
+            const errorResponse = createErrorResponse(400, 'Invalid ID format detected');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        // Wrap database operations in transaction
+        const result = await withTransaction(async (sessions) => {
+            const fuelRequests = await updateManyFuelRequests(
+                { _id: { $in: ids } },
+                { fulfilled: true, message: 'ईंधन प्रबंधक द्वारा ईंधन भरवाई आवश्यक नहीं थी या फोन पर की गई थी, हिस्ट्री साफ़ कर दिया गया' },
+                { session: sessions.bowsers }
+            );
+
+            if (fuelRequests.modifiedCount === 0) {
+                throw new Error('No fuel requests found or updated');
+            }
+
+            return fuelRequests;
+        }, { connections: ['bowsers'] });
+
         res.status(200).json({ message: 'Fuel requests deleted successfully' });
     } catch (err) {
         console.error('Error deleting fuel requests:', err);
-        res.status(500).json({ message: 'Server error', error: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/bulk-delete', idsCount: req.body.ids?.length });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
 
 router.post('/hold-message/:id', async (req, res) => {
-    const { message } = req.body;
     try {
-        const fuelRequest = await FuelRequest.findByIdAndUpdate(req.params.id, { message: message }, { new: true });
-        if (!fuelRequest) {
-            return res.status(404).json({ message: 'Fuel request not found' });
+        const { message } = req.body;
+        const { id } = req.params;
+
+        // Pre-transaction validation
+        if (!id) {
+            const errorResponse = createErrorResponse(400, 'Request ID is required');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
         }
-        res.status(200).json({ message: 'Fuel request deleted successfully' });
+
+        const mongoose = await import('mongoose');
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            const errorResponse = createErrorResponse(400, 'Invalid request ID format');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        if (!message) {
+            const errorResponse = createErrorResponse(400, 'Message is required');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        // Wrap database operations in transaction
+        const fuelRequest = await withTransaction(async (sessions) => {
+            const result = await updateFuelRequest(
+                id, 
+                { message: message }, 
+                { new: true, session: sessions.bowsers }
+            );
+
+            if (!result) {
+                throw new Error('Fuel request not found');
+            }
+
+            return result;
+        }, { connections: ['bowsers'] });
+
+        res.status(200).json({ message: 'Fuel request message updated successfully' });
     } catch (err) {
-        console.error('Error deleting fuel request:', err);
-        res.status(500).json({ message: 'Server error', error: err.message });
+        console.error('Error updating fuel request message:', err);
+        const errorResponse = handleTransactionError(err, { route: '/hold-message/:id', requestId: req.params.id });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
 
 router.delete('/:id', async (req, res) => {
-    const { message } = req.body;
     try {
-        const fuelRequest = await FuelRequest.findByIdAndUpdate(req.params.id, { message: message, fulfilled: true }, { new: true });
-        if (!fuelRequest) {
-            return res.status(404).json({ message: 'Fuel request not found' });
+        const { message } = req.body;
+        const { id } = req.params;
+
+        // Pre-transaction validation
+        if (!id) {
+            const errorResponse = createErrorResponse(400, 'Request ID is required');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
         }
+
+        const mongoose = await import('mongoose');
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            const errorResponse = createErrorResponse(400, 'Invalid request ID format');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        if (!message) {
+            const errorResponse = createErrorResponse(400, 'Message is required');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        // Wrap database operations in transaction
+        const fuelRequest = await withTransaction(async (sessions) => {
+            const result = await updateFuelRequest(
+                id, 
+                { message: message, fulfilled: true }, 
+                { new: true, session: sessions.bowsers }
+            );
+
+            if (!result) {
+                throw new Error('Fuel request not found');
+            }
+
+            return result;
+        }, { connections: ['bowsers'] });
+
         res.status(200).json({ message: 'Fuel request deleted successfully' });
     } catch (err) {
         console.error('Error deleting fuel request:', err);
-        res.status(500).json({ message: 'Server error', error: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/:id', requestId: req.params.id });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
 
 router.patch('/update-cordinates/:id', async (req, res) => {
-    const { location } = req.body;
     try {
-        const fuelRequest = await FuelRequest.findByIdAndUpdate(req.params.id, { location }, { new: true });
-        if (!fuelRequest) {
-            return res.status(404).json({ message: 'Fuel request not found' });
+        const { location } = req.body;
+        const { id } = req.params;
+
+        // Pre-transaction validation
+        if (!id) {
+            const errorResponse = createErrorResponse(400, 'Request ID is required');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
         }
+
+        const mongoose = await import('mongoose');
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            const errorResponse = createErrorResponse(400, 'Invalid request ID format');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        if (!location) {
+            const errorResponse = createErrorResponse(400, 'Location is required');
+            return res.status(errorResponse.statusCode).json(errorResponse.body);
+        }
+
+        // Wrap database operations in transaction
+        const fuelRequest = await withTransaction(async (sessions) => {
+            const result = await updateFuelRequest(
+                id, 
+                { location }, 
+                { new: true, session: sessions.bowsers }
+            );
+
+            if (!result) {
+                throw new Error('Fuel request not found');
+            }
+
+            return result;
+        }, { connections: ['bowsers'] });
+
         res.status(200).json({ message: 'Fuel request updated successfully' });
     } catch (err) {
         console.error('Error updating fuel request:', err);
-        res.status(500).json({ message: 'Server error', error: err.message });
+        const errorResponse = handleTransactionError(err, { route: '/update-cordinates/:id', requestId: req.params.id });
+        res.status(errorResponse.statusCode).json(errorResponse.body);
     }
 });
 
-module.exports = router;
+export default router;

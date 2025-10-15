@@ -1,7 +1,8 @@
-require('dotenv').config();
-const {TripSheet} = require('../models/TripSheets')
-const mongoose = require('mongoose')
-const { updateTripSheet } = require('./tripSheet')
+import dotenv from 'dotenv';
+dotenv.config();
+import { TripSheet } from '../models/TripSheets.js';
+import { Types } from 'mongoose';
+import { updateTripSheet } from './tripSheet.js';
 
 const fetchLocationData = async (latitude, longitude) => {
     const apiKey = process.env.Google_Geocode_Api;
@@ -58,7 +59,7 @@ const removeDispenseFromTripSheet = async (dispenseIdToRemove) => {
     try {
         // Find the TripSheet that contains the dispense _id
         const tripSheet = await TripSheet.findOne({
-            'dispenses.transaction': new mongoose.Types.ObjectId(dispenseIdToRemove)
+            'dispenses.transaction': new Types.ObjectId(dispenseIdToRemove)
         });
 
         if (!tripSheet) {
@@ -71,7 +72,7 @@ const removeDispenseFromTripSheet = async (dispenseIdToRemove) => {
         // Remove the dispense _id from the dispenses array
         await TripSheet.updateOne(
             { _id: tripSheet._id },
-            { $pull: { dispenses: { transaction: new mongoose.Types.ObjectId(dispenseIdToRemove) } } }
+            { $pull: { dispenses: { transaction: new Types.ObjectId(dispenseIdToRemove) } } }
         );
 
         console.log("Dispense ID removed successfully!");
@@ -82,4 +83,8 @@ const removeDispenseFromTripSheet = async (dispenseIdToRemove) => {
     }
 }
 
-module.exports = { fetchLocationData, addRecordToTrip, removeDispenseFromTripSheet };
+// Named exports
+export { fetchLocationData, addRecordToTrip, removeDispenseFromTripSheet };
+
+// Default export for backward compatibility
+export default { fetchLocationData, addRecordToTrip, removeDispenseFromTripSheet };

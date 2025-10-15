@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
+import { Schema } from 'mongoose';
 
-const bowserDriverSchema = new mongoose.Schema({
+const bowserDriverSchema = new Schema({
     handOverDate: { type: Date, required: false },
     name: { type: String, required: true },
     phoneNo: { type: String, required: true }
 }, { _id: false });
 
-module.exports = bowserDriverSchema
+export default bowserDriverSchema

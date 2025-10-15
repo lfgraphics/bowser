@@ -1,7 +1,7 @@
-const express = require('express');
-const router = express.Router();
-const RequestTransfer = require('../models/RequestTransfer');
-const { sendWebPushNotification } = require('../utils/pushNotifications'); // Import the notification function
+import { Router } from 'express';
+const router = Router();
+import RequestTransfer, { find as findRequestTransfers, countDocuments as countRequestTransferDocuments, findById as findRequestTransferById, findByIdAndUpdate as updateRequestTransfer, findByIdAndDelete as deleteRequestTransfer } from '../models/RequestTransfer.js';
+import { sendWebPushNotification } from '../utils/pushNotifications.js'; // Import the notification function
 
 // Get all request transfers
 router.get('/', async (req, res) => {
@@ -17,13 +17,13 @@ router.get('/', async (req, res) => {
                     { 'cancellation.by': { $regex: searchParam, $options: "i" } },
                 ]
             };
-            const requestTransfers = await RequestTransfer.find(filter)
+            const requestTransfers = await findRequestTransfers(filter)
                 .sort({ generationTime: -1 })
                 .skip(skip)
                 .limit(parseInt(limit))
                 .lean();
 
-            const total = await RequestTransfer.countDocuments(filter);
+            const total = await countRequestTransferDocuments(filter);
 
             if (requestTransfers.length === 0) {
                 return res.status(404).json({
@@ -39,13 +39,13 @@ router.get('/', async (req, res) => {
                 totalPages: Math.ceil(total / limit)
             });
         } else {
-            const requestTransfers = await RequestTransfer.find()
+            const requestTransfers = await findRequestTransfers()
                 .sort({ generationTime: -1 })
                 .skip(skip)
                 .limit(parseInt(limit))
                 .lean();
 
-            const total = await RequestTransfer.countDocuments();
+            const total = await countRequestTransferDocuments();
 
             return res.status(200).json({
                 requestTransfers,
@@ -79,13 +79,13 @@ router.get('/yours/:id', async (req, res) => {
                     }
                 ]
             };
-            const requestTransfers = await RequestTransfer.find(filter)
+            const requestTransfers = await findRequestTransfers(filter)
                 .sort({ generationTime: -1 })
                 .skip(skip)
                 .limit(parseInt(limit))
                 .lean();
 
-            const total = await RequestTransfer.countDocuments(filter);
+            const total = await countRequestTransferDocuments(filter);
 
             if (requestTransfers.length === 0) {
                 return res.status(404).json({
@@ -101,13 +101,13 @@ router.get('/yours/:id', async (req, res) => {
                 totalPages: Math.ceil(total / limit)
             });
         } else {
-            const requestTransfers = await RequestTransfer.find({ by: userId })
+            const requestTransfers = await findRequestTransfers({ by: userId })
                 .sort({ generationTime: -1 })
                 .skip(skip)
                 .limit(parseInt(limit))
                 .lean();
 
-            const total = await RequestTransfer.countDocuments({ by: userId });
+            const total = await countRequestTransferDocuments({ by: userId });
 
             return res.status(200).json({
                 requestTransfers,
@@ -141,13 +141,13 @@ router.get('/to-you/:id', async (req, res) => {
                     }
                 ]
             };
-            const requestTransfers = await RequestTransfer.find(filter)
+            const requestTransfers = await findRequestTransfers(filter)
                 .sort({ generationTime: -1 })
                 .skip(skip)
                 .limit(parseInt(limit))
                 .lean();
 
-            const total = await RequestTransfer.countDocuments(filter);
+            const total = await countRequestTransferDocuments(filter);
 
             if (requestTransfers.length === 0) {
                 return res.status(404).json({
@@ -163,13 +163,13 @@ router.get('/to-you/:id', async (req, res) => {
                 totalPages: Math.ceil(total / limit)
             });
         } else {
-            const requestTransfers = await RequestTransfer.find({ to: userId })
+            const requestTransfers = await findRequestTransfers({ to: userId })
                 .sort({ generationTime: -1 })
                 .skip(skip)
                 .limit(parseInt(limit))
                 .lean();
 
-            const total = await RequestTransfer.countDocuments({ to: userId });
+            const total = await countRequestTransferDocuments({ to: userId });
 
             return res.status(200).json({
                 requestTransfers,
@@ -188,7 +188,7 @@ router.get('/to-you/:id', async (req, res) => {
 router.get('/:id', async (req, res) => {
     const id = req.params.id;
     try {
-        const requestTransfer = await RequestTransfer.findById(id).lean();
+        const requestTransfer = await findRequestTransferById(id).lean();
         if (!requestTransfer) {
             return res.status(404).json({
                 title: "Error",
@@ -207,7 +207,7 @@ router.patch('/:id', async (req, res) => {
     const id = req.params.id;
     const { by, to, accepted, cancellation } = req.body;
     try {
-        const requestTransfer = await RequestTransfer.findByIdAndUpdate(id, { by, to, accepted, cancellation }, { new: true }).lean();
+        const requestTransfer = await updateRequestTransfer(id, { by, to, accepted, cancellation }, { new: true }).lean();
         if (!requestTransfer) {
             return res.status(404).json({
                 title: "Error",
@@ -258,7 +258,7 @@ router.post('/create', async (req, res) => {
 router.patch('/accept/:id', async (req, res) => {
     const id = req.params.id;
     try {
-        const requestTransfer = await RequestTransfer.findByIdAndUpdate(id, { accepted: true }, { new: true }).lean();
+        const requestTransfer = await updateRequestTransfer(id, { accepted: true }, { new: true }).lean();
         if (!requestTransfer) {
             return res.status(404).json({
                 title: "Error",
@@ -285,7 +285,7 @@ router.patch('/reject/:id', async (req, res) => {
     const id = req.params.id;
     const { reason, by } = req.body;
     try {
-        const requestTransfer = await RequestTransfer.findByIdAndUpdate(id, { accepted: false, cancellation: { reason, by } }, { new: true }).lean();
+        const requestTransfer = await updateRequestTransfer(id, { accepted: false, cancellation: { reason, by } }, { new: true }).lean();
         if (!requestTransfer) {
             return res.status(404).json({
                 title: "Error",
@@ -311,7 +311,7 @@ router.patch('/reject/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     const id = req.params.id;
     try {
-        const requestTransfer = await RequestTransfer.findByIdAndDelete(id).lean();
+        const requestTransfer = await deleteRequestTransfer(id).lean();
         if (!requestTransfer) {
             return res.status(404).json({
                 title: "Error",
@@ -336,7 +336,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/mark-fulfilled/:id', async (req, res) => {
     const id = req.params.id;
     try {
-        const requestTransfer = await RequestTransfer.findByIdAndUpdate(id, { fulfilled: true }, { new: true }).lean();
+        const requestTransfer = await updateRequestTransfer(id, { fulfilled: true }, { new: true }).lean();
         if (!requestTransfer) {
             return res.status(404).json({
                 title: "Error",
@@ -358,4 +358,4 @@ router.get('/mark-fulfilled/:id', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

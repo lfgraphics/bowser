@@ -1,7 +1,7 @@
-const mongoose = require('mongoose');
-const { transportDatabaseConnection } = require('../../config/database');
+import { Schema } from 'mongoose';
+import { getTransportDatabaseConnection } from '../../config/database.js';
 
-const campUsersSchema = new mongoose.Schema({
+const campUsersSchema = new Schema({
     name: { type: String, required: true, trim: true },
     email: { type: String, trim: true, lowercase: true },
     phone: { type: String, required: true, trim: true },
@@ -12,7 +12,7 @@ const campUsersSchema = new mongoose.Schema({
     }],
     configs: {
         type: Map,
-        of: mongoose.Schema.Types.Mixed,
+        of: Schema.Types.Mixed,
         default: () => new Map([
             ['allowedExpenses', {
                 hotel: 200,
@@ -48,4 +48,4 @@ const campUsersSchema = new mongoose.Schema({
     timestamps: true
 });
 
-module.exports = transportDatabaseConnection.model('CampUser', campUsersSchema, 'CampUsers');
+export default getTransportDatabaseConnection().model('CampUser', campUsersSchema, 'CampUsers');

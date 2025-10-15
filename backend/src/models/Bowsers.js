@@ -1,12 +1,12 @@
-const mongoose = require('mongoose');
-const { bowsersDatabaseConnection } = require('../../config/database');
-const chamberSchema = require('./subSchemas/Chamber')
-const { calculateChamberLevels } = require('../utils/calibration');
+import { Schema } from 'mongoose';
+import { getBowsersDatabaseConnection } from '../../config/database.js';
+import chamberSchema from './subSchemas/Chamber.js';
+import { calculateChamberLevels } from '../utils/calibration.js';
 
-const bowserSchema = new mongoose.Schema({
+const bowserSchema = new Schema({
     regNo: { type: String, require: true, unique: true },
     currentTrip: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'TripSheet'
     },
     chambers: [chamberSchema],
@@ -23,4 +23,24 @@ bowserSchema.pre('save', function (next) {
     }
 });
 
-module.exports = bowsersDatabaseConnection.model('Bowser', bowserSchema, 'BowsersCollection');
+const Bowser = getBowsersDatabaseConnection().model('Bowser', bowserSchema, 'BowsersCollection');
+
+// Export model methods as named exports
+export const find = Bowser.find.bind(Bowser);
+export const findOne = Bowser.findOne.bind(Bowser);
+export const findById = Bowser.findById.bind(Bowser);
+export const findOneAndUpdate = Bowser.findOneAndUpdate.bind(Bowser);
+export const findByIdAndUpdate = Bowser.findByIdAndUpdate.bind(Bowser);
+export const findByIdAndDelete = Bowser.findByIdAndDelete.bind(Bowser);
+export const updateOne = Bowser.updateOne.bind(Bowser);
+export const updateMany = Bowser.updateMany.bind(Bowser);
+export const deleteOne = Bowser.deleteOne.bind(Bowser);
+export const deleteMany = Bowser.deleteMany.bind(Bowser);
+export const create = Bowser.create.bind(Bowser);
+export const insertMany = Bowser.insertMany.bind(Bowser);
+export const countDocuments = Bowser.countDocuments.bind(Bowser);
+export const distinct = Bowser.distinct.bind(Bowser);
+export const aggregate = Bowser.aggregate.bind(Bowser);
+export const bulkWrite = Bowser.bulkWrite.bind(Bowser);
+
+export default Bowser;

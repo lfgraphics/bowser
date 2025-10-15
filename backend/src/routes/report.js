@@ -1,7 +1,7 @@
-const express = require('express');
-const Report = require('../models/reports');
-const { sendBulkNotifications } = require('../utils/pushNotifications');
-const router = express.Router();
+import { Router } from 'express';
+import Report from '../models/reports.js';
+import { sendBulkNotifications } from '../utils/pushNotifications.js';
+const router = Router();
 
 router.post('/', async (req, res) => {
     const { reportId, reportMessage, devPersonal, reporter } = req.body
@@ -23,4 +23,4 @@ router.post('/', async (req, res) => {
 })
 
 
-module.exports = router;
+export default router;

@@ -1,16 +1,16 @@
-const mongoose = require('mongoose');
-const { transportDatabaseConnection } = require('../../config/database');
+import { Schema } from 'mongoose';
+import { getTransportDatabaseConnection } from '../../config/database.js';
 
-const driversLogSchema = new mongoose.Schema({
+const driversLogSchema = new Schema({
     vehicleNo: { type: String, required: true },
-    driver: { type: mongoose.Schema.Types.ObjectId, ref: "Driver" },
+    driver: { type: Schema.Types.ObjectId, ref: "Driver" },
 
     joining: {
-        type: new mongoose.Schema({
+        type: new Schema({
             date: { type: Date, required: true },
             odometer: { type: Number, required: true },
             location: { type: String, required: true },
-            tripId: { type: mongoose.Schema.Types.ObjectId, ref: "TankersTrip" },
+            tripId: { type: Schema.Types.ObjectId, ref: "TankersTrip" },
             vehicleLoadStatus: { type: Number },
             remark: { type: String }
         }, { _id: false }),
@@ -18,12 +18,12 @@ const driversLogSchema = new mongoose.Schema({
     },
 
     leaving: {
-        type: new mongoose.Schema({
+        type: new Schema({
             from: { type: Date, required: true },
             tillDate: { type: Date },
             odometer: { type: Number, required: true },
             location: { type: String, required: true },
-            tripId: { type: mongoose.Schema.Types.ObjectId, ref: "TankersTrip", required: true },
+            tripId: { type: Schema.Types.ObjectId, ref: "TankersTrip", required: true },
             vehicleLoadStatus: { type: Number, required: true },
             remark: { type: String }
         }, { _id: false }),
@@ -43,4 +43,23 @@ driversLogSchema.pre("validate", function (next) {
     next();
 });
 
-module.exports = transportDatabaseConnection.model('DriversLog', driversLogSchema, 'DriversLog');
+const DriversLog = getTransportDatabaseConnection().model('DriversLog', driversLogSchema, 'DriversLog');
+
+// Export model methods as named exports
+export const find = DriversLog.find.bind(DriversLog);
+export const findOne = DriversLog.findOne.bind(DriversLog);
+export const findById = DriversLog.findById.bind(DriversLog);
+export const findOneAndUpdate = DriversLog.findOneAndUpdate.bind(DriversLog);
+export const findByIdAndUpdate = DriversLog.findByIdAndUpdate.bind(DriversLog);
+export const updateOne = DriversLog.updateOne.bind(DriversLog);
+export const updateMany = DriversLog.updateMany.bind(DriversLog);
+export const deleteOne = DriversLog.deleteOne.bind(DriversLog);
+export const deleteMany = DriversLog.deleteMany.bind(DriversLog);
+export const create = DriversLog.create.bind(DriversLog);
+export const insertMany = DriversLog.insertMany.bind(DriversLog);
+export const countDocuments = DriversLog.countDocuments.bind(DriversLog);
+export const distinct = DriversLog.distinct.bind(DriversLog);
+export const aggregate = DriversLog.aggregate.bind(DriversLog);
+export const bulkWrite = DriversLog.bulkWrite.bind(DriversLog);
+
+export default DriversLog;

@@ -64,7 +64,7 @@ export default function CampProfile() {
         try {
             // Clear existing results first
             setStackHolders([])
-            
+
             const response = await fetch(`${BASE_URL}/trans-app/stack-holders?params=${locationSearchTerm}`);
             const data = await response.json();
             const formattedData: ComboboxOption[] = data.map((item: { _id: string, InstitutionName: string, Location: string }) => ({
@@ -238,7 +238,7 @@ export default function CampProfile() {
     }
 
     return (
-        <div className="container mx-auto p-6 space-y-6">
+        <div className="container mx-auto md:max-w-screen-sm p-6 space-y-6">
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold">My Profile</h1>
@@ -246,187 +246,185 @@ export default function CampProfile() {
                 </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3">
-                {/* Profile Information */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Basic Info */}
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle>Personal Information</CardTitle>
-                                <CardDescription>Your basic account information</CardDescription>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    if (isEditingProfile) {
-                                        setProfileFormData({
-                                            name: user.name,
-                                            email: user.email || '',
-                                            locations: user.locations || []
-                                        })
-                                    }
-                                    setIsEditingProfile(!isEditingProfile)
-                                }}
-                            >
-                                {isEditingProfile ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
-                            </Button>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {isEditingProfile ? (
-                                <>
-                                    <div>
-                                        <Label htmlFor="name">Name</Label>
-                                        <Input
-                                            id="name"
-                                            value={profileFormData.name}
-                                            onChange={(e) => setProfileFormData(prev => ({ ...prev, name: e.target.value }))}
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="email">Email</Label>
-                                        <Input
-                                            id="email"
-                                            type="email"
-                                            value={profileFormData.email}
-                                            onChange={(e) => setProfileFormData(prev => ({ ...prev, email: e.target.value }))}
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="locations">Locations</Label>
-                                        <div className="space-y-3">
-                                            {/* Display selected locations as badges */}
-                                            {profileFormData.locations && profileFormData.locations.length > 0 && (
-                                                <div className="flex flex-wrap gap-2">
-                                                    {profileFormData.locations.map((location, index) => (
-                                                        <div
-                                                            key={index}
-                                                            className="relative group bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium"
+            <div className="container mx-auto md:max-w-screen-sm space-y-6">
+                {/* Basic Info */}
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle>Personal Information</CardTitle>
+                            <CardDescription>Your basic account information</CardDescription>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                if (isEditingProfile) {
+                                    setProfileFormData({
+                                        name: user.name,
+                                        email: user.email || '',
+                                        locations: user.locations || []
+                                    })
+                                }
+                                setIsEditingProfile(!isEditingProfile)
+                            }}
+                        >
+                            {isEditingProfile ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {isEditingProfile ? (
+                            <>
+                                <div>
+                                    <Label htmlFor="name">Name</Label>
+                                    <Input
+                                        id="name"
+                                        value={profileFormData.name}
+                                        onChange={(e) => setProfileFormData(prev => ({ ...prev, name: e.target.value }))}
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        value={profileFormData.email}
+                                        onChange={(e) => setProfileFormData(prev => ({ ...prev, email: e.target.value }))}
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="locations">Locations</Label>
+                                    <div className="space-y-3">
+                                        {/* Display selected locations as badges */}
+                                        {profileFormData.locations && profileFormData.locations.length > 0 && (
+                                            <div className="flex flex-wrap gap-2">
+                                                {profileFormData.locations.map((location, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className="relative group bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium"
+                                                    >
+                                                        <span>{location}</span>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="absolute -top-2 -right-2 h-5 w-5 p-0 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/80"
+                                                            onClick={() => handleDeleteLocation(location)}
                                                         >
-                                                            <span>{location}</span>
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="absolute -top-2 -right-2 h-5 w-5 p-0 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/80"
-                                                                onClick={() => handleDeleteLocation(location)}
-                                                            >
-                                                                <X className="h-3 w-3" />
-                                                            </Button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
+                                                            <X className="h-3 w-3" />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
 
-                                            {/* Add location button */}
-                                            <div className="flex gap-2">
+                                        {/* Add location button */}
+                                        <div className="flex gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setShowLocationCombobox(!showLocationCombobox)
+                                                    if (!showLocationCombobox) {
+                                                        setLocationSearchTerm('')
+                                                    }
+                                                }}
+                                            >
+                                                <Plus className="h-4 w-4 mr-1" />
+                                                Add Location
+                                            </Button>
+                                        </div>
+
+                                        {/* Location selection combobox */}
+                                        {showLocationCombobox && (
+                                            <div className="space-y-2">
+                                                <Combobox
+                                                    className="w-full md:w-auto"
+                                                    options={stackHolders}
+                                                    value=""
+                                                    onChange={(value) => {
+                                                        if (value && !profileFormData.locations.includes(value)) {
+                                                            setProfileFormData(prev => ({
+                                                                ...prev,
+                                                                locations: [...prev.locations, value]
+                                                            }))
+                                                        }
+                                                        setShowLocationCombobox(false)
+                                                        setLocationSearchTerm('')
+                                                        setStackHolders([])
+                                                    }}
+                                                    searchTerm={locationSearchTerm}
+                                                    onSearchTermChange={setLocationSearchTerm}
+                                                    placeholder="Search and select location..."
+                                                    showAddButton={false}
+                                                />
                                                 <Button
                                                     type="button"
-                                                    variant="outline"
+                                                    variant="ghost"
                                                     size="sm"
                                                     onClick={() => {
-                                                        setShowLocationCombobox(!showLocationCombobox)
-                                                        if (!showLocationCombobox) {
-                                                            setLocationSearchTerm('')
-                                                        }
+                                                        setShowLocationCombobox(false)
+                                                        setLocationSearchTerm('')
+                                                        setStackHolders([])
                                                     }}
                                                 >
-                                                    <Plus className="h-4 w-4 mr-1" />
-                                                    Add Location
+                                                    Cancel
                                                 </Button>
                                             </div>
-
-                                            {/* Location selection combobox */}
-                                            {showLocationCombobox && (
-                                                <div className="space-y-2">
-                                                    <Combobox
-                                                        className="w-full md:w-auto"
-                                                        options={stackHolders}
-                                                        value=""
-                                                        onChange={(value) => {
-                                                            if (value && !profileFormData.locations.includes(value)) {
-                                                                setProfileFormData(prev => ({
-                                                                    ...prev,
-                                                                    locations: [...prev.locations, value]
-                                                                }))
-                                                            }
-                                                            setShowLocationCombobox(false)
-                                                            setLocationSearchTerm('')
-                                                            setStackHolders([])
-                                                        }}
-                                                        searchTerm={locationSearchTerm}
-                                                        onSearchTermChange={setLocationSearchTerm}
-                                                        placeholder="Search and select location..."
-                                                        showAddButton={false}
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            setShowLocationCombobox(false)
-                                                            setLocationSearchTerm('')
-                                                            setStackHolders([])
-                                                        }}
-                                                    >
-                                                        Cancel
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
+                                        )}
                                     </div>
-                                    <div className="flex space-x-2">
-                                        <Button onClick={handleSaveProfile}>
-                                            <Save className="h-4 w-4 mr-2" />
-                                            Save Changes
-                                        </Button>
-                                        <Button variant="outline" onClick={() => setIsEditingProfile(false)}>
-                                            Cancel
-                                        </Button>
+                                </div>
+                                <div className="flex space-x-2">
+                                    <Button onClick={handleSaveProfile}>
+                                        <Save className="h-4 w-4 mr-2" />
+                                        Save Changes
+                                    </Button>
+                                    <Button variant="outline" onClick={() => setIsEditingProfile(false)}>
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="flex items-center space-x-3">
+                                    <User className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                        <p className="font-medium">{user.name}</p>
+                                        <p className="text-sm text-muted-foreground">Full Name</p>
                                     </div>
-                                </>
-                            ) : (
-                                <>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <Phone className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                        <p className="font-medium">{user.phone}</p>
+                                        <p className="text-sm text-muted-foreground">Phone Number</p>
+                                    </div>
+                                </div>
+                                {user.email && (
                                     <div className="flex items-center space-x-3">
-                                        <User className="h-5 w-5 text-muted-foreground" />
+                                        <Mail className="h-5 w-5 text-muted-foreground" />
                                         <div>
-                                            <p className="font-medium">{user.name}</p>
-                                            <p className="text-sm text-muted-foreground">Full Name</p>
+                                            <p className="font-medium">{user.email}</p>
+                                            <p className="text-sm text-muted-foreground">Email Address</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center space-x-3">
-                                        <Phone className="h-5 w-5 text-muted-foreground" />
+                                )}
+                                {user.locations && user.locations.length > 0 && (
+                                    <div className="flex items-start space-x-3">
+                                        <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                                         <div>
-                                            <p className="font-medium">{user.phone}</p>
-                                            <p className="text-sm text-muted-foreground">Phone Number</p>
+                                            <p className="font-medium">{user.locations.join(', ')}</p>
+                                            <p className="text-sm text-muted-foreground">Assigned Locations</p>
                                         </div>
                                     </div>
-                                    {user.email && (
-                                        <div className="flex items-center space-x-3">
-                                            <Mail className="h-5 w-5 text-muted-foreground" />
-                                            <div>
-                                                <p className="font-medium">{user.email}</p>
-                                                <p className="text-sm text-muted-foreground">Email Address</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {user.locations && user.locations.length > 0 && (
-                                        <div className="flex items-start space-x-3">
-                                            <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                                            <div>
-                                                <p className="font-medium">{user.locations.join(', ')}</p>
-                                                <p className="text-sm text-muted-foreground">Assigned Locations</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
+                                )}
+                            </>
+                        )}
+                    </CardContent>
+                </Card>
 
-                    {/* Configuration */}
-                    <ConfigsManager
+                {/* Configuration */}
+                {/* <ConfigsManager
                         configs={configFormData}
                         onConfigsChange={setConfigFormData}
                         isEditing={isEditingConfigs}
@@ -455,72 +453,69 @@ export default function CampProfile() {
                         showReadonlyToggle={user?.role === 'admin'}
                         title="Configuration Settings"
                         description="Your account settings and preferences"
-                    />
-                </div>
+                    /> */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Account Status</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Role</span>
+                            <Badge variant={getRoleBadgeVariant(user.role)}>
+                                {user.role}
+                            </Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Status</span>
+                            <Badge variant={getStatusBadgeVariant(user.status)}>
+                                {user.status}
+                            </Badge>
+                        </div>
+                        {activity && (
+                            <>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium">Last Login</span>
+                                    <span className="text-sm text-muted-foreground">
+                                        {activity.lastLogin
+                                            ? new Date(activity.lastLogin).toLocaleDateString()
+                                            : 'Never'
+                                        }
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium">Member Since</span>
+                                    <span className="text-sm text-muted-foreground">
+                                        {activity.accountCreated
+                                            ? new Date(activity.accountCreated).toLocaleDateString()
+                                            : 'N/A'
+                                        }
+                                    </span>
+                                </div>
+                            </>
+                        )}
+                    </CardContent>
+                </Card>
 
-                {/* Account Status & Actions */}
-                <div className="space-y-6">
-                    {/* Account Status */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Account Status</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium">Role</span>
-                                <Badge variant={getRoleBadgeVariant(user.role)}>
-                                    {user.role}
-                                </Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium">Status</span>
-                                <Badge variant={getStatusBadgeVariant(user.status)}>
-                                    {user.status}
-                                </Badge>
-                            </div>
-                            {activity && (
-                                <>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm font-medium">Last Login</span>
-                                        <span className="text-sm text-muted-foreground">
-                                            {activity.lastLogin
-                                                ? new Date(activity.lastLogin).toLocaleDateString()
-                                                : 'Never'
-                                            }
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm font-medium">Member Since</span>
-                                        <span className="text-sm text-muted-foreground">
-                                            {activity.accountCreated
-                                                ? new Date(activity.accountCreated).toLocaleDateString()
-                                                : 'N/A'
-                                            }
-                                        </span>
-                                    </div>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Quick Actions */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Quick Actions</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                            <Button
-                                variant="outline"
-                                className="w-full justify-start"
-                                onClick={() => setIsPasswordDialogOpen(true)}
-                            >
-                                <Key className="h-4 w-4 mr-2" />
-                                Change Password
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </div>
+                {/* Quick Actions */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Quick Actions</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        <Button
+                            variant="outline"
+                            className="w-full justify-start"
+                            onClick={() => setIsPasswordDialogOpen(true)}
+                        >
+                            <Key className="h-4 w-4 mr-2" />
+                            Change Password
+                        </Button>
+                    </CardContent>
+                </Card>
             </div>
+            {/* <div className="grid gap-6 lg:grid-cols-3">
+            </div> */}
+            {/* Profile Information */}
 
             {/* Change Password Dialog */}
             <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>

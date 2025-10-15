@@ -1,6 +1,6 @@
-const express = require('express');
-const router = express.Router();
-const FuelingOrder = require('../models/fuelingOrders');
+import { Router } from 'express';
+const router = Router();
+import { find as findFuelingOrders, countDocuments as countFuelingOrderDocuments, findById as findFuelingOrderById, findByIdAndUpdate as updateFuelingOrder, findByIdAndDelete as deleteFuelingOrder } from '../models/fuelingOrders.js';
 
 router.get('/', async (req, res) => {
     const { tripSheetId, bowserNumber, startDate, endDate, driverName, page = 1, limit = 20, sortBy = 'createdAt', order = 'asc', verified, category, vehicleNo, allocator } = req.query;
@@ -50,8 +50,8 @@ router.get('/', async (req, res) => {
     const sortOrder = order === 'asc' ? 1 : -1;
 
     try {
-        const records = await FuelingOrder.find(filter).skip(skip).limit(Number(limit)).sort({ [sortBy]: sortOrder });
-        const totalRecords = await FuelingOrder.countDocuments(filter);
+        const records = await findFuelingOrders(filter).skip(skip).limit(Number(limit)).sort({ [sortBy]: sortOrder });
+        const totalRecords = await countFuelingOrderDocuments(filter);
 
         if (records.length == 0) {
             res.status(400).json({ message: 'No records found' })
@@ -96,7 +96,7 @@ router.get('/export/excel', async (req, res) => {
 
     try {
         // Fetch filtered, sorted, and limited records
-        const records = await FuelingOrder.find(filter, {
+        const records = await findFuelingOrders(filter, {
             fuelingDateTime: 1,
             tripSheetId: 1,
             bowser: 1,
@@ -157,7 +157,7 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        const singleRecord = await FuelingOrder.findById(id);
+        const singleRecord = await findFuelingOrderById(id);
 
         if (!singleRecord) {
             return res.status(404).json({ message: 'Record not found' });
@@ -174,7 +174,7 @@ router.patch('/update/:id', async (req, res) => {
     const updateData = req.body;
 
     try {
-        const updatedRecord = await FuelingOrder.findByIdAndUpdate(id, updateData, {
+        const updatedRecord = await updateFuelingOrder(id, updateData, {
             new: true,
             runValidators: true,
         });
@@ -193,7 +193,7 @@ router.patch('/update/:id', async (req, res) => {
 router.delete('/delete/:id', async (req, res) => {
     const { id } = req.params
     try {
-        const deletedRecord = await FuelingOrder.findByIdAndDelete(id);
+        const deletedRecord = await deleteFuelingOrder(id);
 
         if (!deletedRecord) {
             return res.status(404).json({ message: 'Record not found' });
@@ -206,4 +206,4 @@ router.delete('/delete/:id', async (req, res) => {
     }
 })
 
-module.exports = router;
+export default router;

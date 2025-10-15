@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
-const { bowsersDatabaseConnection } = require('../../config/database');
+import { Schema } from 'mongoose';
+import { getBowsersDatabaseConnection } from '../../config/database.js';
 
-const loadingSheetSchema = new mongoose.Schema({
+const loadingSheetSchema = new Schema({
     regNo: { type: String, required: true }, // taken from the loading order
     odoMeter: { type: Number, required: true },
-    tripSheetId: { type: mongoose.Schema.Types.ObjectId, ref: "TripSheet" },
+    tripSheetId: { type: Schema.Types.ObjectId, ref: "TripSheet" },
     fuleingMachine: { type: String, required: true },
     pumpReadingBefore: { type: Number, required: false },
     pumpReadingAfter: { type: Number, required: true },
@@ -62,7 +62,7 @@ const loadingSheetSchema = new mongoose.Schema({
         name: { type: String, required: true }
     },
     bccAuthorizedOfficer: {  // taken from the loading order
-        orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'LoadingOrder' },
+        orderId: { type: Schema.Types.ObjectId, ref: 'LoadingOrder' },
         id: { type: String, required: true },
         name: { type: String, required: true }
     },
@@ -70,4 +70,24 @@ const loadingSheetSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now, timezone: "Asia/Kolkata" },
 });
 
-module.exports = bowsersDatabaseConnection.model('LoadingSheet', loadingSheetSchema, 'BowserLoadingSheets');
+const LoadingSheet = getBowsersDatabaseConnection().model('LoadingSheet', loadingSheetSchema, 'BowserLoadingSheets');
+
+// Export model methods as named exports
+export const find = LoadingSheet.find.bind(LoadingSheet);
+export const findOne = LoadingSheet.findOne.bind(LoadingSheet);
+export const findById = LoadingSheet.findById.bind(LoadingSheet);
+export const findOneAndUpdate = LoadingSheet.findOneAndUpdate.bind(LoadingSheet);
+export const findByIdAndUpdate = LoadingSheet.findByIdAndUpdate.bind(LoadingSheet);
+export const findByIdAndDelete = LoadingSheet.findByIdAndDelete.bind(LoadingSheet);
+export const updateOne = LoadingSheet.updateOne.bind(LoadingSheet);
+export const updateMany = LoadingSheet.updateMany.bind(LoadingSheet);
+export const deleteOne = LoadingSheet.deleteOne.bind(LoadingSheet);
+export const deleteMany = LoadingSheet.deleteMany.bind(LoadingSheet);
+export const create = LoadingSheet.create.bind(LoadingSheet);
+export const insertMany = LoadingSheet.insertMany.bind(LoadingSheet);
+export const countDocuments = LoadingSheet.countDocuments.bind(LoadingSheet);
+export const distinct = LoadingSheet.distinct.bind(LoadingSheet);
+export const aggregate = LoadingSheet.aggregate.bind(LoadingSheet);
+export const bulkWrite = LoadingSheet.bulkWrite.bind(LoadingSheet);
+
+export default LoadingSheet;

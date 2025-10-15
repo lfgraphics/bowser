@@ -1,11 +1,11 @@
-const express = require('express');
-const Vehicle = require('../models/vehicle');
-const router = express.Router();
+import { Router } from 'express';
+import { find as findVehicles, countDocuments as countVehicles, findById as findVehicleById, findOneAndUpdate as updateVehicle, bulkWrite as bulkWriteVehicles, findByIdAndUpdate as updateVehicleById, updateMany as updateManyVehicles } from '../models/vehicle.js';
+const router = Router();
 
 // Get vehicles by GoodsCategory (Placed before ID-based fetch to avoid conflict)
 router.get('/category/:category', async (req, res) => {
     try {
-        const vehicles = await Vehicle.find({ GoodsCategory: req.params.category }).limit(20).lean();
+        const vehicles = await findVehicles({ GoodsCategory: req.params.category }).limit(20).lean();
         if (vehicles.length === 0) {
             return res.status(404).json({ error: "No vehicles found for the given category" });
         }
@@ -50,8 +50,8 @@ router.post('/', async (req, res) => {
             }
         }
 
-        const vehicles = await Vehicle.find(params).skip(skip).limit(Number(limit)).lean();
-        const totalRecords = await Vehicle.countDocuments(params)
+        const vehicles = await findVehicles(params).skip(skip).limit(Number(limit)).lean();
+        const totalRecords = await countVehicles(params)
         return res.status(200).json({
             vehicles,
             totalRecords,
@@ -67,7 +67,7 @@ router.post('/', async (req, res) => {
 // Get a vehicle by ID
 router.get('/:id', async (req, res) => {
     try {
-        const vehicle = await Vehicle.findById(req.params.id).lean();
+        const vehicle = await findVehicleById(req.params.id).lean();
         if (!vehicle) return res.status(404).json({ error: 'Vehicle not found' });
         return res.status(200).json(vehicle);
     } catch (error) {
@@ -79,7 +79,7 @@ router.get('/:id', async (req, res) => {
 router.put('/update-details/:vehicle', async (req, res) => {
     const { vehicle } = req.body;
     try {
-        const vehicleDetails = await Vehicle.findOneAndUpdate(
+        const vehicleDetails = await updateVehicle(
             { VehicleNo: req.params.vehicle },
             { $set: vehicle },
             { new: true }
@@ -114,10 +114,10 @@ router.put('/update-details', async (req, res) => {
         }));
 
         // Execute bulk operation
-        const result = await Vehicle.bulkWrite(bulkOps);
+        const result = await bulkWriteVehicles(bulkOps);
 
         // Get updated vehicles
-        const updatedVehicles = await Vehicle.find({
+        const updatedVehicles = await findVehicles({
             VehicleNo: { $in: vehicles.map(v => v.VehicleNo) }
         }).lean();
 
@@ -136,7 +136,7 @@ router.put('/update-details', async (req, res) => {
 // Update vehicle by ID
 router.put('/:id', async (req, res) => {
     try {
-        const vehicle = await Vehicle.findByIdAndUpdate(req.params.id, req.body, { new: true }).lean();
+        const vehicle = await updateVehicleById(req.params.id, req.body, { new: true }).lean();
         if (!vehicle) return res.status(404).json({ error: 'Vehicle not found' });
         return res.status(200).json(vehicle);
     } catch (error) {
@@ -148,7 +148,7 @@ router.put('/:id', async (req, res) => {
 // Update vehicle's manager by ID
 router.put('/:id/manager', async (req, res) => {
     try {
-        const vehicle = await Vehicle.findByIdAndUpdate(req.params.id, { manager: req.body.manager }, { new: true }).lean();
+        const vehicle = await updateVehicleById(req.params.id, { manager: req.body.manager }, { new: true }).lean();
         if (!vehicle) return res.status(404).json({ error: 'Vehicle not found' });
         return res.status(200).json(vehicle);
     } catch (error) {
@@ -168,13 +168,13 @@ router.put('/manager/vehicle/update', async (req, res) => {
             return res.status(400).json({ error: 'Manager is required' });
         }
         // Find all vehicles that match the provided vehicle numbers
-        const existingVehicles = await Vehicle.find({ VehicleNo: { $in: vehicleNumbers } }).lean();
+        const existingVehicles = await findVehicles({ VehicleNo: { $in: vehicleNumbers } }).lean();
         // Identify which vehicle numbers were found
         const foundVehicleNumbers = existingVehicles.map(v => v.VehicleNo);
         // Identify which vehicle numbers were not found
         const notFoundVehicleNumbers = vehicleNumbers.filter(no => !foundVehicleNumbers.includes(no));
         // Perform bulk update operation
-        const bulkUpdateResult = await Vehicle.updateMany(
+        const bulkUpdateResult = await updateManyVehicles(
             { VehicleNo: { $in: foundVehicleNumbers } },  // Ensure the field name matches the database schema
             { $set: { manager } }
         );
@@ -208,7 +208,7 @@ router.put('/manager/vehicle/update', async (req, res) => {
 router.patch('/:id/manager', async (req, res) => {
     const { userId } = req.body;
     try {
-        const vehicle = await Vehicle.findById(req.params.id);
+        const vehicle = await findVehicleById(req.params.id);
         if (!vehicle) return res.status(404).json({ error: 'Vehicle not found' });
 
         if (vehicle.manager !== userId) {
@@ -225,4 +225,4 @@ router.patch('/:id/manager', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

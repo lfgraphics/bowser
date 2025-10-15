@@ -1,12 +1,12 @@
-const express = require('express');
-const router = express.Router();
-const FuelingOrder = require('../models/fuelingOrders');
+import { Router } from 'express';
+const router = Router();
+import { find as findFuelingOrders } from '../models/fuelingOrders.js';
 
 router.get('/:phoneNo', async (req, res) => {
     try {
         const { phoneNo } = req.params;
 
-        const userOrders = await FuelingOrder.find({ 'bowser.driver.phoneNo': phoneNo, fulfilled: false }).populate('request').sort({ createdAt: -1 });
+        const userOrders = await findFuelingOrders({ 'bowser.driver.phoneNo': phoneNo, fulfilled: false }).populate('request').sort({ createdAt: -1 });
         if (userOrders.length === 0) {
             return res.status(404).json({ message: 'आप के लिए कोई भी ऑर्डर मौजूद नहीं है|' });
         }
@@ -18,4 +18,4 @@ router.get('/:phoneNo', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;
