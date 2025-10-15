@@ -13,7 +13,7 @@ router.post('/signup', async (req, res) => {
         const { userId, password, phoneNumber, name } = req.body;
 
         // Check if user already exists
-        const existingUser = await findOne({ userId });
+        const existingUser = await findUser({ userId });
         if (existingUser) {
             return res.status(400).json({ message: 'User already exists' });
         }
@@ -54,18 +54,18 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { userId, password, appName } = req.body;
-        const user = await findOne({ userId }).populate(['roles', 'department']);
+        const user = await findUser({ userId }).populate(['roles', 'department']);
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const validPassword = await _verify(user.password, password);
+        const validPassword = await verifyPassword(user.password, password);
         if (!validPassword) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
         const hasAccess = user.roles.some(async role => {
-            const roleDoc = await findById(role);
+            const roleDoc = await findRoleById(role);
             return roleDoc.permissions.apps.some(app =>
                 app.name === appName && app.access === 'admin'
             );
@@ -78,7 +78,7 @@ router.post('/login', async (req, res) => {
         let roleNames = [];
         let roles = [];
         if (user.roles && user.roles.length > 0) {
-            roles = await find({ _id: { $in: user.roles } });
+            roles = await findRoles({ _id: { $in: user.roles } });
             roleNames = roles.map(role => role.name);
         }
         let departmentName

@@ -11,7 +11,7 @@ router.post('/calib-calc', async (req, res) => {
 
     try {
         // Extract chambers from the bowser object
-        const bowserData = await findOne({ regNo: { $regex: bowser, $options: "i" } }, 'chambers');
+        const bowserData = await findOneBowser({ regNo: { $regex: bowser, $options: "i" } }, 'chambers');
         if (!bowserData || !bowserData.chambers) {
             return res.status(404).json({ success: false, message: "Bowser not found or has no chambers." });
         }
@@ -28,7 +28,7 @@ router.post('/calib-calc', async (req, res) => {
 
 router.post('/fix-unloadingDates', async (req, res) => {
     try {
-        const result = await updateMany(
+        const result = await updateManyVehicleTrips(
             { 'TallyLoadDetail.UnloadingDate': { $ne: null } },
             [
                 {
@@ -68,7 +68,7 @@ router.get('/fix-trips-date/:vehicleNo', async (req, res) => {
         return res.status(400).json({ error: 'VehicleNo is required' });
     }
     try {
-        const trips = await find();
+        const trips = await findVehicleTrips();
         console.log(`Found ${trips.length} trips for vehicle ${vehicleNo}`);
 
         const updates = trips.map(trip => {

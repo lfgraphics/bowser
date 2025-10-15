@@ -26,7 +26,7 @@ router.get('/:vehicleNumber', async (req, res) => {
                 const itplNumber = itplMatch ? itplMatch[0].replace(/[()]/g, '').toUpperCase() : driverName;
 
                 // Fetch driver details from the drivers collection using the extracted ITPL number
-                const driver = await findOne({
+                const driver = await findOneDriver({
                     Name: { $regex: itplNumber, $options: 'i' }
                 });
 
@@ -93,7 +93,7 @@ router.get('/managed/:userId', async (req, res) => {
                 const itplNumber = itplMatch ? itplMatch[0].replace(/[()]/g, '').toUpperCase() : driverName;
 
                 // Fetch driver details from the drivers collection using the extracted ITPL number
-                const driver = await findOne({
+                const driver = await findOneDriver({
                     Name: `${vehicle.tripDetails.driver}`
                 });
 
