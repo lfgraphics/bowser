@@ -30,9 +30,42 @@ const campUsersSchema = new Schema({
     },
     role: {
         type: String,
-        enum: ['admin', 'officer', 'supervisor'],
+        enum: ['admin', 'officer', 'depositor'],
         default: 'officer'
     },
+    accounts: [{
+        accountType: { type: String, enum: ['upi', 'bankAccount'], required: true },
+        upiId: {
+            type: String,
+            required: function () { return this.accountType === 'upi'; },
+            trim: true
+        },
+        upiHolderName: {
+            type: String,
+            required: function () { return this.accountType === 'upi'; },
+            trim: true
+        },
+        bankName: {
+            type: String,
+            required: function () { return this.accountType === 'bankAccount'; },
+            trim: true
+        },
+        accountNumber: {
+            type: String,
+            required: function () { return this.accountType === 'bankAccount'; },
+            trim: true
+        },
+        ifscCode: {
+            type: String,
+            required: function () { return this.accountType === 'bankAccount'; },
+            trim: true
+        },
+        accountHolderName: {
+            type: String,
+            required: function () { return this.accountType === 'bankAccount'; },
+            trim: true
+        }
+    }],
     status: {
         type: String,
         enum: ['active', 'inactive', 'suspended'],

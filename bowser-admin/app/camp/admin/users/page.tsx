@@ -48,7 +48,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Plus,
-    X
+    X,
+    CreditCard
 } from 'lucide-react'
 import { campAdminAPI, CampUser, CampUsersPaginationResponse } from '@/lib/campAPI'
 import { getAllStackHolders, StackHolder } from '@/lib/api'
@@ -57,6 +58,7 @@ import Loading from '@/app/loading'
 import { Textarea } from "@/components/ui/textarea"
 import ConfigsManager from '@/components/ConfigsManager'
 import Combobox, { ComboboxOption } from '@/components/Combobox'
+import AccountsManager, { Account } from '@/components/AccountsManager'
 import { BASE_URL } from '@/lib/api'
 
 export default function CampUsersManagement() {
@@ -79,6 +81,11 @@ export default function CampUsersManagement() {
     const [customExpenseKey, setCustomExpenseKey] = useState('')
     const [customExpenseValue, setCustomExpenseValue] = useState('')
     const [isAddingExpense, setIsAddingExpense] = useState(false)
+
+    // Accounts state
+    const [isAccountsDialogOpen, setIsAccountsDialogOpen] = useState(false)
+    const [accountsFormData, setAccountsFormData] = useState<Account[]>([])
+    const [isEditingAccounts, setIsEditingAccounts] = useState(false)
 
     // Delete confirmation dialog state
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -106,6 +113,7 @@ export default function CampUsersManagement() {
                 value: item.Location, // Using Location like the working pattern
                 label: `${item.InstitutionName}: ${item.Location}`
             }))
+            setStackHolders([])
             setStackHolders(formattedData)
         } catch (error: any) {
             setStackHolders([]) // Clear on error too
@@ -200,6 +208,28 @@ export default function CampUsersManagement() {
         } catch (error: any) {
             console.error('Error updating configs:', error)
             toast.error(error.response?.data?.message || 'Failed to update configs')
+        }
+    }
+
+    const handleAccountsUser = async (user: CampUser) => {
+        setSelectedUser(user)
+        setAccountsFormData(user.accounts || [])
+        setIsAccountsDialogOpen(true)
+        setIsEditingAccounts(true)
+    }
+
+    const handleSaveAccounts = async () => {
+        if (!selectedUser) return
+
+        try {
+            await campAdminAPI.updateUserAccounts(selectedUser._id!, accountsFormData)
+            toast.success('User accounts updated successfully')
+            setIsAccountsDialogOpen(false)
+            setIsEditingAccounts(false)
+            fetchUsers()
+        } catch (error: any) {
+            console.error('Error updating accounts:', error)
+            toast.error(error.response?.data?.message || 'Failed to update accounts')
         }
     }
 
@@ -510,6 +540,21 @@ export default function CampUsersManagement() {
                                                             </TooltipTrigger>
                                                             <TooltipContent>
                                                                 <p>Manage Configs</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() => handleAccountsUser(user)}
+                                                                >
+                                                                    <CreditCard className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>Manage Accounts</p>
                                                             </TooltipContent>
                                                         </Tooltip>
 
@@ -941,7 +986,7 @@ export default function CampUsersManagement() {
                             )}
 
                             {/* Preferences Section */}
-                            {configFormData.preferences && (
+                            {/* {configFormData.preferences && (
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <div>
@@ -1043,7 +1088,7 @@ export default function CampUsersManagement() {
                                     </div>
                                     <Separator />
                                 </div>
-                            )}
+                            )} */}
 
                             {/* Add Preferences Section if it doesn't exist */}
                             {!configFormData.preferences && (
@@ -1069,7 +1114,7 @@ export default function CampUsersManagement() {
                             )}
 
                             {/* Permissions Section */}
-                            {configFormData.permissions && (
+                            {/* {configFormData.permissions && (
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <div>
@@ -1171,7 +1216,7 @@ export default function CampUsersManagement() {
                                     </div>
                                     <Separator />
                                 </div>
-                            )}
+                            )} */}
 
                             {/* Add Permissions Section if it doesn't exist */}
                             {!configFormData.permissions && (
@@ -1198,7 +1243,7 @@ export default function CampUsersManagement() {
 
                             {/* Advanced Section for other configs */}
                             <div className="space-y-4">
-                                <Separator />
+                                {/* <Separator />
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <h3 className="text-lg font-semibold">Advanced Settings</h3>
@@ -1212,10 +1257,10 @@ export default function CampUsersManagement() {
                                         <Plus className="h-4 w-4 mr-1" />
                                         Add Config
                                     </Button>
-                                </div>
+                                </div> */}
 
                                 {/* Custom configs */}
-                                {Object.entries(configFormData)
+                                {/* {Object.entries(configFormData)
                                     .filter(([key]) => !['allowedExpenses', 'preferences', 'permissions'].includes(key))
                                     .map(([key, value]) => (
                                         <div key={key} className="space-y-2 border rounded-lg p-4">
@@ -1259,10 +1304,10 @@ export default function CampUsersManagement() {
                                                 className="font-mono text-sm"
                                             />
                                         </div>
-                                    ))}
+                                    ))} */}
 
                                 {/* Add Custom Config */}
-                                {isAddingConfig && (
+                                {/* {isAddingConfig && (
                                     <div className="border rounded-lg p-4 space-y-4">
                                         <div className="flex items-center justify-between">
                                             <h4 className="font-medium">Add Custom Configuration</h4>
@@ -1300,15 +1345,15 @@ export default function CampUsersManagement() {
                                             Add Configuration
                                         </Button>
                                     </div>
-                                )}
+                                )} */}
 
                                 {/* Show message if no advanced configs */}
-                                {Object.entries(configFormData).filter(([key]) => !['allowedExpenses', 'preferences', 'permissions'].includes(key)).length === 0 && !isAddingConfig && (
+                                {/* {Object.entries(configFormData).filter(([key]) => !['allowedExpenses', 'preferences', 'permissions'].includes(key)).length === 0 && !isAddingConfig && (
                                     <div className="text-center py-8 text-muted-foreground">
                                         <p>No advanced configurations yet.</p>
                                         <p className="text-sm">Click "Add Config" to create custom settings.</p>
                                     </div>
-                                )}
+                                )} */}
                             </div>
                         </div>
                         <DialogFooter>
@@ -1385,6 +1430,50 @@ export default function CampUsersManagement() {
                             <Button variant="destructive" onClick={confirmDeleteLocation}>
                                 <X className="h-4 w-4 mr-2" />
                                 Remove Location
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Accounts Management Dialog */}
+                <Dialog open={isAccountsDialogOpen} onOpenChange={setIsAccountsDialogOpen}>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Manage User Accounts</DialogTitle>
+                            <DialogDescription>
+                                Manage payment accounts for {selectedUser?.name}.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4">
+                            <AccountsManager
+                                accounts={accountsFormData}
+                                onAccountsChange={setAccountsFormData}
+                                isEditing={isEditingAccounts}
+                                onEditToggle={() => {
+                                    if (isEditingAccounts) {
+                                        // Reset accounts to original
+                                        setAccountsFormData(selectedUser?.accounts || [])
+                                    }
+                                    setIsEditingAccounts(!isEditingAccounts)
+                                }}
+                                onSave={handleSaveAccounts}
+                                onCancel={() => {
+                                    // Reset accounts to original
+                                    setAccountsFormData(selectedUser?.accounts || [])
+                                    setIsEditingAccounts(false)
+                                }}
+                                title="Payment Accounts"
+                                description="Manage user's payment accounts for transactions"
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => {
+                                setIsAccountsDialogOpen(false)
+                                setIsEditingAccounts(false)
+                                setAccountsFormData([])
+                                setSelectedUser(null)
+                            }}>
+                                Close
                             </Button>
                         </DialogFooter>
                     </DialogContent>

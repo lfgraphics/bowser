@@ -150,6 +150,74 @@ router.put('/users/:id/configs', verifyAdminToken, checkAdminAccess, async (req,
     }
 });
 
+// Update user accounts
+router.put('/users/:id/accounts', verifyAdminToken, checkAdminAccess, async (req, res) => {
+    try {
+        const { accounts } = req.body;
+
+        const user = await findCampUserById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Validate accounts data
+        if (!Array.isArray(accounts)) {
+            return res.status(400).json({ message: 'Accounts must be an array' });
+        }
+
+        // Clean and validate each account
+        const cleanedAccounts = [];
+        for (const account of accounts) {
+            if (!account.accountType || !['upi', 'bankAccount'].includes(account.accountType)) {
+                return res.status(400).json({ message: 'Invalid account type' });
+            }
+
+            if (account.accountType === 'upi') {
+                if (!account.upiId || !account.upiHolderName) {
+                    return res.status(400).json({ message: 'UPI ID and holder name are required for UPI accounts' });
+                }
+            } else if (account.accountType === 'bankAccount') {
+                if (!account.bankName || !account.accountNumber || !account.ifscCode || !account.accountHolderName) {
+                    return res.status(400).json({ message: 'All bank account fields are required' });
+                }
+            }
+
+            // Create clean account object without problematic _id
+            const cleanAccount = {
+                accountType: account.accountType,
+                ...(account.accountType === 'upi' ? {
+                    upiId: account.upiId,
+                    upiHolderName: account.upiHolderName
+                } : {
+                    bankName: account.bankName,
+                    accountNumber: account.accountNumber,
+                    ifscCode: account.ifscCode,
+                    accountHolderName: account.accountHolderName
+                })
+            };
+
+            // Only include _id if it's a valid ObjectId (24 character hex string)
+            if (account._id && /^[0-9a-fA-F]{24}$/.test(account._id)) {
+                cleanAccount._id = account._id;
+            }
+
+            cleanedAccounts.push(cleanAccount);
+        }
+
+        // Update user accounts
+        user.accounts = cleanedAccounts;
+        await user.save();
+
+        res.json({
+            user: await findCampUserById(req.params.id).select('-password'),
+            message: 'User accounts updated successfully'
+        });
+    } catch (error) {
+        console.error('Update user accounts error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
 // Delete camp user
 router.delete('/users/:id', verifyAdminToken, checkAdminAccess, async (req, res) => {
     try {

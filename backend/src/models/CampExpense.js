@@ -1,26 +1,23 @@
 import { Schema } from 'mongoose';
 import { getTransportDatabaseConnection } from '../../config/database.js';
 
-const campExpensesSchema = new Schema({
-    forDate: { type: Date, required: true },
+const campUserTransactionSchema = new Schema({
+    transactionDate: { type: Date, required: true },
     category: { enum: ['self', 'vehicle'], type: String, required: true },
-    expense: {
-        name: {
-            enums: [
-                'fuel', 'transportation', 'hotel',
-                'miscellaneous', 'fooding', 'running',
-                'incentive', 'maintenance', 'others'
-            ],
-            type: String, required: true, trim: true
-        },
-        description: { type: String, required: function () { return this.name === 'others'; }, trim: true },
-        amount: { type: Number, required: true, min: 1 },
-        approvedAmount: { type: Number, required: false, min: 1 },
-        billImage: { type: String, required: false, trim: true }
+    head: { type: String, required: true, trim: true },
+    narration: { type: String, required: false, trim: true },
+    amount: { type: Number, required: true },
+    approved: {
+        type: {
+            amount: { type: Number, required: false },
+            date: { type: Date, required: false },
+            approvedBy: { type: Schema.Types.ObjectId, ref: 'CampUser', required: false }
+        }, required: false
     },
+    billImage: { type: String, required: false, trim: true },
     vehicleNumber: { type: String, required: function () { return this.category === 'vehicle'; }, trim: true },
+    tripId: { type: Schema.Types.ObjectId, ref: 'TankersTrip', required: false },
     driver: { type: String, required: function () { return this.category === 'vehicle'; }, trim: true },
-    location: { type: String, required: false, trim: true },
     remarks: { type: String, required: false, trim: true },
     user: {
         _id: { type: Schema.Types.ObjectId, ref: 'CampUser', required: true },
@@ -31,44 +28,43 @@ const campExpensesSchema = new Schema({
 });
 
 // Indexes for better performance
-campExpensesSchema.index({ forDate: -1 });
-campExpensesSchema.index({ category: 1 });
-campExpensesSchema.index({ against: 1 });
-campExpensesSchema.index({ vehicleNumber: 1 });
-campExpensesSchema.index({ driver: 1 });
-campExpensesSchema.index({ 'user._id': 1 });
-campExpensesSchema.index({ 'user.name': 1 });
-campExpensesSchema.index({ 'expense.name': 1 });
-campExpensesSchema.index({ createdAt: -1 });
-campExpensesSchema.index({ updatedAt: -1 });
+campUserTransactionSchema.index({ forDate: -1 });
+campUserTransactionSchema.index({ category: 1 });
+campUserTransactionSchema.index({ vehicleNumber: 1 });
+campUserTransactionSchema.index({ driver: 1 });
+campUserTransactionSchema.index({ 'user._id': 1 });
+campUserTransactionSchema.index({ 'user.name': 1 });
+campUserTransactionSchema.index({ 'expense.name': 1 });
+campUserTransactionSchema.index({ createdAt: -1 });
+campUserTransactionSchema.index({ updatedAt: -1 });
 
 // Pre-save middleware to update updatedAt
-campExpensesSchema.pre('save', function (next) {
+campUserTransactionSchema.pre('save', function (next) {
     if (!this.isNew) {
         this.updatedAt = Date.now();
     }
     next();
 });
 
-const CampExpense = getTransportDatabaseConnection().model('CampExpense', campExpensesSchema, 'CampExpenses');
+const CampTransaction = getTransportDatabaseConnection().model('CampTransaction', campUserTransactionSchema, 'CampTransactions');
 
 // Export model methods as named exports
-export const find = CampExpense.find.bind(CampExpense);
-export const findOne = CampExpense.findOne.bind(CampExpense);
-export const findById = CampExpense.findById.bind(CampExpense);
-export const findOneAndUpdate = CampExpense.findOneAndUpdate.bind(CampExpense);
-export const findByIdAndUpdate = CampExpense.findByIdAndUpdate.bind(CampExpense);
-export const findByIdAndDelete = CampExpense.findByIdAndDelete.bind(CampExpense);
-export const findOneAndDelete = CampExpense.findOneAndDelete.bind(CampExpense);
-export const updateOne = CampExpense.updateOne.bind(CampExpense);
-export const updateMany = CampExpense.updateMany.bind(CampExpense);
-export const deleteOne = CampExpense.deleteOne.bind(CampExpense);
-export const deleteMany = CampExpense.deleteMany.bind(CampExpense);
-export const create = CampExpense.create.bind(CampExpense);
-export const insertMany = CampExpense.insertMany.bind(CampExpense);
-export const countDocuments = CampExpense.countDocuments.bind(CampExpense);
-export const distinct = CampExpense.distinct.bind(CampExpense);
-export const aggregate = CampExpense.aggregate.bind(CampExpense);
-export const bulkWrite = CampExpense.bulkWrite.bind(CampExpense);
+export const find = CampTransaction.find.bind(CampTransaction);
+export const findOne = CampTransaction.findOne.bind(CampTransaction);
+export const findById = CampTransaction.findById.bind(CampTransaction);
+export const findOneAndUpdate = CampTransaction.findOneAndUpdate.bind(CampTransaction);
+export const findByIdAndUpdate = CampTransaction.findByIdAndUpdate.bind(CampTransaction);
+export const findByIdAndDelete = CampTransaction.findByIdAndDelete.bind(CampTransaction);
+export const findOneAndDelete = CampTransaction.findOneAndDelete.bind(CampTransaction);
+export const updateOne = CampTransaction.updateOne.bind(CampTransaction);
+export const updateMany = CampTransaction.updateMany.bind(CampTransaction);
+export const deleteOne = CampTransaction.deleteOne.bind(CampTransaction);
+export const deleteMany = CampTransaction.deleteMany.bind(CampTransaction);
+export const create = CampTransaction.create.bind(CampTransaction);
+export const insertMany = CampTransaction.insertMany.bind(CampTransaction);
+export const countDocuments = CampTransaction.countDocuments.bind(CampTransaction);
+export const distinct = CampTransaction.distinct.bind(CampTransaction);
+export const aggregate = CampTransaction.aggregate.bind(CampTransaction);
+export const bulkWrite = CampTransaction.bulkWrite.bind(CampTransaction);
 
-export default CampExpense;
+export default CampTransaction;

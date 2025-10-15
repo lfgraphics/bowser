@@ -2,6 +2,19 @@ import axios from 'axios'
 import { BASE_URL } from './api'
 
 // Types
+export interface Account {
+  _id?: string
+  accountType: 'upi' | 'bankAccount'
+  // UPI fields
+  upiId?: string
+  upiHolderName?: string
+  // Bank Account fields
+  bankName?: string
+  accountNumber?: string
+  ifscCode?: string
+  accountHolderName?: string
+}
+
 export interface CampUser {
   _id?: string
   id?: string
@@ -11,6 +24,7 @@ export interface CampUser {
   role: 'admin' | 'officer' | 'supervisor'
   status: 'active' | 'inactive' | 'suspended'
   locations?: string[]
+  accounts?: Account[]
   configs?: Map<string, any>
   lastLogin?: Date
   loginAttempts?: number
@@ -106,6 +120,16 @@ export const campAdminAPI = {
     return response.data
   },
 
+  // Update user accounts
+  updateUserAccounts: async (id: string, accounts: Account[]): Promise<{ user: CampUser; message: string }> => {
+    const response = await axios.put(
+      `${BASE_URL}/camp/admin/users/${id}/accounts`,
+      { accounts },
+      getAuthHeaders()
+    )
+    return response.data
+  },
+
   // Delete camp user
   deleteUser: async (id: string): Promise<{ message: string }> => {
     const response = await axios.delete(
@@ -160,7 +184,7 @@ export const campProfileAPI = {
   // Get current user profile
   getProfile: async (): Promise<CampUser> => {
     const response = await axios.get(
-      `${BASE_URL}/camp/profile/profile`,
+      `${BASE_URL}/camp/profile`,
       getAuthHeaders()
     )
     return response.data
@@ -169,7 +193,7 @@ export const campProfileAPI = {
   // Update profile
   updateProfile: async (profileData: { name?: string; email?: string; locations?: string[] }): Promise<{ user: CampUser; message: string }> => {
     const response = await axios.put(
-      `${BASE_URL}/camp/profile/profile`,
+      `${BASE_URL}/camp/profile`,
       profileData,
       getAuthHeaders()
     )
@@ -179,8 +203,18 @@ export const campProfileAPI = {
   // Update profile configs (non-readonly only)
   updateConfigs: async (configs: Record<string, any>): Promise<{ user: CampUser; message: string }> => {
     const response = await axios.put(
-      `${BASE_URL}/camp/profile/profile/configs`,
+      `${BASE_URL}/camp/profile/configs`,
       { configs },
+      getAuthHeaders()
+    )
+    return response.data
+  },
+
+  // Update profile accounts
+  updateAccounts: async (accounts: Account[]): Promise<{ user: CampUser; message: string }> => {
+    const response = await axios.put(
+      `${BASE_URL}/camp/profile/accounts`,
+      { accounts },
       getAuthHeaders()
     )
     return response.data
@@ -189,7 +223,7 @@ export const campProfileAPI = {
   // Change password
   changePassword: async (currentPassword: string, newPassword: string): Promise<{ message: string }> => {
     const response = await axios.put(
-      `${BASE_URL}/camp/profile/profile/change-password`,
+      `${BASE_URL}/camp/profile/change-password`,
       { currentPassword, newPassword },
       getAuthHeaders()
     )
@@ -199,7 +233,7 @@ export const campProfileAPI = {
   // Get user locations
   getLocations: async (): Promise<{ locations: string[] }> => {
     const response = await axios.get(
-      `${BASE_URL}/camp/profile/profile/locations`,
+      `${BASE_URL}/camp/profile/locations`,
       getAuthHeaders()
     )
     return response.data
@@ -215,7 +249,7 @@ export const campProfileAPI = {
     isLocked: boolean
   }> => {
     const response = await axios.get(
-      `${BASE_URL}/camp/profile/profile/activity`,
+      `${BASE_URL}/camp/profile/activity`,
       getAuthHeaders()
     )
     return response.data

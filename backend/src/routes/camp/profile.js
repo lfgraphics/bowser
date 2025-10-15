@@ -7,7 +7,7 @@ import { verifyCampUserToken } from '../../middleware/auth.js';
 const router = Router();
 
 // Get current user profile
-router.get('/profile', verifyCampUserToken, async (req, res) => {
+router.get('/', verifyCampUserToken, async (req, res) => {
     try {
         // User is already fetched by middleware, just exclude password
         const { password, ...userWithoutPassword } = req.user.toObject();
@@ -19,7 +19,7 @@ router.get('/profile', verifyCampUserToken, async (req, res) => {
 });
 
 // Update profile (limited fields)
-router.put('/profile', verifyCampUserToken, async (req, res) => {
+router.put('/', verifyCampUserToken, async (req, res) => {
     try {
         const { name, email, locations } = req.body;
 
@@ -45,7 +45,7 @@ router.put('/profile', verifyCampUserToken, async (req, res) => {
 });
 
 // Update user configs (only non-readonly ones)
-router.put('/profile/configs', verifyCampUserToken, async (req, res) => {
+router.put('/configs', verifyCampUserToken, async (req, res) => {
     try {
         const { configs } = req.body;
         const user = req.user;
@@ -77,8 +77,74 @@ router.put('/profile/configs', verifyCampUserToken, async (req, res) => {
     }
 });
 
+// Update user accounts
+router.put('/accounts', verifyCampUserToken, async (req, res) => {
+    try {
+        const { accounts } = req.body;
+        const user = req.user;
+
+        // Validate accounts data
+        if (!Array.isArray(accounts)) {
+            return res.status(400).json({ message: 'Accounts must be an array' });
+        }
+
+        // Clean and validate each account
+        const cleanedAccounts = [];
+        for (const account of accounts) {
+            if (!account.accountType || !['upi', 'bankAccount'].includes(account.accountType)) {
+                return res.status(400).json({ message: 'Invalid account type' });
+            }
+
+            if (account.accountType === 'upi') {
+                if (!account.upiId || !account.upiHolderName) {
+                    return res.status(400).json({ message: 'UPI ID and holder name are required for UPI accounts' });
+                }
+            } else if (account.accountType === 'bankAccount') {
+                if (!account.bankName || !account.accountNumber || !account.ifscCode || !account.accountHolderName) {
+                    return res.status(400).json({ message: 'All bank account fields are required' });
+                }
+            }
+
+            // Create clean account object without problematic _id
+            const cleanAccount = {
+                accountType: account.accountType,
+                ...(account.accountType === 'upi' ? {
+                    upiId: account.upiId,
+                    upiHolderName: account.upiHolderName
+                } : {
+                    bankName: account.bankName,
+                    accountNumber: account.accountNumber,
+                    ifscCode: account.ifscCode,
+                    accountHolderName: account.accountHolderName
+                })
+            };
+
+            // Only include _id if it's a valid ObjectId (24 character hex string)
+            if (account._id && /^[0-9a-fA-F]{24}$/.test(account._id)) {
+                cleanAccount._id = account._id;
+            }
+
+            cleanedAccounts.push(cleanAccount);
+        }
+
+        // Update user accounts
+        user.accounts = cleanedAccounts;
+        await user.save();
+
+        // Return updated user without password
+        const { password, ...userWithoutPassword } = user.toObject();
+        res.json({
+            user: userWithoutPassword,
+            message: 'Accounts updated successfully'
+        });
+    } catch (error) {
+        console.error('Update profile accounts error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
 // Change password
-router.put('/profile/change-password', verifyCampUserToken, async (req, res) => {
+router.put('/change-password', verifyCampUserToken, async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
         const user = req.user;
@@ -106,7 +172,7 @@ router.put('/profile/change-password', verifyCampUserToken, async (req, res) => 
 });
 
 // Get user locations
-router.get('/profile/locations', verifyCampUserToken, async (req, res) => {
+router.get('/locations', verifyCampUserToken, async (req, res) => {
     try {
         // User is already available from middleware
         res.json({ locations: req.user.locations || [] });
@@ -117,7 +183,7 @@ router.get('/profile/locations', verifyCampUserToken, async (req, res) => {
 });
 
 // Get user activity/stats
-router.get('/profile/activity', verifyCampUserToken, async (req, res) => {
+router.get('/activity', verifyCampUserToken, async (req, res) => {
     try {
         const user = req.user;
 

@@ -103,15 +103,19 @@ function endAll(sessions) {
 async function withTransaction(callback, opts = {}) {
   const {
     connections = ["bowsers", "transport", "users"],
-    maxRetries = 3,
+    maxRetries = 5, // Increased from 3 to 5 for better write conflict handling
     txnOptions = defaultTxnOptions,
     context = {},
     signal,
   } = opts;
 
   let attempt = 0;
-  // basic backoff in ms
-  const backoff = (n) => new Promise((r) => setTimeout(r, 100 * Math.pow(2, n)));
+  // Enhanced backoff with jitter for write conflicts
+  const backoff = (n) => {
+    const baseDelay = 50 * Math.pow(2, n); // Start with 50ms, exponential growth
+    const jitter = Math.random() * 50; // Add 0-50ms random jitter to avoid thundering herd
+    return new Promise((r) => setTimeout(r, baseDelay + jitter));
+  };
 
   while (attempt < maxRetries) {
     attempt += 1;
@@ -176,6 +180,10 @@ async function withTransaction(callback, opts = {}) {
       const isTransient = isTransientTransactionError(err);
       endAll(sessions);
       if (isTransient && attempt < maxRetries) {
+        // Log write conflict details for monitoring
+        if (err.code === 112) {
+          console.warn(`[TXN] Write conflict detected (attempt ${attempt}/${maxRetries}) for ${context?.route || 'unknown route'}, retrying with backoff...`);
+        }
         await backoff(attempt - 1);
         continue;
       }

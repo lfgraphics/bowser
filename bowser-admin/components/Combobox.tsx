@@ -152,7 +152,7 @@ const Combobox = ({
                     ) : (
                         filteredOptions.map((item, index) => (
                             <div
-                                key={item.value}
+                                key={index}
                                 role="option"
                                 aria-selected={value === item.value}
                                 className={cn(

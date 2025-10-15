@@ -31,6 +31,7 @@ import Loading from '@/app/loading'
 import { PasswordInput } from "@/components/PasswordInput"
 import ConfigsManager from '@/components/ConfigsManager'
 import Combobox, { ComboboxOption } from '@/components/Combobox'
+import AccountsManager, { Account } from '@/components/AccountsManager'
 
 export default function CampProfile() {
     const [user, setUser] = useState<CampUser | null>(null)
@@ -38,10 +39,12 @@ export default function CampProfile() {
     const [loading, setLoading] = useState(true)
     const [isEditingProfile, setIsEditingProfile] = useState(false)
     const [isEditingConfigs, setIsEditingConfigs] = useState(false)
+    const [isEditingAccounts, setIsEditingAccounts] = useState(false)
     const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false)
 
     const [profileFormData, setProfileFormData] = useState({ name: '', email: '', locations: [] as string[] })
     const [configFormData, setConfigFormData] = useState<Record<string, any>>({})
+    const [accountsFormData, setAccountsFormData] = useState<Account[]>([])
     const [passwordFormData, setPasswordFormData] = useState({
         currentPassword: '',
         newPassword: '',
@@ -62,15 +65,14 @@ export default function CampProfile() {
 
     const fetchStackHolders = async () => {
         try {
-            // Clear existing results first
-            setStackHolders([])
-
             const response = await fetch(`${BASE_URL}/trans-app/stack-holders?params=${locationSearchTerm}`);
             const data = await response.json();
             const formattedData: ComboboxOption[] = data.map((item: { _id: string, InstitutionName: string, Location: string }) => ({
                 value: item.Location, // Using Location like the working pattern
                 label: `${item.InstitutionName}: ${item.Location}`
             }));
+            console.log('existing: ', stackHolders.length, 'fetchStackHolders: ', formattedData.length)
+            setStackHolders([])
             setStackHolders(formattedData);
         } catch (error: any) {
             setStackHolders([]) // Clear on error too
@@ -93,6 +95,9 @@ export default function CampProfile() {
                 email: userData.email || '',
                 locations: userData.locations || []
             })
+
+            // Handle accounts - convert to array format
+            setAccountsFormData(userData.accounts || [])
 
             // Handle configs - they come as plain objects from the API
             const configsObj: Record<string, any> = {}
@@ -155,6 +160,17 @@ export default function CampProfile() {
         } catch (error: any) {
             console.error('Error updating configs:', error)
             toast.error(error.response?.data?.message || 'Failed to update configuration')
+        }
+    }
+
+    const handleSaveAccounts = async () => {
+        try {
+            await campProfileAPI.updateAccounts(accountsFormData)
+            toast.success('Accounts updated successfully')
+            setIsEditingAccounts(false)
+        } catch (error: any) {
+            console.error('Error updating accounts:', error)
+            toast.error(error.response?.data?.message || 'Failed to update accounts')
         }
     }
 
@@ -243,6 +259,7 @@ export default function CampProfile() {
                 <div>
                     <h1 className="text-3xl font-bold">My Profile</h1>
                     <p className="text-muted-foreground">Manage your camp account settings</p>
+                    <p className="text-sm text-muted-foreground mb-3 text-center">Changes are not save until you click "Save Changes"</p>
                 </div>
             </div>
 
@@ -454,6 +471,29 @@ export default function CampProfile() {
                         title="Configuration Settings"
                         description="Your account settings and preferences"
                     /> */}
+
+                {/* Accounts Management */}
+                <AccountsManager
+                    accounts={accountsFormData}
+                    onAccountsChange={setAccountsFormData}
+                    isEditing={isEditingAccounts}
+                    onEditToggle={() => {
+                        if (isEditingAccounts) {
+                            // Reset accounts to original
+                            setAccountsFormData(user?.accounts || [])
+                        }
+                        setIsEditingAccounts(!isEditingAccounts)
+                    }}
+                    onSave={handleSaveAccounts}
+                    onCancel={() => {
+                        // Reset accounts to original
+                        setAccountsFormData(user?.accounts || [])
+                        setIsEditingAccounts(false)
+                    }}
+                    title="Payment Accounts"
+                    description="Manage your payment accounts for transactions"
+                />
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Account Status</CardTitle>
