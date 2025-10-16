@@ -972,7 +972,7 @@ export default function CampUsersManagement() {
                                             ...prev,
                                             allowedExpenses: {
                                                 hotel: 200,
-                                                fooding: 100,
+                                                fooding: 200,
                                                 petrol: 2,
                                                 readonly: false
                                             }
