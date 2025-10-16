@@ -32,7 +32,7 @@ export async function updateLocalUri(newLocalUri) {
         const success = saveConfig({ localUri: newLocalUri });
         if (success) {
             addLog(`Local URI updated to: ${newLocalUri}`);
-            
+
             // Force close existing local connection to use new URI on next sync
             if (localClient) {
                 console.log('🔄 Closing existing local connection due to URI change...');
@@ -40,7 +40,7 @@ export async function updateLocalUri(newLocalUri) {
                 localClient = null;
                 addLog('Local DB connection closed - will reconnect with new URI on next sync');
             }
-            
+
             return true;
         } else {
             addLog('Failed to save local URI configuration', 'ERROR');
@@ -87,11 +87,11 @@ function setLogger(customLogger) {
 async function connectToDatabases() {
     // Get current URIs (localUri is dynamic, atlasUri is static)
     const currentLocalUri = getCurrentLocalUri();
-    
+
     console.log('🔄 Connection attempt with:');
     console.log(`  - Local URI: ${currentLocalUri}`);
     console.log(`  - Local URI source: ${getConfig('localUri') ? 'USER_CONFIG' : process.env.localUri ? 'ENVIRONMENT' : 'DEFAULT'}`);
-    
+
     if (!currentLocalUri || !atlasUri) {
         throw new Error(`Missing required URIs: ${!currentLocalUri ? 'localUri' : ''} ${!atlasUri ? 'atlasUri' : ''}`);
     }
@@ -624,11 +624,15 @@ async function syncTrips() {
             continue;
         }
         if (!atlasTrip) {
-            // Not in Atlas, insert
+            const normalizedDate = new Date(new Date(localTrip.TallyLoadDetail.LoadingDate).setHours(0, 0, 0, 0));
+            let updatedLocalTrip = {
+                ...localTrip,
+                StartDate: normalizedDate
+            };
             bulkOps.push({
-                insertOne: { document: localTrip }
+                insertOne: { document: updatedLocalTrip }
             });
-            openedTrips.push(localTrip._id);
+            openedTrips.push(updatedLocalTrip._id);
         } else {
             if (JSON.stringify(localTrip) !== JSON.stringify(atlasTrip)) {
                 // bulkOps.push({
