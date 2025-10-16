@@ -21,6 +21,12 @@ const driverSchema = new Schema({
     generationTime: { type: Date },
 });
 
+// Add indexes for better performance
+driverSchema.index({ Name: 1 }); // Driver name lookups
+driverSchema.index({ ITPLId: 1 }); // ITPL ID searches
+driverSchema.index({ "MobileNo.MobileNo": 1 }); // Mobile number lookups
+driverSchema.index({ inActive: 1 }); // Active driver filters
+
 const Driver = getTransportDatabaseConnection().model('Driver', driverSchema, 'DriversCollection');
 
 // Export model methods as named exports

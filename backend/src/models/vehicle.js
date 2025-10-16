@@ -26,6 +26,12 @@ vehicleSchema.virtual("lastDriverLog", {
     options: { sort: { _id: -1 }, limit: 1 }
 });
 
+// Add indexes to optimize query performance and reduce lock contention
+vehicleSchema.index({ VehicleNo: 1 }); // Primary lookup field
+vehicleSchema.index({ "tripDetails.driver": 1 }); // Driver lookup
+vehicleSchema.index({ manager: 1 }); // Manager queries
+vehicleSchema.index({ driverLogs: 1 }); // Driver log references
+
 vehicleSchema.set("toObject", { virtuals: true });
 vehicleSchema.set("toJSON", { virtuals: true });
 

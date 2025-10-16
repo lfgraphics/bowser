@@ -36,6 +36,11 @@ const driversLogSchema = new Schema({
     }],
 });
 
+// Add indexes for better query performance and reduced conflicts
+driversLogSchema.index({ vehicleNo: 1, creationDate: -1 }); // Primary queries
+driversLogSchema.index({ driver: 1 }); // Driver lookups
+driversLogSchema.index({ vehicleNo: 1, driver: 1 }, { unique: true, sparse: true }); // Unique constraint per vehicle-driver combo
+
 driversLogSchema.pre("validate", function (next) {
     if (!this.joining && !this.leaving) {
         return next(new Error("Either 'joining' or 'leaving' must be provided."));
