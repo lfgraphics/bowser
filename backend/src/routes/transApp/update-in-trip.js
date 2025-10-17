@@ -287,10 +287,6 @@ router.post('/unload', async (req, res) => {
     }
 });
 
-router.get('/check', (req, res) => {
-    res.status(200).json({ message: 'Update in trip route is working.' });
-});
-
 router.post('/create-empty-trip', async (req, res) => {
     const { postData } = req.body;
     try {

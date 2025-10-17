@@ -482,7 +482,7 @@ async function createEmptyTrip(postData) {
         EmptyTripDetail: {
             StartOdometer: odometer,
             VehicleNo: VehicleNo,
-            ProposedDate: proposedDate ? new Date(proposedDate) : undefined,
+            ProposedDate: proposedDate ? new Date(new Date(proposedDate).setHours(0, 0, 0, 0)) : undefined,
             ProposedBy: proposedBy,
             OrderedBy: orderedBy,
             Division: divisionNo,

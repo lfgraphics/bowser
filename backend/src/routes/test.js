@@ -74,8 +74,8 @@ router.get('/fix-trips-date/:vehicleNo', async (req, res) => {
         const updates = trips.map(trip => {
             const start = new Date(trip.StartDate);
 
-            // Preserve year, month, day, set time to 00:00:01.800
-            start.setUTCHours(0, 0, 1, 800);
+            // Preserve year, month, day, set time to 00:00:00.000
+            start.setUTCHours(0, 0, 0, 0);
 
             return {
                 updateOne: {
