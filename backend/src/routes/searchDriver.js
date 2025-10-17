@@ -73,7 +73,7 @@ router.post('/updateDriverMobile', async (req, res) => {
             return res.status(404).json({ message: 'Driver not found.' });
         }
 
-        const updatedDriver = await findOneAndUpdate(
+        const updatedDriver = await updateDriver(
             { _id: driver._id },
             [
                 {
