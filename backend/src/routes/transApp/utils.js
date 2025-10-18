@@ -287,7 +287,7 @@ async function getNewSummary(userId, isAdmin) {
                 }
             },
             // Sort by StartDate desc, then by rankindex asc (0 first)
-            { $sort: { tripDay: -1, rankindex: 1 } },
+            { $sort: { StartDate: -1, rankindex: 1 } },
             {
                 $group: {
                     _id: "$VehicleNo",

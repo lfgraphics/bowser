@@ -115,7 +115,10 @@ router.post('/', async (req, res) => {
     } catch (err) {
         console.error('Error creating fuel request:', err);
         const errorResponse = handleTransactionError(err, { route: '/fuelRequest', vehicleNumber: req.body.vehicleNumber, driverId: req.body.driverId });
-        res.status(errorResponse.statusCode).json(errorResponse.body);
+        // Ensure we have a valid status code
+        const statusCode = errorResponse?.statusCode || 500;
+        const errorBody = errorResponse?.body || { error: 'Internal server error' };
+        res.status(statusCode).json(errorBody);
     }
 });
 
@@ -162,7 +165,10 @@ router.get('/', async (req, res) => {
     } catch (err) {
         console.error('Error fetching fuel requests:', err);
         const errorResponse = handleTransactionError(err, { route: '/', fulfilled: req.query.fulfilled, param: req.query.param, manager: req.query.manager });
-        res.status(errorResponse.statusCode).json(errorResponse.body);
+        // Ensure we have a valid status code
+        const statusCode = errorResponse?.statusCode || 500;
+        const errorBody = errorResponse?.body || { error: 'Internal server error' };
+        res.status(statusCode).json(errorBody);
     }
 });
 
@@ -183,7 +189,10 @@ router.get('/driver', async (req, res) => {
     } catch (err) {
         console.error('Error fetching vehicles for driver:', err);
         const errorResponse = handleTransactionError(err, { route: '/driver', driverId: req.query.driverId });
-        return res.status(errorResponse.statusCode).json(errorResponse.body);
+        // Ensure we have a valid status code
+        const statusCode = errorResponse?.statusCode || 500;
+        const errorBody = errorResponse?.body || { error: 'Internal server error' };
+        return res.status(statusCode).json(errorBody);
     }
 })
 
@@ -197,7 +206,10 @@ router.get('/vehicle-driver/:id', async (req, res) => {
     } catch (err) {
         console.error('Error fetching fuel requests:', err);
         const errorResponse = handleTransactionError(err, { route: '/vehicle-driver/:id', requestId: req.params.id });
-        res.status(errorResponse.statusCode).json(errorResponse.body);
+        // Ensure we have a valid status code
+        const statusCode = errorResponse?.statusCode || 500;
+        const errorBody = errorResponse?.body || { error: 'Internal server error' };
+        res.status(statusCode).json(errorBody);
     }
 });
 
@@ -238,7 +250,10 @@ router.put('/bulk-delete', async (req, res) => {
     } catch (err) {
         console.error('Error deleting fuel requests:', err);
         const errorResponse = handleTransactionError(err, { route: '/bulk-delete', idsCount: req.body.ids?.length });
-        res.status(errorResponse.statusCode).json(errorResponse.body);
+        // Ensure we have a valid status code
+        const statusCode = errorResponse?.statusCode || 500;
+        const errorBody = errorResponse?.body || { error: 'Internal server error' };
+        res.status(statusCode).json(errorBody);
     }
 });
 
@@ -267,8 +282,8 @@ router.post('/hold-message/:id', async (req, res) => {
         // Wrap database operations in transaction
         const fuelRequest = await withTransaction(async (sessions) => {
             const result = await updateFuelRequest(
-                id, 
-                { message: message }, 
+                id,
+                { message: message },
                 { new: true, session: sessions.bowsers }
             );
 
@@ -283,7 +298,10 @@ router.post('/hold-message/:id', async (req, res) => {
     } catch (err) {
         console.error('Error updating fuel request message:', err);
         const errorResponse = handleTransactionError(err, { route: '/hold-message/:id', requestId: req.params.id });
-        res.status(errorResponse.statusCode).json(errorResponse.body);
+        // Ensure we have a valid status code
+        const statusCode = errorResponse?.statusCode || 500;
+        const errorBody = errorResponse?.body || { error: 'Internal server error' };
+        res.status(statusCode).json(errorBody);
     }
 });
 
@@ -312,8 +330,8 @@ router.delete('/:id', async (req, res) => {
         // Wrap database operations in transaction
         const fuelRequest = await withTransaction(async (sessions) => {
             const result = await updateFuelRequest(
-                id, 
-                { message: message, fulfilled: true }, 
+                id,
+                { message: message, fulfilled: true },
                 { new: true, session: sessions.bowsers }
             );
 
@@ -328,7 +346,10 @@ router.delete('/:id', async (req, res) => {
     } catch (err) {
         console.error('Error deleting fuel request:', err);
         const errorResponse = handleTransactionError(err, { route: '/:id', requestId: req.params.id });
-        res.status(errorResponse.statusCode).json(errorResponse.body);
+        // Ensure we have a valid status code
+        const statusCode = errorResponse?.statusCode || 500;
+        const errorBody = errorResponse?.body || { error: 'Internal server error' };
+        res.status(statusCode).json(errorBody);
     }
 });
 
@@ -357,8 +378,8 @@ router.patch('/update-cordinates/:id', async (req, res) => {
         // Wrap database operations in transaction
         const fuelRequest = await withTransaction(async (sessions) => {
             const result = await updateFuelRequest(
-                id, 
-                { location }, 
+                id,
+                { location },
                 { new: true, session: sessions.bowsers }
             );
 
@@ -373,7 +394,10 @@ router.patch('/update-cordinates/:id', async (req, res) => {
     } catch (err) {
         console.error('Error updating fuel request:', err);
         const errorResponse = handleTransactionError(err, { route: '/update-cordinates/:id', requestId: req.params.id });
-        res.status(errorResponse.statusCode).json(errorResponse.body);
+        // Ensure we have a valid status code
+        const statusCode = errorResponse?.statusCode || 500;
+        const errorBody = errorResponse?.body || { error: 'Internal server error' };
+        res.status(statusCode).json(errorBody);
     }
 });
 
