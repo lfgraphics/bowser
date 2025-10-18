@@ -135,7 +135,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
             previousTripId: tripId,
             StartFrom: data.find(trip => trip?._id === tripId)?.EndTo,
             division: user?.Division || "",
-            proposedDate: new Date(new Date(proposedDate ? proposedDate : new Date()).setUTCHours(0, 0, 0, 0))
+            proposedDate: new Date(new Date(proposedDate ? proposedDate : new Date()).setUTCHours(0, 0, 1, 800))
         }
         try {
             const response = await fetch(url, {

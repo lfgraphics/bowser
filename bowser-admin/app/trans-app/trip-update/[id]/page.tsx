@@ -23,7 +23,7 @@ const page = ({ params }: { params: { id: string } }) => {
     const normalizeStartDate = (d?: Date) => {
         if (!d) return undefined
         const n = new Date(d)
-        n.setUTCHours(0, 0, 0, 0)
+        n.setUTCHours(0, 0, 1, 800)
         return n
     }
 

@@ -111,15 +111,21 @@ const tankerTripSchema = new Schema({
             comment: { type: String, required: false }
         }
     ],
-    driverStatus: { type: Number, default: 1 }
-}, { versionKey: false });
+    driverStatus: { type: Number, default: 1 },
+}, {
+    versionKey: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
 
-tankerTripSchema.virtual("startDateOnly").get(function () {
-    if (!this.StartDate) return null;
+tankerTripSchema.virtual('tripDay').get(function () {
+    var now = new Date(this.StartDate);
+    var start = new Date(now.getFullYear(), 0, 0);
+    var diff = now - start;
+    var oneDay = 1000 * 60 * 60 * 24;
+    var day = Math.floor(diff / oneDay);
 
-    const d = new Date(this.StartDate);
-    d.setHours(0, 0, 0, 0); // truncate to midnight
-    return d;
+    return Number(`${now.getFullYear()}.${day}${this.rankindex}`);
 });
 
 tankerTripSchema.pre(['save', 'findOneAndUpdate', 'updateOne', 'updateMany', 'bulkWrite'], async function (next) {
@@ -272,7 +278,7 @@ function getModelReference(context) {
     if (context.constructor && typeof context.constructor.find === 'function') {
         return context.constructor;
     }
-    
+
     // Fallback: try to get the model from the connection
     try {
         const connection = getTransportDatabaseConnection();
@@ -282,7 +288,7 @@ function getModelReference(context) {
     } catch (error) {
         console.error('Error getting model reference:', error);
     }
-    
+
     throw new Error('Could not find valid model reference in middleware context');
 }
 
@@ -293,7 +299,7 @@ async function updateVehicleLatestTrip(vehicleNo, currentTripId, currentDoc, isU
         if (!model || typeof model.find !== 'function') {
             throw new Error('Invalid model provided to updateVehicleLatestTrip');
         }
-        
+
         // Get all trips for this vehicle to determine the latest one
         // This includes the current document state for accurate comparison
         const allTrips = await model.find(
@@ -397,10 +403,6 @@ async function recalculateVehicleLatestTrip(vehicleNo, model) {
         console.error(`Error recalculating latest trip for vehicle ${vehicleNo}:`, error);
     }
 }
-
-tankerTripSchema.set("toJSON", { virtuals: true });
-tankerTripSchema.set("toBSON", { virtuals: true });
-tankerTripSchema.set("toObject", { virtuals: true });
 
 // Optimize common queries: by vehicle with date and rank ordering
 tankerTripSchema.index({ VehicleNo: 1, StartDate: -1, rankindex: 1 });

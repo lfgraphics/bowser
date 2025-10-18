@@ -250,8 +250,44 @@ async function getNewSummary(userId, isAdmin) {
                     VehicleNo: { $in: activeVehicleNos }
                 }
             },
+            {
+                $addFields: {
+                    tripDay: {
+                        $let: {
+                            vars: {
+                                startDate: "$StartDate",
+                                startOfYear: {
+                                    $dateFromParts: {
+                                        year: { $year: "$StartDate" },
+                                        month: 1,
+                                        day: 1
+                                    }
+                                }
+                            },
+                            in: {
+                                $toDouble: {
+                                    $concat: [
+                                        { $toString: { $year: "$$startDate" } },
+                                        ".",
+                                        {
+                                            $toString: {
+                                                $floor: {
+                                                    $divide: [
+                                                        { $subtract: ["$$startDate", "$$startOfYear"] },
+                                                        86400000 // milliseconds in a day (1000 * 60 * 60 * 24)
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             // Sort by StartDate desc, then by rankindex asc (0 first)
-            { $sort: { StartDate: -1, rankindex: 1 } },
+            { $sort: { tripDay: -1, rankindex: 1 } },
             {
                 $group: {
                     _id: "$VehicleNo",
@@ -471,7 +507,7 @@ async function createEmptyTrip(postData) {
 
     const newEmptyTrip = new TankersTrip({
         VehicleNo: VehicleNo,
-        StartDate: new Date(new Date(proposedDate).setHours(0, 0, 0, 0)),
+        StartDate: new Date(new Date(proposedDate).setHours(0, 0, 1, 800)),
         EndDate: null,
         targetTime: new Date(targetTime),
         StartDriver: driverName,
@@ -482,7 +518,7 @@ async function createEmptyTrip(postData) {
         EmptyTripDetail: {
             StartOdometer: odometer,
             VehicleNo: VehicleNo,
-            ProposedDate: proposedDate ? new Date(new Date(proposedDate).setHours(0, 0, 0, 0)) : undefined,
+            ProposedDate: proposedDate ? new Date(new Date(proposedDate).setHours(0, 0, 1, 800)) : undefined,
             ProposedBy: proposedBy,
             OrderedBy: orderedBy,
             Division: divisionNo,

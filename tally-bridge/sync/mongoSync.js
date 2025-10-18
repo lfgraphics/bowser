@@ -624,7 +624,7 @@ async function syncTrips() {
             continue;
         }
         if (!atlasTrip) {
-            const normalizedDate = new Date(new Date(localTrip.TallyLoadDetail.LoadingDate).setHours(0, 0, 0, 0));
+            const normalizedDate = new Date(new Date(localTrip.TallyLoadDetail.LoadingDate).setHours(0, 0, 1, 800));
             let updatedLocalTrip = {
                 ...localTrip,
                 StartDate: normalizedDate

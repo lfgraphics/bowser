@@ -70,6 +70,8 @@ The key architectural decision was the use of a **Tally Bridge** desktop app to 
 | Local ↔ Cloud Syncing              | Developed manual & scheduled syncing with UI, and sync status tracking            |
 | Device-specific requirements       | Created role-specific views and apps (mobile/web/desktop separation)              |
 | Real-time data transfer & updates  | Integrated MongoDB with WebSocket-ready structure for future scaling _deprecated_ |
+| Tally dosen't return time, monogodb needs time, setting the UTC Hours to 0, 0, 0, 0 led to shortning of date by -1 day in some cases | Handled it by adjusting UTCHours to 0, 0, 1, 800 as default and used a synthetic field 'tripDay' to get the trips' start date without time |
+| Many vehicles were having multiple trips on the same day, so sorting by date only was not sufficient | Added a field 'rankindex' to the trip schema to differentiate trips on the same day and used it in combination with 'tripDay' for sorting |
 
 ---
 
