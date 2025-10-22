@@ -3,6 +3,7 @@ const router = Router();
 import { getUserVehicles, getLoadedNotUnloadedVehicles, getUnloadedNotPlannedVehicles, getUnloadedPlannedVehicles, getNewSummary, getTripById, getCurrentTripByDriverId, getAllTripsForVehicle } from './utils.js';
 import { getLatestVehicleUpdates } from '../../utils/vehicles.js';
 import { getVehiclesFullDetails } from '../../utils/enrichVehicles.js';
+import { bulkWrite as tripsBulkWrite } from '../../models/VehiclesTrip.js';
 import { Types } from 'mongoose';
 
 // Get latest status update for each vehicle of a user by userId
@@ -174,6 +175,7 @@ router.get('/get-all-trips/:vehicleNo', async (req, res) => {
 // Body: { orderedTripIds: string[], date?: string (YYYY-MM-DD) }
 router.post('/trips/reorder', async (req, res) => {
     const { orderedTripIds, date } = req.body || {};
+    console.log("Reordering trips:", orderedTripIds, date);
     if (!Array.isArray(orderedTripIds) || orderedTripIds.length === 0) {
         return res.status(400).json({ error: 'orderedTripIds array is required.' });
     }
@@ -184,16 +186,16 @@ router.post('/trips/reorder', async (req, res) => {
                 update: { $set: { rankindex: idx } }
             }
         }));
-        // Optional: if date provided, ensure we only reorder trips from that date
-        if (date) {
-            const start = new Date(date + 'T00:00:00.000Z');
-            const end = new Date(date + 'T23:59:59.999Z');
-            ops.forEach(op => {
-                op.updateOne.filter.StartDate = { $gte: start, $lte: end };
-            });
-        }
-        const { default: VehiclesTripModel } = await import('../../models/VehiclesTrip.js');
-        const result = await VehiclesTripModel.bulkWrite(ops);
+        // // Optional: if date provided, ensure we only reorder trips from that date
+        // if (date) {
+        //     const start = new Date(date + 'T00:00:00.000Z');
+        //     const end = new Date(date + 'T23:59:59.999Z');
+        //     ops.forEach(op => {
+        //         op.updateOne.filter.StartDate = { $gte: start, $lte: end };
+        //     });
+        // }
+        const result = await tripsBulkWrite(ops);
+        console.log('Reorder result:', result);
         return res.status(200).json({ success: true, result });
     } catch (error) {
         console.error('Error reordering trips:', error);

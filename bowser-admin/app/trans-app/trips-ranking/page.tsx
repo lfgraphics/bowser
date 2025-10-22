@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GripVertical } from "lucide-react";
+import { toast } from "sonner";
 
 type GroupedTrips = Record<string, TankersTrip[]>; // key = YYYY-MM-DD
 
@@ -154,6 +155,7 @@ export default function TripsRankingPage() {
 
     const persistOrder = async (day: string) => {
         const orderedTripIds = (grouped[day] || []).map((t) => t._id);
+
         try {
             const body: any = { orderedTripIds };
             if (/^\d{4}-\d{2}-\d{2}$/.test(day)) body.date = day;
@@ -163,6 +165,9 @@ export default function TripsRankingPage() {
                 body: JSON.stringify(body),
             });
             if (!res.ok) throw new Error("Failed to save order");
+            const respone = await res.json();
+            if (respone.success) toast.success("Order saved successfully");
+            else toast.error("Failed to save order");
         } catch (e: any) {
             setError(e?.message || "Failed to save order");
         }

@@ -266,6 +266,7 @@ router.post("/status-update", async (req, res) => {
 router.get("/last-trip/:vehicleNo/:date", async (req, res) => {
     try {
         const { vehicleNo, date } = req.params;
+        console.log(`[LAST-TRIP] Fetching last trip for vehicle ${vehicleNo} before date ${date}`);
         const response = await getOneTripOfVehicleByDate(vehicleNo, date);
         return res.json(response);
     } catch (error) {
