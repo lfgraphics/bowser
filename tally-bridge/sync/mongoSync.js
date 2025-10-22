@@ -634,19 +634,19 @@ async function syncTrips() {
             });
             openedTrips.push(updatedLocalTrip._id);
         } else {
-            if (localTrip.StartDate !== atlasTrip.StartDate) {
-                const normalizedDate = new Date(new Date(localTrip.TallyLoadDetail.LoadingDate).setUTCHours(0, 0, 1, 800));
-                let updatedLocalTrip = {
-                    ...localTrip,
-                    StartDate: normalizedDate
-                };
-                bulkOps.push({
-                    updateOne: {
-                        filter: { _id: localTrip._id },
-                        update: { $set: updatedLocalTrip }
-                    }
-                });
-                updatedTrips.push(localTrip._id);
+            if (localTrip.TallyLoadDetail.LoadingDate !== atlasTrip.StartDate) {
+                // const normalizedDate = new Date(new Date(localTrip.TallyLoadDetail.LoadingDate).setUTCHours(0, 0, 1, 800));
+                // let updatedLocalTrip = {
+                //     ...localTrip,
+                //     StartDate: normalizedDate
+                // };
+                // bulkOps.push({
+                //     updateOne: {
+                //         filter: { _id: localTrip._id },
+                //         update: { $set: updatedLocalTrip }
+                //     }
+                // });
+                // updatedTrips.push(localTrip._id);
             } else {
                 noUpdatesNeeded++;
             }
