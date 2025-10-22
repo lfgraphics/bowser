@@ -14,9 +14,9 @@ router.post("/join", async (req, res) => {
 
         // Validation
         if (!vehicleNo || !driverId || !joining?.date) {
-            return res.status(400).json({ 
-                error: "Missing required fields", 
-                required: ["vehicleNo", "driverId", "joining.date"] 
+            return res.status(400).json({
+                error: "Missing required fields",
+                required: ["vehicleNo", "driverId", "joining.date"]
             });
         }
 
@@ -36,7 +36,7 @@ router.post("/join", async (req, res) => {
                 VehicleNo: vehicleNo,
                 StartDate: { $lte: joiningDate }
             }).sort({ StartDate: -1, rankindex: 1, _id: -1 }).lean();
-            
+
             if (!trip) {
                 console.log(`[DRIVER-JOIN] No trip found for vehicle ${vehicleNo}`);
                 return res.status(404).json({ error: "No trip found for given vehicle and date" });
@@ -61,9 +61,9 @@ router.post("/join", async (req, res) => {
 
         // Create driver log
         console.log(`[DRIVER-JOIN] Creating driver log entry`);
-        const newLog = new DriversLog({ 
-            vehicleNo, 
-            driver: driverId, 
+        const newLog = new DriversLog({
+            vehicleNo,
+            driver: driverId,
             joining: {
                 ...joining,
                 date: joiningDate,
@@ -99,7 +99,7 @@ router.post("/join", async (req, res) => {
             { $set: { driverStatus: 1 } },
             { new: true }
         );
-        
+
         if (!updatedTrip) {
             console.log(`[DRIVER-JOIN] Warning: Failed to update trip ${tripId} driverStatus`);
             // Don't rollback for trip update failure as main operation succeeded
@@ -108,11 +108,11 @@ router.post("/join", async (req, res) => {
         }
 
         console.log(`[DRIVER-JOIN] Successfully completed driver join for ${driverName} to vehicle ${vehicleNo}`);
-        return res.json({ 
-            message: "Driver joined successfully", 
-            entry: savedLog, 
-            updatedVehicle, 
-            updatedTrip 
+        return res.json({
+            message: "Driver joined successfully",
+            entry: savedLog,
+            updatedVehicle,
+            updatedTrip
         });
 
     } catch (error) {
@@ -130,9 +130,9 @@ router.post("/leave", async (req, res) => {
 
         // Validation
         if (!vehicleNo || !driverId || !leaving?.from) {
-            return res.status(400).json({ 
-                error: "Missing required fields", 
-                required: ["vehicleNo", "driverId", "leaving.from"] 
+            return res.status(400).json({
+                error: "Missing required fields",
+                required: ["vehicleNo", "driverId", "leaving.from"]
             });
         }
 
@@ -162,13 +162,15 @@ router.post("/leave", async (req, res) => {
         console.log(`[DRIVER-LEAVE] Updating driver log for driver ${driverId} on vehicle ${vehicleNo}`);
         const log = await DriversLog.findOneAndUpdate(
             { vehicleNo, driver: driverId },
-            { $set: { 
-                leaving: {
-                    ...leaving,
-                    from: leavingDate,
-                    tripId
-                } 
-            } },
+            {
+                $set: {
+                    leaving: {
+                        ...leaving,
+                        from: leavingDate,
+                        tripId
+                    }
+                }
+            },
             { new: true, upsert: true }
         );
 
@@ -202,7 +204,7 @@ router.post("/leave", async (req, res) => {
             { $set: { driverStatus: 0 } },
             { new: true }
         );
-        
+
         if (!updatedTrip) {
             console.log(`[DRIVER-LEAVE] Warning: Failed to update trip ${tripId} driverStatus`);
             // Don't fail for trip update failure as main operation succeeded
@@ -211,11 +213,11 @@ router.post("/leave", async (req, res) => {
         }
 
         console.log(`[DRIVER-LEAVE] Successfully completed driver leave for vehicle ${vehicleNo}`);
-        return res.json({ 
-            message: "Driver leaving updated", 
-            entry: log, 
-            updatedVehicle, 
-            updatedTrip 
+        return res.json({
+            message: "Driver leaving updated",
+            entry: log,
+            updatedVehicle,
+            updatedTrip
         });
 
     } catch (error) {
@@ -233,9 +235,9 @@ router.post("/status-update", async (req, res) => {
 
         // Validation
         if (!vehicleNo || !remark) {
-            return res.status(400).json({ 
-                error: "Missing required fields", 
-                required: ["vehicleNo", "remark"] 
+            return res.status(400).json({
+                error: "Missing required fields",
+                required: ["vehicleNo", "remark"]
             });
         }
 
@@ -264,8 +266,8 @@ router.post("/status-update", async (req, res) => {
 // Helper: Fetch last trip before a given date
 // ---------------------------
 router.get("/last-trip/:vehicleNo/:date", async (req, res) => {
+    const { vehicleNo, date } = req.params;
     try {
-        const { vehicleNo, date } = req.params;
         console.log(`[LAST-TRIP] Fetching last trip for vehicle ${vehicleNo} before date ${date}`);
         const response = await getOneTripOfVehicleByDate(vehicleNo, date);
         return res.json(response);
