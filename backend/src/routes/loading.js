@@ -152,7 +152,7 @@ router.patch('/orders/:id', async (req, res) => {
         }
 
         const updatedOrder = await withTransaction(async (sessions) => {
-            const updated = await findByIdAndUpdate(
+            const updated = await updateLoadingOrder(
                 new mongoose.Types.ObjectId(id),
                 updateData,
                 { new: true, runValidators: true, session: sessions.bowsers }
@@ -183,7 +183,7 @@ router.delete('/order/:id', async (req, res) => {
         }
 
         const deletedOrder = await withTransaction(async (sessions) => {
-            const del = await findByIdAndDelete(new mongoose.Types.ObjectId(id), { session: sessions.bowsers });
+            const del = await deleteLoadingOrder(new mongoose.Types.ObjectId(id), { session: sessions.bowsers });
             if (!del) {
                 const e = new Error('LoadingOrder not found');
                 e.name = 'ValidationError';
@@ -314,14 +314,14 @@ router.post('/sheet', async (req, res) => {
             };
 
             // Upsert LoadingSheet by LoadingOrder (ensures a sheet exists even when sheetId is provided)
-            const newLoadingSheet = await findOneAndUpdate(
+            const newLoadingSheet = await updateLoadingSheet(
                 { "bccAuthorizedOfficer.orderId": new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)) },
                 { $set: sheetData },
                 { new: true, upsert: true, setDefaultsOnInsert: true, session: sessions.bowsers }
             );
 
             // Mark LoadingOrder fulfilled
-            const loadingOrder = await findByIdAndUpdate(
+            const loadingOrder = await updateLoadingOrder(
                 new mongoose.Types.ObjectId(String(bccAuthorizedOfficer.orderId)),
                 { $set: { fulfilled: true } },
                 { new: true, session: sessions.bowsers }
