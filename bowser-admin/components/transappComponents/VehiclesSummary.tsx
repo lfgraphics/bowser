@@ -499,14 +499,14 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                             <CardContent className='grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2'>
                                 <Button
                                     variant="outline"
-                                    className={`w-40 ${filter !== 'all' && filter === 'loadedOnWay' ? 'bg-card text-card-foreground border-white' : ''}`}
+                                    className={`w-40 ${filter !== 'all' && filter === 'loadedOnWay' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
                                     onClick={() => setFilter('loadedOnWay')}
                                 >
                                     <strong>On Way: </strong><span>{data?.loaded?.onWay.count}</span>
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    className={`w-40 ${filter !== 'all' && filter === 'loadedReported' ? 'bg-card text-card-foreground border-white' : ''}`}
+                                    className={`w-40 ${filter !== 'all' && filter === 'loadedReported' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
                                     onClick={() => setFilter('loadedReported')}
                                 >
                                     <strong>Reported: </strong><span>{data?.loaded?.reported?.count}</span>
@@ -521,21 +521,21 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                             <CardContent className='grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2'>
                                 <Button
                                     variant="outline"
-                                    className={`w-40 ${filter !== 'all' && filter === 'emptyOnWay' ? 'bg-card text-card-foreground border-white' : ''}`}
+                                    className={`w-40 ${filter !== 'all' && filter === 'emptyOnWay' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
                                     onClick={() => setFilter('emptyOnWay')}
                                 >
                                     <strong>On Way: </strong>{data?.empty?.onWay.count}
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    className={`w-40 ${filter !== 'all' && filter === 'emptyStanding' ? 'bg-card text-card-foreground border-white' : ''}`}
+                                    className={`w-40 ${filter !== 'all' && filter === 'emptyStanding' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
                                     onClick={() => setFilter('emptyStanding')}
                                 >
                                     <strong>Dipo Standing: </strong>{data?.empty?.standing.count}
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    className={`w-40 ${filter !== 'all' && filter === 'outsideStandingVehicles' ? 'bg-card text-card-foreground border-white' : ''}`}
+                                    className={`w-40 ${filter !== 'all' && filter === 'outsideStandingVehicles' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
                                     onClick={() => setFilter("outsideStandingVehicles")}
                                 >
                                     {/* <strong>Outside Standing: </strong> {data?.empty?.reported?.trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status !== "In Distillery").length - data?.empty?.reported?.trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Loaded").length} */}
@@ -543,14 +543,14 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    className={`w-40 ${filter !== 'all' && filter === 'loaded' ? 'bg-card text-card-foreground border-white' : ''}`}
+                                    className={`w-40 ${filter !== 'all' && filter === 'loaded' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
                                     onClick={() => setFilter("loaded")}
                                 >
                                     <strong>Loaded: </strong> {data?.empty?.reported?.trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Loaded").length}
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    className={`w-40 ${filter !== 'all' && filter === 'otherStanding' ? 'bg-card text-card-foreground border-white' : ''}`}
+                                    className={`w-40 ${filter !== 'all' && filter === 'otherStanding' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
                                     onClick={() => setFilter('otherStanding')}
                                 >
                                     <strong>Other Standing: </strong> {otherStanding?.length || 0}
