@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { allowedRoutes } from '@/app/(auth)/login/page';
 
-export async function middleware (req: NextRequest) {
+export async function proxy (req: NextRequest) {
   const cookies = req.cookies; // Get all cookies
   // Avoid logging cookies in production
 

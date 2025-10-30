@@ -4,9 +4,6 @@ const nextConfig = {
     // Enable this setting to ignore type errors during builds
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   async headers() {
     return [
       {
