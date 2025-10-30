@@ -7,7 +7,6 @@ import "./loading";
 import { CacheProvider } from '@/src/context/CacheContext'
 import { Sidebar } from '@/components/layout/Sidebar';
 import { isAuthenticated } from '@/lib/auth';
-import { SpeedInsights } from "@vercel/speed-insights/next"
 import { usePathname } from 'next/navigation';
 import { Toaster } from "sonner";
 import { VehiclesCacheProvider } from "@/src/context/VehiclesCacheContext";
@@ -35,13 +34,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           {isAuth && <Sidebar />}
           <div className={`h-[96svh]`}>
-            <Toaster richColors closeButton position="bottom-center"/>
+            <Toaster richColors closeButton position="bottom-center" />
             <CacheProvider>
               <VehiclesCacheProvider>
                 {children}
               </VehiclesCacheProvider>
             </CacheProvider>
-            <SpeedInsights />
           </div>
         </ThemeProvider>
       </body>

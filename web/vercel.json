@@ -1,3 +1,0 @@
-{
-    "buildCommand": "pnpm install --no-strict-peer-dependencies && pnpm run build"
-}
