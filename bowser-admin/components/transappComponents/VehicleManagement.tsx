@@ -2,13 +2,13 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
+    ExcelTable as Table,
+    ExcelTableBody as TableBody,
+    ExcelTableCell as TableCell,
+    ExcelTableHead as TableHead,
+    ExcelTableHeader as TableHeader,
+    ExcelTableRow as TableRow
+} from "@codvista/cvians-excel-table"
 import {
     Tooltip,
     TooltipContent,
@@ -267,28 +267,28 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                 <Table className='w-full min-w-max'>
                     <TableHeader>
                         <TableRow className="sticky top-0 bg-background z-10">
-                            <TableHead className="bg-background">Sn</TableHead>
-                            <TableHead className="bg-background">Vehicle no.</TableHead>
-                            <TableHead className="bg-background">Capacity</TableHead>
-                            <TableHead className="bg-background flex flex-row gap-3 items-center">Driver</TableHead>
+                            <TableHead sortable dataType="number" className="bg-background">Sn</TableHead>
+                            <TableHead sortable dataType="string" filterable className="bg-background">Vehicle no.</TableHead>
+                            <TableHead sortable dataType="number" filterable className="bg-background">Capacity</TableHead>
+                            <TableHead sortable dataType="string" filterable className="bg-background flex flex-row gap-3 items-center">Driver</TableHead>
                             {hasAnyNoDriver && (
                                 <>
-                                    <TableHead className="bg-background">No Driver Since</TableHead>
-                                    <TableHead className="bg-background">Location</TableHead>
+                                    <TableHead sortable dataType="string" filterable className="bg-background">No Driver Since</TableHead>
+                                    <TableHead sortable dataType="string" filterable className="bg-background">Location</TableHead>
                                 </>
                             )}
-                            <TableHead className="bg-background">Trip Status</TableHead>
+                            <TableHead sortable dataType="string" filterable className="bg-background">Trip Status</TableHead>
                             {!filterNoDriver && (
                                 <>
-                                    <TableHead className="bg-background">Last Update IN</TableHead>
+                                    <TableHead sortable dataType="string" filterable className="bg-background">Last Update IN</TableHead>
                                 </>
                             )}
-                            <TableHead className="bg-background">Last Status Comment</TableHead>
+                            <TableHead sortable dataType="string" filterable className="bg-background">Last Status Comment</TableHead>
                             {!filterNoDriver && (
-                                <TableHead className="bg-background">Last Comment Time</TableHead>
+                                <TableHead sortable dataType="string" filterable className="bg-background">Last Comment Time</TableHead>
                             )}
                             {user?.Division?.includes('Admin') && (
-                                <TableHead className="bg-background">Supervisor</TableHead>
+                                <TableHead sortable dataType="string" filterable className="bg-background">Supervisor</TableHead>
                             )}
                             {!filterNoDriver && (
                                 <TableHead className="bg-background">Actions</TableHead>
@@ -370,18 +370,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                                         </>
                                     )}
                                     <TableCell>
-                                        {filterNoDriver
-                                            ? v?.lastStatusUpdate?.comment
-                                            || v?.lastDriverLog?.leaving?.remark
-                                            : (() => {
-                                                return v?.lastStatusUpdate?.comment?.includes('#') ? v?.lastStatusUpdate?.comment?.match(/#(\w+)/)?.[1] : v?.lastStatusUpdate?.comment
-                                                    || v?.latestTrip?.statusUpdate?.[v?.latestTrip?.statusUpdate?.length - 1]?.comment
-                                                    || v?.latestTrip?.statusUpdate?.[v?.latestTrip?.statusUpdate?.length - 1]?.status
-                                                    || v?.lastDriverLog?.statusUpdate?.[v?.lastDriverLog?.statusUpdate?.length - 1]?.remark
-                                                    || v?.lastDriverLog?.leaving?.remark
-                                                    || '-';
-                                            })()
-                                        }
+                                        {v.lastStatusUpdate?.comment || '_'}
                                     </TableCell>
                                     {!filterNoDriver && (
                                         <TableCell>{formatDate(v?.lastStatusUpdate?.dateTime!) || formatDate(v?.lastDriverLog?.statusUpdate?.[v?.lastDriverLog?.statusUpdate?.length - 1]?.dateTime)}</TableCell>
