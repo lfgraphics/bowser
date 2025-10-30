@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@codvista/cvians-excel-table':
-        specifier: ^2.2.0
-        version: 2.2.0(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(class-variance-authority@0.7.1)(clsx@2.1.1)(lucide-react@0.548.0(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        specifier: ^2.2.1
+        version: 2.2.1(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(class-variance-authority@0.7.1)(clsx@2.1.1)(lucide-react@0.548.0(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -230,8 +230,8 @@ packages:
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
     engines: {node: '>=6.9.0'}
 
-  '@codvista/cvians-excel-table@2.2.0':
-    resolution: {integrity: sha512-TivV9akByMfjF50aZHuoZpI2el1ixx17SnH58ni32ePCbmCfgDqL/yTlRytoiZIFA7fkOjfF+xX/aIwFYtUc4g==}
+  '@codvista/cvians-excel-table@2.2.1':
+    resolution: {integrity: sha512-zRaBewbNQ59ORNzp0BWn4G3dJ4wEJnVYqUN6cNQTSoxHom2B0/AZxNUdscNwFcEOyaaoRlPwoUN/jwCSaDrOhw==}
     peerDependencies:
       class-variance-authority: ^0.7.0
       clsx: ^2.1.1
@@ -3117,7 +3117,7 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
-  '@codvista/cvians-excel-table@2.2.0(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(class-variance-authority@0.7.1)(clsx@2.1.1)(lucide-react@0.548.0(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@codvista/cvians-excel-table@2.2.1(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(class-variance-authority@0.7.1)(clsx@2.1.1)(lucide-react@0.548.0(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
       '@radix-ui/react-accordion': 1.2.12(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@radix-ui/react-checkbox': 1.3.3(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
