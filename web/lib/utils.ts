@@ -1,0 +1,49 @@
+import moment from 'moment';
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+import { apiClient } from './api';
+import xlsx from "json-as-xlsx";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+export const formatDate = (dateInput: string | Date | null): string => {
+  if (dateInput == null) return ""
+  const date = moment(dateInput);
+  if (!date || !date.isValid()) return "no date provided";
+  return `${date.format('DD-MM-YY')}, ${date.format('hh:mm A')}`;
+};
+
+export const getDriversApp = async () => {
+  try {
+    const response = await apiClient.get<any[]>('/updates?appName=drivers')
+    return response.data[0]
+  } catch {
+    return undefined
+  }
+}
+
+export const getTallyBridgeApp = async () => {
+  try {
+    const response = await apiClient.get<any[]>('/updates?appName=tally-bridge')
+    return response.data[0]
+  } catch {
+    return undefined
+  }
+}
+
+export const downloadExcel = (data: any[], fileName: string) => {
+  const settings = {
+    fileName: fileName,
+    extraLength: 3,
+    writeOptions: {},
+  };
+  xlsx(data, settings);
+};
+
+export function camelToWords(str: string) {
+  return str
+    .replace(/([A-Z])/g, " $1")   // insert space before capital letters
+    .replace(/^./, (s) => s.toUpperCase()); // capitalize first letter
+}

@@ -1,0 +1,86 @@
+"use client"
+
+import { useEffect, useState, createContext } from "react";
+import {
+    FileDown,
+    FileUp,
+    AudioWaveform,
+    Home,
+} from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import { TransAppUser } from "@/types";
+import ManualBreadcrumb from "@/components/ManualBreadCrumb";
+
+export const TransAppContext = createContext<{
+    user: TransAppUser | undefined;
+    photo: TransAppUser["Photo"] | undefined;
+}>({
+    user: {
+        _id: 'string',
+        name: 'string',
+        userId: 'string',
+        Photo: {
+            type: 'string',
+            data: [0]
+        },
+        Division: 'string',
+        hashed: false,
+        phoneNumber: 'xxxxxxxxx',
+        vehicles: ['string']
+    },
+    photo: undefined,
+});
+
+export default function TransAppLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    const router = useRouter();
+    const pathname = usePathname();
+    const [user, setUser] = useState<TransAppUser>();
+    const [photo, setPhoto] = useState<TransAppUser["Photo"] | undefined>();
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const storedUser = localStorage.getItem("adminUser");
+            if (storedUser) {
+                const parsed = JSON.parse(storedUser);
+                setUser(parsed);
+                setPhoto(parsed.Photo);
+            } else {
+                router.push("/login");
+            }
+        }
+    }, []);
+
+    const navItems = [
+        {
+            label: "Home",
+            href: "/trans-app",
+            icon: <Home className="mr-2 w-4 h-4" />,
+        },
+        {
+            label: "Unloading Tracker",
+            href: "/trans-app/unloading-tracker",
+            icon: <FileDown className="mr-2 w-4 h-4" />,
+        },
+        {
+            label: "Loading Planner",
+            href: "/trans-app/loading-planner",
+            icon: <FileUp className="mr-2 w-4 h-4" />,
+        },
+        {
+            label: "Loading Tracker",
+            href: "/trans-app/loading-tracker",
+            icon: <AudioWaveform className="mr-2 w-4 h-4" />,
+        },
+    ];
+
+    return (
+        <TransAppContext.Provider value={{ user, photo }}>
+            <ManualBreadcrumb />
+                {children}
+        </TransAppContext.Provider>
+    );
+}

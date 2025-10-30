@@ -1,0 +1,48 @@
+"use client"
+import { ThemeProvider } from "@/components/theme-provider"
+import { useEffect, useState } from 'react';
+import { Inter } from "next/font/google";
+import "./globals.css";
+import "./loading";
+import { CacheProvider } from '@/src/context/CacheContext'
+import { Sidebar } from '@/components/layout/Sidebar';
+import { isAuthenticated } from '@/lib/auth';
+import { usePathname } from 'next/navigation';
+import { Toaster } from "sonner";
+import { VehiclesCacheProvider } from "@/src/context/VehiclesCacheContext";
+import NetStatus from "@/components/NetStatus";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const [isAuth, setIsAuth] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setIsAuth(isAuthenticated());
+  }, [pathname]);
+
+  return (
+    <html lang="en" className={inter.className} suppressHydrationWarning>
+      <body className={`dark:bg-background dark:text-foreground`}>
+        <NetStatus />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {isAuth && <Sidebar />}
+          <div className={`h-[96svh]`}>
+            <Toaster richColors closeButton position="bottom-center" />
+            <CacheProvider>
+              <VehiclesCacheProvider>
+                {children}
+              </VehiclesCacheProvider>
+            </CacheProvider>
+          </div>
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}
