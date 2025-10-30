@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { Types } from 'mongoose';
 import { sendNativePushNotification } from '../utils/pushNotifications.js';
-import fuelingOrders, { findByIdAndUpdate as updateFuelingOrder } from '../models/fuelingOrders.js';
+import FuelingOrder, { findByIdAndUpdate as updateFuelingOrder } from '../models/fuelingOrders.js';
 import { findOne as findVehicle } from '../models/vehicle.js';
 import { findByIdAndUpdate as updateFuelRequest } from '../models/FuelRequest.js';
 import { withTransaction } from '../utils/transactions.js';
@@ -63,7 +63,7 @@ router.post('/', asyncHandler(async (req, res) => {
     try {
         // Use transactions across bowsers and transport (transport reserved for future related ops)
         const result = await withTransaction(async (sessions) => {
-            const order = new fuelingOrders({
+            const order = new FuelingOrder({
                 allocationType,
                 pumpAllocationType,
                 fuelProvider,
