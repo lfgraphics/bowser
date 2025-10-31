@@ -477,7 +477,7 @@ export interface DispensesRecord {
   quantityType: string;
   gpsLocation: string;
   location: string;
-  fuelingDateTime: string;
+  fuelingDateTime: string | Date;
   verified: {
     status: boolean;
     by?: {

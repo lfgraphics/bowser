@@ -15,6 +15,7 @@ import { BASE_URL } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import OnlyAllowed from './OnlyAllowed';
 import { toast } from '@/hooks/use-toast';
+import { DateTimePicker } from './ui/datetime-picker';
 
 interface FuelRecordCardProps {
     record: DispensesRecord;
@@ -80,6 +81,9 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
         }
         if (updatedRecord.fuelQuantity !== record.fuelQuantity) {
             updatedFields.fuelQuantity = updatedRecord.fuelQuantity;
+        }
+        if (updatedRecord.fuelingDateTime !== record.fuelingDateTime) {
+            updatedFields.fuelingDateTime = updatedRecord.fuelingDateTime;
         }
         if (updatedRecord.gpsLocation !== record.gpsLocation) {
             updatedFields.gpsLocation = updatedRecord.gpsLocation;
@@ -256,7 +260,16 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                 ) : (
                                     `${updatedRecord?.fuelQuantity} Liter - ${updatedRecord?.quantityType}`
                                 )}</p>
-                                <p className="text-sm"><strong>Date & Time:</strong> {formatDate(record?.fuelingDateTime!)}</p>
+                                <p className="text-sm"><strong>Date & Time:</strong> {
+                                    editing ?
+                                        <DateTimePicker
+                                            value={new Date(updatedRecord.fuelingDateTime)}
+                                            onChange={(e) => {
+                                                setUpdatedRecord({ ...updatedRecord, fuelingDateTime: e! })
+                                            }}
+                                        />
+                                        : formatDate(record?.fuelingDateTime!)
+                                }</p>
                                 <p className="text-sm"><strong>Fueling Location:</strong> {record.location}</p>
                                 <p className="flex items-center text-sm">
                                     <MapPin className="mr-1 w-4 h-4" />
@@ -349,7 +362,7 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                         <div className='flex flex-col gap-3'>
                                             <Label className='text-foreground' htmlFor="tripSheetId">Transfer the record to:</Label>
                                             <Input
-                                            className='text-foreground'
+                                                className='text-foreground'
                                                 id="tripSheetId"
                                                 placeholder='Trip Sheet Id'
                                                 value={transferToSheet}
