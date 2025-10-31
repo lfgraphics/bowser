@@ -1,7 +1,7 @@
 "use client"
 import { TankersTrip } from '@/types'
 import { fetchUnloadedButNotPlanned } from '@/utils/transApp'
-import React, { useEffect, useState, useContext } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import { TransAppContext } from "../layout";
 import Loading from '@/app/loading'
 import UnloadedUnplannedVehicleTracker from '@/components/LoadingPlanner'

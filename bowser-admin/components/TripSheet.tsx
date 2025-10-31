@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, } from './ui/table';
 import { Button, } from './ui/button'
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { Toaster } from "@/components/ui/toaster"
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, RefreshCcw, X } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
@@ -30,7 +30,10 @@ import Loading from '@/app/loading';
 import Stamp from './Stamp';
 
 
-const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
+const TripSheetPage = () => {
+
+    const searchParams = useSearchParams();
+
     const router = useRouter();
     const checkAuth = () => {
         if (typeof window !== 'undefined') {
@@ -45,11 +48,11 @@ const TripSheetPage = ({ query }: { query: Record<string, string> }) => {
     }, []);
 
     const [sheets, setSheets] = useState<TripSheet[]>([]);
-    const [searchParam, setSearchParam] = useState<string>(query?.searchParam || '');
+    const [searchParam, setSearchParam] = useState<string>(searchParams.get('searchParam') || '');
     const [loading, setLoading] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
     const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false);
-    const [settlment, setSettlment] = useState<boolean>(query?.settlment === 'true');
+    const [settlment, setSettlment] = useState<boolean>(searchParams.get('settlment') === 'true');
     const [deletingSheetId, setDeletingSheetId] = useState<string>('');
     const [summaryId, setSummaryId] = useState<string | undefined>(undefined);
     const [showSummaryDialog, setShowSummaryDialog] = useState<boolean>(false);

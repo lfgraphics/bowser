@@ -34,11 +34,14 @@ import { BASE_URL } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { downloadExcel, formatDate } from "@/lib/utils";
+import { useSearchParams } from "next/navigation";
 
-const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: number, allocator: string, limit?: number } }) => {
-  const tripNumber = searchParams.tripNumber;
-  const allocator = searchParams.allocator;
-  const recLimit = searchParams.limit;
+const VehicleDispensesPage = () => {
+  // { searchParams }: { searchParams: { tripNumber?: number, allocator: string, limit?: number } }
+  const searchParams = useSearchParams();
+  const tripNumber = Number(searchParams.get('tripNumber'));
+  const allocator = searchParams.get('allocator');
+  const recLimit = Number(searchParams.get('limit'));
 
   const [records, setRecords] = useState<DispensesRecord[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -370,7 +373,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
               className="w-full sm:w-auto"
             />
           </div>
-          <div className="flex justify-between items-center font-[200] text-muted-foreground">
+          <div className="flex justify-between items-center font-extralight text-muted-foreground">
             {records.length} out of {totalRecords} records{" "}
           </div>
           <Button variant="outline" onClick={toggleSelectAll}>
@@ -510,7 +513,7 @@ const VehicleDispensesPage = ({ searchParams }: { searchParams: { tripNumber?: n
                   onChange={(e) => setLimit(Number(e.target.value))}
                 ></Input>{" "}
               </div>
-              <div className="flex justify-between items-center font-[200] text-gray-300">
+              <div className="flex justify-between items-center font-extralight text-gray-300">
                 Total found record{records.length > 1 ? "s" : ""}{" "}
                 {records.length} out of {totalRecords} records{" "}
               </div>

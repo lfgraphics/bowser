@@ -1,7 +1,7 @@
 "use client"
 import { TankersTrip } from '@/types'
 import { fetchLoadedButUnloadedTrips } from '@/utils/transApp'
-import React, { useEffect, useState, useContext } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import { TransAppContext } from "../layout";
 import LoadVehicleTracker from '@/components/UnloadingTracker'
 import Loading from '@/app/loading';

@@ -1,7 +1,7 @@
 "use client"
 import { TankersTrip } from '@/types'
 import { fetchUnloadedButPlanned } from '@/utils/transApp'
-import React, { useEffect, useState, useContext } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import { TransAppContext } from "../layout";
 import UnloadedPlannedVehicleTracker from '@/components/LoadingTracker'
 import Loading from '@/app/loading'
@@ -18,6 +18,7 @@ const LoadingTracker = () => {
   // parse and validate search params into QueryType
   const rawQuery = Object.fromEntries(searchParams.entries()) as Record<string, string | undefined>;
   const actionRaw = rawQuery.actionType;
+  console.log("Action Raw:", actionRaw);
   const actionType = (actionRaw === "loaded" ||
     actionRaw === "destinationChange" ||
     actionRaw === "update" ||
