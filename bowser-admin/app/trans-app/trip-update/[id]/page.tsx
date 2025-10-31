@@ -12,7 +12,12 @@ import React from 'react'
 import { toast } from 'sonner';
 import { toDate } from '@/utils';
 
-const page = ({ params }: { params: { id: string } }) => {
+const page = ({
+    params,
+}: {
+    params: Promise<{ id: string }>
+}) => {
+    const [id, setId] = React.useState<string>('');
     const [loading, setLoading] = React.useState(false);
     const [trip, setTrip] = React.useState<TankersTrip>();
     const [isReported, setIsReported] = React.useState(false);
@@ -131,9 +136,10 @@ const page = ({ params }: { params: { id: string } }) => {
 
     React.useEffect(() => {
         const fetchRecord = async () => {
+            const { id } = await params
             setLoading(true)
             try {
-                const request = await fetch(`${BASE_URL}/trans-app/vehicles/get-trip-by-id/${params.id}`);
+                const request = await fetch(`${BASE_URL}/trans-app/vehicles/get-trip-by-id/${id}`);
                 if (!request.ok) {
                     const errorData = await request.json();
                     toast.error('Error fetching record', { description: errorData.error, richColors: true });

@@ -273,7 +273,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                             <TableHead sortable dataType="string" filterable className="bg-background flex flex-row gap-3 items-center">Driver</TableHead>
                             {hasAnyNoDriver && (
                                 <>
-                                    <TableHead sortable dataType="string" filterable className="bg-background">No Driver Since</TableHead>
+                                    <TableHead sortable dataType="number" filterable className="bg-background">No Driver Since</TableHead>
                                     <TableHead sortable dataType="string" filterable className="bg-background">Location</TableHead>
                                 </>
                             )}

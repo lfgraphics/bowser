@@ -1,3 +1,4 @@
+"use client";
 import { BASE_URL } from "@/lib/api";
 import { useRef, useEffect } from "react";
 
