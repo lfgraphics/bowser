@@ -241,9 +241,9 @@ export default function LoadVehicleTracker({ tripsData, query }: { tripsData: Ta
                     {
                         tripId && (
                             <div className="buttons flex flex-col gap-2 items-center w-full">
-                                <Button className={`w-full ${actionType === "update" ? "bg-green-500 text-white hover:bg-green-300 hover:text-black" : ""}`} onClick={() => setActionType("update")}>Update</Button>
-                                <Button className={`w-full ${actionType === "report" ? "bg-green-500 text-white hover:bg-green-300 hover:text-black" : ""}`} onClick={() => setActionType("report")}>Report</Button>
-                                <Button className={`w-full ${actionType === "unload" ? "bg-green-500 text-white hover:bg-green-300 hover:text-black" : ""}`} onClick={() => setActionType("unload")}>Unload</Button>
+                                {queryAction ? actionType === "update" && <Button className={`w-full ${actionType === "update" ? "bg-green-500 text-white hover:bg-green-300 hover:text-black" : ""}`} onClick={() => setActionType("update")}>Update</Button> : <Button className={`w-full ${actionType === "update" ? "bg-green-500 text-white hover:bg-green-300 hover:text-black" : ""}`} onClick={() => setActionType("update")}>Update</Button>}
+                                {queryAction ? actionType === "report" && <Button className={`w-full ${actionType === "report" ? "bg-green-500 text-white hover:bg-green-300 hover:text-black" : ""}`} onClick={() => setActionType("report")}>Report</Button> : <Button className={`w-full ${actionType === "report" ? "bg-green-500 text-white hover:bg-green-300 hover:text-black" : ""}`} onClick={() => setActionType("report")}>Report</Button>}
+                                {queryAction ? actionType === "unload" && <Button className={`w-full ${actionType === "unload" ? "bg-green-500 text-white hover:bg-green-300 hover:text-black" : ""}`} onClick={() => setActionType("unload")}>Unload</Button> : <Button className={`w-full ${actionType === "unload" ? "bg-green-500 text-white hover:bg-green-300 hover:text-black" : ""}`} onClick={() => setActionType("unload")}>Unload</Button>}
                             </div>
                         )
                     }
@@ -294,9 +294,9 @@ export default function LoadVehicleTracker({ tripsData, query }: { tripsData: Ta
                             required
                         />
 
-                        <div className="flex gap-2 flex-row justify-between mt-2">
-                            <Button className="w-full " variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
-                            <Button className="w-full " type="button" onClick={() => submit()}>Submit</Button>
+                        <div className="w-full flex gap-2 flex-row justify-between mt-2">
+                            <Button className="flex-1" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
+                            <Button className="flex-1" type="button" onClick={() => submit()}>Submit</Button>
                         </div>
                     </div>
 

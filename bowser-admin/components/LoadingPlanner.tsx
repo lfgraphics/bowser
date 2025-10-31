@@ -339,9 +339,9 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
                             }}
                             readOnly
                         />
-                        <div className="flex gap-2 flex-row justify-between mt-2">
-                            <Button className="w-full" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
-                            <Button className="w-full" type="button" onClick={() => submit()}>Submit</Button>
+                        <div className="w-full flex gap-2 flex-row justify-between mt-2">
+                            <Button className="flex-1" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
+                            <Button className="flex-1" type="button" onClick={() => submit()}>Submit</Button>
                         </div>
                     </div>
                 </div>

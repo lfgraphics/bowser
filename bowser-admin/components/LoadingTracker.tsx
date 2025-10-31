@@ -230,10 +230,10 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }
                         {
                             tripId && (
                                 <div className="buttons flex flex-col gap-2 items-center w-full">
-                                    <Button className={`w-full ${actionType === "destinationChange" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("destinationChange")}>Destination Change</Button>
-                                    <Button className={`w-full ${actionType === "update" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("update")}>Update</Button>
-                                    <Button className={`w-full ${actionType === "report" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("report")}>Report</Button>
-                                    <Button disabled className={`w-full ${actionType === "loaded" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("loaded")}>Loaded</Button>
+                                    {queryAction ? actionType === "destinationChange" && <Button className={`w-full ${actionType === "destinationChange" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("destinationChange")}>Destination Change</Button> : <Button className={`w-full ${actionType === "destinationChange" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("destinationChange")}>Destination Change</Button>}
+                                    {queryAction ? actionType === "update" && <Button className={`w-full ${actionType === "update" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("update")}>Update</Button> : <Button className={`w-full ${actionType === "update" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("update")}>Update</Button>}
+                                    {queryAction ? actionType === "report" && <Button className={`w-full ${actionType === "report" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("report")}>Report</Button> : <Button className={`w-full ${actionType === "report" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("report")}>Report</Button>}
+                                    {queryAction ? actionType === "loaded" && <Button disabled className={`w-full ${actionType === "loaded" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("loaded")}>Loaded</Button> : <Button disabled className={`w-full ${actionType === "loaded" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("loaded")}>Loaded</Button>}
                                 </div>
                             )
                         }
@@ -343,9 +343,9 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }
                                     <Label htmlFor="comment">Instruction/ Comment</Label>
                                     <Input id="comment" value={ManagerComment} onChange={(e) => setManagerComment(e.target.value)} className={`${!ManagerComment ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
 
-                                    <div className="flex gap-2 flex-row justify-between mt-2">
-                                        <Button className="w-full" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
-                                        <Button className="w-full" type="button" onClick={() => submit()}>Submit</Button>
+                                    <div className="w-full flex gap-2 flex-row justify-between mt-2">
+                                        <Button className="flex-1" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
+                                        <Button className="flex-1" type="button" onClick={() => submit()}>Submit</Button>
                                     </div>
                                 </div>
                             }
@@ -398,9 +398,9 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }
                                     <Label htmlFor="comment">Instruction/ Comment</Label>
                                     <Input id="comment" value={ManagerComment} onChange={(e) => setManagerComment(e.target.value)} className={`${!ManagerComment ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
 
-                                    <div className="flex gap-2 flex-row justify-between mt-2">
-                                        <Button className="w-full" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
-                                        <Button className="w-full" type="button" onClick={() => submit()}>Submit</Button>
+                                    <div className="w-full flex gap-2 flex-row justify-between mt-2">
+                                        <Button className="flex-1" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
+                                        <Button className="flex-1" type="button" onClick={() => submit()}>Submit</Button>
                                     </div>
                                 </div>
                             }
