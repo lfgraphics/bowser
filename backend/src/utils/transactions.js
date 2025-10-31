@@ -28,6 +28,7 @@ async function createSession(key) {
   const connGetter = CONNECTIONS[key];
   if (!connGetter) throw new Error(`Unknown connection key: ${key}`);
   const conn = connGetter();
+  // Use Mongoose's startSession method which returns a compatible session
   return conn.startSession();
 }
 
