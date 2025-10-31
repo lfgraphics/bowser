@@ -4,7 +4,7 @@ import { BASE_URL } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
 import { DispensesRecord } from '@/types';
 import axios from 'axios';
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export const page = ({ params }: { params: Promise<{ id: string }> }) => {
     const checkAuth = () => {

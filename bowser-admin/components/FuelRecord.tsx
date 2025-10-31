@@ -88,6 +88,9 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
         if (updatedRecord.gpsLocation !== record.gpsLocation) {
             updatedFields.gpsLocation = updatedRecord.gpsLocation;
         }
+        if (updatedRecord.location !== record.location) {
+            updatedFields.location = updatedRecord.location;
+        }
 
         // Proceed only if there are changes
         if (Object.keys(updatedFields).length === 0) {
@@ -270,20 +273,19 @@ const FuelRecordCard: React.FC<FuelRecordCardProps> = ({ record }) => {
                                         />
                                         : formatDate(record?.fuelingDateTime!)
                                 }</p>
-                                <p className="text-sm"><strong>Fueling Location:</strong> {record.location}</p>
-                                <p className="flex items-center text-sm">
-                                    <MapPin className="mr-1 w-4 h-4" />
-                                    {editing ? (
+                                <p className="text-sm"><strong>Fueling Location:</strong> {
+                                    editing ?
                                         <Input
                                             placeholder='Location of Fueling'
-                                            value={updatedRecord?.gpsLocation}
+                                            value={updatedRecord?.location}
                                             onChange={(e) => {
-                                                setUpdatedRecord({ ...updatedRecord, gpsLocation: e.target.value });
+                                                setUpdatedRecord({ ...updatedRecord, location: e.target.value });
                                             }}
                                         />
-                                    ) : (
-                                        updatedRecord?.gpsLocation
-                                    )}
+                                        : record.location
+                                }</p>
+                                <p className="flex items-center text-sm">
+                                    <MapPin className="mr-1 w-4 h-4" />{updatedRecord?.gpsLocation}
                                 </p>
                                 <h2 className="font-semibold text-gray-600 text-md">Bowser Details</h2>
                                 <p className="text-gray-600 text-sm"><strong>Registration Number:</strong> {record?.bowser.regNo || "Error"}</p>
