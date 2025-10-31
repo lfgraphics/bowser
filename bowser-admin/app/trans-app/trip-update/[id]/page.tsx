@@ -12,12 +12,7 @@ import React from 'react'
 import { toast } from 'sonner';
 import { toDate } from '@/utils';
 
-const page = ({
-    params,
-}: {
-    params: Promise<{ id: string }>
-}) => {
-    const [id, setId] = React.useState<string>('');
+const page = ({ params }: { params: Promise<{ id: string }> }) => {
     const [loading, setLoading] = React.useState(false);
     const [trip, setTrip] = React.useState<TankersTrip>();
     const [isReported, setIsReported] = React.useState(false);

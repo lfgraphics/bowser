@@ -6,7 +6,7 @@ import { DispensesRecord } from '@/types';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 
-export const page = ({ params }: { params: { id: string } }) => {
+export const page = ({ params }: { params: Promise<{ id: string }> }) => {
     const checkAuth = () => {
         const authenticated = isAuthenticated();
         if (!authenticated) {
@@ -56,8 +56,9 @@ export const page = ({ params }: { params: { id: string } }) => {
     const [record, setRecord] = useState<DispensesRecord>(dummyRecord);
     useEffect(() => {
         const fetchRecords = async () => {
+            const { id } = await params
             try {
-                const response = await axios.get(`${BASE_URL}/listDispenses/${params.id}`);
+                const response = await axios.get(`${BASE_URL}/listDispenses/${id}`);
                 setRecord(response.data);
                 console.log(response.data)
             } catch (error) {
