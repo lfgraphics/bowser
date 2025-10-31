@@ -59,7 +59,7 @@ const UpdateManager: React.FC = () => {
             const releases = releasesRes.data;
 
             // Filter only apk and exe releases
-            const filtered = releases.filter((r: any) => ['apk', 'exe'].includes(r.tag_name));
+            const filtered = releases.filter((r: any) => ['apk'].includes(r.tag_name));
 
             // Fetch assets directly from each release's assets_url
             const latestAssetsByTag: Record<string, any> = {};

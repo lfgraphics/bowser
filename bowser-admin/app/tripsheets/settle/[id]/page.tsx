@@ -13,7 +13,15 @@ import { WholeTripSheet } from '@/types';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 
-const SettlementPage = ({ params }: { params: { id: string } }) => {
+const SettlementPage = ({ params }: { params: Promise<{ id: string }> }) => {
+  const [id, setId] = useState<string>("");
+  useEffect(() => {
+    (async () => {
+      const { id } = await params;
+      setId(id);
+    })();
+  }, [params]);
+
   const [tripSheet, setTripSheet] = useState<WholeTripSheet | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [checkModalVisible, setCheckModalVisible] = useState<boolean>(true);
@@ -92,7 +100,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
       setLoading(true);
       try {
         const response = await axios.get(
-          `${BASE_URL}/tripsheet/${params.id}`
+          `${BASE_URL}/tripsheet/${id}`
         );
         const data: WholeTripSheet = response.data;
         setTripSheet(data);
@@ -114,7 +122,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
     };
 
     fetchTripSheet();
-  }, [params.id]);
+  }, [id]);
 
   const updateCalcRate = async () => {
     try {
@@ -161,7 +169,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
 
     try {
       const response = await axios.post(
-        `${BASE_URL}/tripsheet/settle/${params.id}`,
+        `${BASE_URL}/tripsheet/settle/${id}`,
         {
           chamberwiseDipList,
           pumpReading: Number(pumpReading),
@@ -217,7 +225,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
 
     try {
       const response = await axios.post(
-        `${BASE_URL}/tripsheet/check-settelment/${params.id}`,
+        `${BASE_URL}/tripsheet/check-settelment/${id}`,
         {
           chamberwiseDipList,
           pumpReading: Number(pumpReading),
@@ -254,7 +262,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
   };
 
   const handlePrint = () => {
-    const printURL = `${window.location.origin}/tripsheets/settle/print/${params.id}`; // Your print route
+    const printURL = `${window.location.origin}/tripsheets/settle/print/${id}`; // Your print route
     const newWindow = window.open(printURL, "_blank");
     newWindow?.focus();
 

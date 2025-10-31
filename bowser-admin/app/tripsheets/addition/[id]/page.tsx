@@ -1,6 +1,6 @@
 "use client";
-import React, { useEffect, useState, FormEvent } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,10 @@ import { User } from "@/types/auth";
 import { BASE_URL } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
-export default function TripSheetCreatePage({ searchParams }: { searchParams: { tripSheetId?: number } }) {
-    const router = useRouter();
+export default function TripSheetCreatePage() {
+    const searchParams = useSearchParams();
+    const query = Object.fromEntries(searchParams.entries());
+    
     const params = useParams(); // from /tripsheets/create/[loadingSheetId]
     const [currentUser, setCurrentUser] = useState<User | null>()
     const { toast } = useToast();
@@ -62,7 +64,7 @@ export default function TripSheetCreatePage({ searchParams }: { searchParams: { 
             {loading && <Loading />}
             <Card className="mx-auto mt-6 max-w-screen-sm">
                 <CardHeader>
-                    <CardTitle>Load Addition for {searchParams.tripSheetId}</CardTitle>
+                    <CardTitle>Load Addition for {query.tripSheetId}</CardTitle>
                     <CardContent className="flex flex-col gap-3">
                         <Label htmlFor="qty">Date</Label>
                         <Input

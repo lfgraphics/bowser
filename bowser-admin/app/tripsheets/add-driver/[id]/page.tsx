@@ -10,13 +10,16 @@ import { BASE_URL } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { TripSheet, User } from "@/types";
 import { searchItems } from "@/utils/searchUtils";
-import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const page = () => {
-    const router = useRouter();
-    const params = useParams(); // from /tripsheets/create/[loadingSheetId]
-    const tripsheetId = params.id;
+const page = ({ params }: { params: Promise<{ id: string }> }) => {
+    const [tripsheetId, setTripsheetId] = useState<string>("");
+    useEffect(() => {
+        (async () => {
+            const { id } = await params;
+            setTripsheetId(id);
+        })();
+    }, [params]);
 
     const [tripSheet, setTripSheet] = useState<TripSheet | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -104,6 +107,9 @@ const page = () => {
     }
     return (
         <>
+            {
+                error && <div className="text-destructive">Error: {error}</div>
+            }
             {isLoading && <Loading />}
             <Card className="mt-8">
                 <CardHeader><strong>{tripSheet?.tripSheetId}</strong> Created at: {formatDate(tripSheet?.createdAt!)}</CardHeader>

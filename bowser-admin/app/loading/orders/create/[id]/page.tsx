@@ -11,9 +11,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { TripSheet, User } from "@/types";
 import { searchItems } from "@/utils/searchUtils";
 
-const page = ({ params }: { params: { id: string } }) => {
-    const sheetId = params.id; // Extract `id` from params
-
+const page = ({ params }: { params: Promise<{ id: string }> }) => {
     const [regNo, setRegNo] = useState("");
     const [loadingDesc, setLoadingDesc] = useState("");
     const [prpoduct, setProduct] = useState("");
@@ -58,8 +56,9 @@ const page = ({ params }: { params: { id: string } }) => {
         }
 
         const getTripBowser = async () => {
+            const { id } = await params;
             try {
-                const response = await fetch(`${BASE_URL}/tripSheet/find-by-id/${sheetId}`);
+                const response = await fetch(`${BASE_URL}/tripSheet/find-by-id/${id}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -82,6 +81,7 @@ const page = ({ params }: { params: { id: string } }) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        const { id } = await params;
 
         try {
             const body = {
@@ -90,7 +90,7 @@ const page = ({ params }: { params: { id: string } }) => {
                 loadingDesc,
                 loadingLocation,
                 loadingLocationName: locationName,
-                tripSheetId: sheetId,
+                tripSheetId: id,
                 petrolPump: {
                     name: petrolPumpName,
                     phone: petrolPumpPhoneNo

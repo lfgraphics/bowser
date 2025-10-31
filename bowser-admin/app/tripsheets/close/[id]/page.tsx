@@ -6,11 +6,17 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BASE_URL } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
-import { WholeTripSheet } from '@/types';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 
-const SettlementPage = ({ params }: { params: { id: string } }) => {
+const SettlementPage = ({ params }: { params: Promise<{ id: string }> }) => {
+    const [id, setId] = useState<string>("");
+    useEffect(() => {
+        (async () => {
+            const { id } = await params;
+            setId(id);
+        })();
+    }, [params]);
     const [loading, setLoading] = useState<boolean>(true);
     const [reason, setReason] = useState<string>("");
     const [remarks, setRemarks] = useState<string>("");
@@ -50,7 +56,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
 
         try {
             const response = await axios.post(
-                `${BASE_URL}/tripsheet/close-trip/${params.id}`,
+                `${BASE_URL}/tripsheet/close-trip/${id}`,
                 {
                     dateTime: String(dateTime),
                     userDetails,
@@ -72,7 +78,7 @@ const SettlementPage = ({ params }: { params: { id: string } }) => {
     };
 
     const handlePrint = () => {
-        const printURL = `${window.location.origin}/tripsheets/settle/print/${params.id}`; // Your print route
+        const printURL = `${window.location.origin}/tripsheets/settle/print/${id}`; // Your print route
         const newWindow = window.open(printURL, "_blank");
         newWindow?.focus();
 

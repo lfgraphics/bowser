@@ -14,10 +14,17 @@ import { LoadingSheet, TripSheetPayload, User } from "@/types";
 import { SearchModal } from "@/components/SearchModal";
 import { searchItems } from "@/utils/searchUtils";
 
-export default function TripSheetCreatePage() {
+export default function TripSheetCreatePage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
-    const params = useParams(); // from /tripsheets/create/[loadingSheetId]
-    const loadingSheetId = params.id;
+    const [id, setId] = useState<string>("");
+    useEffect(() => {
+        (async () => {
+            const { id } = await params;
+            setId(id);
+        })();
+    }, [params]);
+
+    const loadingSheetId = id;
 
     // States
     const [loadingSheet, setLoadingSheet] = useState<LoadingSheet | null>(null);
@@ -256,7 +263,7 @@ export default function TripSheetCreatePage() {
                                 <Label>{`Driver Name`}</Label>
                                 <Input
                                     value={driver.name}
-                                    onChange={(e:any) => {
+                                    onChange={(e: any) => {
                                         setBowserDriver(
                                             bowserDriver.map((d, i) => (i === index ? { ...d, name: e.target.value } : d))
                                         )

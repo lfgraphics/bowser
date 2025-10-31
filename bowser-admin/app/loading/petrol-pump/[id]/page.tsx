@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, FormEvent } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { useRouter, useParams } from "next/navigation";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -48,10 +48,15 @@ interface LoadingSheetFormData {
 }
 
 
-export default function LoadingSheetPage() {
+export default function LoadingSheetPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const params = useParams(); // The [id] from the URL
-  const orderId = params.id;
+  const [orderId, setOrderId] = useState<string>("");
+  useEffect(() => {
+    (async () => {
+      const { id } = await params;
+      setOrderId(id);
+    })();
+  }, [params]);
   const STORAGE_KEY = `loadingSheetPageData${orderId}`; // Unique key in localforage
 
   // -----------------------------------------

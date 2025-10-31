@@ -1,20 +1,28 @@
 "use client";
+
 import Loading from "@/app/loading";
 import axios from "axios";
 import TripCalculationModal from "@/components/exclusive/TripCalculationModal";
 import { WholeTripSheet } from "@/types";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { BASE_URL } from "@/lib/api";
 
-const SettlementPage = async ({ params }: { params: { id: string } }) => {
-  const { id } = params;
+const SettlementPage = ({ params }: { params: Promise<{ id: string }> }) => {
+  const [id, setId] = useState<string>("");
+  useEffect(() => {
+    (async () => {
+      const { id } = await params;
+      setId(id);
+    })();
+  }, [params]);
+
   const [loading, setLoading] = useState(true);
   const [record, setRecord] = useState<WholeTripSheet>();
   useEffect(() => {
     const fetchRecords = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${BASE_URL}/tripSheet/${params.id}`);
+        const response = await axios.get(`${BASE_URL}/tripSheet/${id}`);
         setRecord(response.data);
         console.log(response.data);
       } catch (error) {

@@ -1,16 +1,21 @@
 'use client';
+import Loading from '@/app/loading';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BASE_URL } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { BowserTrips } from '@/types';
 import { Check, X } from 'lucide-react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
 import React, { useEffect } from 'react'
 
-const page = () => {
-    const params = useParams();
-    const bowserNumber = params.bowserNumber;
+const page = ({ params }: { params: Promise<{ bowserNumber: string }> }) => {
+    const [bowserNumber, setBowserNumber] = React.useState<string>("");
+    useEffect(() => {
+        (async () => {
+            const { bowserNumber } = await params;
+            setBowserNumber(bowserNumber);
+        })();
+    }, [params]);
     const [bowserTrips, setBowserTrips] = React.useState<BowserTrips[]>([])
     const [loading, setLoading] = React.useState<boolean>(false)
 
@@ -40,9 +45,9 @@ const page = () => {
         }
     }, [bowserNumber])
 
-    console.log(bowserNumber)
     return (
         <div>
+            {loading && <Loading />}
             {bowserTrips && bowserTrips.length > 0 &&
                 <Table>
                     <TableHeader>

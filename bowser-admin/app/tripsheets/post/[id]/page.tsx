@@ -9,12 +9,17 @@ import { Progress } from "@/components/ui/progress"
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BASE_URL } from '@/lib/api';
 import { WholeTripSheet } from '@/types';
-import { createTallyPostableXML } from '@/utils/post';
-// import { postToTally } from '@/utils/tally';
 import axios from 'axios';
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
-const page = ({ params }: { params: { id: string } }) => {
+const page = ({ params }: { params: Promise<{ id: string }> }) => {
+    const [id, setId] = useState<string>("");
+    useEffect(() => {
+        (async () => {
+            const { id } = await params;
+            setId(id);
+        })();
+    }, [params]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string>();
     const [entryVoucher, setEntryVoucher] = useState('Bio-Diesel Filling-ITPL')
@@ -29,7 +34,7 @@ const page = ({ params }: { params: { id: string } }) => {
     const fetchRecords = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${BASE_URL}/tripSheet/${params.id}`);
+            const response = await axios.get(`${BASE_URL}/tripSheet/${id}`);
             setRecord(response.data);
 
             if (response.data.bowser.driver[0]?.name !== "Gida Office") {
@@ -63,7 +68,7 @@ const page = ({ params }: { params: { id: string } }) => {
 
     useEffect(() => {
         checkTallyStatus();
-    }, [params.id]);
+    }, [id]);
 
     const post = async (recordId: string) => {
         setLoading(true);

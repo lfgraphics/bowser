@@ -7,7 +7,6 @@ const Page = () => {
     const searchParams = useSearchParams();
 
     const query = Object.fromEntries(searchParams.entries());
-    console.log("TripSheet Page Query Params:", query);
 
     return <TripSheetPage />;
 };
