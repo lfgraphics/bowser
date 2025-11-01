@@ -276,6 +276,7 @@ router.post('/unload', async (req, res) => {
         trip.EndDate = data.TrackUpdateDate || new Date();
         trip.LoadTripDetail.UnloadDate = data.TrackUpdateDate || new Date();
         trip.TallyLoadDetail.UnloadingDate = data.TrackUpdateDate || new Date();
+        trip.TallyLoadDetail.EndOdometer = data.OdometerOnTrackUpdate || 0;
         trip.LoadTripDetail.EndOdometer = data.OdometerOnTrackUpdate || 0;
 
         await trip.save();

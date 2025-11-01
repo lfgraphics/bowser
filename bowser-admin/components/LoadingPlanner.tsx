@@ -20,7 +20,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
     const [loading, setLoading] = useState<boolean>(false)
     const [targetTime, setTargetTime] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
     const [proposedDate, setProposedDate] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
-    const [odometer, setOdometer] = useState<number | undefined>(undefined)
+    const [odometer, setOdometer] = useState<number>(0)
     const [orderedBy, setOrderedBy] = useState<string>("")
     const [proposedBy, setProposedBy] = useState<string>("")
     const [data, setData] = useState<TankersTrip[]>(tripsData || [])
@@ -63,12 +63,15 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
 
     useEffect(() => {
         const crTtip = data.find(trip => trip?._id === tripId);
+        const odo = crTtip?.LoadTripDetail?.EndOdometer
+        console.log("Current Trip Changed:", crTtip);
         setCurrentTrip(crTtip || null);
         searchDriver(crTtip?.StartDriver!)
-        setOdometer(crTtip?.TallyLoadDetail?.EndOdometer || crTtip?.LoadTripDetail?.EndOdometer || crTtip?.EmptyTripDetail?.EndOdometer || 0);
+        setOdometer(odo!);
+        console.log('ododmeter: ', odo);
         setDriver(crTtip?.StartDriver || "");
         setDriverMobile(crTtip?.StartDriverMobile || "");
-    }, [data, tripId])
+    }, [data, tripId]);
 
     const resetForm = () => {
         setTripId("");
@@ -310,10 +313,10 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
                         <Input
                             id="odometer"
                             type="string"
-                            value={odometer || ""}
+                            value={odometer}
                             onChange={(e) => {
                                 const value = e.target.value;
-                                setOdometer(value ? parseFloat(value) : undefined);
+                                setOdometer(value ? parseFloat(value) : 0);
                             }}
                         // className={`${!odometer || odometer < 0 ? "bg-yellow-100 text-black" : ""} text-foreground`}
                         />
