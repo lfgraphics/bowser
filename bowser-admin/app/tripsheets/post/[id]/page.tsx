@@ -67,6 +67,7 @@ const page = ({ params }: { params: Promise<{ id: string }> }) => {
     };
 
     useEffect(() => {
+        if(!id) return;
         checkTallyStatus();
     }, [id]);
 
