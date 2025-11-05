@@ -244,7 +244,7 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
                             >
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>{record.category}</TableCell>
-                                <TableCell>{record.category !== "Own" ? record.party :"Not Applicable"}</TableCell>
+                                <TableCell>{record.category !== "Own" ? record.party : "Not Applicable"}</TableCell>
                                 <TableCell>{`${formatDate(
                                     record.fuelingDateTime
                                 )}`}</TableCell>
@@ -312,19 +312,19 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
             </Table>
 
             {showAlert &&
-            <AlertDialog open={showAlert} onOpenChange={setShowAlert} >
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{alertTitle}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {alertMessage}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Okay</AlertDialogCancel>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                <AlertDialog open={showAlert} onOpenChange={setShowAlert} >
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{alertTitle}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {alertMessage}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Okay</AlertDialogCancel>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             }
 
             <Button onClick={openCalculationModal}>Show Calculations</Button>
@@ -344,7 +344,20 @@ const WholeTripSheetCard: React.FC<WholeTripSheetCardProps> = ({ record }) => {
     );
 };
 
-export const page = ({ params }: { params: { id: string } }) => {
+export const page = ({
+    params,
+}: {
+    params: Promise<{ id: string }>
+}) => {
+    const [id, setId] = useState<string>("");
+    useEffect(() => {
+        const fetchId = async () => {
+            const resolvedParams = await params;
+            setId(resolvedParams.id);
+        };
+        fetchId();
+    }, [params]);
+
     const [loading, setLoading] = useState(false);
     const checkAuth = () => {
         const authenticated = isAuthenticated();
@@ -524,9 +537,12 @@ export const page = ({ params }: { params: { id: string } }) => {
     const [record, setRecord] = useState<WholeTripSheet>(dummyRecord);
     useEffect(() => {
         const fetchRecords = async () => {
+            const resolvedParams = await params;
+            const id = resolvedParams.id;
+            if (!id) return;
             try {
                 setLoading(true)
-                const response = await axios.get(`${BASE_URL}/tripSheet/${params.id}`);
+                const response = await axios.get(`${BASE_URL}/tripSheet/${id}`);
                 setRecord(response.data);
                 console.log(response.data)
             } catch (error) {
@@ -537,10 +553,11 @@ export const page = ({ params }: { params: { id: string } }) => {
         };
 
         fetchRecords();
-    }, [params.id]);
+    }, [id]);
 
     const handlePrint = () => {
-        const printURL = `${window.location.origin}/tripsheets/settle/print/${params.id}`; // Your print route
+        if (!id) return;
+        const printURL = `${window.location.origin}/tripsheets/settle/print/${id}`; // Your print route
         const newWindow = window.open(printURL, '_blank');
         newWindow?.focus();
 

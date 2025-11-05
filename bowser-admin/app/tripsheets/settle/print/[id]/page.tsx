@@ -14,12 +14,14 @@ const SettlementPage = ({ params }: { params: Promise<{ id: string }> }) => {
       const { id } = await params;
       setId(id);
     })();
-  }, [params]);
+  }, [id]);
 
   const [loading, setLoading] = useState(true);
   const [record, setRecord] = useState<WholeTripSheet>();
   useEffect(() => {
     const fetchRecords = async () => {
+      const resolvedParams = await params;
+      const id = resolvedParams.id;
       if (!id) return;
       try {
         setLoading(true);
