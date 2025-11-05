@@ -158,7 +158,7 @@ const VehicleManagementPage = () => {
             <div className="main m-4 flex flex-col gap-6">
                 <div className="query-container flex gap-4">
                     <SearchInput
-                        onChange={(e) => { setQuery(e.target.value) }}
+                        onChange={(e: { target: { value: React.SetStateAction<string> } }) => { setQuery(e.target.value) }}
                         placeholder='Enter a value to filter'
                     />
                     <Select value={limit} onValueChange={(value) => setLimit(value)}>

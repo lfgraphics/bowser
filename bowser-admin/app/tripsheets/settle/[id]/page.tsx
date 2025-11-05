@@ -97,6 +97,7 @@ const SettlementPage = ({ params }: { params: Promise<{ id: string }> }) => {
 
   useEffect(() => {
     const fetchTripSheet = async () => {
+      if(!id) return;
       setLoading(true);
       try {
         const response = await axios.get(
@@ -262,6 +263,7 @@ const SettlementPage = ({ params }: { params: Promise<{ id: string }> }) => {
   };
 
   const handlePrint = () => {
+    if (!id) return;
     const printURL = `${window.location.origin}/tripsheets/settle/print/${id}`; // Your print route
     const newWindow = window.open(printURL, "_blank");
     newWindow?.focus();

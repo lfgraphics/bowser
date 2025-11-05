@@ -32,6 +32,7 @@ const page = ({ params }: { params: Promise<{ id: string }> }) => {
     const [postProgress, setPostProgress] = useState<{ current: number, total: number } | null>(null);
 
     const fetchRecords = async () => {
+        if (!id) return;
         try {
             setLoading(true);
             const response = await axios.get(`${BASE_URL}/tripSheet/${id}`);

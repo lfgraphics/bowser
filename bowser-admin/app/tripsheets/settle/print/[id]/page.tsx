@@ -20,6 +20,7 @@ const SettlementPage = ({ params }: { params: Promise<{ id: string }> }) => {
   const [record, setRecord] = useState<WholeTripSheet>();
   useEffect(() => {
     const fetchRecords = async () => {
+      if (!id) return;
       try {
         setLoading(true);
         const response = await axios.get(`${BASE_URL}/tripSheet/${id}`);

@@ -1,9 +1,36 @@
 "use client";
 import FuelingAllocation, { SearchParams } from '@/components/FuelingAllocation';
 import { InstallPrompt } from '../page';
+import { useSearchParams } from 'next/navigation';
 // import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-export default function Dashboard({ searchParams }: { searchParams: SearchParams }) {
+export default function Dashboard() {
+    const urlSearchParams = useSearchParams();
+    const searchParams: SearchParams = {
+        vehicleNumber: urlSearchParams.get('vehicleNumber') || '',
+        odoMeter: urlSearchParams.get('odoMeter') || '',
+        tripId: urlSearchParams.get('tripId') || '',
+        driverId: urlSearchParams.get('driverId') || '',
+        driverName: urlSearchParams.get('driverName') || '',
+        driverMobile: urlSearchParams.get('driverMobile') || '',
+        id: urlSearchParams.get('id') || '',
+        orderId: urlSearchParams.get('orderId') || '',
+        category: (urlSearchParams.get('category') as "Own" | "Attatch" | "Bulk Sale") || "Own",
+        party: urlSearchParams.get('party') || '',
+        partyName: urlSearchParams.get('partyName') || '',
+        odometer: urlSearchParams.get('odometer') || '',
+        quantityType: (urlSearchParams.get('quantityType') as 'Full' | 'Part') || 'Full',
+        fuelQuantity: urlSearchParams.get('fuelQuantity') || '',
+        pumpAllocationType: (urlSearchParams.get('pumpAllocationType') as 'Any' | 'Specific') || 'Any',
+        allocationType: urlSearchParams.get('allocationType') || '',
+        bowserDriverName: urlSearchParams.get('bowserDriverName') || '',
+        bowserDriverMobile: urlSearchParams.get('bowserDriverMobile') || '',
+        bowserRegNo: urlSearchParams.get('bowserRegNo') || '',
+        fuelProvider: urlSearchParams.get('fuelProvider') || '',
+        petrolPump: urlSearchParams.get('petrolPump') || '',
+        fuelStation: urlSearchParams.get('fuelStation') || '',
+        editing: urlSearchParams.get('editing') === 'true',
+    };
 
     return (
         <div>
