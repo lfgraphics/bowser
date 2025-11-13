@@ -5,6 +5,8 @@ import vehiclesRoutes from './fetch-vehicles.js';
 import tripUpdateRoutes from './update-in-trip.js';
 import stackHoldersRoutes from './stack-holders.js';
 import goodsRoutes from './goods.js';
+import loadingNotificationRoutes from './loading-notification.js';
+
 
 const router = Router();
 
@@ -14,5 +16,6 @@ router.use('/vehicles', vehiclesRoutes);
 router.use('/trip-update', tripUpdateRoutes);
 router.use('/stack-holders', stackHoldersRoutes);
 router.use('/goods', goodsRoutes);
+router.use('/loading-notification', loadingNotificationRoutes);
 
 export default router;

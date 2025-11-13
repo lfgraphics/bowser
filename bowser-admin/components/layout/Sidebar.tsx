@@ -116,6 +116,17 @@ export function Sidebar() {
                     </Link>
                   </li>
                   <li onClick={toggleSidebar}>
+                    <Link href="/trans-app/notifications">
+                      <Button
+                        variant="ghost"
+                        className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/trans-app/notifications" ? "bg-primary text-primary-foreground" : ""}`}
+                      >
+                        <Bell className="mr-2 w-4 h-4" />
+                        Notifications
+                      </Button>
+                    </Link>
+                  </li>
+                  <li onClick={toggleSidebar}>
                     <Link href="/trans-app/unloading-tracker">
                       <Button
                         variant="ghost"
@@ -552,7 +563,7 @@ export function Sidebar() {
                   <ThemeChanger />
                 </li>
               </ul>
-              <div className="sticky bottom-0 h-8 w-full bg-gradient-to-t from-background to-transparent z-10"></div>
+              <div className="sticky bottom-0 h-8 w-full bg-linear-to-t from-background to-transparent z-10"></div>
             </nav>
             <div className="mt-auto h-[15%]">
               <Button

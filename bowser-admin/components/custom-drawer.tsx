@@ -25,7 +25,7 @@ const CustomDrawer = ({ title, description, children }: { title: string | null; 
 
     return (
         <Drawer open={isOpen} onOpenChange={setIsOpen} onClose={handleClose}>
-            <DrawerContent className="mx-auto w-full max-w-lg md:max-w-screen-xl px-4 max-h-[80svh]">
+            <DrawerContent className="mx-auto w-full max-w-lg md:max-w-7xl px-4 max-h-[80svh]">
                 <DrawerHeader className="text-left">
                     <DrawerTitle>{title}</DrawerTitle>
                     <DrawerDescription>{description}</DrawerDescription>

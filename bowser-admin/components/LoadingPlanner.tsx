@@ -16,19 +16,19 @@ import { searchItems } from "@/utils/searchUtils"
 import Loading from "@/app/loading"
 import { DatePicker, DateTimePicker } from "./ui/datetime-picker"
 
-export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query }: { tripsData: TankersTrip[], user: TransAppUser | undefined, query: { tripId: string } }) {
+export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query }: { tripsData: TankersTrip[], user: TransAppUser | undefined, query: { tripId: string, destination: string, destinationName: string, notificationId: string, orderedBy: string } }) {
     const [loading, setLoading] = useState<boolean>(false)
     const [targetTime, setTargetTime] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
     const [proposedDate, setProposedDate] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
     const [odometer, setOdometer] = useState<number>(0)
-    const [orderedBy, setOrderedBy] = useState<string>("")
+    const [orderedBy, setOrderedBy] = useState<string>(query.orderedBy || "")
     const [proposedBy, setProposedBy] = useState<string>("")
     const [data, setData] = useState<TankersTrip[]>(tripsData || [])
     const [driverMobile, setDriverMobile] = useState<string>("")
     const [vehicleSearch, setVehicleSearch] = useState<string>("")
     const [tripId, setTripId] = useState<string>(query.tripId)
     const [Driver, setDriver] = useState<string>("");
-    const [search, setSearch] = useState<string>("")
+    const [search, setSearch] = useState<string>(query.destinationName || "")
     const [stackHolders, setStackHolders] = useState<ComboboxOption[]>([])
     const [stackHolder, setStackHolder] = useState<string>("")
     const [currentTrip, setCurrentTrip] = useState<TankersTrip | null>(null)
@@ -59,7 +59,16 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
         let jsonUser: TransAppUser = JSON.parse(user!)
         setProposedBy(jsonUser.name)
         searchDriver(data.find((trip) => trip._id === tripId)?.StartDriver!)
-    }, [])
+    }, []);
+
+    useEffect(() => {
+        if (query.destination && query.destinationName) {
+            setStackHolder(query.destination)
+            setSearch(query.destinationName)
+            setOrderedBy(query.orderedBy || "")
+            fetchStackHolders()
+        }
+    }, [query])
 
     useEffect(() => {
         const crTtip = data.find(trip => trip?._id === tripId);
@@ -138,7 +147,8 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
             previousTripId: tripId,
             StartFrom: data.find(trip => trip?._id === tripId)?.EndTo,
             division: user?.Division || "",
-            proposedDate: new Date(new Date(proposedDate ? proposedDate : new Date()).setUTCHours(0, 0, 1, 800))
+            proposedDate: new Date(new Date(proposedDate ? proposedDate : new Date()).setUTCHours(0, 0, 1, 800)),
+            notificationId: query.notificationId || ""
         }
         try {
             const response = await fetch(url, {
@@ -208,7 +218,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
                                 return (
                                     <div className="gap-y-2">
                                         <strong className="text-lg">Last trip details</strong><br />
-                                        <div className="grid grid-cols-[auto_1fr] gap-x-2 text-lg">
+                                        <div className="hidden">
                                             <span><strong>Start Date: </strong></span>
                                             <span>{formatDate(String(t?.StartDate))}</span>
 
@@ -226,7 +236,8 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
 
                                             <span><strong>Reporting Date: </strong></span>
                                             <span>{formatDate(t?.ReportingDate || t?.TallyLoadDetail?.ReportedDate || "")}</span>
-
+                                        </div>
+                                        <div className="grid grid-cols-[auto_1fr] gap-x-2 text-lg">
                                             <span><strong>Unloading Date: </strong></span>
                                             <span>
                                                 {formatDate(t?.TallyLoadDetail?.UnloadingDate || t?.LoadTripDetail?.UnloadDate || "") === "no date provided"
@@ -235,7 +246,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
                                                 }
                                             </span>
 
-                                            <span><strong>Ending Location: </strong></span>
+                                            <span><strong>Depo: </strong></span>
                                             <span>{t?.EndTo || "N/A"}</span>
                                         </div>
                                     </div>
@@ -320,28 +331,36 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
                             }}
                         // className={`${!odometer || odometer < 0 ? "bg-yellow-100 text-black" : ""} text-foreground`}
                         />
-                        <Label htmlFor="ordered-by">Ordered By</Label>
-                        <Input
-                            id="ordered-by"
-                            type="text"
-                            value={orderedBy}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                setOrderedBy(value);
-                            }}
-                            className={`${!orderedBy ? "bg-yellow-100" : ""}`}
-                        />
-                        <Label htmlFor="proposed-by">Proposed By</Label>
-                        <Input
-                            id="proposed-by"
-                            type="text"
-                            value={proposedBy}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                setProposedBy(value);
-                            }}
-                            readOnly
-                        />
+                        {
+                            <div className={query.orderedBy ? "hidden" : ""}>
+                                <Label htmlFor="ordered-by">Ordered By</Label>
+                                <Input
+                                    id="ordered-by"
+                                    type="text"
+                                    value={orderedBy}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setOrderedBy(value);
+                                    }}
+                                    className={`${!orderedBy ? "bg-yellow-100" : ""}`}
+                                />
+                            </div>
+                        }
+                        {
+                            <div className="hidden">
+                                <Label htmlFor="proposed-by">Proposed By</Label>
+                                <Input
+                                    id="proposed-by"
+                                    type="text"
+                                    value={proposedBy}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setProposedBy(value);
+                                    }}
+                                    readOnly
+                                />
+                            </div>
+                        }
                         <div className="w-full flex gap-2 flex-row justify-between mt-2">
                             <Button className="flex-1" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
                             <Button className="flex-1" type="button" onClick={() => submit()}>Submit</Button>

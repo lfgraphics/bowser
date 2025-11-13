@@ -5,6 +5,7 @@ import { Router } from 'express';
 const router = Router();
 import { findById as findTripById, findByIdAndUpdate as updateTripById } from '../../models/VehiclesTrip.js';
 import { createEmptyTrip, updateEmptyTrip } from './utils.js';
+import LoadingOrderNotification from '../../models/LoadingOrderNotification.js';
 
 // const { getCurrentTrip, getAllTrips } = require('./utils');
 
@@ -293,9 +294,15 @@ router.post('/create-empty-trip', async (req, res) => {
     try {
         const savedTrip = await createEmptyTrip(postData);
         console.log('Created empty trip: ', savedTrip);
+        if (postData.notificationId){
+            const updateResponse = await LoadingOrderNotification.findByIdAndUpdate(postData.notificationId, { status: 'completed' }, { new: true });
+            console.log('Updated loading order notification status: ', updateResponse);
+        }else{
+            console.log('No notification id provided')
+        }
         return res.status(201).json({ message: 'Empty trip created successfully', trip: savedTrip });
     } catch (err) {
-        console.error('Error creating empty tanker trip: ', err.message);
+        console.error('Error creating empty tanker trip: ', err);
         return res.status(400).json({ message: 'Failed creating Empty tanker trip', error: err.message });
     }
 });

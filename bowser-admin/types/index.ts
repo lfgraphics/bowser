@@ -668,6 +668,21 @@ export interface TransAppUser {
   vehicles: [string]
 }
 
+export interface LoadingNotification {
+  _id: string;
+  to: string;
+  vehicle: string;
+  tripId: string;
+  destinationId: string;
+  destinationName: string;
+  location: string;
+  status: "pending" | "completed";
+  from: string;
+  sentAt: string;
+  url: string;
+  id: string;
+}
+
 export interface TankersTrip {
   _id: string;
   TallyLoadDetail: {

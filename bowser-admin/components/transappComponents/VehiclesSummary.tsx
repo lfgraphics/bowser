@@ -31,6 +31,7 @@ import {
     ExcelTableHeader as TableHeader,
     ExcelTableRow as TableRow
 } from "@codvista/cvians-excel-table"
+import AdminLoadingPlanner from '../AdminLoadingPlanner';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -713,9 +714,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
-                                                    if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
-                                                        setViewingTrip(trip?._id)
-                                                    }
                                                 }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.driverStatus == 0 ? "text-destructive" : ""}>
                                                     <TableCell>{index + 1}</TableCell>
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
@@ -750,6 +748,9 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
+                                                        {trip?.superwiser && user?.Division.includes('Admin') &&
+                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Divert"></AdminLoadingPlanner>
+                                                        }
                                                         <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                             <Eye />
                                                         </Button>
@@ -777,9 +778,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             .map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
-                                                    if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
-                                                        setViewingTrip(trip?._id)
-                                                    }
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Depot" ? "bg-yellow-200 dark:text-background hover:bg-yellow-200" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                     <TableCell>{index + 1}</TableCell>
                                                     <TableCell>{highlightText(trip?.VehicleNo || "")}</TableCell>
@@ -821,6 +819,9 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
+                                                        {trip?.superwiser && user?.Division.includes('Admin') &&
+                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Order"></AdminLoadingPlanner>
+                                                        }
                                                         <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                             <Eye />
                                                         </Button>
@@ -841,9 +842,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
-                                                    if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
-                                                        setViewingTrip(trip?._id)
-                                                    }
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                     <TableCell>{index + 1}</TableCell>
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
@@ -887,6 +885,9 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
+                                                        {trip?.superwiser && user?.Division.includes('Admin') &&
+                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Divert"></AdminLoadingPlanner>
+                                                        }
                                                         <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                             <Eye />
                                                         </Button>
@@ -907,9 +908,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
-                                                    if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
-                                                        setViewingTrip(trip?._id)
-                                                    }
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                     <TableCell>{index + 1}</TableCell>
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
@@ -945,6 +943,9 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
+                                                        {trip?.superwiser && user?.Division.includes('Admin') &&
+                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Divert"></AdminLoadingPlanner>
+                                                        }
                                                         <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                             <Eye />
                                                         </Button>
@@ -965,9 +966,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
-                                                    if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
-                                                        setViewingTrip(trip?._id)
-                                                    }
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                     <TableCell>{index + 1}</TableCell>
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
@@ -979,7 +977,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                     <TableCell>{formatDate(trip?.EmptyTripDetail.ReportDate)}</TableCell>
                                                     <TableCell>{trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status !== "Custom" ? trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status + `: ${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment || ""}` : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment}</TableCell>
                                                     <TableCell className='flex gap-2'>
-                                                        {!user?.Division.includes('Admin') && <DropdownMenu>
+                                                        <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
                                                                 <Button variant="outline" size="sm">
                                                                     Update
@@ -1001,7 +999,10 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                     }}>Change Destination</Link>
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
-                                                        </DropdownMenu>}
+                                                        </DropdownMenu>
+                                                        {trip?.superwiser && user?.Division.includes('Admin') &&
+                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Divert"></AdminLoadingPlanner>
+                                                        }
                                                         <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                             <Eye />
                                                         </Button>
@@ -1023,9 +1024,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
-                                                    if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
-                                                        setViewingTrip(trip?._id)
-                                                    }
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                     <TableCell>{index + 1}</TableCell>
                                                     <TableCell>{highlightText(trip?.VehicleNo || "")}</TableCell>
@@ -1053,9 +1051,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
-                                                    if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
-                                                        setViewingTrip(trip?._id)
-                                                    }
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                     <TableCell>{index + 1}</TableCell>
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
@@ -1092,6 +1087,9 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
+                                                        {trip?.superwiser && user?.Division.includes('Admin') &&
+                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Divert"></AdminLoadingPlanner>
+                                                        }
                                                         <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                             <Eye />
                                                         </Button>
@@ -1112,9 +1110,6 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
-                                                    if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
-                                                        setViewingTrip(trip?._id)
-                                                    }
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                     <TableCell>{index + 1}</TableCell>
                                                     <TableCell>{highlightText(trip?.VehicleNo || "")}</TableCell>
@@ -1156,6 +1151,9 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
+                                                        {trip?.superwiser && user?.Division.includes('Admin') &&
+                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Order"></AdminLoadingPlanner>
+                                                        }
                                                         <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                             <Eye />
                                                         </Button>
@@ -1332,7 +1330,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                             <TableRow onClick={(e: React.MouseEvent) => {
                                                                 const el = e.target as HTMLElement | null;
                                                                 // if the click happened inside the dropdown, don't open the drawer
-                                                                if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
+                                                                if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link') && !el.closest('#adminorder')) {
                                                                     setViewingTrip(trip?._id)
                                                                 }
                                                             }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
@@ -1409,7 +1407,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                             <TableRow onClick={(e: React.MouseEvent) => {
                                                                 const el = e.target as HTMLElement | null;
                                                                 // if the click happened inside the dropdown, don't open the drawer
-                                                                if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
+                                                                if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link') && !el.closest('#adminorder')) {
                                                                     setViewingTrip(trip?._id)
                                                                 }
                                                             }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
@@ -1512,7 +1510,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                                     const el = e.target as HTMLElement | null;
                                                                     // if the click happened inside the dropdown, don't open the drawer
-                                                                    if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
+                                                                    if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link') && !el.closest('#adminorder')) {
                                                                         setViewingTrip(trip?._id)
                                                                     }
                                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
@@ -1608,7 +1606,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                                     const el = e.target as HTMLElement | null;
                                                                     // if the click happened inside the dropdown, don't open the drawer
-                                                                    if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link')) {
+                                                                    if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link') && !el.closest('#adminorder')) {
                                                                         setViewingTrip(trip?._id)
                                                                     }
                                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>

@@ -9,6 +9,10 @@ import { useSearchParams } from 'next/navigation';
 
 type QueryType = {
   tripId: string;
+  destination: string;
+  destinationName: string;
+  notificationId: string;
+  orderedBy: string;
 }
 
 const UnloadingTracker = () => {
@@ -17,7 +21,11 @@ const UnloadingTracker = () => {
   // parse and validate search params into QueryType
   const rawQuery = Object.fromEntries(searchParams.entries()) as Record<string, string | undefined>;
   const query: QueryType = {
-    tripId: rawQuery.tripId ?? ""
+    tripId: rawQuery.tripId ?? "",
+    destination: rawQuery.destination ?? "",
+    destinationName: rawQuery.destinationName ?? "",
+    notificationId: rawQuery.notificationId ?? "",
+    orderedBy: rawQuery.orderedBy ?? "",
   };
 
   const [loading, setLoading] = useState<boolean>(true)
