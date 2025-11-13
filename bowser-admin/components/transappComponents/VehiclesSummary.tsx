@@ -749,7 +749,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
                                                         {trip?.superwiser && user?.Division.includes('Admin') &&
-                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Divert"></AdminLoadingPlanner>
+                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Order" type="new"></AdminLoadingPlanner>
                                                         }
                                                         <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                             <Eye />
@@ -820,7 +820,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
                                                         {trip?.superwiser && user?.Division.includes('Admin') &&
-                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Order"></AdminLoadingPlanner>
+                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Order" type="new"></AdminLoadingPlanner>
                                                         }
                                                         <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                             <Eye />
@@ -886,7 +886,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
                                                         {trip?.superwiser && user?.Division.includes('Admin') &&
-                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Divert"></AdminLoadingPlanner>
+                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Divert" type="divert"></AdminLoadingPlanner>
                                                         }
                                                         <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                             <Eye />
@@ -944,7 +944,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
                                                         {trip?.superwiser && user?.Division.includes('Admin') &&
-                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Divert"></AdminLoadingPlanner>
+                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Order" type="divert"></AdminLoadingPlanner>
                                                         }
                                                         <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                             <Eye />
@@ -1001,7 +1001,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
                                                         {trip?.superwiser && user?.Division.includes('Admin') &&
-                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Divert"></AdminLoadingPlanner>
+                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Order" type="divert"></AdminLoadingPlanner>
                                                         }
                                                         <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                             <Eye />
@@ -1088,7 +1088,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
                                                         {trip?.superwiser && user?.Division.includes('Admin') &&
-                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Divert"></AdminLoadingPlanner>
+                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Divert" type="divert"></AdminLoadingPlanner>
                                                         }
                                                         <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                             <Eye />
@@ -1152,7 +1152,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
                                                         {trip?.superwiser && user?.Division.includes('Admin') &&
-                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Order"></AdminLoadingPlanner>
+                                                            <AdminLoadingPlanner trip={trip} manager={trip.superwiser} trigger="Order" type="new"></AdminLoadingPlanner>
                                                         }
                                                         <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
                                                             <Eye />

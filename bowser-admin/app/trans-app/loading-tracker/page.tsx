@@ -10,6 +10,10 @@ import { useSearchParams } from 'next/navigation';
 type QueryType = {
   actionType: "loaded" | "destinationChange" | "update" | "report" | undefined;
   tripId: string;
+  destination: string;
+  destinationName: string;
+  notificationId: string;
+  orderedBy: string;
 }
 
 const LoadingTracker = () => {
@@ -27,7 +31,11 @@ const LoadingTracker = () => {
     : undefined;
   const query: QueryType = {
     actionType,
-    tripId: rawQuery.tripId ?? ""
+    tripId: rawQuery.tripId ?? "",
+    destination: rawQuery.destination ?? "",
+    destinationName: rawQuery.destinationName ?? "",
+    notificationId: rawQuery.notificationId ?? "",
+    orderedBy: rawQuery.orderedBy ?? ""
   };
 
   const [loading, setLoading] = useState<boolean>(true)

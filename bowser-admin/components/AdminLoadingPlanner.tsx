@@ -8,7 +8,7 @@ import { Button } from "./ui/button";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 import { AlertDescription } from "./ui/alert";
 
-const AdminLoadingPlanner = ({ trip, manager, trigger }: { trip: TankersTrip, manager: string, trigger: string }) => {
+const AdminLoadingPlanner = ({ trip, manager, trigger, type }: { trip: TankersTrip, manager: string, trigger: string, type: "new" | "divert" }) => {
     const [loading, setLoading] = useState(true);
     const [stackHolder, setStackHolder] = useState<string>("")
     const [stackHolders, setStackHolders] = useState<ComboboxOption[]>([])
@@ -49,7 +49,8 @@ const AdminLoadingPlanner = ({ trip, manager, trigger }: { trip: TankersTrip, ma
             destinationName: stackHolders.find(holder => holder.value === stackHolder)?.label.split(':')[0].trim() || stackHolder,
             location: stackHolders.find(holder => holder.value === stackHolder)?.label.split(':')[1].trim() || stackHolder,
             from: admin,
-            vehicle: trip.VehicleNo || ""
+            vehicle: trip.VehicleNo || "",
+            type: type || "new"
         }
 
         try {

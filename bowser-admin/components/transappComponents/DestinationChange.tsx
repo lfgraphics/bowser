@@ -20,10 +20,11 @@ import { DatePicker, DateTimePicker } from '../ui/datetime-picker'
 
 interface DestinationChangeProps {
     selectedTrip: TankersTrip,
-    user: TransAppUser
+    user: TransAppUser,
+    query: { tripId: string, destination: string, destinationName: string, notificationId: string, orderedBy: string }
 }
 
-const DestinationChange = ({ selectedTrip, user }: DestinationChangeProps) => {
+const DestinationChange = ({ selectedTrip, user, query }: DestinationChangeProps) => {
     const [loading, setLoading] = useState(false);
     const [driverMobile, setDriverMobile] = useState("")
     const [searchModalConfig, setSearchModalConfig] = useState<{
@@ -41,7 +42,7 @@ const DestinationChange = ({ selectedTrip, user }: DestinationChangeProps) => {
         renderItem: () => null,
         keyExtractor: () => "",
     });
-    const [search, setSearch] = useState<string>("")
+    const [search, setSearch] = useState<string>(query.destinationName || "")
     const [stackHolders, setStackHolders] = useState<ComboboxOption[]>([])
     const [fullStackHolders, setFullStackHolders] = useState<{ _id: string, Location: string, InstitutionName: string }[]>([])
     const [stackHolder, setStackHolder] = useState<string>("")
@@ -49,7 +50,7 @@ const DestinationChange = ({ selectedTrip, user }: DestinationChangeProps) => {
     const [targetTime, setTargetTime] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
     const [proposedDate, setProposedDate] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
     const [odometer, setOdometer] = useState<number | undefined>(undefined)
-    const [orderedBy, setOrderedBy] = useState<string>("")
+    const [orderedBy, setOrderedBy] = useState<string>(query.orderedBy || "")
     const [proposedBy, setProposedBy] = useState<string>("")
     const [userDivision, setUserDivision] = useState<string>("")
     const [modificationCheck, setModificationCheck] = useState<boolean>(false)
@@ -64,6 +65,15 @@ const DestinationChange = ({ selectedTrip, user }: DestinationChangeProps) => {
         setProposedBy(jsonUser.name)
         setUserDivision(jsonUser.Division)
     }, [user])
+
+    useEffect(() => {
+        if (query.destination && query.destinationName) {
+            setStackHolder(query.destination)
+            setSearch(query.destinationName)
+            setOrderedBy(query.orderedBy || "")
+            fetchStackHolders()
+        }
+    }, [query])
 
     const handleDriverSelection = (driver: Driver) => {
         setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
@@ -285,7 +295,7 @@ const DestinationChange = ({ selectedTrip, user }: DestinationChangeProps) => {
                     </div>
                 }
 
-                <div>
+                <div className={`${query.orderedBy ? "hidden" : ""}`}>
                     <Label htmlFor="location">New Destination</Label>
                     <Combobox
                         className={`${!stackHolder ? "bg-yellow-100" : ""} w-full`}
@@ -340,7 +350,7 @@ const DestinationChange = ({ selectedTrip, user }: DestinationChangeProps) => {
                     <Input id="comment" value={ManagerComment} onChange={(e) => setManagerComment(e.target.value)} className={`${!ManagerComment ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
                 </div>
 
-                <div>
+                <div className='hidden'>
                     <Label id="proposed-by">Proposed By</Label>
                     <Input
                         id="proposed-by"
@@ -354,7 +364,7 @@ const DestinationChange = ({ selectedTrip, user }: DestinationChangeProps) => {
                     />
                 </div>
 
-                <div>
+                <div className={`${query.orderedBy ? "hidden" : ""}`}>
                     <Label>Ordered By</Label>
                     <Input
                         id="ordered-by"

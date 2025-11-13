@@ -3,6 +3,7 @@ import { getTransportDatabaseConnection } from '../../config/database.js';
 
 const loadingOrderNotificationSchema = new Schema({
     to: { type: String, required: true },
+    type: { type: String, enum: ['new', 'divert'], required: true, default: 'new' },
     sentAt: { type: Date, default: Date.now },
     tripId: { type: Schema.Types.ObjectId, ref: 'TankersTrip', required: true },
     destinationId: { type: Schema.Types.ObjectId, ref: 'StackHolder', required: true },
@@ -10,7 +11,7 @@ const loadingOrderNotificationSchema = new Schema({
     location: { type: String, required: true },
     status: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
     from: { type: String, required: true },
-    vehicle: { type: String},
+    vehicle: { type: String },
 }, {
     versionKey: false,
     toJSON: { virtuals: true },
@@ -18,7 +19,7 @@ const loadingOrderNotificationSchema = new Schema({
 });
 
 loadingOrderNotificationSchema.virtual('url').get(function () {
-    return String(`/trans-app/loading-planner?tripId=${this.tripId}&destination=${this.destinationId}&destinationName=${this.destinationName}&orderedBy=${this.from}&notificationId=${this._id}`);
+    return String(`/trans-app/${this.type === "new" ? 'loading-planner?' : 'loading-tracker?actionType=destinationChange'}${this.type === "new" ? '' : '&'}tripId=${this.tripId}&destination=${this.destinationId}&destinationName=${this.destinationName}&orderedBy=${this.from}&notificationId=${this._id}`);
 });
 
 const LoadingOrderNotification = getTransportDatabaseConnection().model('LoadingOrderNotification', loadingOrderNotificationSchema, 'LoadingOrderNotifications');

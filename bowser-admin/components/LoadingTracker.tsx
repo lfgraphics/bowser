@@ -20,8 +20,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./
 import { Card, CardContent, CardHeader } from "./ui/card"
 import { DateTimePicker } from "./ui/datetime-picker"
 
-export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }: { tripsData: TankersTrip[], user: TransAppUser, query: { actionType: "update" | "report" | "loaded" | "destinationChange" | undefined; tripId: string } }) {
+export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }: { tripsData: TankersTrip[], user: TransAppUser, query: { actionType: "update" | "report" | "loaded" | "destinationChange" | undefined; tripId: string, destination: string, destinationName: string, notificationId: string, orderedBy: string } }) {
     const queryAction = query?.actionType
+    const queryDestination = query?.destination || "no destination"
+    const queryDestinationName = query?.destinationName
+    const queryNotificationId = query?.notificationId
+    const queryOrderedBy = query?.orderedBy
+
     const [loading, setLoading] = useState(false)
     const [actionType, setActionType] = useState<"update" | "report" | "loaded" | "destinationChange" | undefined>(queryAction)
     const [TrackUpdateDate, setTrackUpdateDate] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
@@ -57,6 +62,12 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }
     });
 
     const [tripId, setTripId] = useState<string>(query.tripId)
+    const [trip, setTrip] = useState<TankersTrip | undefined>(undefined);
+
+    useEffect(() => {
+        const selectedTrip = data.find(trip => trip._id === tripId);
+        setTrip(selectedTrip);
+    }, [tripId, data]);
 
     useEffect(() => {
         if (actionType === "report") {
@@ -218,18 +229,20 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }
                                 </div>
                             </>
                         }
-                        <Combobox
-                            className="w-full"
-                            options={vehicles}
-                            value={tripId}
-                            onChange={setTripId}
-                            searchTerm={vehicleSearch}
-                            onSearchTermChange={setVehicleSearch}
-                            placeholder="Select Vehicle"
-                        />
+                        <div className={query.orderedBy ? "hidden" : ""}>
+                            <Combobox
+                                className="w-full"
+                                options={vehicles}
+                                value={tripId}
+                                onChange={setTripId}
+                                searchTerm={vehicleSearch}
+                                onSearchTermChange={setVehicleSearch}
+                                placeholder="Select Vehicle"
+                            />
+                        </div>
                         {
                             tripId && (
-                                <div className="buttons flex flex-col gap-2 items-center w-full">
+                                <div className={`${query.orderedBy ? "hidden" : ""} buttons flex flex-col gap-2 items-center w-full`}>
                                     {queryAction ? actionType === "destinationChange" && <Button className={`w-full ${actionType === "destinationChange" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("destinationChange")}>Destination Change</Button> : <Button className={`w-full ${actionType === "destinationChange" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("destinationChange")}>Destination Change</Button>}
                                     {queryAction ? actionType === "update" && <Button className={`w-full ${actionType === "update" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("update")}>Update</Button> : <Button className={`w-full ${actionType === "update" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("update")}>Update</Button>}
                                     {queryAction ? actionType === "report" && <Button className={`w-full ${actionType === "report" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("report")}>Report</Button> : <Button className={`w-full ${actionType === "report" ? "bg-green-500 text-white hover:bg-green-200 hover:text-black" : ""}`} onClick={() => setActionType("report")}>Report</Button>}
@@ -414,6 +427,9 @@ export default function UnloadedPlannedVehicleTracker({ tripsData, query, user }
                                 <DestinationChange
                                     selectedTrip={data.find((trip) => trip._id == tripId)!}
                                     user={user}
+                                    query={
+                                        { tripId: trip?._id!, destination: queryDestination, destinationName: queryDestinationName, notificationId: queryNotificationId, orderedBy: queryOrderedBy }
+                                    }
                                 />
                             }
                         </div>

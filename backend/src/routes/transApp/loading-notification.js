@@ -24,10 +24,10 @@ router.post('/', async (req, res) => {
         await sendWebPushNotification(
             {
                 userId: to,
-                message: `New loading order for trip ${vehicle} to ${location} at ${destinationName}.`,
+                message: `Send ${vehicle} to ${location} at ${destinationName}.\n${from}`,
                 options: {
-                    title: 'Loading Order Notification',
-                    url: `/trans-app/loading-planner?tripId=${tripId}&destination=${destinationId}&destinationName=${destinationName}`,
+                    title: 'New Loading Order',
+                    url: `/trans-app/notifications`,
                     id: loadingOrderNotification._id,
                     icon: '/icons/setplan.svg'
                 }
