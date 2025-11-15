@@ -7,6 +7,7 @@ import { BASE_URL } from "@/lib/api";
 import { Button } from "./ui/button";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 import { AlertDescription } from "./ui/alert";
+import { Label } from "./ui/label";
 
 const AdminLoadingPlanner = ({ trip, manager, trigger, type }: { trip: TankersTrip, manager: string, trigger: string, type: "new" | "divert" }) => {
     const [loading, setLoading] = useState(true);
@@ -92,9 +93,10 @@ const AdminLoadingPlanner = ({ trip, manager, trigger, type }: { trip: TankersTr
                 </AlertDialogTrigger>
                 <AlertDialogContent id="adminorder">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Order Loading destination</AlertDialogTitle>
-                        <AlertDescription></AlertDescription>
+                        <AlertDialogTitle className="font-black text-2xl">Initiating Loading Program</AlertDialogTitle>
+                        <AlertDescription className="font-bold text-lg text-foreground">{trip.VehicleNo || ""}</AlertDescription>
                     </AlertDialogHeader>
+                    <Label>Loading Location</Label>
                     <Combobox
                         className={`${!stackHolder ? "bg-yellow-100" : ""} w-full`}
                         options={stackHolders}
