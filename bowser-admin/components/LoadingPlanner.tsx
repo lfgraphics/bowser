@@ -133,7 +133,30 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
         }
     }
 
+    const validateInputs = () => {
+        if (!tripId) {
+            toast.error("Please select a trip", { richColors: true });
+            return false;
+        }
+        if (!Driver) {
+            toast.error("Please select a driver", { richColors: true });
+            return false;
+        }
+        if (!stackHolder) {
+            toast.error("Please select a destination", { richColors: true });
+            return false;
+        }
+        if (!targetTime) {
+            toast.error("Please select a target time", { richColors: true });
+            return false;
+        }
+        return true;
+    }
+
     const submit = async () => {
+        if (!validateInputs()) {
+            return;
+        }
         const url = `${BASE_URL}/trans-app/trip-update/create-empty-trip`;
         const postData = {
             VehicleNo: data.find(trip => trip?._id === tripId)?.VehicleNo,

@@ -1,10 +1,9 @@
 "use client"
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-import { Share2, Loader2, Phone } from "lucide-react";
+import { Share2, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
-import { toJpeg } from 'html-to-image';
 import {
     Dialog,
     DialogContent,
@@ -42,182 +41,324 @@ type Props = {
 };
 
 const MorningUpdateReport: React.FC<Props> = ({ isOpen, onClose, reportData }) => {
-    const [isSharing, setIsSharing] = useState(false);
-    const snapshotRef = React.useRef<HTMLDivElement>(null);
-
-    const handleShare = async () => {
-        setIsSharing(true);
-        try {
-            if (!snapshotRef.current) throw new Error("Snapshot node missing");
-
-            const originalHeight = snapshotRef.current.style.height;
-            snapshotRef.current.style.height = 'auto';
-
-            if ((document as any).fonts && typeof (document as any).fonts.ready?.then === "function") {
-                await (document as any).fonts.ready;
-            } else {
-                await new Promise((r) => setTimeout(r, 300));
-            }
-
-            const dataUrl = await toJpeg(document.getElementById('snapshot')!, {
-                pixelRatio: 2,
-                quality: 2,
-                backgroundColor: "#ffffff",
-            });
-
-            snapshotRef.current.style.height = originalHeight;
-
-            const blob = await fetch(dataUrl).then((r) => r.blob());
-            const file = new File([blob], "morning-update-report.jpg", { type: "image/jpeg" });
-
-            const nav: any = typeof navigator !== "undefined" ? navigator : undefined;
-            if (nav && typeof nav.canShare === "function" && nav.canShare({ files: [file] })) {
-                await nav.share({ files: [file], title: "Morning Update Report" });
-                toast.success("Report shared successfully");
-            } else {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "morning-update-report.jpg";
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                toast.success("Report downloaded");
-            }
-        } catch (err) {
-            console.error(err);
-            toast.error("Failed to share report", { description: String(err) });
-        } finally {
-            setIsSharing(false);
-        }
-    };
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [imageBlob, setImageBlob] = useState<Blob | null>(null);
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
 
     const currentTs = new Date().toLocaleString();
 
+    // Generate body content for the report (API will wrap with Tailwind)
+    const generateReportBodyContent = () => {
+        return `
+<div class="bg-white max-w-2xl mx-auto rounded-3xl shadow-2xl p-8">
+    <!-- Header -->
+    <div class="text-center mb-8 pb-6 border-b-4 border-blue-600">
+        <h1 class="text-2xl font-bold text-slate-800 uppercase mb-2">
+            ${(reportData.user?.name || "—").toUpperCase()}
+        </h1>
+        <div class="text-base font-bold text-slate-600 mb-1">${reportData.date}</div>
+        <div class="text-sm text-slate-500">Morning Update</div>
+    </div>
+    
+    <!-- Vehicles -->
+    <div class="space-y-6">
+        ${reportData.vehicles?.map((v) => `
+            <div class="border-2 border-slate-200 rounded-xl overflow-hidden">
+                <table class="w-full">
+                    <tbody>
+                        <!-- Vehicle Number Row -->
+                        <tr>
+                            <td class="py-3 px-4 text-xs text-slate-500 align-middle w-1/4">
+                                Vehicle No.
+                            </td>
+                            <td class="py-3 px-4 text-4xl font-bold text-slate-900 w-1/3">
+                                ${v.vehicleNo}
+                            </td>
+                            <td class="py-3 px-4 text-right align-middle w-5/12">
+                                <div class="status-badge inline-flex items-center justify-end px-4 py-1.5 text-white font-semibold text-xs min-w-[100px] ${v.isReported ? 'bg-green-600' : 'bg-orange-600'}">
+                                    ${v.isReported ? 'REPORTED' : 'ON WAY'}
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- Planned For Row -->
+                        <tr class="bg-blue-600/15">
+                            <td class="py-3 px-4 text-xs text-slate-500 align-middle">
+                                Planned for
+                            </td>
+                            <td class="py-3 px-4 text-lg font-semibold text-slate-900" colspan="2">
+                                ${v.plannedFor.split(':')[1] || v.plannedFor.split(':')[0] || v.plannedFor}
+                            </td>
+                        </tr>
+                        
+                        <!-- Currently At Row -->
+                        <tr>
+                            <td class="py-3 px-4 text-xs text-slate-500 align-middle">
+                                Currently at
+                            </td>
+                            <td class="py-3 px-4 text-lg font-semibold text-slate-900" colspan="2">
+                                ${toProperTitleCase(v.location.split(':')[1] || v.location.split(':')[0])}
+                            </td>
+                        </tr>
+                        
+                        <!-- Unloaded At Row -->
+                        <tr class="bg-slate-50">
+                            <td class="py-3 px-4 text-xs text-slate-500 align-middle">
+                                Unloaded at
+                            </td>
+                            <td class="py-3 px-4 text-lg font-semibold text-slate-900" colspan="2">
+                                ${toProperTitleCase(v.unloadedAt)}
+                            </td>
+                        </tr>
+                        
+                        ${v.remark ? `
+                        <!-- Remark Label Row -->
+                        <tr>
+                            <td class="py-3 px-4 text-xs text-slate-500 align-middle">
+                                Remark
+                            </td>
+                            <td colspan="2"></td>
+                        </tr>
+                        <!-- Remark Content Row -->
+                        <tr class="bg-slate-50">
+                            <td class="py-3 px-4 text-base leading-relaxed text-slate-900" colspan="3">
+                                ${formatVehicleRemark(v.remark)}
+                            </td>
+                        </tr>
+                        ` : ''}
+                        
+                        <!-- Driver Row -->
+                        <tr class="text-xs">
+                            <td class="py-3 px-4 text-slate-500 align-middle">
+                                Driver
+                            </td>
+                            <td class="py-3 px-4 font-semibold text-slate-900">
+                                ${v.driverName}
+                            </td>
+                            ${v.driverPhone ? `
+                            <td class="py-3 px-4">
+                                <div class="flex items-center justify-end gap-2 text-slate-700">
+                                    <span>📞</span>
+                                    <span>${v.driverPhone}</span>
+                                </div>
+                            </td>
+                            ` : '<td></td>'}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        `).join('')}
+    </div>
+    
+    <!-- Footer -->
+    <div class="mt-6 text-right text-[11px] text-slate-500">
+        Generated on ${formatDate(currentTs)}
+    </div>
+</div>
+        `.trim();
+    };
+
+    // Generate image when dialog opens
+    useEffect(() => {
+        if (isOpen && !imageBlob) {
+            generateImage();
+        }
+    }, [isOpen]);
+
+    // Cleanup image URL on unmount
+    useEffect(() => {
+        return () => {
+            if (imageUrl) {
+                URL.revokeObjectURL(imageUrl);
+            }
+        };
+    }, [imageUrl]);
+
+    const generateImage = async () => {
+        setIsGenerating(true);
+        try {
+            const response = await fetch('/api/html-to-image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    bodyContent: generateReportBodyContent(),
+                    useTailwind: true,
+                    customStyles: `
+                        /* Custom clip-path for status badge */
+                        .status-badge {
+                            clip-path: polygon(25% 0%, 100% 0%, 100% 100%, 25% 100%, 0% 50%);
+                        }
+                    `,
+                    backgroundColor: 'bg-gradient-to-br from-indigo-500 via-purple-500 to-purple-600',
+                    format: 'png',
+                    fullPage: true,
+                    width: 800,
+                    height: 1200,
+                    filename: `morning-update-${reportData.date}.png`
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to generate image');
+            }
+
+            const blob = await response.blob();
+            setImageBlob(blob);
+
+            // Create URL for preview
+            const url = URL.createObjectURL(blob);
+            setImageUrl(url);
+
+            toast.success('Report generated successfully!');
+        } catch (error) {
+            console.error('Error generating image:', error);
+            toast.error('Failed to generate report', {
+                description: error instanceof Error ? error.message : 'Unknown error'
+            });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleShare = async () => {
+        if (!imageBlob) {
+            toast.error('No image to share. Please wait for generation.');
+            return;
+        }
+
+        try {
+            const file = new File([imageBlob], `morning-update-${reportData.date}.png`, {
+                type: 'image/png'
+            });
+
+            const nav: any = typeof navigator !== "undefined" ? navigator : undefined;
+            if (nav && typeof nav.canShare === "function" && nav.canShare({ files: [file] })) {
+                await nav.share({
+                    files: [file],
+                    title: 'Morning Update Report',
+                    text: `Morning Update Report - ${reportData.date}`
+                });
+                toast.success("Report shared successfully");
+            } else {
+                // Fallback: Download the image
+                handleDownload();
+            }
+        } catch (err) {
+            console.error(err);
+            if ((err as Error).name !== 'AbortError') {
+                toast.error("Failed to share report", { description: String(err) });
+            }
+        }
+    };
+
+    const handleDownload = () => {
+        if (!imageUrl) {
+            toast.error('No image to download. Please wait for generation.');
+            return;
+        }
+
+        try {
+            const a = document.createElement("a");
+            a.href = imageUrl;
+            a.download = `morning-update-${reportData.date}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            toast.success("Report downloaded successfully");
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to download report", { description: String(err) });
+        }
+    };
+
+    const handleClose = () => {
+        // Cleanup
+        if (imageUrl) {
+            URL.revokeObjectURL(imageUrl);
+        }
+        setImageBlob(null);
+        setImageUrl(null);
+        onClose();
+    };
+
     return (
-        <Dialog open={isOpen} onOpenChange={(o) => { if (!o) onClose(); }}>
-            <DialogContent className="max-w-screen-lg max-h-[90vh] flex flex-col">
+        <Dialog open={isOpen} onOpenChange={(o) => { if (!o) handleClose(); }}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Morning Update Report</DialogTitle>
                 </DialogHeader>
 
-                {/* Sharable content - no scroll, full height auto */}
-                <div
-                    id="snapshot"
-                    ref={snapshotRef}
-                    className="mx-auto"
-                    style={{
-                        width: 500,
-                        minWidth: 500,
-                        backgroundColor: "white",
-                        padding: 24,
-                        color: "#111827",
-                        fontFamily:
-                            "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, \"Apple Color Emoji\", \"Segoe UI Emoji\"",
-                        overflow: "visible",
-                    }}
-                >
-                    {/* Header */}
-                    <div className="text-center mb-6">
-                        <div className="mt-1 text-lg font-bold">{(reportData.user?.name).toUpperCase() || "—"}</div>
-                        <div className="mt-1 text-sm text-gray-700 font-bold">{reportData.date}</div>
-                        <div className="mt-1 text-xs text-gray-600">Morning Update</div>
-                    </div>
+                <div className="space-y-4">
+                    {/* Loading State */}
+                    {isGenerating && (
+                        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                            <p className="text-sm text-muted-foreground">Generating report image...</p>
+                        </div>
+                    )}
 
-                    {/* Vehicles Table */}
-                    <div className="space-y-6">
-                        {reportData.vehicles?.map((v, idx) => (
-                            <div key={`${v.vehicleNo}-${idx}`} className="border rounded-md px-4">
-                                <table className="w-full">
-                                    <tbody>
-                                        {/* Row 1: Vehicle No. with reported status */}
-                                        <tr>
-                                            <td className="py-1 align-mid" style={{ fontSize: '12px', width: '18%' }}>Vehicle No.</td>
-                                            <td className="font-bold py-1" style={{ fontSize: '36px', width: '33%' }}>{v.vehicleNo}</td>
-                                            <td className="py-1 text-right align-mid" style={{ width: '33%' }}>
-                                                <div
-                                                    className={`inline-flex items-end justify-end px-3 py-1 text-white font-medium text-right ${v.isReported ? 'bg-green-600' : 'bg-orange-600'
-                                                        }`}
-                                                    style={{
-                                                        fontSize: '12px',
-                                                        clipPath: 'polygon(25% 0%, 100% 0%, 100% 100%, 25% 100%, 0% 50%)',
-                                                        minWidth: '100px'
-                                                    }}
-                                                >
-                                                    {v.isReported ? 'REPORTED' : 'ON WAY'}
-                                                </div>
-                                            </td>
-                                        </tr>
-
-                                        {/* Row 2: Planned for */}
-                                        <tr className="bg-blue-600/30">
-                                            <td className="py-1 align-mid" style={{ fontSize: '12px', width: '18%' }}>Planned for</td>
-                                            <td className="font-semibold py-1" style={{ fontSize: '18px' }} colSpan={2}>{v.plannedFor.split(':')[1] || v.plannedFor.split(':')[0] || v.plannedFor}</td>
-                                        </tr>
-
-                                        {/* Row 3: Currently at */}
-                                        <tr>
-                                            <td className="py-1 align-mid" style={{ fontSize: '12px', width: '18%' }}>Currently at</td>
-                                            <td className="font-semibold py-1" style={{ fontSize: '18px' }} colSpan={2}>{toProperTitleCase(v.location.split(':')[1] || v.location.split(':')[0])}</td>
-                                        </tr>
-
-                                        {/* Row 4: Unloaded at */}
-                                        <tr className="bg-muted/10">
-                                            <td className="py-1 align-mid" style={{ fontSize: '12px', width: '18%' }}>Unloaded at</td>
-                                            <td className="font-semibold py-1" style={{ fontSize: '18px' }} colSpan={2}>{toProperTitleCase(v.unloadedAt)}</td>
-                                        </tr>
-
-                                        {v.remark &&
-                                            <>
-                                                {/* Row 5: Remark label */}
-                                                <tr>
-                                                    <td className="py-1 align-mid" style={{ fontSize: '12px', width: '18%' }}>Remark</td>
-                                                    <td className="py-1" colSpan={2}></td>
-                                                </tr>
-                                                <tr className="bg-muted/10">
-                                                    <td className="py-1" style={{ fontSize: '18px' }} colSpan={3}>
-                                                        {formatVehicleRemark(v.remark)}
-                                                    </td>
-                                                </tr>
-                                            </>
-                                        }
-
-                                        {/* Row 6: Driver */}
-                                        <tr>
-                                            <td className="py-1 align-mid" style={{ fontSize: '12px', width: '18%' }}>Driver</td>
-                                            <td className="font-semibold py-1 flex" style={{ fontSize: '12px' }}>
-                                                {`${v.driverName}`}
-                                            </td>
-                                            {v.driverPhone &&
-                                                <td>
-                                                    <span className="flex gap-2 items-center justify-end">
-                                                        <Phone size={12} /> {v.driverPhone}
-                                                    </span>
-                                                </td>
-                                            }
-                                        </tr>
-                                    </tbody>
-                                </table>
+                    {/* Image Preview */}
+                    {!isGenerating && imageUrl && (
+                        <div className="flex flex-col items-center space-y-4">
+                            <div className="border rounded-lg overflow-hidden shadow-lg max-w-full">
+                                <img
+                                    src={imageUrl}
+                                    alt="Morning Update Report"
+                                    className="w-full h-auto"
+                                    style={{ maxHeight: '70vh', objectFit: 'contain' }}
+                                />
                             </div>
-                        ))}
-                    </div>
+                            <p className="text-xs text-muted-foreground text-center">
+                                Preview of the generated report. Use the buttons below to share or download.
+                            </p>
+                        </div>
+                    )}
 
-                    {/* Footer */}
-                    <div className="mt-4 text-[11px] text-gray-600 text-right">Generated on {formatDate(currentTs)}</div>
+                    {/* Error State */}
+                    {!isGenerating && !imageUrl && (
+                        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                            <p className="text-sm text-muted-foreground">Failed to generate report image.</p>
+                            <Button onClick={generateImage} variant="outline">
+                                Try Again
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
-                {/* Buttons above content */}
-                <DialogFooter className="mb-4 flex justify-end gap-2 fixed bottom-4 w-full">
-                    <Button type="button" variant="outline" onClick={onClose} disabled={isSharing}>Close</Button>
-                    <Button type="button" onClick={handleShare} disabled={isSharing}>
-                        {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />} Share as Image
+                <DialogFooter className="flex justify-between sm:justify-between gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleClose}
+                        disabled={isGenerating}
+                    >
+                        Close
                     </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleDownload}
+                            disabled={isGenerating || !imageBlob}
+                        >
+                            <Download className="mr-2 h-4 w-4" />
+                            Download
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={handleShare}
+                            disabled={isGenerating || !imageBlob}
+                        >
+                            <Share2 className="mr-2 h-4 w-4" />
+                            Share
+                        </Button>
+                    </div>
                 </DialogFooter>
-
             </DialogContent>
         </Dialog>
-
     );
 };
 

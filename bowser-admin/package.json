@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "echo 'Skipping Puppeteer Chrome download for Vercel deployment'"
   },
   "dependencies": {
     "@codvista/cvians-excel-table": "^2.7.0",
@@ -28,6 +29,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toast": "^1.2.15",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@sparticuz/chromium-min": "^141.0.0",
     "axios": "^1.13.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -43,6 +45,7 @@
     "mongoose": "^8.19.2",
     "next": "16.0.1",
     "next-themes": "^0.4.6",
+    "puppeteer": "^24.30.0",
     "react": "19.2.0",
     "react-day-picker": "^9.11.1",
     "react-dom": "19.2.0",

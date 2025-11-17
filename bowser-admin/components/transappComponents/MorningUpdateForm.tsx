@@ -142,14 +142,27 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                         "";
 
                     const savedState = saved?.vehicleRemarks?.[vehicleNo];
-                    initialRemarks[vehicleNo] = {
-                        lastRemark: lastRemark || "",
-                        newRemark: savedState?.newRemark ?? "",
-                        useLastRemark: savedState?.useLastRemark ?? false,
-                        location: savedState?.location ?? "",
-                        isReported: savedState?.isReported ?? false,
-                    };
+                    
+                    // If we have saved state, use it; otherwise initialize empty
+                    if (savedState) {
+                        initialRemarks[vehicleNo] = {
+                            lastRemark: lastRemark || "",
+                            newRemark: savedState.newRemark || "",
+                            useLastRemark: savedState.useLastRemark || false,
+                            location: savedState.location || "",
+                            isReported: savedState.isReported || false,
+                        };
+                    } else {
+                        initialRemarks[vehicleNo] = {
+                            lastRemark: lastRemark || "",
+                            newRemark: "",
+                            useLastRemark: false,
+                            location: "",
+                            isReported: false,
+                        };
+                    }
                 }
+                
                 setVehicleRemarks(initialRemarks);
 
                 // Restore or capture openingTime from localforage
@@ -164,18 +177,23 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                 } else {
                     const firstOpenISO = new Date().toISOString();
                     setOpeningTime(new Date(firstOpenISO));
+                    
+                    // New session -> log form opened
+                    const initialLog: ActivityLog = {
+                        timestamp: firstOpenISO,
+                        type: 'form_opened',
+                        details: { userId: user._id, userName: user.name }
+                    };
+                    setActivityLogs([initialLog]);
+                    
                     try {
                         await saveFormData(storageKey, {
                             openingTime: firstOpenISO,
                             vehicleRemarks: initialRemarks,
-                            activityLogs: [] as ActivityLog[],
-                        } as PersistedFormData);
+                            activityLogs: [initialLog],
+                        } as PersistedFormData & { activityLogs: ActivityLog[] });
                     } catch (e) {
-                        console.warn("Failed to persist initial opening time", e);
-                    }
-                    // New session -> log form opened
-                    if (user?._id) {
-                        logActivity('form_opened', { userId: user._id, userName: user.name });
+                        // Silent fail - don't disrupt user experience
                     }
                 }
             } catch (err) {
@@ -193,7 +211,7 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
     }, [user?._id, isOpen, storageKey, logActivity]);
 
     useEffect(() => {
-        if (!storageKey) return;
+        if (!storageKey || !isOpen) return;
 
         // Debounce persistence to prevent excessive saves
         const timeoutId = setTimeout(async () => {
@@ -202,15 +220,16 @@ const MorningUpdateForm: React.FC<Props> = ({ isOpen, onClose, user, onSuccess }
                 vehicleRemarks,
                 activityLogs,
             };
+            
             try {
                 await saveFormData(storageKey, persist);
             } catch (e) {
-                console.warn("Failed to persist morning update form", e);
+                // Silent fail - don't disrupt user experience
             }
         }, 500);
 
         return () => clearTimeout(timeoutId);
-    }, [vehicleRemarks, openingTime, activityLogs, storageKey]);
+    }, [vehicleRemarks, openingTime, activityLogs, storageKey, isOpen]);
 
     // Focus/blur logging while dialog open
     useEffect(() => {

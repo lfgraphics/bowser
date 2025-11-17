@@ -1,3 +1,17 @@
 {
-    "buildCommand": "pnpm run build"
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30,
+      "memory": 1024,
+      "excludeFiles": [
+        ".cache/**",
+        "node_modules/puppeteer/.local-chromium/**"
+      ]
+    }
+  },
+  "build": {
+    "env": {
+      "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
+    }
+  }
 }
