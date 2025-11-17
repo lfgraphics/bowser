@@ -419,7 +419,7 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
             <TableCell className="border border-black">Total Run KM</TableCell>
             <TableCell className="border border-black text-right">{distance} km</TableCell>
             <TableCell className="border-none"></TableCell>
-            <TableCell className="border border-black">Effective Fuel Prise</TableCell>
+            <TableCell className="border border-black">Effective Fuel Price</TableCell>
             <TableCell className="border border-black text-right">&#8377; {hsdRateForDeduction}</TableCell>
           </TableRow>
           <TableRow className="border-none">
@@ -493,30 +493,33 @@ const FinalPrint: React.FC<TripCalculationModalProps> = ({ record }) => {
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">d)</TableCell>
-            <TableCell className="border border-black">Return back in Main Stock</TableCell>
-            <TableCell className="border border-black text-right">{unload.toFixed(2)} Lt.</TableCell>
+            <TableCell className="border border-black">Total Addition</TableCell>
+            <TableCell className="border border-black text-right">{addition.toFixed(2)} Lt.</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border border-black">Fueling Cost</TableCell>
             <TableCell className="border border-black text-right">&#8377; {fuelingCost}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">e)</TableCell>
-            <TableCell className="border border-black">Closing Qty as per Dip</TableCell>
-            <TableCell className="border border-black text-right">{totalClosingQty} Lt.</TableCell>
+            <TableCell className="border border-black">Return back in Main Stock</TableCell>
+            <TableCell className="border border-black text-right">{unload.toFixed(2)} Lt.</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border border-black">Border/Other Exp.</TableCell>
             <TableCell className="border border-black text-right">&#8377; {borderOtherExp}</TableCell>
           </TableRow>
           <TableRow className="border-none">
             <TableCell className="border border-black">f)</TableCell>
-            <TableCell className="border border-black font-bold">Sale as per Load (c-d-e)</TableCell>
-            <TableCell className="border border-black font-bold text-right">{(totalLoadedQtyBySlip + totalOpeningQty) - (unload + totalClosingQty)} Lt.</TableCell>
+            <TableCell className="border border-black">Closing Qty as per Dip</TableCell>
+            <TableCell className="border border-black text-right">{totalClosingQty} Lt.</TableCell>
             <TableCell className="border-none"></TableCell>
             <TableCell className="border border-black">Reward</TableCell>
             <TableCell className="border border-black text-right">&#8377; {reward}</TableCell>
           </TableRow>
           <TableRow className="border-none">
-            <TableCell className="border-none" colSpan={4}></TableCell>
+            <TableCell className="border border-black">g)</TableCell>
+            <TableCell className="border border-black font-bold">Sale as per Load ((c+d)-e-f)</TableCell>
+            <TableCell className="border border-black font-bold text-right">{(((totalLoadedQtyBySlip + totalOpeningQty) + addition) - (unload + totalClosingQty)).toFixed(2)} Lt.</TableCell>
+            <TableCell className="border-none"></TableCell>
             <TableCell className="border border-black font-bold">Total Distribution Cost</TableCell>
             <TableCell className="border border-black font-bold text-right">&#8377; {totalDistributionCost}</TableCell>
           </TableRow>

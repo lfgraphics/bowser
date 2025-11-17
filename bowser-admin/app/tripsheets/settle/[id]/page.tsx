@@ -324,6 +324,7 @@ const SettlementPage = ({ params }: { params: Promise<{ id: string }> }) => {
           />
           <Label htmlFor={`pumpEndReading`}>Settlment Date, Time</Label>
           <Input
+            min={String(tripSheet?.createdAt)}
             id={`pumpEndReading`}
             type="datetime-local"
             placeholder="end reading"
