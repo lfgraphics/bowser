@@ -31,7 +31,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
     const [loading, setLoading] = useState(false);
     const [updatingTrip, setUpdatingTrip] = useState<TankersTrip>()
     const [open, setOpen] = useState(false);
-    const [mode, setMode] = useState<"none" | "add" | "leave" | "status">("none");
+    const [mode, setMode] = useState<"none" | "add" | "leave" | "status" | "continue">("none");
     const { cache, setCache } = useVehiclesCache()
     const [joiningDriver, setJoiningDriver] = useState<string>("")
     const [joiningDriverId, setJoiningDriverId] = useState<string>("")
@@ -131,6 +131,78 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
             });
 
             toast.success("Driver added");
+            setOpen(false);
+            setMode("none");
+        } catch (err: any) {
+            toast.error("Error", { description: err.message });
+        }
+    };
+
+    const handleContinueDriver = async () => {
+        try {
+            // Get last driver info from lastDriverLog
+            const lastDriver = vehicle?.lastDriverLog?.driver;
+            if (!lastDriver) {
+                toast.error("No previous driver found to continue");
+                return;
+            }
+
+            // Get location from latest trip's travel history or leaving location
+            let location = vehicle?.driver?.leaving?.location || vehicle?.latestTrip?.StartFrom || "Unknown";
+            if (vehicle?.latestTrip?.TravelHistory && vehicle.latestTrip.TravelHistory.length > 0) {
+                const lastHistory = vehicle.latestTrip.TravelHistory[vehicle.latestTrip.TravelHistory.length - 1];
+                location = lastHistory.LocationOnTrackUpdate || location;
+            }
+
+            const continuingData = {
+                date: new Date().toISOString().split('T')[0], // Today's date
+                odometer: vehicle?.latestTrip?.LoadTripDetail?.EndOdometer || 
+                         vehicle?.latestTrip?.EmptyTripDetail?.EndOdometer || 
+                         "0",
+                location,
+                remark: "Continued after leave period"
+            };
+
+            const res = await fetch(`${BASE_URL}/driver-log/join`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    vehicleNo: vehicle?.vehicle?.VehicleNo,
+                    driverId: lastDriver._id,
+                    driverName: lastDriver.Name,
+                    joining: continuingData,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed");
+            
+            setCache((prev) => {
+                const updated = { ...prev.vehicleDetails };
+                const target = updated[vehicle?.vehicle?._id];
+
+                if (target) {
+                    updated[vehicle?.vehicle?._id] = {
+                        ...target,
+                        driver: {
+                            _id: lastDriver._id,
+                            name: lastDriver.Name,
+                            mobile: lastDriver.MobileNo?.[0]?.MobileNo || null,
+                        },
+                        vehicle: {
+                            ...target.vehicle,
+                            tripDetails: {
+                                ...target.vehicle?.tripDetails,
+                                driver: lastDriver.Name,
+                            },
+                        },
+                        lastDriverLog: data.entry,
+                    };
+                }
+
+                return { ...prev, vehicleDetails: updated };
+            });
+
+            toast.success("Driver continued successfully");
             setOpen(false);
             setMode("none");
         } catch (err: any) {
@@ -330,8 +402,15 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                                         </div>
                                     </div>
 
-                                    <div className="flex gap-2">
-                                        <Button onClick={() => setMode("add")}>Add Driver</Button>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex gap-2">
+                                            <Button onClick={() => setMode("add")}>Add Driver</Button>
+                                            {vehicle?.driver?.leaving?.tillDate && (
+                                                <Button variant="default" onClick={() => setMode("continue")}>
+                                                    Continue Driver
+                                                </Button>
+                                            )}
+                                        </div>
                                         <Button variant="outline" onClick={() => setMode("status")}>
                                             Add Status Update
                                         </Button>
@@ -470,6 +549,43 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                             />
                             <div className="flex gap-2">
                                 <Button onClick={handleLeaveDriver}>Submit</Button>
+                                <Button variant="ghost" onClick={() => setMode("none")}>Cancel</Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MODE: CONTINUE DRIVER */}
+                    {mode === "continue" && (
+                        <div className="space-y-3">
+                            <div className="p-4 border rounded bg-muted/50">
+                                <h3 className="font-semibold mb-2">Continuing Driver:</h3>
+                                <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
+                                    <span className="font-medium">Name:</span>
+                                    <span>{vehicle?.lastDriverLog?.driver?.Name || "Unknown"}</span>
+                                    
+                                    <span className="font-medium">Left On:</span>
+                                    <span>{formatDate(vehicle?.driver?.leaving?.from!)}</span>
+                                    
+                                    {vehicle?.driver?.leaving?.tillDate && (
+                                        <>
+                                            <span className="font-medium">Till Date:</span>
+                                            <span>{formatDate(vehicle?.driver?.leaving?.tillDate)}</span>
+                                        </>
+                                    )}
+                                    
+                                    <span className="font-medium">Location:</span>
+                                    <span>
+                                        {vehicle?.latestTrip?.TravelHistory && vehicle.latestTrip.TravelHistory.length > 0
+                                            ? vehicle.latestTrip.TravelHistory[vehicle.latestTrip.TravelHistory.length - 1].LocationOnTrackUpdate
+                                            : vehicle?.driver?.leaving?.location || vehicle?.latestTrip?.StartFrom || "Unknown"}
+                                    </span>
+                                </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                This will continue the previous driver with today's date and the last known location.
+                            </p>
+                            <div className="flex gap-2">
+                                <Button onClick={handleContinueDriver}>Continue Driver</Button>
                                 <Button variant="ghost" onClick={() => setMode("none")}>Cancel</Button>
                             </div>
                         </div>

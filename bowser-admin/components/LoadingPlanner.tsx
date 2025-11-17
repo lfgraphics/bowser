@@ -170,7 +170,11 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
             previousTripId: tripId,
             StartFrom: data.find(trip => trip?._id === tripId)?.EndTo,
             division: user?.Division || "",
-            proposedDate: new Date(new Date(proposedDate ? proposedDate : new Date()).setUTCHours(0, 0, 1, 800)),
+            proposedDate: (() => {
+                const date = proposedDate ? new Date(proposedDate) : new Date();
+                // Create date at start of day in UTC to avoid timezone shifts
+                return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 1, 800));
+            })(),
             notificationId: query.notificationId || ""
         }
         try {

@@ -507,7 +507,7 @@ async function createEmptyTrip(postData) {
 
     const newEmptyTrip = new TankersTrip({
         VehicleNo: VehicleNo,
-        StartDate: new Date(new Date(proposedDate).setHours(0, 0, 1, 800)),
+        StartDate: proposedDate,
         EndDate: null,
         targetTime: new Date(targetTime),
         StartDriver: driverName,
@@ -518,7 +518,7 @@ async function createEmptyTrip(postData) {
         EmptyTripDetail: {
             StartOdometer: odometer,
             VehicleNo: VehicleNo,
-            ProposedDate: proposedDate ? new Date(new Date(proposedDate).setHours(0, 0, 1, 800)) : undefined,
+            ProposedDate: proposedDate ? proposedDate : undefined,
             ProposedBy: proposedBy,
             OrderedBy: orderedBy,
             Division: divisionNo,

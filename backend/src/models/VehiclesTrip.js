@@ -128,6 +128,179 @@ tankerTripSchema.virtual('tripDay').get(function () {
     return Number(`${now.getFullYear()}.${day}${this.rankindex}`);
 });
 
+// Helper function to handle new trip creation logic
+async function handleNewTripCreation(vehicleNo, tripDoc, TripModel) {
+    try {
+        // Import vehicle and driver log models
+        const { findOne: findVehicle, findOneAndUpdate: updateVehicle } = await import('./vehicle.js');
+        const { findOne: findDriverLog, create: createDriverLog } = await import('./VehicleDriversLog.js');
+        const { findOne: findDriver } = await import('./driver.js');
+        
+        // 1. Check and set rankindex for trips on the same date
+        // New trips should appear on top (rankindex: 0), so increment existing trips
+        if (tripDoc.StartDate) {
+            const startDate = new Date(tripDoc.StartDate);
+            const dayStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+            const dayEnd = new Date(dayStart);
+            dayEnd.setDate(dayEnd.getDate() + 1);
+            
+            // Find all trips for this vehicle on the same day (excluding current trip)
+            const tripsOnSameDay = await TripModel.find({
+                VehicleNo: vehicleNo,
+                _id: { $ne: tripDoc._id }, // Exclude current trip
+                StartDate: {
+                    $gte: dayStart,
+                    $lt: dayEnd
+                }
+            }).lean();
+            
+            if (tripsOnSameDay.length > 0) {
+                // Increment rankindex of all existing trips on this day
+                await TripModel.updateMany(
+                    {
+                        VehicleNo: vehicleNo,
+                        _id: { $ne: tripDoc._id },
+                        StartDate: {
+                            $gte: dayStart,
+                            $lt: dayEnd
+                        }
+                    },
+                    { $inc: { rankindex: 1 } }
+                );
+            }
+            
+            // Set new trip to rankindex 0 (appears on top)
+            tripDoc.rankindex = 0;
+        }
+        
+        // 2. Check and update driver status - PRIORITIZE TRIP DATA
+        const vehicle = await findVehicle({ VehicleNo: vehicleNo }).lean();
+        
+        if (!vehicle) return;
+        
+        const currentVehicleDriver = vehicle.tripDetails?.driver;
+        const tripDriver = tripDoc.StartDriver;
+        
+        // PRIORITY 1: If trip has a driver assigned, use it
+        if (tripDriver && tripDriver !== "no driver") {
+            // Find driver by name to get ID
+            const driver = await findDriver({ Name: tripDriver }).lean();
+            
+            if (driver) {
+                // Check if there's already a joining log for this driver on this vehicle
+                const existingLog = await findDriverLog({ 
+                    vehicleNo, 
+                    driver: driver._id,
+                    'joining.date': { $exists: true }
+                }).sort({ creationDate: -1 }).limit(1).lean();
+                
+                // Only create joining log if:
+                // 1. No existing log, OR
+                // 2. Last log has a leaving entry (driver left and is now rejoining)
+                const shouldCreateLog = !existingLog || (existingLog && existingLog.leaving);
+                
+                if (shouldCreateLog) {
+                    // Get location from trip or use default
+                    let location = tripDoc.StartFrom || 'Unknown';
+                    if (tripDoc.TravelHistory && tripDoc.TravelHistory.length > 0) {
+                        location = tripDoc.TravelHistory[0].LocationOnTrackUpdate || location;
+                    }
+                    
+                    // Create joining entry with trip's start date
+                    await createDriverLog({
+                        vehicleNo,
+                        driver: driver._id,
+                        joining: {
+                            date: tripDoc.StartDate,
+                            odometer: tripDoc.LoadTripDetail?.StartOdometer || tripDoc.EmptyTripDetail?.StartOdometer || 0,
+                            location,
+                            tripId: tripDoc._id,
+                            vehicleLoadStatus: tripDoc.LoadStatus,
+                            remark: 'Auto-assigned from trip creation'
+                        }
+                    });
+                }
+            }
+            
+            // Update vehicle driver status to match trip
+            if (currentVehicleDriver !== tripDriver) {
+                await updateVehicle(
+                    { VehicleNo: vehicleNo },
+                    { $set: { 'tripDetails.driver': tripDriver } }
+                );
+            }
+            
+            tripDoc.driverStatus = 1; // Driver present
+        }
+        // PRIORITY 2: Vehicle has "no driver" - check for auto-continue
+        else if (currentVehicleDriver === "no driver" || !currentVehicleDriver) {
+            // Check if there's a driver log with tillDate that has passed
+            const lastLog = await findDriverLog({ vehicleNo })
+                .sort({ creationDate: -1 })
+                .populate('driver')
+                .lean();
+            
+            if (lastLog && lastLog.leaving && lastLog.leaving.tillDate) {
+                const tillDate = new Date(lastLog.leaving.tillDate);
+                const tripStartDate = new Date(tripDoc.StartDate);
+                
+                // If trip starts on or after tillDate, auto-continue the driver
+                if (tripStartDate >= tillDate && lastLog.driver) {
+                    const driverName = lastLog.driver.Name || lastLog.driver.name;
+                    const driverId = lastLog.driver._id;
+                    
+                    // Get last location from leaving or trip start
+                    let location = lastLog.leaving.location || tripDoc.StartFrom || 'Unknown';
+                    if (tripDoc.TravelHistory && tripDoc.TravelHistory.length > 0) {
+                        location = tripDoc.TravelHistory[0].LocationOnTrackUpdate || location;
+                    }
+                    
+                    // Create joining entry with trip's start date
+                    await createDriverLog({
+                        vehicleNo,
+                        driver: driverId,
+                        joining: {
+                            date: tripDoc.StartDate,
+                            odometer: tripDoc.LoadTripDetail?.StartOdometer || tripDoc.EmptyTripDetail?.StartOdometer || 0,
+                            location,
+                            tripId: tripDoc._id,
+                            vehicleLoadStatus: tripDoc.LoadStatus,
+                            remark: 'Auto-continued after leave period'
+                        }
+                    });
+                    
+                    // Update vehicle and trip with driver info
+                    await updateVehicle(
+                        { VehicleNo: vehicleNo },
+                        { $set: { 'tripDetails.driver': driverName } }
+                    );
+                    
+                    tripDoc.StartDriver = driverName;
+                    tripDoc.driverStatus = 1; // Driver present
+                } else {
+                    // No driver to continue, mark as no driver
+                    tripDoc.StartDriver = tripDoc.StartDriver || "no driver";
+                    tripDoc.driverStatus = 0; // No driver
+                }
+            } else {
+                // No previous driver log, mark as no driver
+                tripDoc.StartDriver = tripDoc.StartDriver || "no driver";
+                tripDoc.driverStatus = 0; // No driver
+            }
+        }
+        // PRIORITY 3: Vehicle has a driver - sync trip with vehicle
+        else {
+            if (!tripDoc.StartDriver || tripDoc.StartDriver === "no driver") {
+                tripDoc.StartDriver = currentVehicleDriver;
+            }
+            tripDoc.driverStatus = 1; // Driver present
+        }
+    } catch (error) {
+        console.error('Error in handleNewTripCreation:', error);
+        // Don't throw - let the trip creation continue
+    }
+}
+
 tankerTripSchema.pre(['save', 'findOneAndUpdate', 'updateOne', 'updateMany', 'bulkWrite'], async function (next) {
     try {
         // Skip for bulk operations as they should handle their own vehicle updates
@@ -140,6 +313,7 @@ tankerTripSchema.pre(['save', 'findOneAndUpdate', 'updateOne', 'updateMany', 'bu
         let vehicleNo = null;
         let currentTripId = null;
         let isUpdateOperation = false;
+        let isNewTrip = false;
 
         if (this.getUpdate) {
             isUpdateOperation = true;
@@ -186,6 +360,7 @@ tankerTripSchema.pre(['save', 'findOneAndUpdate', 'updateOne', 'updateMany', 'bu
             }
         } else {
             // For save operations (create/insert)
+            isNewTrip = true;
             vehicleNo = doc.VehicleNo;
             currentTripId = doc._id || this._id;
         }
@@ -195,18 +370,19 @@ tankerTripSchema.pre(['save', 'findOneAndUpdate', 'updateOne', 'updateMany', 'bu
             return next();
         }
 
-        // Always check and update vehicle reference for any trip modification
-        // This ensures the vehicle always points to the truly latest trip
-
-        // Create a comprehensive query to find the actual latest trip after this operation
-        // We need to simulate what the database will look like after this operation completes
-
         // Get the model reference properly
         try {
             const ModelRef = getModelReference(this);
+            
+            // For new trips, handle driver status and rankindex
+            if (isNewTrip && doc.StartDate) {
+                await handleNewTripCreation(vehicleNo, doc, ModelRef);
+            }
+            
+            // Always check and update vehicle reference for any trip modification
             await updateVehicleLatestTrip(vehicleNo, currentTripId, doc, isUpdateOperation, ModelRef);
         } catch (modelError) {
-            console.error('Error getting model reference for vehicle:', vehicleNo, modelError);
+            console.error('Error in trip pre-hook for vehicle:', vehicleNo, modelError);
             // Continue without updating - don't fail the main operation
         }
 
@@ -248,11 +424,12 @@ tankerTripSchema.post(['save', 'findOneAndUpdate', 'updateOne', 'deleteOne', 'de
             vehicleNumbers.add(doc.VehicleNo);
         }
 
-        // Update latest trip reference for all affected vehicles
+        // Update latest trip reference and verify driver status for all affected vehicles
         try {
             const ModelRef = getModelReference(this);
             for (const vehicleNo of vehicleNumbers) {
                 await recalculateVehicleLatestTrip(vehicleNo, ModelRef);
+                await verifyDriverStatus(vehicleNo, ModelRef);
             }
         } catch (modelError) {
             console.error('Error getting model reference for bulk operation:', modelError);
@@ -265,6 +442,56 @@ tankerTripSchema.post(['save', 'findOneAndUpdate', 'updateOne', 'deleteOne', 'de
         if (next) next();
     }
 });
+
+// Helper function to verify and sync driver status between trip and vehicle
+async function verifyDriverStatus(vehicleNo, TripModel) {
+    try {
+        const { findOne: findVehicle, findOneAndUpdate: updateVehicle } = await import('./vehicle.js');
+        
+        // Get the latest trip for this vehicle
+        const latestTrip = await TripModel.findOne(
+            { VehicleNo: vehicleNo, StartDate: { $ne: null } },
+            { StartDriver, driverStatus: 1, _id: 1 }
+        ).sort({ StartDate: -1, rankindex: 1 }).lean();
+        
+        if (!latestTrip) return;
+        
+        // Get current vehicle status
+        const vehicle = await findVehicle({ VehicleNo: vehicleNo }).lean();
+        
+        if (!vehicle) return;
+        
+        const vehicleDriver = vehicle.tripDetails?.driver;
+        const tripDriver = latestTrip.StartDriver;
+        
+        // Check if they're in sync
+        if (vehicleDriver !== tripDriver) {
+            // Sync vehicle with trip (trip is source of truth)
+            if (tripDriver && tripDriver !== "no driver") {
+                await updateVehicle(
+                    { VehicleNo: vehicleNo },
+                    { $set: { 'tripDetails.driver': tripDriver } }
+                );
+            } else if (!tripDriver || tripDriver === "no driver") {
+                await updateVehicle(
+                    { VehicleNo: vehicleNo },
+                    { $set: { 'tripDetails.driver': 'no driver' } }
+                );
+            }
+        }
+        
+        // Update trip driverStatus if needed
+        const expectedDriverStatus = (tripDriver && tripDriver !== "no driver") ? 1 : 0;
+        if (latestTrip.driverStatus !== expectedDriverStatus) {
+            await TripModel.updateOne(
+                { _id: latestTrip._id },
+                { $set: { driverStatus: expectedDriverStatus } }
+            );
+        }
+    } catch (error) {
+        console.error(`Error verifying driver status for vehicle ${vehicleNo}:`, error);
+    }
+}
 
 // Helper function to get the correct model reference in different middleware contexts
 function getModelReference(context) {
