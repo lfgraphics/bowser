@@ -2,11 +2,7 @@
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 30,
-      "memory": 1024,
-      "excludeFiles": [
-        ".cache/**",
-        "node_modules/puppeteer/.local-chromium/**"
-      ]
+      "memory": 1024
     }
   },
   "build": {
