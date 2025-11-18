@@ -451,7 +451,6 @@ async function verifyDriverStatus(vehicleNo, TripModel) {
         // Get the latest trip for this vehicle
         const latestTrip = await TripModel.findOne(
             { VehicleNo: vehicleNo, StartDate: { $ne: null } },
-            { StartDriver, driverStatus: 1, _id: 1 }
         ).sort({ StartDate: -1, rankindex: 1 }).lean();
         
         if (!latestTrip) return;
