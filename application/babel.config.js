@@ -3,7 +3,7 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      ['react-native-reanimated/plugin', { globals: ['__scanOCR'] }], // Add this line
+      ['react-native-worklets/plugin', { globals: ['__scanOCR'] }],
     ],
   };
 };

@@ -3,7 +3,7 @@ import VehicleDriverHome from '@/components/VehicleDriverHome';
 import 'react-native-get-random-values';
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { Linking } from 'react-native';
+import { Linking, ActivityIndicator, View } from 'react-native';
 import { useNavigation } from 'expo-router';
 import { checkUserLoggedIn } from '../src/utils/authUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,91 +13,127 @@ import { DriverData, UserData } from '@/src/types/models';
 export default function index() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userData, setUserData] = useState<DriverData | UserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigation = useNavigation<any>();
 
-  const notificationListener = useRef<Notifications.EventSubscription>(null);
-  const responseListener = useRef<Notifications.EventSubscription>(null);
+  const notificationListener = useRef<Notifications.EventSubscription | null>(null);
+  const responseListener = useRef<Notifications.EventSubscription | null>(null);
 
   useEffect(() => {
     // Define categories for notifications with buttons
     async function setupNotificationCategories() {
-      await Notifications.setNotificationCategoryAsync('fuelingActions', [
-        {
-          identifier: 'callDriver',
-          buttonTitle: 'Call Driver',
-          options: { isDestructive: false, opensAppToForeground: true },
-        },
-        {
-          identifier: 'openFuelingScreen',
-          buttonTitle: 'Fuel',
-          options: { opensAppToForeground: true },
-        },
-      ]);
+      try {
+        await Notifications.setNotificationCategoryAsync('fuelingActions', [
+          {
+            identifier: 'callDriver',
+            buttonTitle: 'Call Driver',
+            options: { isDestructive: false, opensAppToForeground: true },
+          },
+          {
+            identifier: 'openFuelingScreen',
+            buttonTitle: 'Fuel',
+            options: { opensAppToForeground: true },
+          },
+        ]);
+      } catch (error) {
+        console.error('Error setting up notification categories:', error);
+      }
     }
 
     setupNotificationCategories();
 
     // Handle incoming notifications
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-        shouldShowBanner: true,
-        shouldShowList: true,
-      }),
-    });
+    try {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
 
-    // Foreground notification listener
-    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
-      console.log('Notification received (Foreground):', notification);
-    });
+      // Foreground notification listener
+      notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
+        console.log('Notification received (Foreground):', notification);
+      });
 
-    // Notification interaction listener
-    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
-      const actionIdentifier = response.actionIdentifier;
-      const data = response.notification.request.content.data;
+      // Notification interaction listener
+      responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+        try {
+          const actionIdentifier = response.actionIdentifier;
+          const data = response.notification.request.content.data;
 
-      console.log('User interacted with notification:', actionIdentifier,);
+          console.log('User interacted with notification:', actionIdentifier);
 
-      // Handle button actions
-      if (actionIdentifier === 'callDriver') {
-        const phoneNumber = data.driverMobile;
-        Linking.openURL(`tel:${phoneNumber}`);
-      } else if (actionIdentifier === 'openFuelingScreen') {
-        navigation.navigate('NotificationFueling', data);
-        console.log(data)
-      }
-    });
+          // Handle button actions
+          if (actionIdentifier === 'callDriver') {
+            const phoneNumber = data?.driverMobile;
+            if (phoneNumber) {
+              Linking.openURL(`tel:${phoneNumber}`).catch(err => 
+                console.error('Error opening phone dialer:', err)
+              );
+            }
+          } else if (actionIdentifier === 'openFuelingScreen') {
+            navigation.navigate('NotificationFueling', data);
+            console.log(data);
+          }
+        } catch (error) {
+          console.error('Error handling notification response:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Error setting up notifications:', error);
+    }
 
     // Cleanup listeners
     return () => {
-      if (notificationListener.current) {
-        notificationListener.current.remove();
-      }
-      if (responseListener.current) {
-        responseListener.current.remove();
+      try {
+        if (notificationListener.current) {
+          notificationListener.current.remove();
+        }
+        if (responseListener.current) {
+          responseListener.current.remove();
+        }
+      } catch (error) {
+        console.error('Error cleaning up notification listeners:', error);
       }
     };
   }, []);
 
   useEffect(() => {
     const fetchUserRole = async () => {
-      await checkUserLoggedIn();
       try {
+        await checkUserLoggedIn();
         const userData = await AsyncStorage.getItem('userData');
         if (userData) {
           let parsedData = JSON.parse(userData);
           setUserData(parsedData);
-          setUserRole(parsedData.Role[0]);
-          console.log(parsedData.Role[0])
+          // Add safety check for Role array
+          if (parsedData.Role && Array.isArray(parsedData.Role) && parsedData.Role.length > 0) {
+            setUserRole(parsedData.Role[0]);
+            console.log('User role:', parsedData.Role[0]);
+          } else {
+            console.warn('User role not found or invalid');
+          }
         }
       } catch (error) {
-        console.log(error);
+        console.error('Error fetching user role:', error);
+      } finally {
+        setIsLoading(false);
       }
     }
     fetchUserRole();
   }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
 
   return (
     <>
