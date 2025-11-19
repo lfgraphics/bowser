@@ -28,8 +28,20 @@ async function createSession(key) {
   const connGetter = CONNECTIONS[key];
   if (!connGetter) throw new Error(`Unknown connection key: ${key}`);
   const conn = connGetter();
-  // Use Mongoose's startSession method which returns a compatible session
-  return conn.startSession();
+  
+  // Ensure connection is ready
+  if (conn.readyState !== 1) {
+    throw new Error(`Connection '${key}' is not ready (state: ${conn.readyState})`);
+  }
+  
+  // Get the underlying MongoDB client and start a session
+  // Mongoose connection wraps the MongoDB client, we need the native driver session
+  const client = conn.getClient();
+  if (!client) {
+    throw new Error(`Failed to get MongoDB client for connection '${key}'`);
+  }
+  
+  return client.startSession();
 }
 
 /**
