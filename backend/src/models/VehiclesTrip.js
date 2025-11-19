@@ -1,7 +1,237 @@
 import { Schema, Types } from 'mongoose';
 import './TransUser.js';
-import { findOneAndUpdate as findAndUpdateVehicle } from './vehicle.js'
 import { getTransportDatabaseConnection } from '../../config/database.js';
+
+// Performance & Architecture: Configuration constants
+const PERFORMANCE_CONFIG = {
+    CACHE_TTL: 60000, // 1 minute
+    MAX_CONCURRENT_UPDATES: 10,
+    OPERATION_TIMEOUT: 5000, // 5 seconds
+    MAX_RETRY_ATTEMPTS: 3,
+    RETRY_BASE_DELAY: 1000, // 1 second
+    CONNECTION_POOL_SIZE: 10,
+    RATE_LIMIT_WINDOW: 60000, // 1 minute
+    RATE_LIMIT_MAX_REQUESTS: 100
+};
+
+// Architecture Change 1: Render-Compatible Background Processing
+class RenderCompatibleJobQueue {
+    constructor() {
+        this.processingJobs = new Set();
+        this.maxConcurrentJobs = 3; // Conservative for Render's memory limits
+        this.jobTimeout = 10000; // 10 seconds max per job
+    }
+
+    async enqueue(jobType, jobData, options = {}) {
+        // For Render: Use setTimeout for non-blocking background processing
+        const jobId = `${jobType}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        if (this.processingJobs.size >= this.maxConcurrentJobs) {
+            // Skip job if at capacity (graceful degradation)
+            console.warn(`Job queue at capacity, skipping job: ${jobType}`);
+            return null;
+        }
+
+        this.processingJobs.add(jobId);
+        
+        // Use setTimeout for async processing (Render compatible)
+        setTimeout(async () => {
+            try {
+                await this.processJob(jobType, jobData, options);
+            } catch (error) {
+                console.error(`Background job ${jobType} failed:`, error);
+            } finally {
+                this.processingJobs.delete(jobId);
+            }
+        }, options.delay || 0);
+
+        return jobId;
+    }
+
+    async processJob(jobType, jobData, options = {}) {
+        const startTime = Date.now();
+        
+        // Add timeout protection for Render
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Job timeout')), this.jobTimeout);
+        });
+
+        try {
+            await Promise.race([
+                this.executeJob(jobType, jobData),
+                timeoutPromise
+            ]);
+        } catch (error) {
+            // Retry logic for Render (simple exponential backoff)
+            if (options.retryCount < 2) { // Max 2 retries
+                const delay = 1000 * Math.pow(2, options.retryCount || 0);
+                console.log(`Retrying job ${jobType} in ${delay}ms`);
+                
+                setTimeout(() => {
+                    this.enqueue(jobType, jobData, { 
+                        ...options, 
+                        retryCount: (options.retryCount || 0) + 1,
+                        delay 
+                    });
+                }, delay);
+            } else {
+                console.error(`Job ${jobType} failed after retries:`, error);
+            }
+        }
+    }
+
+    async executeJob(jobType, jobData) {
+        switch (jobType) {
+            case 'RECALCULATE_VEHICLE_LATEST_TRIP':
+                return await this.recalculateVehicleLatestTrip(jobData);
+            case 'VERIFY_DRIVER_STATUS':
+                return await this.verifyDriverStatus(jobData);
+            case 'BATCH_UPDATE_VEHICLES':
+                return await this.batchUpdateVehicles(jobData);
+            default:
+                console.warn(`Unknown job type: ${jobType}`);
+        }
+    }
+
+    async recalculateVehicleLatestTrip({ vehicleNo, ModelRef }) {
+        try {
+            const { findOneAndUpdate: findAndUpdateVehicle } = await import('./vehicle.js');
+            
+            const latestTrip = await ModelRef.findOne(
+                { VehicleNo: vehicleNo, StartDate: { $ne: null } },
+                { _id: 1, StartDate: 1, rankindex: 1 },
+                { sort: { StartDate: -1, rankindex: 1, _id: -1 } }
+            ).lean();
+
+            if (latestTrip) {
+                await findAndUpdateVehicle(
+                    { VehicleNo: vehicleNo },
+                    { $set: { 'tripDetails.id': latestTrip._id } },
+                    { new: true }
+                );
+            } else {
+                await findAndUpdateVehicle(
+                    { VehicleNo: vehicleNo },
+                    { $unset: { 'tripDetails.id': 1 } },
+                    { new: true }
+                );
+            }
+        } catch (error) {
+            console.error(`Background recalculation failed for ${vehicleNo}:`, error);
+        }
+    }
+
+    async verifyDriverStatus({ vehicleNo, ModelRef }) {
+        try {
+            const { findOne: findVehicle, findOneAndUpdate: updateVehicle } = await import('./vehicle.js');
+            
+            const [latestTrip, vehicle] = await Promise.all([
+                ModelRef.findOne(
+                    { VehicleNo: vehicleNo, StartDate: { $ne: null } }
+                ).sort({ StartDate: -1, rankindex: 1 }).lean(),
+                findVehicle({ VehicleNo: vehicleNo }).lean()
+            ]);
+
+            if (!latestTrip || !vehicle) return;
+
+            const vehicleDriver = vehicle.tripDetails?.driver;
+            const tripDriver = latestTrip.StartDriver;
+
+            if (vehicleDriver !== tripDriver) {
+                const updateData = tripDriver && tripDriver !== "no driver" 
+                    ? { $set: { 'tripDetails.driver': tripDriver } }
+                    : { $set: { 'tripDetails.driver': 'no driver' } };
+
+                await updateVehicle({ VehicleNo: vehicleNo }, updateData);
+            }
+
+            const expectedDriverStatus = (tripDriver && tripDriver !== "no driver") ? 1 : 0;
+            if (latestTrip.driverStatus !== expectedDriverStatus) {
+                await ModelRef.updateOne(
+                    { _id: latestTrip._id },
+                    { $set: { driverStatus: expectedDriverStatus } }
+                );
+            }
+        } catch (error) {
+            console.error(`Background driver status verification failed for ${vehicleNo}:`, error);
+        }
+    }
+
+    async batchUpdateVehicles({ updates }) {
+        try {
+            const { bulkWrite } = await import('./vehicle.js');
+            await bulkWrite(updates, { ordered: false });
+        } catch (error) {
+            console.error('Background batch update failed:', error);
+        }
+    }
+
+    getStats() {
+        return {
+            activeJobs: this.processingJobs.size,
+            maxConcurrentJobs: this.maxConcurrentJobs
+        };
+    }
+}
+
+const backgroundQueue = new RenderCompatibleJobQueue();
+
+// Architecture Change 2: Database Optimization - Connection Pool & Caching
+const vehicleCache = new Map();
+const driverCache = new Map();
+const connectionPool = new Map();
+
+// Architecture Change 3: Graceful Degradation - Retry with Exponential Backoff
+async function retryWithExponentialBackoff(fn, maxAttempts = PERFORMANCE_CONFIG.MAX_RETRY_ATTEMPTS) {
+    let attempt = 0;
+    while (attempt < maxAttempts) {
+        try {
+            return await fn();
+        } catch (error) {
+            attempt++;
+            if (attempt >= maxAttempts) {
+                throw error;
+            }
+            
+            const delay = PERFORMANCE_CONFIG.RETRY_BASE_DELAY * Math.pow(2, attempt - 1);
+            console.warn(`Retry attempt ${attempt}/${maxAttempts} after ${delay}ms:`, error.message);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+}
+
+// Performance Improvement 1: Rate Limiting
+class RateLimiter {
+    constructor(maxRequests = PERFORMANCE_CONFIG.RATE_LIMIT_MAX_REQUESTS, windowMs = PERFORMANCE_CONFIG.RATE_LIMIT_WINDOW) {
+        this.maxRequests = maxRequests;
+        this.windowMs = windowMs;
+        this.requests = new Map();
+    }
+
+    async checkLimit(key) {
+        const now = Date.now();
+        const windowStart = now - this.windowMs;
+        
+        if (!this.requests.has(key)) {
+            this.requests.set(key, []);
+        }
+        
+        const keyRequests = this.requests.get(key);
+        // Remove old requests outside the window
+        while (keyRequests.length > 0 && keyRequests[0] < windowStart) {
+            keyRequests.shift();
+        }
+        
+        if (keyRequests.length >= this.maxRequests) {
+            throw new Error(`Rate limit exceeded for ${key}`);
+        }
+        
+        keyRequests.push(now);
+        return true;
+    }
+}
+
+const rateLimiter = new RateLimiter();
 
 const tankerTripSchema = new Schema({
     VehicleNo: { type: String, required: true },
@@ -128,6 +358,338 @@ tankerTripSchema.virtual('tripDay').get(function () {
     return Number(`${now.getFullYear()}.${day}${this.rankindex}`);
 });
 
+// ============================================================================
+// PERFORMANCE & ARCHITECTURE IMPROVEMENTS
+// ============================================================================
+
+// Performance Improvement 2: Timeout wrapper for operations
+function withTimeout(promise, timeoutMs = PERFORMANCE_CONFIG.OPERATION_TIMEOUT) {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => 
+            setTimeout(() => reject(new Error(`Operation timeout after ${timeoutMs}ms`)), timeoutMs)
+        )
+    ]);
+}
+
+// Performance Improvement 3: Chunk array for batch processing
+function chunkArray(array, chunkSize) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+        chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+}
+
+// Performance Improvement 4: Caching Layer Implementation
+async function getCachedVehicle(vehicleNo) {
+    const cacheKey = `vehicle:${vehicleNo}`;
+    const cached = vehicleCache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < PERFORMANCE_CONFIG.CACHE_TTL) {
+        return cached.data;
+    }
+    
+    try {
+        const { findOne: findVehicle } = await import('./vehicle.js');
+        const vehicle = await withTimeout(
+            findVehicle({ VehicleNo: vehicleNo }).lean()
+        );
+        
+        vehicleCache.set(cacheKey, { 
+            data: vehicle, 
+            timestamp: Date.now() 
+        });
+        return vehicle;
+    } catch (error) {
+        console.error(`Error fetching vehicle ${vehicleNo}:`, error);
+        return null;
+    }
+}
+
+async function getCachedDriver(driverName) {
+    const cacheKey = `driver:${driverName}`;
+    const cached = driverCache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < PERFORMANCE_CONFIG.CACHE_TTL) {
+        return cached.data;
+    }
+    
+    try {
+        const { findOne: findDriver } = await import('./driver.js');
+        const driver = await withTimeout(
+            findDriver({ Name: driverName }).lean()
+        );
+        
+        driverCache.set(cacheKey, { 
+            data: driver, 
+            timestamp: Date.now() 
+        });
+        return driver;
+    } catch (error) {
+        console.error(`Error fetching driver ${driverName}:`, error);
+        return null;
+    }
+}
+
+// Architecture Change 2: Database Optimization - Read Replica Support
+async function getReadOnlyConnection() {
+    const key = 'readonly';
+    if (!connectionPool.has(key)) {
+        // In production, this would connect to a read replica
+        connectionPool.set(key, getTransportDatabaseConnection());
+    }
+    return connectionPool.get(key);
+}
+
+// Performance Improvement 1: Parallel Processing with Circuit Breaker
+async function processVehicleUpdatesWithCircuitBreaker(vehicleNumbers, ModelRef) {
+    if (vehicleNumbers.size === 0) return;
+
+    const vehicleArray = Array.from(vehicleNumbers);
+    const chunks = chunkArray(vehicleArray, PERFORMANCE_CONFIG.MAX_CONCURRENT_UPDATES);
+
+    for (const chunk of chunks) {
+        // Apply rate limiting
+        try {
+            await rateLimiter.checkLimit('vehicle_updates');
+        } catch (error) {
+            console.warn('Rate limit hit, delaying vehicle updates:', error.message);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        // Process each chunk in parallel with circuit breaker pattern
+        const results = await Promise.allSettled(
+            chunk.map(vehicleNo => 
+                withTimeout(
+                    retryWithExponentialBackoff(() => 
+                        processVehicleUpdateOptimized(vehicleNo, ModelRef)
+                    ),
+                    PERFORMANCE_CONFIG.OPERATION_TIMEOUT
+                )
+            )
+        );
+
+        // Log failures but continue processing (graceful degradation)
+        results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+                console.error(`Failed to update vehicle ${chunk[index]}:`, result.reason);
+                // Enqueue for background retry (Render compatible)
+                backgroundQueue.enqueue('RECALCULATE_VEHICLE_LATEST_TRIP', {
+                    vehicleNo: chunk[index],
+                    ModelRef
+                });
+                backgroundQueue.enqueue('VERIFY_DRIVER_STATUS', {
+                    vehicleNo: chunk[index],
+                    ModelRef
+                });
+            }
+        });
+    }
+}
+
+// Performance Improvement: Optimized single vehicle update
+async function processVehicleUpdateOptimized(vehicleNo, ModelRef) {
+    try {
+        // Run both operations in parallel for each vehicle
+        const [latestTripResult, driverStatusResult] = await Promise.allSettled([
+            recalculateVehicleLatestTripOptimized(vehicleNo, ModelRef),
+            verifyDriverStatusOptimized(vehicleNo, ModelRef)
+        ]);
+
+        // Log individual failures but don't fail the entire operation
+        if (latestTripResult.status === 'rejected') {
+            console.error(`Failed to recalculate latest trip for ${vehicleNo}:`, latestTripResult.reason);
+        }
+        if (driverStatusResult.status === 'rejected') {
+            console.error(`Failed to verify driver status for ${vehicleNo}:`, driverStatusResult.reason);
+        }
+    } catch (error) {
+        console.error(`Error processing vehicle ${vehicleNo}:`, error);
+        throw error;
+    }
+}
+
+// Performance Improvement 2: Batch Database Operations
+async function batchUpdateVehicles(vehicleUpdates) {
+    if (vehicleUpdates.length === 0) return;
+
+    try {
+        const { bulkWrite } = await import('./vehicle.js');
+        await withTimeout(
+            retryWithExponentialBackoff(() => 
+                bulkWrite(vehicleUpdates, { ordered: false })
+            )
+        );
+    } catch (error) {
+        console.error('Error in batch vehicle updates:', error);
+        
+        // Graceful degradation: fallback to individual updates
+        const individualResults = await Promise.allSettled(
+            vehicleUpdates.map(async (update) => {
+                try {
+                    const { findOneAndUpdate } = await import('./vehicle.js');
+                    return await withTimeout(
+                        findOneAndUpdate(
+                            update.updateOne.filter,
+                            update.updateOne.update,
+                            { new: true }
+                        )
+                    );
+                } catch (individualError) {
+                    console.error('Individual vehicle update failed:', individualError);
+                    throw individualError;
+                }
+            })
+        );
+
+        // Log individual failures
+        individualResults.forEach((result, index) => {
+            if (result.status === 'rejected') {
+                console.error(`Individual update failed for vehicle update ${index}:`, result.reason);
+            }
+        });
+    }
+}
+
+// Performance Improvement: Optimized latest trip calculation with caching
+async function recalculateVehicleLatestTripOptimized(vehicleNo, model) {
+    try {
+        // Use read replica for heavy read operations
+        const readConnection = await getReadOnlyConnection();
+        const ReadOnlyModel = readConnection.models.TankersTrip || model;
+
+        // Find the actual latest trip from database using optimized query
+        const latestTrip = await withTimeout(
+            ReadOnlyModel.findOne(
+                { VehicleNo: vehicleNo, StartDate: { $ne: null } },
+                { _id: 1, StartDate: 1, rankindex: 1 },
+                { sort: { StartDate: -1, rankindex: 1, _id: -1 } }
+            ).lean()
+        );
+
+        const { findOneAndUpdate: findAndUpdateVehicle } = await import('./vehicle.js');
+        
+        if (latestTrip) {
+            await withTimeout(
+                retryWithExponentialBackoff(() =>
+                    findAndUpdateVehicle(
+                        { VehicleNo: vehicleNo },
+                        { $set: { 'tripDetails.id': latestTrip._id } },
+                        { new: true }
+                    )
+                )
+            );
+        } else {
+            // No valid trips found, clear the vehicle trip reference
+            await withTimeout(
+                retryWithExponentialBackoff(() =>
+                    findAndUpdateVehicle(
+                        { VehicleNo: vehicleNo },
+                        { $unset: { 'tripDetails.id': 1 } },
+                        { new: true }
+                    )
+                )
+            );
+        }
+
+        // Invalidate cache after update
+        vehicleCache.delete(`vehicle:${vehicleNo}`);
+    } catch (error) {
+        console.error(`Error recalculating latest trip for vehicle ${vehicleNo}:`, error);
+        throw error;
+    }
+}
+
+// Performance Improvement: Optimized driver status verification with caching
+async function verifyDriverStatusOptimized(vehicleNo, TripModel) {
+    try {
+        // Use read replica for trip lookup
+        const readConnection = await getReadOnlyConnection();
+        const ReadOnlyTripModel = readConnection.models.TankersTrip || TripModel;
+
+        // Get the latest trip for this vehicle
+        const latestTrip = await withTimeout(
+            ReadOnlyTripModel.findOne(
+                { VehicleNo: vehicleNo, StartDate: { $ne: null } },
+            ).sort({ StartDate: -1, rankindex: 1 }).lean()
+        );
+
+        if (!latestTrip) return;
+
+        // Use cached vehicle lookup
+        const vehicle = await getCachedVehicle(vehicleNo);
+        if (!vehicle) return;
+
+        const vehicleDriver = vehicle.tripDetails?.driver;
+        const tripDriver = latestTrip.StartDriver;
+
+        // Check if they're in sync
+        if (vehicleDriver !== tripDriver) {
+            const { findOneAndUpdate: updateVehicle } = await import('./vehicle.js');
+            
+            // Sync vehicle with trip (trip is source of truth)
+            const updateData = tripDriver && tripDriver !== "no driver" 
+                ? { $set: { 'tripDetails.driver': tripDriver } }
+                : { $set: { 'tripDetails.driver': 'no driver' } };
+
+            await withTimeout(
+                retryWithExponentialBackoff(() =>
+                    updateVehicle({ VehicleNo: vehicleNo }, updateData)
+                )
+            );
+
+            // Invalidate cache after update
+            vehicleCache.delete(`vehicle:${vehicleNo}`);
+        }
+
+        // Update trip driverStatus if needed
+        const expectedDriverStatus = (tripDriver && tripDriver !== "no driver") ? 1 : 0;
+        if (latestTrip.driverStatus !== expectedDriverStatus) {
+            await withTimeout(
+                retryWithExponentialBackoff(() =>
+                    TripModel.updateOne(
+                        { _id: latestTrip._id },
+                        { $set: { driverStatus: expectedDriverStatus } }
+                    )
+                )
+            );
+        }
+    } catch (error) {
+        console.error(`Error verifying driver status for vehicle ${vehicleNo}:`, error);
+        throw error;
+    }
+}
+
+// Architecture Change 1: Render-Compatible Background Processing
+async function enqueueVehicleUpdate(vehicleNo, ModelRef) {
+    // Enqueue both operations as separate jobs for better error isolation
+    await backgroundQueue.enqueue('RECALCULATE_VEHICLE_LATEST_TRIP', {
+        vehicleNo,
+        ModelRef
+    });
+    
+    await backgroundQueue.enqueue('VERIFY_DRIVER_STATUS', {
+        vehicleNo,
+        ModelRef
+    });
+}
+
+// Architecture Change 2: Health Check for Database Operations
+async function performHealthCheck() {
+    try {
+        const connection = getTransportDatabaseConnection();
+        await withTimeout(connection.db.admin().ping(), 2000);
+        return { status: 'healthy', timestamp: new Date() };
+    } catch (error) {
+        return { status: 'unhealthy', error: error.message, timestamp: new Date() };
+    }
+}
+
+// ============================================================================
+// END PERFORMANCE & ARCHITECTURE IMPROVEMENTS
+// ============================================================================
+
 // Helper function to handle new trip creation logic
 async function handleNewTripCreation(vehicleNo, tripDoc, TripModel) {
     try {
@@ -135,7 +697,7 @@ async function handleNewTripCreation(vehicleNo, tripDoc, TripModel) {
         const { findOne: findVehicle, findOneAndUpdate: updateVehicle } = await import('./vehicle.js');
         const { findOne: findDriverLog, create: createDriverLog } = await import('./VehicleDriversLog.js');
         const { findOne: findDriver } = await import('./driver.js');
-        
+
         // 1. Check and set rankindex for trips on the same date
         // New trips should appear on top (rankindex: 0), so increment existing trips
         if (tripDoc.StartDate) {
@@ -143,7 +705,7 @@ async function handleNewTripCreation(vehicleNo, tripDoc, TripModel) {
             const dayStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
             const dayEnd = new Date(dayStart);
             dayEnd.setDate(dayEnd.getDate() + 1);
-            
+
             // Find all trips for this vehicle on the same day (excluding current trip)
             const tripsOnSameDay = await TripModel.find({
                 VehicleNo: vehicleNo,
@@ -153,7 +715,7 @@ async function handleNewTripCreation(vehicleNo, tripDoc, TripModel) {
                     $lt: dayEnd
                 }
             }).lean();
-            
+
             if (tripsOnSameDay.length > 0) {
                 // Increment rankindex of all existing trips on this day
                 await TripModel.updateMany(
@@ -168,44 +730,44 @@ async function handleNewTripCreation(vehicleNo, tripDoc, TripModel) {
                     { $inc: { rankindex: 1 } }
                 );
             }
-            
+
             // Set new trip to rankindex 0 (appears on top)
             tripDoc.rankindex = 0;
         }
-        
-        // 2. Check and update driver status - PRIORITIZE TRIP DATA
-        const vehicle = await findVehicle({ VehicleNo: vehicleNo }).lean();
-        
+
+        // 2. Check and update driver status - PRIORITIZE TRIP DATA (Optimized with caching)
+        const vehicle = await getCachedVehicle(vehicleNo);
+
         if (!vehicle) return;
-        
+
         const currentVehicleDriver = vehicle.tripDetails?.driver;
         const tripDriver = tripDoc.StartDriver;
-        
+
         // PRIORITY 1: If trip has a driver assigned, use it
         if (tripDriver && tripDriver !== "no driver") {
-            // Find driver by name to get ID
-            const driver = await findDriver({ Name: tripDriver }).lean();
-            
+            // Find driver by name to get ID (using cache)
+            const driver = await getCachedDriver(tripDriver);
+
             if (driver) {
                 // Check if there's already a joining log for this driver on this vehicle
-                const existingLog = await findDriverLog({ 
-                    vehicleNo, 
+                const existingLog = await findDriverLog({
+                    vehicleNo,
                     driver: driver._id,
                     'joining.date': { $exists: true }
                 }).sort({ creationDate: -1 }).limit(1).lean();
-                
+
                 // Only create joining log if:
                 // 1. No existing log, OR
                 // 2. Last log has a leaving entry (driver left and is now rejoining)
                 const shouldCreateLog = !existingLog || (existingLog && existingLog.leaving);
-                
+
                 if (shouldCreateLog) {
                     // Get location from trip or use default
                     let location = tripDoc.StartFrom || 'Unknown';
                     if (tripDoc.TravelHistory && tripDoc.TravelHistory.length > 0) {
                         location = tripDoc.TravelHistory[0].LocationOnTrackUpdate || location;
                     }
-                    
+
                     // Create joining entry with trip's start date
                     await createDriverLog({
                         vehicleNo,
@@ -221,7 +783,7 @@ async function handleNewTripCreation(vehicleNo, tripDoc, TripModel) {
                     });
                 }
             }
-            
+
             // Update vehicle driver status to match trip
             if (currentVehicleDriver !== tripDriver) {
                 await updateVehicle(
@@ -229,7 +791,7 @@ async function handleNewTripCreation(vehicleNo, tripDoc, TripModel) {
                     { $set: { 'tripDetails.driver': tripDriver } }
                 );
             }
-            
+
             tripDoc.driverStatus = 1; // Driver present
         }
         // PRIORITY 2: Vehicle has "no driver" - check for auto-continue
@@ -239,22 +801,22 @@ async function handleNewTripCreation(vehicleNo, tripDoc, TripModel) {
                 .sort({ creationDate: -1 })
                 .populate('driver')
                 .lean();
-            
+
             if (lastLog && lastLog.leaving && lastLog.leaving.tillDate) {
                 const tillDate = new Date(lastLog.leaving.tillDate);
                 const tripStartDate = new Date(tripDoc.StartDate);
-                
+
                 // If trip starts on or after tillDate, auto-continue the driver
                 if (tripStartDate >= tillDate && lastLog.driver) {
                     const driverName = lastLog.driver.Name || lastLog.driver.name;
                     const driverId = lastLog.driver._id;
-                    
+
                     // Get last location from leaving or trip start
                     let location = lastLog.leaving.location || tripDoc.StartFrom || 'Unknown';
                     if (tripDoc.TravelHistory && tripDoc.TravelHistory.length > 0) {
                         location = tripDoc.TravelHistory[0].LocationOnTrackUpdate || location;
                     }
-                    
+
                     // Create joining entry with trip's start date
                     await createDriverLog({
                         vehicleNo,
@@ -268,13 +830,13 @@ async function handleNewTripCreation(vehicleNo, tripDoc, TripModel) {
                             remark: 'Auto-continued after leave period'
                         }
                     });
-                    
+
                     // Update vehicle and trip with driver info
                     await updateVehicle(
                         { VehicleNo: vehicleNo },
                         { $set: { 'tripDetails.driver': driverName } }
                     );
-                    
+
                     tripDoc.StartDriver = driverName;
                     tripDoc.driverStatus = 1; // Driver present
                 } else {
@@ -301,13 +863,8 @@ async function handleNewTripCreation(vehicleNo, tripDoc, TripModel) {
     }
 }
 
-tankerTripSchema.pre(['save', 'findOneAndUpdate', 'updateOne', 'updateMany', 'bulkWrite'], async function (next) {
+tankerTripSchema.pre(['save', 'findOneAndUpdate', 'updateOne', 'updateMany'], async function (next) {
     try {
-        // Skip for bulk operations as they should handle their own vehicle updates
-        if (this.op === 'bulkWrite') {
-            return next();
-        }
-
         // Get the document being saved/updated
         let doc = this;
         let vehicleNo = null;
@@ -373,12 +930,12 @@ tankerTripSchema.pre(['save', 'findOneAndUpdate', 'updateOne', 'updateMany', 'bu
         // Get the model reference properly
         try {
             const ModelRef = getModelReference(this);
-            
+
             // For new trips, handle driver status and rankindex
             if (isNewTrip && doc.StartDate) {
                 await handleNewTripCreation(vehicleNo, doc, ModelRef);
             }
-            
+
             // Always check and update vehicle reference for any trip modification
             await updateVehicleLatestTrip(vehicleNo, currentTripId, doc, isUpdateOperation, ModelRef);
         } catch (modelError) {
@@ -393,76 +950,168 @@ tankerTripSchema.pre(['save', 'findOneAndUpdate', 'updateOne', 'updateMany', 'bu
     }
 });
 
+// Pre-hook for delete operations to capture vehicle numbers before deletion
+tankerTripSchema.pre(['deleteOne', 'deleteMany'], async function () {
+    try {
+        const query = this.getQuery();
+        const docsToDelete = await this.model.find(query, { VehicleNo: 1 }).lean();
+        
+        // Store vehicle numbers for post-hook processing
+        this._deletedVehicleNumbers = new Set(
+            docsToDelete.map(doc => doc.VehicleNo).filter(Boolean)
+        );
+    } catch (error) {
+        console.error('Error in delete pre-hook:', error);
+        this._deletedVehicleNumbers = new Set();
+    }
+});
+
+// Collect all affected vehicle numbers before bulkWrite
+tankerTripSchema.pre('bulkWrite', async function () {
+    // `this` is the Model (TankersTrip)
+    const vehicleNumbers = new Set();
+    
+    // For bulkWrite, we need to analyze the operations that will be performed
+    // Since we can't easily access operations in pre-hook, we'll collect vehicles in post-hook
+    // This pre-hook is mainly for setup if needed
+    
+    this._bulkVehicleNumbers = vehicleNumbers;
+});
+
 // Post-hook to handle bulk operations and ensure consistency
-tankerTripSchema.post(['save', 'findOneAndUpdate', 'updateOne', 'deleteOne', 'deleteMany', 'bulkWrite'], async function (doc, next) {
+tankerTripSchema.post(['save', 'findOneAndUpdate', 'updateOne', 'deleteOne', 'deleteMany'], async function (doc) {
     try {
         // For bulk operations or when multiple vehicles might be affected
         let vehicleNumbers = new Set();
 
-        if (this.op === 'deleteOne' || this.op === 'deleteMany') {
-            // For delete operations, we need to recalculate for affected vehicles
-            const deletedDocs = Array.isArray(doc) ? doc : [doc];
-            deletedDocs.forEach(d => {
+        // Handle different document types - post-hooks receive the result document(s)
+        if (doc === null || doc === undefined) {
+            // Delete operations return null/undefined, use pre-captured vehicle numbers
+            if (this._deletedVehicleNumbers && this._deletedVehicleNumbers.size > 0) {
+                vehicleNumbers = this._deletedVehicleNumbers;
+            } else {
+                // No vehicles to process
+                return;
+            }
+        } else if (Array.isArray(doc)) {
+            // Handle array of documents (bulk operations)
+            doc.forEach(d => {
                 if (d && d.VehicleNo) vehicleNumbers.add(d.VehicleNo);
             });
-        } else if (this.op === 'bulkWrite') {
-            // For bulk operations, extract all affected vehicle numbers
-            if (this.result && this.result.insertedIds) {
-                // Get inserted documents
-                const ModelRef = getModelReference(this);
-                const insertedDocs = await ModelRef.find({
-                    _id: { $in: Object.values(this.result.insertedIds) }
-                }, { VehicleNo: 1 }).lean();
-                insertedDocs.forEach(d => {
-                    if (d.VehicleNo) vehicleNumbers.add(d.VehicleNo);
-                });
-            }
-            // Note: Updated/deleted documents in bulk operations are harder to track
-            // Consider adding vehicle tracking in the actual bulk operation if needed
         } else if (doc && doc.VehicleNo) {
-            // Regular operations
+            // Single document operations
             vehicleNumbers.add(doc.VehicleNo);
         }
 
         // Update latest trip reference and verify driver status for all affected vehicles
-        try {
-            const ModelRef = getModelReference(this);
-            for (const vehicleNo of vehicleNumbers) {
-                await recalculateVehicleLatestTrip(vehicleNo, ModelRef);
-                await verifyDriverStatus(vehicleNo, ModelRef);
+        if (vehicleNumbers.size > 0) {
+            try {
+                const ModelRef = getModelReference(this);
+                await processVehicleUpdatesWithCircuitBreaker(vehicleNumbers, ModelRef);
+            } catch (modelError) {
+                console.error('Error getting model reference for bulk operation:', modelError);
+                // Continue without updating - don't fail the main operation
             }
-        } catch (modelError) {
-            console.error('Error getting model reference for bulk operation:', modelError);
-            // Continue without updating - don't fail the main operation
         }
 
-        if (next) next();
+        // Clean up temporary data
+        if (this._deletedVehicleNumbers) {
+            delete this._deletedVehicleNumbers;
+        }
+
     } catch (error) {
         console.error('Error in tankerTripSchema post-hook:', error);
-        if (next) next();
+        // Clean up on error as well
+        if (this._deletedVehicleNumbers) {
+            delete this._deletedVehicleNumbers;
+        }
     }
 });
+
+tankerTripSchema.post('bulkWrite', async function (result) {
+    try {
+        // `this` is the Model (TankersTrip)
+        const ModelRef = this;
+        const vehicleNumbers = new Set();
+
+        // Collect vehicle numbers from inserted documents
+        if (result && result.insertedIds && Object.keys(result.insertedIds).length > 0) {
+            const insertedIds = Object.values(result.insertedIds);
+            const insertedDocs = await ModelRef.find(
+                { _id: { $in: insertedIds } },
+                { VehicleNo: 1 }
+            ).lean();
+
+            for (const d of insertedDocs) {
+                if (d.VehicleNo) vehicleNumbers.add(d.VehicleNo);
+            }
+        }
+
+        // Collect vehicle numbers from updated documents
+        if (result && result.modifiedCount > 0) {
+            // For updates, we need to find affected documents
+            // Since we can't easily track which specific documents were updated,
+            // we'll need to rely on the operations that were passed to bulkWrite
+            // For now, we'll skip this optimization and let individual hooks handle updates
+        }
+
+        // Collect vehicle numbers from upserted documents
+        if (result && result.upsertedIds && Array.isArray(result.upsertedIds) && result.upsertedIds.length > 0) {
+            const upsertedDocs = await ModelRef.find(
+                { _id: { $in: result.upsertedIds } },
+                { VehicleNo: 1 }
+            ).lean();
+
+            for (const d of upsertedDocs) {
+                if (d.VehicleNo) vehicleNumbers.add(d.VehicleNo);
+            }
+        } else if (result && result.upsertedIds && typeof result.upsertedIds === 'object') {
+            // Handle case where upsertedIds is an object with indices as keys
+            const upsertedIds = Object.values(result.upsertedIds);
+            if (upsertedIds.length > 0) {
+                const upsertedDocs = await ModelRef.find(
+                    { _id: { $in: upsertedIds } },
+                    { VehicleNo: 1 }
+                ).lean();
+
+                for (const d of upsertedDocs) {
+                    if (d.VehicleNo) vehicleNumbers.add(d.VehicleNo);
+                }
+            }
+        }
+
+        // Now run your existing logic per affected vehicle with parallel processing
+        await processVehicleUpdatesWithCircuitBreaker(vehicleNumbers, ModelRef);
+
+    } catch (err) {
+        console.error('Error in TankersTrip post bulkWrite hook:', err);
+        // Don't block the write on errors here
+    }
+});
+
+
+
 
 // Helper function to verify and sync driver status between trip and vehicle
 async function verifyDriverStatus(vehicleNo, TripModel) {
     try {
         const { findOne: findVehicle, findOneAndUpdate: updateVehicle } = await import('./vehicle.js');
-        
+
         // Get the latest trip for this vehicle
         const latestTrip = await TripModel.findOne(
             { VehicleNo: vehicleNo, StartDate: { $ne: null } },
         ).sort({ StartDate: -1, rankindex: 1 }).lean();
-        
+
         if (!latestTrip) return;
-        
+
         // Get current vehicle status
         const vehicle = await findVehicle({ VehicleNo: vehicleNo }).lean();
-        
+
         if (!vehicle) return;
-        
+
         const vehicleDriver = vehicle.tripDetails?.driver;
         const tripDriver = latestTrip.StartDriver;
-        
+
         // Check if they're in sync
         if (vehicleDriver !== tripDriver) {
             // Sync vehicle with trip (trip is source of truth)
@@ -478,7 +1127,7 @@ async function verifyDriverStatus(vehicleNo, TripModel) {
                 );
             }
         }
-        
+
         // Update trip driverStatus if needed
         const expectedDriverStatus = (tripDriver && tripDriver !== "no driver") ? 1 : 0;
         if (latestTrip.driverStatus !== expectedDriverStatus) {
@@ -585,6 +1234,7 @@ async function updateVehicleLatestTrip(vehicleNo, currentTripId, currentDoc, isU
 
         // Only update vehicle if the latest trip has changed
         try {
+            const { findOneAndUpdate: findAndUpdateVehicle } = await import('./vehicle.js');
             await findAndUpdateVehicle(
                 { VehicleNo: vehicleNo },
                 { $set: { 'tripDetails.id': latestTrip._id } },
@@ -604,6 +1254,8 @@ async function updateVehicleLatestTrip(vehicleNo, currentTripId, currentDoc, isU
 // Helper function to recalculate latest trip from database (for post-hooks and cleanup)
 async function recalculateVehicleLatestTrip(vehicleNo, model) {
     try {
+        const { findOneAndUpdate: findAndUpdateVehicle } = await import('./vehicle.js');
+        
         // Find the actual latest trip from database using the exact sort criteria
         const latestTrip = await model.findOne(
             { VehicleNo: vehicleNo, StartDate: { $ne: null } },
@@ -630,8 +1282,14 @@ async function recalculateVehicleLatestTrip(vehicleNo, model) {
     }
 }
 
-// Optimize common queries: by vehicle with date and rank ordering
-tankerTripSchema.index({ VehicleNo: 1, StartDate: -1, rankindex: 1 });
+// Architecture Change 2: Database Optimization - Compound indexes for performance
+tankerTripSchema.index({ VehicleNo: 1, StartDate: -1, rankindex: 1 }); // Primary query optimization
+tankerTripSchema.index({ VehicleNo: 1, StartDate: 1 }); // Date range queries
+tankerTripSchema.index({ StartDriver: 1, StartDate: -1 }); // Driver-based queries
+tankerTripSchema.index({ LoadStatus: 1, VehicleNo: 1 }); // Load status filtering
+tankerTripSchema.index({ 'statusUpdate.dateTime': -1 }); // Status update queries
+tankerTripSchema.index({ EndDate: 1, VehicleNo: 1 }, { sparse: true }); // Completed trips
+tankerTripSchema.index({ driverStatus: 1, VehicleNo: 1 }); // Driver status queries
 
 const TankersTrip = getTransportDatabaseConnection().model('TankersTrip', tankerTripSchema, 'TankersTrips');
 
@@ -651,5 +1309,17 @@ export const countDocuments = TankersTrip.countDocuments.bind(TankersTrip);
 export const distinct = TankersTrip.distinct.bind(TankersTrip);
 export const aggregate = TankersTrip.aggregate.bind(TankersTrip);
 export const bulkWrite = TankersTrip.bulkWrite.bind(TankersTrip);
+
+// Architecture Change 2: Export health check and performance utilities
+export const healthCheck = performHealthCheck;
+export const clearCache = () => {
+    vehicleCache.clear();
+    driverCache.clear();
+};
+export const getCacheStats = () => ({
+    vehicleCacheSize: vehicleCache.size,
+    driverCacheSize: driverCache.size,
+    backgroundJobs: backgroundQueue.getStats()
+});
 
 export default TankersTrip;

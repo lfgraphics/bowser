@@ -585,97 +585,131 @@ async function syncTrips() {
     const localCollection = localClient.db(localDbName).collection(localTripCollectionName);
     const atlasCollection = atlasClient.db(atlasTransportDbName).collection('TankersTrips');
 
-    addLog("---------------------------------------");
-    addLog("Syncing Trips Data...");
+    // Backend API configuration
+    const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://localhost:5000';
+    const BULK_SYNC_ENDPOINT = `${BACKEND_API_URL}/trans-app/loaded-trips/bulk-sync`;
 
-    const openedTrips = [];
-    const updatedTrips = [];
-    const deletedTrips = [];
+    addLog("---------------------------------------");
+    addLog("Syncing Trips Data via Backend API...");
+
     let noUpdatesNeeded = 0;
 
-    // Step 1: Fetch data from Local and Atlas
+    // Step 1: Fetch data from Local and Atlas (keep existing logic)
     const [atlasTrips, localTrips] = await Promise.all([
         atlasCollection.find({ LoadStatus: 1 }).toArray(),
         localCollection.find({ StartDate: { $gte: past6Months, $lte: now }, LoadStatus: 1 }).toArray(),
     ]);
 
-
     console.log(`Fetched ${atlasTrips.length} trips from Atlas.`);
     console.log(`Fetched ${localTrips.length} trips from Local.`);
+    addLog(`Fetched ${atlasTrips.length} trips from Atlas.`);
+    addLog(`Fetched ${localTrips.length} trips from Local.`);
 
     // Create maps for quick lookup
-    const localTripsMap = new Map(localTrips.map(trip => [trip._id.toString(), trip]));
     const atlasTripsMap = new Map(atlasTrips.map(trip => [trip._id.toString(), trip]));
 
-    const loadStatusZeroCount = localTrips.filter(trip => trip.LoadStatus === 0).length;
-    console.log(`Local trips with LoadStatus: 0: ${loadStatusZeroCount}`);
-    const missingInAtlas = localTrips.filter(trip => trip.LoadStatus === 0 && !atlasTripsMap.has(trip._id.toString()));
-    console.log(`Missing in Atlas (LoadStatus: 0): ${missingInAtlas.length}`);
+    // Step 2: Determine which trips need to be synced (keep existing logic)
+    const tripsToSync = [];
 
-    // Step 2: Prepare bulk operations for MongoDB Atlas
-    const bulkOps = [];
-
-    // Sync local changes to cloud (update or insert)
     for (const localTrip of localTrips) {
         const atlasTrip = atlasTripsMap.get(localTrip._id.toString());
+        
         if (atlasTrip && atlasTrip.OpretionallyModified === true) {
             // Skip update if OpretionallyModified is true in Atlas
             noUpdatesNeeded++;
             continue;
         }
+        
         if (!atlasTrip) {
+            // New trip - needs to be inserted
             const normalizedDate = new Date(new Date(localTrip.TallyLoadDetail.LoadingDate).setUTCHours(0, 0, 1, 800));
-            let updatedLocalTrip = {
+            tripsToSync.push({
                 ...localTrip,
                 StartDate: normalizedDate
-            };
-            bulkOps.push({
-                insertOne: { document: updatedLocalTrip }
             });
-            openedTrips.push(updatedLocalTrip._id);
         } else {
+            // Trip exists - check if update needed
             if (localTrip.TallyLoadDetail.LoadingDate !== atlasTrip.StartDate) {
+                // Uncomment if you want to enable updates:
                 // const normalizedDate = new Date(new Date(localTrip.TallyLoadDetail.LoadingDate).setUTCHours(0, 0, 1, 800));
-                // let updatedLocalTrip = {
+                // tripsToSync.push({
                 //     ...localTrip,
                 //     StartDate: normalizedDate
-                // };
-                // bulkOps.push({
-                //     updateOne: {
-                //         filter: { _id: localTrip._id },
-                //         update: { $set: updatedLocalTrip }
-                //     }
                 // });
-                // updatedTrips.push(localTrip._id);
             } else {
                 noUpdatesNeeded++;
             }
         }
     }
 
-    // Remove from cloud if missing in local (within range)
-    for (const atlasTrip of atlasTrips) {
-        if (!localTripsMap.has(atlasTrip._id.toString())) {
-            // bulkOps.push({
-            //     deleteOne: { filter: { _id: atlasTrip._id } }
-            // });
-            // deletedTrips.push(atlasTrip._id);
+    console.log(`${tripsToSync.length} trips need to be synced.`);
+    addLog(`${tripsToSync.length} trips need to be synced.`);
+    addLog(`${noUpdatesNeeded} trips require no updates.`);
+
+    // Step 3: Send trips to backend API instead of direct MongoDB
+    if (tripsToSync.length > 0) {
+        const batchSize = 100;
+        let totalInserted = 0;
+        let totalUpdated = 0;
+        let totalSkipped = 0;
+        let totalErrors = 0;
+
+        for (let i = 0; i < tripsToSync.length; i += batchSize) {
+            const batch = tripsToSync.slice(i, i + batchSize);
+            const batchNum = Math.floor(i / batchSize) + 1;
+            const totalBatches = Math.ceil(tripsToSync.length / batchSize);
+            
+            try {
+                console.log(`Sending batch ${batchNum}/${totalBatches} (${batch.length} trips)...`);
+                
+                const response = await fetch(BULK_SYNC_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'TallyBridge/1.0'
+                    },
+                    body: JSON.stringify({ trips: batch })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    totalInserted += result.result.inserted;
+                    totalUpdated += result.result.updated;
+                    totalSkipped += result.result.skipped;
+                    
+                    console.log(`Batch ${batchNum} completed: ${result.result.inserted} inserted, ${result.result.updated} updated, ${result.result.skipped} skipped`);
+                    addLog(`Batch ${batchNum}/${totalBatches}: ${result.result.inserted} inserted, ${result.result.updated} updated, ${result.result.skipped} skipped`);
+                } else {
+                    totalErrors++;
+                    console.error(`Batch ${batchNum} failed:`, result.error);
+                    addLog(`Batch ${batchNum} failed: ${result.error}`, 'ERROR');
+                }
+
+                // Small delay between batches to avoid overwhelming the API
+                if (i + batchSize < tripsToSync.length) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+            } catch (error) {
+                totalErrors++;
+                console.error(`Batch ${batchNum} error:`, error);
+                addLog(`Batch ${batchNum} error: ${error.message}`, 'ERROR');
+            }
         }
+
+        // Step 4: Log summary
+        addLog(`Sync completed via Backend API:`);
+        addLog(`   - ${totalInserted} trips inserted to Atlas`);
+        addLog(`   - ${totalUpdated} trips updated in Atlas`);
+        addLog(`   - ${totalSkipped} trips skipped`);
+        if (totalErrors > 0) {
+            addLog(`   - ${totalErrors} batches had errors`, 'ERROR');
+        }
+    } else {
+        addLog('No trips to sync.');
     }
 
-    // Step 3: Execute bulk operations
-    if (bulkOps.length > 0) {
-        // The actual cloud update is intentionally disabled:
-        const result = await atlasCollection.bulkWrite(bulkOps);
-        console.log(`Bulk sync result: ${result.modifiedCount || 0} updated, ${result.insertedCount || 0} inserted, ${result.deletedCount || 0} deleted.`);
-        console.log('Cloud updates are commented out; no changes pushed to Atlas.');
-    }
-
-    // Step 4: Log summary
-    addLog(`${openedTrips.length} trips inserted to Atlas.`);
-    addLog(`${updatedTrips.length} trips updated in Atlas.`);
-    addLog(`${deletedTrips.length} trips deleted from Atlas.`);
-    addLog(`${noUpdatesNeeded} trips required no updates.`);
     addLog("Trip Data Sync Completed.");
     addLog("---------------------------------------");
 }

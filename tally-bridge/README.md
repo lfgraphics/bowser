@@ -60,7 +60,7 @@ Before running Tally Bridge, ensure you have:
 3. **Configure environment**:
    Create a `.env` file in the root directory with your MongoDB URIs:
    ```env
-   localUri=mongodb://192.168.165.72:27017
+   localUri=mongodb://main-atlas-data-local-server-ip:27017
    atlasUri=mongodb+srv://your-atlas-connection-string
    ```
 
