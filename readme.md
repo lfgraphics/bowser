@@ -72,6 +72,7 @@ The key architectural decision was the use of a **Tally Bridge** desktop app to 
 | Real-time data transfer & updates  | Integrated MongoDB with WebSocket-ready structure for future scaling _deprecated_ |
 | Tally dosen't return time, monogodb needs time, setting the UTC Hours to 0, 0, 0, 0 led to shortning of date by -1 day in some cases | Handled it by adjusting UTCHours to 0, 0, 1, 800 as default and used a synthetic field 'tripDay' to get the trips' start date without time |
 | Many vehicles were having multiple trips on the same day, so sorting by date only was not sufficient | Added a field 'rankindex' to the trip schema to differentiate trips on the same day and used it in combination with 'tripDay' for sorting |
+| Reports Viewing issue, for big datasets users were facing issues, filtering and sorting was required in each table | Created Excel like table component and used in the project have hosted as an npm package [@cvians-excel-table](https://www.npmjs.com/@codvista/cvians-excel-table) and maintanig it as a separate project |
 
 ---
 

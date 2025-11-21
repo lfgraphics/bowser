@@ -278,8 +278,18 @@ router.post('/transfer', async (req, res) => {
             return res.status(400).json({ message: "Transaction is not associated with any trip sheet." });
         }
 
-        // Update the transaction's tripSheetId to the new one
+        // Fetch the destination trip sheet to get bowser and driver details
+        const toTripSheet = await TripSheet.findOne({ tripSheetId: toTripSheetId });
+
+        if (!toTripSheet) {
+            return res.status(404).json({ message: "Destination trip sheet not found." });
+        }
+
+        // Update the transaction with new trip sheet details
         transaction.tripSheetId = toTripSheetId;
+        transaction.bowser.regNo = toTripSheet.bowser.regNo;
+        transaction.bowser.driver.name = toTripSheet.bowser.driver?.[0]?.name || '';
+        transaction.bowser.driver.phoneNo = toTripSheet.bowser.driver?.[0]?.phoneNo || '';
         await transaction.save();
 
         // Update both the source and destination trip sheets
