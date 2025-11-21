@@ -593,8 +593,8 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                     </div>
                     {
                         filter !== 'all' &&
-                        <div className='w-full overflow-y-auto'>
-                            <Table className='w-full min-w-max border-none'>
+                        <div className='relative w-full overflow-y-auto max-h-[70svh]'>
+                            <Table className='w-full min-w-max border-none bg-background'>
                                 <TableHeader>
                                     {(filter !== "outsideStandingVehicles" && filter !== "notLoadedVehicles" && filter !== "loaded" && filter !== "loadedReported" && filter !== "emptyStanding" && filter !== "otherStanding") &&
                                         <TableRow>

@@ -10,7 +10,7 @@
     "postinstall": "echo 'Skipping Puppeteer Chrome download for Vercel deployment'"
   },
   "dependencies": {
-    "@codvista/cvians-excel-table": "^2.7.0",
+    "@codvista/cvians-excel-table": "^2.9.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.10",

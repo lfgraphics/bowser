@@ -298,7 +298,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                     <TableBody>
                         {pageVehicles?.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={999} className="text-center text-muted-foreground">No records found</TableCell>
+                                <TableCell colSpan={9} className="text-center text-muted-foreground">No records found</TableCell>
                             </TableRow>
                         )}
                         {pageVehicles?.map((v, index) => {
