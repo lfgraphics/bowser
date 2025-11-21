@@ -967,13 +967,39 @@ tankerTripSchema.pre(['deleteOne', 'deleteMany'], async function () {
 });
 
 // Collect all affected vehicle numbers before bulkWrite
-tankerTripSchema.pre('bulkWrite', async function () {
+tankerTripSchema.pre('bulkWrite', async function (operations) {
     // `this` is the Model (TankersTrip)
     const vehicleNumbers = new Set();
     
-    // For bulkWrite, we need to analyze the operations that will be performed
-    // Since we can't easily access operations in pre-hook, we'll collect vehicles in post-hook
-    // This pre-hook is mainly for setup if needed
+    try {
+        // Analyze operations to extract vehicle numbers
+        for (const op of operations) {
+            if (op.insertOne?.document?.VehicleNo) {
+                vehicleNumbers.add(op.insertOne.document.VehicleNo);
+            } else if (op.updateOne?.filter?.VehicleNo) {
+                vehicleNumbers.add(op.updateOne.filter.VehicleNo);
+            } else if (op.updateMany?.filter?.VehicleNo) {
+                vehicleNumbers.add(op.updateMany.filter.VehicleNo);
+            } else if (op.deleteOne?.filter?.VehicleNo) {
+                vehicleNumbers.add(op.deleteOne.filter.VehicleNo);
+            } else if (op.deleteMany?.filter?.VehicleNo) {
+                vehicleNumbers.add(op.deleteMany.filter.VehicleNo);
+            } else if (op.replaceOne?.filter?.VehicleNo) {
+                vehicleNumbers.add(op.replaceOne.filter.VehicleNo);
+            } else {
+                // For operations without explicit VehicleNo in filter, fetch from DB
+                const filter = op.updateOne?.filter || op.deleteOne?.filter || op.replaceOne?.filter;
+                if (filter) {
+                    const docs = await this.find(filter, { VehicleNo: 1 }).lean();
+                    docs.forEach(doc => {
+                        if (doc.VehicleNo) vehicleNumbers.add(doc.VehicleNo);
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error in bulkWrite pre-hook:', error);
+    }
     
     this._bulkVehicleNumbers = vehicleNumbers;
 });
@@ -1032,9 +1058,9 @@ tankerTripSchema.post('bulkWrite', async function (result) {
     try {
         // `this` is the Model (TankersTrip)
         const ModelRef = this;
-        const vehicleNumbers = new Set();
+        const vehicleNumbers = this._bulkVehicleNumbers || new Set();
 
-        // Collect vehicle numbers from inserted documents
+        // Add vehicle numbers from result if available
         if (result && result.insertedIds && Object.keys(result.insertedIds).length > 0) {
             const insertedIds = Object.values(result.insertedIds);
             const insertedDocs = await ModelRef.find(
@@ -1047,27 +1073,11 @@ tankerTripSchema.post('bulkWrite', async function (result) {
             }
         }
 
-        // Collect vehicle numbers from updated documents
-        if (result && result.modifiedCount > 0) {
-            // For updates, we need to find affected documents
-            // Since we can't easily track which specific documents were updated,
-            // we'll need to rely on the operations that were passed to bulkWrite
-            // For now, we'll skip this optimization and let individual hooks handle updates
-        }
-
-        // Collect vehicle numbers from upserted documents
-        if (result && result.upsertedIds && Array.isArray(result.upsertedIds) && result.upsertedIds.length > 0) {
-            const upsertedDocs = await ModelRef.find(
-                { _id: { $in: result.upsertedIds } },
-                { VehicleNo: 1 }
-            ).lean();
-
-            for (const d of upsertedDocs) {
-                if (d.VehicleNo) vehicleNumbers.add(d.VehicleNo);
-            }
-        } else if (result && result.upsertedIds && typeof result.upsertedIds === 'object') {
-            // Handle case where upsertedIds is an object with indices as keys
-            const upsertedIds = Object.values(result.upsertedIds);
+        if (result && result.upsertedIds) {
+            const upsertedIds = Array.isArray(result.upsertedIds) 
+                ? result.upsertedIds 
+                : Object.values(result.upsertedIds);
+            
             if (upsertedIds.length > 0) {
                 const upsertedDocs = await ModelRef.find(
                     { _id: { $in: upsertedIds } },
@@ -1080,12 +1090,20 @@ tankerTripSchema.post('bulkWrite', async function (result) {
             }
         }
 
-        // Now run your existing logic per affected vehicle with parallel processing
-        await processVehicleUpdatesWithCircuitBreaker(vehicleNumbers, ModelRef);
+        // Batch process all affected vehicles in a single operation
+        if (vehicleNumbers.size > 0) {
+            await batchUpdateAllVehicleLatestTrips(vehicleNumbers, ModelRef);
+        }
+
+        // Clean up
+        delete this._bulkVehicleNumbers;
 
     } catch (err) {
         console.error('Error in TankersTrip post bulkWrite hook:', err);
-        // Don't block the write on errors here
+        // Clean up on error
+        if (this._bulkVehicleNumbers) {
+            delete this._bulkVehicleNumbers;
+        }
     }
 });
 
@@ -1279,6 +1297,96 @@ async function recalculateVehicleLatestTrip(vehicleNo, model) {
         }
     } catch (error) {
         console.error(`Error recalculating latest trip for vehicle ${vehicleNo}:`, error);
+    }
+}
+
+// Batch update all vehicle latest trips in a single operation
+async function batchUpdateAllVehicleLatestTrips(vehicleNumbers, TripModel) {
+    if (vehicleNumbers.size === 0) return;
+
+    try {
+        const { bulkWrite: vehicleBulkWrite } = await import('./vehicle.js');
+        const vehicleArray = Array.from(vehicleNumbers);
+        
+        // Fetch latest trips for all vehicles in parallel
+        const latestTripsPromises = vehicleArray.map(async (vehicleNo) => {
+            const latestTrip = await TripModel.findOne(
+                { VehicleNo: vehicleNo, StartDate: { $ne: null } },
+                { _id: 1, StartDate: 1, rankindex: 1 },
+                { sort: { StartDate: -1, rankindex: 1, _id: -1 } }
+            ).lean();
+            
+            return { vehicleNo, latestTrip };
+        });
+
+        const latestTripsResults = await Promise.allSettled(latestTripsPromises);
+
+        // Build bulk write operations for vehicle collection
+        const vehicleBulkOps = [];
+        
+        for (const result of latestTripsResults) {
+            if (result.status === 'fulfilled') {
+                const { vehicleNo, latestTrip } = result.value;
+                
+                if (latestTrip) {
+                    vehicleBulkOps.push({
+                        updateOne: {
+                            filter: { VehicleNo: vehicleNo },
+                            update: { $set: { 'tripDetails.id': latestTrip._id } }
+                        }
+                    });
+                } else {
+                    vehicleBulkOps.push({
+                        updateOne: {
+                            filter: { VehicleNo: vehicleNo },
+                            update: { $unset: { 'tripDetails.id': 1 } }
+                        }
+                    });
+                }
+            } else {
+                console.error('Failed to fetch latest trip:', result.reason);
+            }
+        }
+
+        // Execute single bulk write for all vehicle updates
+        if (vehicleBulkOps.length > 0) {
+            await withTimeout(
+                retryWithExponentialBackoff(() =>
+                    vehicleBulkWrite(vehicleBulkOps, { ordered: false })
+                )
+            );
+            
+            // Invalidate cache for all updated vehicles
+            vehicleArray.forEach(vehicleNo => {
+                vehicleCache.delete(`vehicle:${vehicleNo}`);
+            });
+        }
+
+        // Verify driver status for all vehicles in parallel (background job)
+        const driverStatusPromises = vehicleArray.map(vehicleNo =>
+            verifyDriverStatusOptimized(vehicleNo, TripModel).catch(error => {
+                console.error(`Driver status verification failed for ${vehicleNo}:`, error);
+            })
+        );
+
+        await Promise.allSettled(driverStatusPromises);
+
+    } catch (error) {
+        console.error('Error in batch vehicle latest trip update:', error);
+        
+        // Graceful degradation: fallback to individual updates
+        const vehicleArray = Array.from(vehicleNumbers);
+        const fallbackResults = await Promise.allSettled(
+            vehicleArray.map(vehicleNo => 
+                recalculateVehicleLatestTripOptimized(vehicleNo, TripModel)
+            )
+        );
+
+        fallbackResults.forEach((result, index) => {
+            if (result.status === 'rejected') {
+                console.error(`Fallback update failed for ${vehicleArray[index]}:`, result.reason);
+            }
+        });
     }
 }
 

@@ -4,19 +4,34 @@ import { aggregate as aggregateMorningUpdates } from '../models/MorningUpdate.js
 
 const getOneTripOfVehicleByDate = async (vehicelno, date) => {
     try {
-        const trip = await findOneTrip({
-            VehicleNo: vehicelno,
-            StartDate: { $lte: new Date(date) }
-        }).sort({ StartDate: -1 });
-
-        if (!trip) {
-            throw new Error({ error: "No trip found before given date" });
+        // Parse and validate date
+        let parsedDate;
+        try {
+            parsedDate = new Date(date);
+            // Check if date is valid
+            if (isNaN(parsedDate.getTime())) {
+                throw new Error(`Invalid date format: ${date}`);
+            }
+        } catch (dateError) {
+            throw new Error(`Invalid date format: ${date}. Expected format: YYYY-MM-DD or ISO date string`);
         }
 
+        console.log(`[TRIP-QUERY] Searching for vehicle ${vehicelno} with StartDate <= ${parsedDate.toISOString()}`);
+
+        const trip = await findOneTrip({
+            VehicleNo: vehicelno,
+            StartDate: { $lte: parsedDate, $ne: null }
+        }).sort({ StartDate: -1, rankindex: 1 });
+
+        if (!trip) {
+            throw new Error(`No trip found for vehicle ${vehicelno} before date ${parsedDate.toISOString()}`);
+        }
+
+        console.log(`[TRIP-QUERY] Found trip ${trip._id} with StartDate ${trip.StartDate}`);
         return { latestTrip: trip };
     } catch (error) {
-        console.error(error);
-        throw new Error({ error: "Failed to fetch last trip", error });
+        console.error(`[TRIP-QUERY-ERROR] ${error.message}`);
+        throw error;
     }
 }
 

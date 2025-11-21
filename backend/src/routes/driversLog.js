@@ -267,8 +267,20 @@ router.post("/status-update", async (req, res) => {
 // ---------------------------
 router.get("/last-trip/:vehicleNo/:date", async (req, res) => {
     const { vehicleNo, date } = req.params;
+    
+    // Validate date format
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+        console.error(`[LAST-TRIP] Invalid date format received: ${date}`);
+        return res.status(400).json({ 
+            error: "Invalid date format", 
+            details: `Date '${date}' is not valid. Expected format: YYYY-MM-DD or ISO date string`,
+            received: date
+        });
+    }
+    
     try {
-        console.log(`[LAST-TRIP] Fetching last trip for vehicle ${vehicleNo} before date ${date}`);
+        console.log(`[LAST-TRIP] Fetching last trip for vehicle ${vehicleNo} before date ${parsedDate.toISOString()} (received: ${date})`);
         const response = await getOneTripOfVehicleByDate(vehicleNo, date);
         return res.json(response);
     } catch (error) {
