@@ -369,7 +369,7 @@ export default function Page() {
                 <TabsTrigger value="Inactive Vehicles">Inactive Vehicles</TabsTrigger>
               }
             </TabsList>
-            {tab == "Vehicles" && <Button className='my-2 sm:my-0' onClick={() => setIsVehicleAdditionDialogvisible(true)}>Add Vehicle</Button>}
+            {tab == "Vehicles" && !user?.Division.includes('Admin') && <Button className='my-2 sm:my-0' onClick={() => setIsVehicleAdditionDialogvisible(true)}>Add Vehicle</Button>}
           </Tabs>
           {
             tab == "Vehicles" && vehicles &&

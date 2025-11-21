@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 
 import Link from 'next/link';
 import useSWR, { mutate as globalMutate } from "swr";
-import { Eye, Pen, X } from 'lucide-react';
+import { Eye, Pen, X, Share2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 import Loading from '@/app/loading';
@@ -16,7 +16,8 @@ import { useCache } from "@/src/context/CacheContext";
 
 import CustomDrawer from "../custom-drawer";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader } from '../ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
@@ -153,6 +154,9 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
     const [viewingTrip, setViewingTrip] = useState<string | null>(cache.viewingTrip ?? null);
     const [searchTerm, setSearchTerm] = useState(cache.searchTerm ?? "");
     const [allVehiclesAccordion, setAllVehiclesAccordion] = useState(cache.allVehiclesAccordion ?? "");
+    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+    const [imagePreview, setImagePreview] = useState<{ url: string; blob: Blob; filename: string } | null>(null);
+    const tableRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setCache((prev) => {
@@ -486,7 +490,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
 
     return (
         <>
-            {isLoading && <Loading />}
+            {isLoading && !data && <Loading />}
             {error &&
                 <div className="text-red-500">{error.message || String(error)}</div>
             }
@@ -532,7 +536,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                     className={`w-40 ${filter !== 'all' && filter === 'emptyStanding' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
                                     onClick={() => setFilter('emptyStanding')}
                                 >
-                                    <strong>Dipo Standing: </strong>{data?.empty?.standing.count}
+                                    <strong>Depo Standing: </strong>{data?.empty?.standing.count}
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -559,8 +563,86 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                             </CardContent>
                             {/* <CardFooter></CardFooter> */}
                         </Card>
-                        <div className='w-full flex justify-end my-3'>
+                        <div className='w-full flex justify-end gap-2 my-3'>
                             <Button onClick={() => handleDownload()}>Download Report</Button>
+                            {filter !== 'all' && (
+                                <Button 
+                                    variant="outline"
+                                    disabled={isGeneratingImage}
+                                    onClick={async () => {
+                                        setIsGeneratingImage(true);
+                                        try {
+                                            if (!tableRef.current) {
+                                                throw new Error('Table not found');
+                                            }
+
+                                            // Store original styles
+                                            const originalMaxHeight = tableRef.current.style.maxHeight;
+                                            const originalOverflow = tableRef.current.style.overflow;
+                                            
+                                            // Temporarily remove height constraint to capture full content
+                                            tableRef.current.style.maxHeight = 'none';
+                                            tableRef.current.style.overflow = 'visible';
+                                            
+                                            // Wait for layout to update
+                                            await new Promise(resolve => setTimeout(resolve, 100));
+
+                                            // Clone and clean the table container
+                                            const clonedTable = tableRef.current.cloneNode(true) as HTMLElement;
+                                            const interactiveElements = clonedTable.querySelectorAll('button, a, input, select, textarea, [role="button"], .dropdown, .link');
+                                            interactiveElements.forEach(el => el.remove());
+
+                                            // Restore original styles immediately
+                                            tableRef.current.style.maxHeight = originalMaxHeight;
+                                            tableRef.current.style.overflow = originalOverflow;
+
+                                            const bodyContent = `
+                                                <div class="p-8">
+                                                    <h1 class="text-2xl font-bold mb-4 text-gray-900">${camelToWords(filter)} - Vehicles Report</h1>
+                                                    <div class="text-sm text-gray-600 mb-4">Generated on ${formatDate(new Date())} by <span class="font-bold">${user?.name}</span></div>
+                                                    ${clonedTable.innerHTML}
+                                                </div>
+                                            `;
+
+                                            const response = await fetch('/api/html-to-image', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    bodyContent,
+                                                    useTailwind: true,
+                                                    backgroundColor: 'bg-white',
+                                                    format: 'png',
+                                                    quality: 90,
+                                                    filename: `${camelToWords(filter)}_${formatDate(new Date())}.png`,
+                                                    width: 1920,
+                                                    fullPage: true,
+                                                }),
+                                            });
+
+                                            if (!response.ok) {
+                                                const error = await response.json();
+                                                throw new Error(error.error || 'Failed to generate image');
+                                            }
+
+                                            const blob = await response.blob();
+                                            const filename = `${camelToWords(filter)}_${formatDate(new Date())}.png`;
+                                            const url = URL.createObjectURL(blob);
+                                            
+                                            // Show preview dialog
+                                            setImagePreview({ url, blob, filename });
+                                            toast.success('Report generated successfully!');
+                                        } catch (error) {
+                                            console.error(error);
+                                            toast.error('Failed to share table', { description: String(error) });
+                                        } finally {
+                                            setIsGeneratingImage(false);
+                                        }
+                                    }}
+                                >
+                                    <Share2 className="mr-2 h-4 w-4" />
+                                    {isGeneratingImage ? 'Generating...' : 'Share Table'}
+                                </Button>
+                            )}
                         </div>
                         {filter !== 'all' &&
                             <div className='flex items-center gap-2'>
@@ -593,8 +675,8 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                     </div>
                     {
                         filter !== 'all' &&
-                        <div className='relative w-full overflow-y-auto max-h-[70svh]'>
-                            <Table className='w-full min-w-max border-none bg-background'>
+                        <div ref={tableRef} className='relative w-full overflow-y-auto max-h-[70svh]'>
+                                <Table className='w-full min-w-max border-none bg-background'>
                                 <TableHeader>
                                     {(filter !== "outsideStandingVehicles" && filter !== "notLoadedVehicles" && filter !== "loaded" && filter !== "loadedReported" && filter !== "emptyStanding" && filter !== "otherStanding") &&
                                         <TableRow>
@@ -1686,6 +1768,96 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                     </AlertDialogContent>
                 </AlertDialog>
             }
+
+            {/* Image Preview Dialog */}
+            <Dialog open={Boolean(imagePreview)} onOpenChange={(open) => {
+                if (!open && imagePreview) {
+                    URL.revokeObjectURL(imagePreview.url);
+                    setImagePreview(null);
+                }
+            }}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Report Preview</DialogTitle>
+                        <DialogDescription>
+                            Preview your generated report. You can share or download it below.
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    {imagePreview && (
+                        <div className="flex flex-col items-center space-y-4">
+                            <div className="border rounded-lg overflow-hidden shadow-lg max-w-full">
+                                <img
+                                    src={imagePreview.url}
+                                    alt="Report Preview"
+                                    className="w-full h-auto"
+                                    style={{ maxHeight: '60vh', objectFit: 'contain' }}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    <DialogFooter className="flex justify-between sm:justify-between gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                if (imagePreview) {
+                                    URL.revokeObjectURL(imagePreview.url);
+                                    setImagePreview(null);
+                                }
+                            }}
+                        >
+                            Close
+                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    if (!imagePreview) return;
+                                    const link = document.createElement('a');
+                                    link.href = imagePreview.url;
+                                    link.download = imagePreview.filename;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    toast.success('Report downloaded successfully!');
+                                }}
+                            >
+                                <Download className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                            <Button
+                                onClick={async () => {
+                                    if (!imagePreview) return;
+                                    try {
+                                        const file = new File([imagePreview.blob], imagePreview.filename, { type: 'image/png' });
+                                        const nav: any = typeof navigator !== "undefined" ? navigator : undefined;
+                                        
+                                        if (nav && typeof nav.share === "function") {
+                                            await nav.share({
+                                                files: [file],
+                                                title: `${camelToWords(filter)} - Vehicles Report`,
+                                                text: `Sharing ${camelToWords(filter)} report`,
+                                            });
+                                            toast.success('Report shared successfully!');
+                                        } else {
+                                            toast.error('Sharing is not supported on this device');
+                                        }
+                                    } catch (error: any) {
+                                        if (error.name !== 'AbortError') {
+                                            console.error('Share failed:', error);
+                                            toast.error('Failed to share report', { description: String(error) });
+                                        }
+                                    }
+                                }}
+                            >
+                                <Share2 className="mr-2 h-4 w-4" />
+                                Share
+                            </Button>
+                        </div>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {viewingTrip !== null &&
                 <CustomDrawer key={viewingTrip} title={findTripById(viewingTrip)?.VehicleNo} description={viewingTrip}>
