@@ -24,8 +24,9 @@ import { searchItems } from '@/utils/searchUtils'
 
 import Loading from '../loading'
 import { TransAppContext } from "./layout";
+import SupervisorMorningUpdatesView from '@/components/transappComponents/SupervisorMorningUpdatesView'
 
-type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary" | "Morning Updates"
+type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary" | "Morning Updates" | "Supervisors Morning Updates";
 
 export default function Page() {
   const { user, photo } = useContext(TransAppContext);
@@ -61,8 +62,8 @@ export default function Page() {
     date: string,
     openingTime: string,
     closingTime: string,
-    vehicles: Array<{ 
-      vehicleNo: string, 
+    vehicles: Array<{
+      vehicleNo: string,
       remark: string,
       location: string,
       plannedFor: string,
@@ -86,6 +87,7 @@ export default function Page() {
     Vehicles: 'vehicles',
     'Inactive Vehicles': 'inactive-vehicles',
     'Morning Updates': 'morning-updates',
+    'Supervisors Morning Updates': 'supervisors-morning-updates',
   } as const), [])
 
   const parseTabFromParam = (raw: string | null, allowed: Readonly<Tabslist[]>): Tabslist | null => {
@@ -224,7 +226,7 @@ export default function Page() {
 
     // Evaluate only once on mount
     evaluate();
-    
+
     return () => {
       mounted = false;
     };
@@ -366,6 +368,9 @@ export default function Page() {
                 <TabsTrigger value="Morning Updates">Morning Updates</TabsTrigger>
               }
               {!user?.Division?.includes('Admin') &&
+                <TabsTrigger value="Supervisors Morning Updates">Morning Updates</TabsTrigger>
+              }
+              {!user?.Division?.includes('Admin') &&
                 <TabsTrigger value="Inactive Vehicles">Inactive Vehicles</TabsTrigger>
               }
             </TabsList>
@@ -374,6 +379,10 @@ export default function Page() {
           {
             tab == "Vehicles" && vehicles &&
             <VehicleManagement user={user} />
+          }
+          {
+            tab === "Supervisors Morning Updates" &&
+            <SupervisorMorningUpdatesView userId={user?._id} />
           }
           {
             tab === "Inactive Vehicles" &&

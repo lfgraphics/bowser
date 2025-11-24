@@ -47,8 +47,6 @@ const NetStatus: React.FC<NetStatusProps> = ({ minSpeedMbps = 1 }) => {
             // Formula: (bytes * 8 bits/byte) / (seconds * 1,000,000 bits/Mbps)
             const speedMbps = (fileSizeBytes * 8) / (duration * 1000000);
             
-            console.log(`Speed test: ${(fileSizeBytes / 1024).toFixed(1)} KB in ${duration.toFixed(3)}s = ${speedMbps.toFixed(2)} Mbps`);
-            
             // Simple threshold check
             setIsSpeedLow(speedMbps < minSpeedMbps);
             

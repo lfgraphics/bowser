@@ -4,10 +4,30 @@ import MorningUpdate, { find as findMorningUpdates, countDocuments as countMorni
 
 // Utility: build date range query
 const buildDateRangeQuery = (startDate, endDate) => {
-    if (!startDate && !endDate) return {};
     const query = {};
-    if (startDate) query.$gte = new Date(startDate);
-    if (endDate) query.$lte = new Date(endDate);
+    
+    if (!startDate && !endDate) {
+        // If no dates provided, use current date from 00:00:00 to 23:59:59
+        const today = new Date();
+        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+        const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+        query.$gte = startOfDay;
+        query.$lte = endOfDay;
+    } else {
+        if (startDate) {
+            // Set to start of day (00:00:00)
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            query.$gte = start;
+        }
+        if (endDate) {
+            // Set to end of day (23:59:59)
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            query.$lte = end;
+        }
+    }
+    
     return { openingTime: query };
 };
 
