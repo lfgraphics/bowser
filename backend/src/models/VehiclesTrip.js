@@ -756,10 +756,30 @@ async function handleNewTripCreation(vehicleNo, tripDoc, TripModel) {
                     'joining.date': { $exists: true }
                 }).sort({ creationDate: -1 }).limit(1).lean();
 
+                // CRITICAL: Don't overwrite recent driver logs with old trip data
                 // Only create joining log if:
                 // 1. No existing log, OR
-                // 2. Last log has a leaving entry (driver left and is now rejoining)
-                const shouldCreateLog = !existingLog || (existingLog && existingLog.leaving);
+                // 2. Last log has a leaving entry AND trip date is after leaving date, OR
+                // 3. Trip date is more recent than the last log's joining date
+                const tripStartDate = new Date(tripDoc.StartDate);
+                let shouldCreateLog = false;
+
+                if (!existingLog) {
+                    // No existing log, safe to create
+                    shouldCreateLog = true;
+                } else if (existingLog.leaving) {
+                    // Driver has left - only rejoin if trip is after leaving date
+                    const leavingDate = new Date(existingLog.leaving.from);
+                    if (tripStartDate >= leavingDate) {
+                        shouldCreateLog = true;
+                    }
+                } else if (existingLog.joining) {
+                    // Driver is currently joined - only update if this trip is more recent
+                    const lastJoiningDate = new Date(existingLog.joining.date);
+                    if (tripStartDate > lastJoiningDate) {
+                        shouldCreateLog = true;
+                    }
+                }
 
                 if (shouldCreateLog) {
                     // Get location from trip or use default
@@ -784,8 +804,9 @@ async function handleNewTripCreation(vehicleNo, tripDoc, TripModel) {
                 }
             }
 
-            // Update vehicle driver status to match trip
-            if (currentVehicleDriver !== tripDriver) {
+            // Only update vehicle driver status if trip is recent (within last 7 days)
+            const daysSinceTripStart = (Date.now() - new Date(tripDoc.StartDate)) / (1000 * 60 * 60 * 24);
+            if (daysSinceTripStart <= 7 && currentVehicleDriver !== tripDriver) {
                 await updateVehicle(
                     { VehicleNo: vehicleNo },
                     { $set: { 'tripDetails.driver': tripDriver } }
@@ -805,9 +826,18 @@ async function handleNewTripCreation(vehicleNo, tripDoc, TripModel) {
             if (lastLog && lastLog.leaving && lastLog.leaving.tillDate) {
                 const tillDate = new Date(lastLog.leaving.tillDate);
                 const tripStartDate = new Date(tripDoc.StartDate);
+                const leavingDate = new Date(lastLog.leaving.from);
 
-                // If trip starts on or after tillDate, auto-continue the driver
-                if (tripStartDate >= tillDate && lastLog.driver) {
+                // CRITICAL: Only auto-continue if:
+                // 1. Trip starts on or after tillDate (leave period ended)
+                // 2. Trip date is NOT before the leaving date (don't backdate)
+                // 3. Trip is recent (within last 7 days) to avoid affecting old data
+                const daysSinceTripStart = (Date.now() - tripStartDate) / (1000 * 60 * 60 * 24);
+                
+                if (tripStartDate >= tillDate && 
+                    tripStartDate >= leavingDate && 
+                    daysSinceTripStart <= 7 && 
+                    lastLog.driver) {
                     const driverName = lastLog.driver.Name || lastLog.driver.name;
                     const driverId = lastLog.driver._id;
 
