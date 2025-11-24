@@ -69,7 +69,8 @@ function startTransactions(sessions, txnOptions = defaultTxnOptions) {
  * Commit all sessions (best-effort 2PC style)
  */
 async function commitAll(sessions) {
-  for (const s of Object.values(sessions)) {
+  const sessionValues = Object.values(sessions).filter(s => s && typeof s.commitTransaction === 'function');
+  for (const s of sessionValues) {
     await s.commitTransaction();
   }
 }
@@ -78,7 +79,8 @@ async function commitAll(sessions) {
  * Abort all sessions
  */
 async function abortAll(sessions) {
-  for (const s of Object.values(sessions)) {
+  const sessionValues = Object.values(sessions).filter(s => s && typeof s.abortTransaction === 'function');
+  for (const s of sessionValues) {
     try {
       await s.abortTransaction();
     } catch (e) {
@@ -92,7 +94,8 @@ async function abortAll(sessions) {
  * End all sessions
  */
 function endAll(sessions) {
-  for (const s of Object.values(sessions)) {
+  const sessionValues = Object.values(sessions).filter(s => s && typeof s.endSession === 'function');
+  for (const s of sessionValues) {
     try {
       s.endSession();
     } catch (e) {

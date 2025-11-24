@@ -967,8 +967,16 @@ tankerTripSchema.pre(['deleteOne', 'deleteMany'], async function () {
 });
 
 // Collect all affected vehicle numbers before bulkWrite
-tankerTripSchema.pre('bulkWrite', async function (operations) {
+tankerTripSchema.pre('bulkWrite', async function () {
     // `this` is the Model (TankersTrip)
+    // In Mongoose 8.x, bulkWrite pre-hook receives operations via this.getOptions()
+    const operations = this.getOptions?.()?.operations || this._conditions || [];
+    
+    if (!Array.isArray(operations) || operations.length === 0) {
+        console.warn('bulkWrite pre-hook: no valid operations array found, skipping');
+        return;
+    }
+    
     const vehicleNumbers = new Set();
     
     try {
