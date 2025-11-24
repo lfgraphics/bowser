@@ -966,51 +966,9 @@ tankerTripSchema.pre(['deleteOne', 'deleteMany'], async function () {
     }
 });
 
-// Collect all affected vehicle numbers before bulkWrite
-tankerTripSchema.pre('bulkWrite', async function () {
-    // `this` is the Model (TankersTrip)
-    // In Mongoose 8.x, bulkWrite pre-hook receives operations via this.getOptions()
-    const operations = this.getOptions?.()?.operations || this._conditions || [];
-    
-    if (!Array.isArray(operations) || operations.length === 0) {
-        console.warn('bulkWrite pre-hook: no valid operations array found, skipping');
-        return;
-    }
-    
-    const vehicleNumbers = new Set();
-    
-    try {
-        // Analyze operations to extract vehicle numbers
-        for (const op of operations) {
-            if (op.insertOne?.document?.VehicleNo) {
-                vehicleNumbers.add(op.insertOne.document.VehicleNo);
-            } else if (op.updateOne?.filter?.VehicleNo) {
-                vehicleNumbers.add(op.updateOne.filter.VehicleNo);
-            } else if (op.updateMany?.filter?.VehicleNo) {
-                vehicleNumbers.add(op.updateMany.filter.VehicleNo);
-            } else if (op.deleteOne?.filter?.VehicleNo) {
-                vehicleNumbers.add(op.deleteOne.filter.VehicleNo);
-            } else if (op.deleteMany?.filter?.VehicleNo) {
-                vehicleNumbers.add(op.deleteMany.filter.VehicleNo);
-            } else if (op.replaceOne?.filter?.VehicleNo) {
-                vehicleNumbers.add(op.replaceOne.filter.VehicleNo);
-            } else {
-                // For operations without explicit VehicleNo in filter, fetch from DB
-                const filter = op.updateOne?.filter || op.deleteOne?.filter || op.replaceOne?.filter;
-                if (filter) {
-                    const docs = await this.find(filter, { VehicleNo: 1 }).lean();
-                    docs.forEach(doc => {
-                        if (doc.VehicleNo) vehicleNumbers.add(doc.VehicleNo);
-                    });
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Error in bulkWrite pre-hook:', error);
-    }
-    
-    this._bulkVehicleNumbers = vehicleNumbers;
-});
+// Note: Mongoose bulkWrite doesn't trigger traditional pre/post hooks
+// We need to wrap the bulkWrite method to handle vehicle updates
+// This is handled in the exported bulkWrite wrapper below
 
 // Post-hook to handle bulk operations and ensure consistency
 tankerTripSchema.post(['save', 'findOneAndUpdate', 'updateOne', 'deleteOne', 'deleteMany'], async function (doc) {
@@ -1424,7 +1382,49 @@ export const insertMany = TankersTrip.insertMany.bind(TankersTrip);
 export const countDocuments = TankersTrip.countDocuments.bind(TankersTrip);
 export const distinct = TankersTrip.distinct.bind(TankersTrip);
 export const aggregate = TankersTrip.aggregate.bind(TankersTrip);
-export const bulkWrite = TankersTrip.bulkWrite.bind(TankersTrip);
+
+// Wrap bulkWrite to handle vehicle updates since Mongoose doesn't trigger hooks for bulkWrite
+export async function bulkWrite(operations, options) {
+    // Extract vehicle numbers from operations before executing
+    const vehicleNumbers = new Set();
+    
+    try {
+        for (const op of operations) {
+            if (op.insertOne?.document?.VehicleNo) {
+                vehicleNumbers.add(op.insertOne.document.VehicleNo);
+            } else if (op.updateOne?.filter?.VehicleNo) {
+                vehicleNumbers.add(op.updateOne.filter.VehicleNo);
+            } else if (op.updateMany?.filter?.VehicleNo) {
+                vehicleNumbers.add(op.updateMany.filter.VehicleNo);
+            } else if (op.deleteOne?.filter?.VehicleNo) {
+                vehicleNumbers.add(op.deleteOne.filter.VehicleNo);
+            } else if (op.deleteMany?.filter?.VehicleNo) {
+                vehicleNumbers.add(op.deleteMany.filter.VehicleNo);
+            } else if (op.replaceOne?.filter?.VehicleNo) {
+                vehicleNumbers.add(op.replaceOne.filter.VehicleNo);
+            }
+        }
+    } catch (error) {
+        console.error('Error extracting vehicle numbers from bulkWrite operations:', error);
+    }
+    
+    // Execute the actual bulkWrite
+    const result = await TankersTrip.bulkWrite(operations, options);
+    
+    // Update affected vehicles in background (non-blocking)
+    if (vehicleNumbers.size > 0) {
+        // Use setImmediate to avoid blocking the response
+        setImmediate(async () => {
+            try {
+                await processVehicleUpdatesWithCircuitBreaker(vehicleNumbers, TankersTrip);
+            } catch (error) {
+                console.error('Error updating vehicles after bulkWrite:', error);
+            }
+        });
+    }
+    
+    return result;
+}
 
 // Architecture Change 2: Export health check and performance utilities
 export const healthCheck = performHealthCheck;
