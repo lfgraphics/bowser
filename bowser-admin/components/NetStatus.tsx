@@ -29,17 +29,33 @@ const NetStatus: React.FC<NetStatusProps> = ({ minSpeedMbps = 1 }) => {
     // Check network speed
     const checkSpeed = async () => {
         try {
-            const start = Date.now();
-            // Use local favicon for speed test
-            const response = await fetch('/favicon-16x16.png?_=' + Date.now(), { cache: 'no-store' });
-            const duration = (Date.now() - start) / 1000; // seconds
-            // favicon-16x16.png is 15 KB (15 * 1024 bytes)
-            const fileSizeBytes = 15 * 1024; // 15 KB = 15360 bytes
-            const speedMbps = (fileSizeBytes * 8) / (duration * 1024 * 1024); // Mbps
+            const start = performance.now();
+            // Use larger icon for more accurate speed test (112 KB)
+            const response = await fetch('/icon-512x512.png?_=' + Date.now(), { cache: 'no-store' });
+            
+            if (!response.ok) {
+                return 0;
+            }
+            
+            const blob = await response.blob(); // Ensure full download
+            const duration = (performance.now() - start) / 1000; // seconds
+            
+            // Use actual blob size
+            const fileSizeBytes = blob.size;
+            
+            // Calculate speed in Mbps
+            // Formula: (bytes * 8 bits/byte) / (seconds * 1,000,000 bits/Mbps)
+            const speedMbps = (fileSizeBytes * 8) / (duration * 1000000);
+            
+            console.log(`Speed test: ${(fileSizeBytes / 1024).toFixed(1)} KB in ${duration.toFixed(3)}s = ${speedMbps.toFixed(2)} Mbps`);
+            
+            // Simple threshold check
             setIsSpeedLow(speedMbps < minSpeedMbps);
+            
             return speedMbps;
-        } catch {
-            setIsSpeedLow(true);
+        } catch (error) {
+            console.error('Speed check error:', error);
+            // Don't mark as slow on error
             return 0;
         }
     };
@@ -83,13 +99,25 @@ const NetStatus: React.FC<NetStatusProps> = ({ minSpeedMbps = 1 }) => {
         prevPathRef.current = pathname;
     }, [pathname, minSpeedMbps]);
 
+    // Show toast only when status changes (not on every check)
+    const prevOnlineRef = useRef(isOnline);
+    const prevSpeedLowRef = useRef(isSpeedLow);
+    
     useEffect(() => {
-        if (!isOnline) {
+        if (!isOnline && prevOnlineRef.current) {
             toast.info('No internet connection detected. Please check your network.');
-        } else if (isSpeedLow) {
-            toast.info('Internet connection is very slow. Some features may not work properly.');
+        } else if (isOnline && !prevOnlineRef.current) {
+            toast.success('Internet connection restored.');
         }
-    }, [isOnline, isSpeedLow]);
+        prevOnlineRef.current = isOnline;
+    }, [isOnline]);
+
+    useEffect(() => {
+        if (isSpeedLow && !prevSpeedLowRef.current && isOnline) {
+            toast.warning('Internet connection is very slow. Some features may not work properly.');
+        }
+        prevSpeedLowRef.current = isSpeedLow;
+    }, [isSpeedLow, isOnline]);
 
     return null; // This component does not render anything
 };

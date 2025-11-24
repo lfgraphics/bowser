@@ -182,7 +182,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                 statusUpdate,
             };
         });
-    }, [user, filter, viewingTrip, searchTerm, allVehiclesAccordion, statusUpdate, setCache]);
+    }, [user, viewingTrip, searchTerm, allVehiclesAccordion, statusUpdate, setCache]);
 
     const highlightText = (text: string) => {
         if (!searchTerm) return text;
