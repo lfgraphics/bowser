@@ -1,7 +1,7 @@
 import { Router } from 'express';
 const router = Router();
 import LoadingOrderNotification from '../../models/LoadingOrderNotification.js';
-import { sendWebPushNotification } from '../../utils/pushNotifications.js';
+import { sendBulkNotifications, sendWebPushNotification } from '../../utils/pushNotifications.js';
 
 router.post('/', async (req, res) => {
     const { tripId, destinationId, destinationName, to, from, location, vehicle } = req.body;
@@ -21,16 +21,17 @@ router.post('/', async (req, res) => {
 
         await loadingOrderNotification.save();
 
-        await sendWebPushNotification(
+        await sendBulkNotifications(
             {
-                userId: to,
+                recipients: to.split(',').map(userId => ({ userId: userId.trim() })),
                 message: `Send ${vehicle} to ${location} at ${destinationName}.\n${from}`,
                 options: {
-                    title: 'New Loading Order',
+                    title: `New Loading Order from ${from}`,
                     url: `/trans-app/notifications`,
                     id: loadingOrderNotification._id,
                     icon: '/icons/setplan.svg'
-                }
+                },
+                platform: 'web'
             }
         );
         res.status(201).json(loadingOrderNotification);

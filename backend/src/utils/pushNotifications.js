@@ -184,6 +184,7 @@ async function sendBulkNotifications({ groups = [], recipients = [], message, pl
     ];
 
     if (allRecipients.length === 0) {
+        console.log('No recipients found for the specified groups or direct recipients.', String(recipients), String(groups));
         return
     }
 
