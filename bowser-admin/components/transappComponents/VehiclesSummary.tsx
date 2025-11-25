@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 
 import Link from 'next/link';
 import useSWR, { mutate as globalMutate } from "swr";
@@ -156,7 +156,9 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
     const [allVehiclesAccordion, setAllVehiclesAccordion] = useState(cache.allVehiclesAccordion ?? "");
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const [imagePreview, setImagePreview] = useState<{ url: string; blob: Blob; filename: string } | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
     const tableRef = useRef<HTMLDivElement>(null);
+    const ITEMS_PER_PAGE = 50;
 
     useEffect(() => {
         setCache((prev) => {
@@ -182,7 +184,12 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                 statusUpdate,
             };
         });
-    }, [user, viewingTrip, searchTerm, allVehiclesAccordion, statusUpdate, setCache]);
+    }, [user, viewingTrip, filter, searchTerm, allVehiclesAccordion, statusUpdate, setCache]);
+
+    // Reset to page 1 when filter or search changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filter, searchTerm]);
 
     const highlightText = (text: string) => {
         if (!searchTerm) return text;
@@ -230,19 +237,22 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
         }
     );
 
-    const reportedTrips = data?.empty?.reported?.trips ?? [];
-    const lastStatus = (trip: any) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status ?? "";
-    const outsideStanding = reportedTrips.filter(trip => {
-        const s = lastStatus(trip);
-        const endTo = (trip?.EndTo ?? "").toLowerCase();
-        return !["Accident", "Breakdown", "Loaded"].includes(s) && !endTo.includes("gida office") && !endTo.includes("maintenece") && !endTo.includes("indian tanker") && !endTo.includes("maintenance") && trip?.driverStatus !== 0;
-    });
-    const otherStanding = reportedTrips.filter(trip => {
-        const s = lastStatus(trip);
-        const endTo = (trip?.EndTo ?? "").toLowerCase();
-        // Only include reported trips that are not Accident/Breakdown and whose destination matches the specific keywords
-        return s !== "Loaded" && ["Accident", "Breakdown"].includes(s) || (endTo.includes("gida office") || endTo.includes("maintenece") || endTo.includes("indian tanker") || endTo.includes("maintenance")) || trip?.driverStatus === 0;
-    });
+    const { outsideStanding, otherStanding } = useMemo(() => {
+        const reportedTrips = data?.empty?.reported?.trips ?? [];
+        const lastStatus = (trip: any) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status ?? "";
+        const outside = reportedTrips.filter(trip => {
+            const s = lastStatus(trip);
+            const endTo = (trip?.EndTo ?? "").toLowerCase();
+            return !["Accident", "Breakdown", "Loaded"].includes(s) && !endTo.includes("gida office") && !endTo.includes("maintenece") && !endTo.includes("indian tanker") && !endTo.includes("maintenance") && trip?.driverStatus !== 0;
+        });
+        const other = reportedTrips.filter(trip => {
+            const s = lastStatus(trip);
+            const endTo = (trip?.EndTo ?? "").toLowerCase();
+            // Only include reported trips that are not Accident/Breakdown and whose destination matches the specific keywords
+            return s !== "Loaded" && ["Accident", "Breakdown"].includes(s) || (endTo.includes("gida office") || endTo.includes("maintenece") || endTo.includes("indian tanker") || endTo.includes("maintenance")) || trip?.driverStatus === 0;
+        });
+        return { outsideStanding: outside, otherStanding: other };
+    }, [data?.empty?.reported?.trips]);
 
     const handleDownload = () => {
         generateTripsReport({
@@ -405,8 +415,13 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
         return sortedGrouped;
     }
 
+    const groupedLoadedByEndTo = useMemo(() => groupTripsByEndTo(data?.loaded, "loaded"), [data?.loaded, searchTerm]);
+    const groupedLoadedBySupervisor = useMemo(() => groupBySupervisors(data?.loaded, "loaded"), [data?.loaded, searchTerm]);
+    const groupedEmptyByEndTo = useMemo(() => groupTripsByEndTo(data?.empty, "empty"), [data?.empty, searchTerm]);
+    const groupedEmptyBySupervisor = useMemo(() => groupBySupervisors(data?.empty, "empty"), [data?.empty, searchTerm]);
+
     // filter helper: applies current searchTerm across common trip fields
-    const matchesSearch = (trip: any) => {
+    const matchesSearch = useCallback((trip: any) => {
         if (!searchTerm) return true;
         const q = String(searchTerm).toLowerCase();
         const fields: Array<string | undefined | null> = [
@@ -421,7 +436,102 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
         return fields
             .filter(Boolean)
             .some((f) => String(f).toLowerCase().includes(q));
-    };
+    }, [searchTerm]);
+
+    // Filtered and sorted data - memoized for performance
+    const sortedLoadedOnWay = useMemo(() => {
+        const filtered = data?.loaded?.onWay?.trips?.filter(matchesSearch) ?? [];
+        return [...filtered].sort((a, b) => a.EndTo.localeCompare(b.EndTo));
+    }, [data?.loaded?.onWay?.trips, matchesSearch]);
+
+    const sortedLoadedReported = useMemo(() => {
+        const filtered = data?.loaded?.reported?.trips?.filter(matchesSearch) ?? [];
+        return [...filtered]
+            .sort((a, b) => a.EndTo.localeCompare(b.EndTo))
+            .sort((a, b) => Math.round(
+                Math.abs(Number(new Date()) - Number(new Date(b.ReportingDate!))) / (1000 * 60 * 60 * 24)
+            ) - Math.round(
+                Math.abs(Number(new Date()) - Number(new Date(a.ReportingDate!))) / (1000 * 60 * 60 * 24)
+            ));
+    }, [data?.loaded?.reported?.trips, matchesSearch]);
+
+    const sortedEmptyOnWay = useMemo(() => {
+        const filtered = data?.empty?.onWay?.trips?.filter(matchesSearch) ?? [];
+        return [...filtered].sort((a, b) => a.EndTo.localeCompare(b.EndTo));
+    }, [data?.empty?.onWay?.trips, matchesSearch]);
+
+    const sortedEmptyReported = useMemo(() => {
+        const filtered = data?.empty?.reported?.trips?.filter(matchesSearch) ?? [];
+        return [...filtered].sort((a, b) => a.EndTo.localeCompare(b.EndTo));
+    }, [data?.empty?.reported?.trips, matchesSearch]);
+
+    const sortedEmptyStanding = useMemo(() => {
+        const filtered = data?.empty?.standing?.trips?.filter(matchesSearch) ?? [];
+        return [...filtered].sort((a, b) => a.EndTo.localeCompare(b.EndTo));
+    }, [data?.empty?.standing?.trips, matchesSearch]);
+
+    const sortedOutsideStanding = useMemo(() => {
+        const filtered = outsideStanding?.filter(matchesSearch) ?? [];
+        return [...filtered].sort((a, b) => a.EndTo.localeCompare(b.EndTo));
+    }, [outsideStanding, matchesSearch]);
+
+    const sortedOtherStanding = useMemo(() => {
+        const filtered = otherStanding?.filter(matchesSearch) ?? [];
+        return [...filtered].sort((a, b) => a.EndTo.localeCompare(b.EndTo));
+    }, [otherStanding, matchesSearch]);
+
+    const sortedLoadedInReported = useMemo(() => {
+        const filtered = data?.empty?.reported?.trips
+            ?.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Loaded")
+            ?.filter(matchesSearch) ?? [];
+        return [...filtered].sort((a, b) => a.EndTo.localeCompare(b.EndTo));
+    }, [data?.empty?.reported?.trips, matchesSearch]);
+
+    // Paginated data based on current filter
+    const { paginatedData, totalPages, totalRecords } = useMemo(() => {
+        let dataToUse: any[] = [];
+        
+        switch (filter) {
+            case 'loadedOnWay':
+                dataToUse = sortedLoadedOnWay;
+                break;
+            case 'loadedReported':
+                dataToUse = sortedLoadedReported;
+                break;
+            case 'emptyOnWay':
+                dataToUse = sortedEmptyOnWay;
+                break;
+            case 'emptyReported':
+                dataToUse = sortedEmptyReported;
+                break;
+            case 'emptyStanding':
+                dataToUse = sortedEmptyStanding;
+                break;
+            case 'outsideStandingVehicles':
+                dataToUse = sortedOutsideStanding;
+                break;
+            case 'otherStanding':
+                dataToUse = sortedOtherStanding;
+                break;
+            case 'loaded':
+                dataToUse = sortedLoadedInReported;
+                break;
+            default:
+                dataToUse = [];
+        }
+
+        const total = dataToUse.length;
+        const pages = Math.ceil(total / ITEMS_PER_PAGE);
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        const paginated = dataToUse.slice(startIndex, endIndex);
+
+        return {
+            paginatedData: paginated,
+            totalPages: pages,
+            totalRecords: total
+        };
+    }, [filter, currentPage, sortedLoadedOnWay, sortedLoadedReported, sortedEmptyOnWay, sortedEmptyReported, sortedEmptyStanding, sortedOutsideStanding, sortedOtherStanding, sortedLoadedInReported, ITEMS_PER_PAGE]);
 
     const updateTripStatus = async () => {
         if (!statusUpdate) return;
@@ -490,7 +600,8 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
 
     return (
         <>
-            {isLoading && !data && <Loading />}
+            {isLoading && <Loading />}
+            {!data && 'No data, Loading...'}
             {error &&
                 <div className="text-red-500">{error.message || String(error)}</div>
             }
@@ -566,7 +677,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                         <div className='w-full flex justify-end gap-2 my-3'>
                             <Button onClick={() => handleDownload()}>Download Report</Button>
                             {filter !== 'all' && (
-                                <Button 
+                                <Button
                                     variant="outline"
                                     disabled={isGeneratingImage}
                                     onClick={async () => {
@@ -579,11 +690,11 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             // Store original styles
                                             const originalMaxHeight = tableRef.current.style.maxHeight;
                                             const originalOverflow = tableRef.current.style.overflow;
-                                            
+
                                             // Temporarily remove height constraint to capture full content
                                             tableRef.current.style.maxHeight = 'none';
                                             tableRef.current.style.overflow = 'visible';
-                                            
+
                                             // Wait for layout to update
                                             await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -627,7 +738,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             const blob = await response.blob();
                                             const filename = `${camelToWords(filter)}_${formatDate(new Date())}.png`;
                                             const url = URL.createObjectURL(blob);
-                                            
+
                                             // Show preview dialog
                                             setImagePreview({ url, blob, filename });
                                             toast.success('Report generated successfully!');
@@ -676,7 +787,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                     {
                         filter !== 'all' &&
                         <div ref={tableRef} className='relative w-full overflow-y-auto max-h-[70svh]'>
-                                <Table className='w-full min-w-max border-none bg-background'>
+                            <Table className='w-full min-w-max border-none bg-background'>
                                 <TableHeader>
                                     {(filter !== "outsideStandingVehicles" && filter !== "notLoadedVehicles" && filter !== "loaded" && filter !== "loadedReported" && filter !== "emptyStanding" && filter !== "otherStanding") &&
                                         <TableRow>
@@ -789,15 +900,12 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                 </TableHeader>
                                 <TableBody>
                                     {filter == 'loadedOnWay' &&
-                                        data?.loaded.onWay.trips
-                                            .filter(matchesSearch)
-                                            .sort((a, b) => a.EndTo.localeCompare(b.EndTo))
-                                            .map((trip, index) =>
+                                        paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
                                                 }} key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.driverStatus == 0 ? "text-destructive" : ""}>
-                                                    <TableCell>{index + 1}</TableCell>
+                                                    <TableCell>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
                                                     {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>}
                                                     <TableCell>{highlightText(trip?.EndTo || "")}</TableCell>
@@ -846,22 +954,11 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             )
                                     }
                                     {filter == 'loadedReported' &&
-                                        data?.loaded.reported?.trips
-                                            .filter(matchesSearch)
-                                            .sort((a, b) => a.EndTo.localeCompare(b.EndTo)).sort((a, b) => Math.round(
-                                                Math.abs(
-                                                    Number(new Date()) - Number(new Date(b.ReportingDate!))
-                                                ) / (1000 * 60 * 60 * 24)
-                                            ) - Math.round(
-                                                Math.abs(
-                                                    Number(new Date()) - Number(new Date(a.ReportingDate!))
-                                                ) / (1000 * 60 * 60 * 24)
-                                            ))
-                                            .map((trip, index) =>
+                                        paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Depot" ? "bg-yellow-200 dark:text-background hover:bg-yellow-200" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
-                                                    <TableCell>{index + 1}</TableCell>
+                                                    <TableCell>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
                                                     <TableCell>{highlightText(trip?.VehicleNo || "")}</TableCell>
                                                     <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>
                                                     <TableCell>{trip?.capacity}</TableCell>
@@ -917,15 +1014,12 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             )
                                     }
                                     {filter == 'emptyOnWay' &&
-                                        data?.empty?.onWay.trips
-                                            .filter(matchesSearch)
-                                            .sort((a, b) => a.EndTo.localeCompare(b.EndTo))
-                                            .map((trip, index) =>
+                                        paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
-                                                    <TableCell>{index + 1}</TableCell>
+                                                    <TableCell>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
                                                     {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>}
                                                     <TableCell>{highlightText(trip?.EndTo || "")}</TableCell>
@@ -983,15 +1077,12 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             )
                                     }
                                     {filter == 'outsideStandingVehicles' &&
-                                        outsideStanding
-                                            .filter(matchesSearch)
-                                            .sort((a, b) => a.EndTo.localeCompare(b.EndTo))
-                                            .map((trip, index) =>
+                                        paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
-                                                    <TableCell>{index + 1}</TableCell>
+                                                    <TableCell>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
                                                     {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>}
                                                     <TableCell>{highlightText(trip?.VehicleNo || "")}</TableCell>
@@ -1041,15 +1132,12 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             )
                                     }
                                     {filter == 'otherStanding' &&
-                                        otherStanding
-                                            .filter(matchesSearch)
-                                            .sort((a, b) => a.EndTo.localeCompare(b.EndTo))
-                                            .map((trip, index) =>
+                                        paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
-                                                    <TableCell>{index + 1}</TableCell>
+                                                    <TableCell>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
                                                     {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>}
                                                     <TableCell>{highlightText(trip?.VehicleNo || "")}</TableCell>
@@ -1098,16 +1186,12 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             )
                                     }
                                     {filter == 'loaded' &&
-                                        data?.empty?.reported?.trips
-                                            .filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Loaded")
-                                            .filter(matchesSearch)
-                                            .sort((a, b) => a.EndTo.localeCompare(b.EndTo))
-                                            .map((trip, index) =>
+                                        paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
-                                                    <TableCell>{index + 1}</TableCell>
+                                                    <TableCell>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
                                                     <TableCell>{highlightText(trip?.VehicleNo || "")}</TableCell>
                                                     <TableCell>{trip?.capacity}</TableCell>
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.superwiser || "")}</TableCell>}
@@ -1126,15 +1210,12 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             )
                                     }
                                     {filter == 'emptyReported' &&
-                                        data?.empty?.reported?.trips
-                                            .filter(matchesSearch)
-                                            .sort((a, b) => a.EndTo.localeCompare(b.EndTo))
-                                            .map((trip, index) =>
+                                        paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
-                                                    <TableCell>{index + 1}</TableCell>
+                                                    <TableCell>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
                                                     {user?.Division.includes('Admin') && <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>}
                                                     <TableCell>{highlightText(trip?.EndTo || "")}</TableCell>
@@ -1185,15 +1266,12 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                             )
                                     }
                                     {filter == 'emptyStanding' &&
-                                        data?.empty?.standing.trips
-                                            .filter(matchesSearch)
-                                            .sort((a, b) => a.EndTo.localeCompare(b.EndTo))
-                                            .map((trip, index) =>
+                                        paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
-                                                    <TableCell>{index + 1}</TableCell>
+                                                    <TableCell>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
                                                     <TableCell>{highlightText(trip?.VehicleNo || "")}</TableCell>
                                                     <TableCell>{trip.EndTo}</TableCell>
                                                     <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>
@@ -1252,6 +1330,76 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                             </Table>
                         </div>
                     }
+
+                    {/* Pagination Controls */}
+                    {filter !== 'all' && totalPages > 1 && (
+                        <div className="flex items-center justify-between px-4 py-3 border-t">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <span>
+                                    Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, totalRecords)} of {totalRecords} records
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(1)}
+                                    disabled={currentPage === 1}
+                                >
+                                    First
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                >
+                                    Previous
+                                </Button>
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                        let pageNum;
+                                        if (totalPages <= 5) {
+                                            pageNum = i + 1;
+                                        } else if (currentPage <= 3) {
+                                            pageNum = i + 1;
+                                        } else if (currentPage >= totalPages - 2) {
+                                            pageNum = totalPages - 4 + i;
+                                        } else {
+                                            pageNum = currentPage - 2 + i;
+                                        }
+                                        return (
+                                            <Button
+                                                key={pageNum}
+                                                variant={currentPage === pageNum ? "default" : "outline"}
+                                                size="sm"
+                                                onClick={() => setCurrentPage(pageNum)}
+                                                className="w-10"
+                                            >
+                                                {pageNum}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    Next
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(totalPages)}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    Last
+                                </Button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* summary table for admins */}
                     {user?.Division.includes('Admin') &&
@@ -1783,7 +1931,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                             Preview your generated report. You can share or download it below.
                         </DialogDescription>
                     </DialogHeader>
-                    
+
                     {imagePreview && (
                         <div className="flex flex-col items-center space-y-4">
                             <div className="border rounded-lg overflow-hidden shadow-lg max-w-full">
@@ -1832,7 +1980,7 @@ const VehiclesSummary = ({ user }: { user: TransAppUser | undefined }) => {
                                     try {
                                         const file = new File([imagePreview.blob], imagePreview.filename, { type: 'image/png' });
                                         const nav: any = typeof navigator !== "undefined" ? navigator : undefined;
-                                        
+
                                         if (nav && typeof nav.share === "function") {
                                             await nav.share({
                                                 files: [file],
