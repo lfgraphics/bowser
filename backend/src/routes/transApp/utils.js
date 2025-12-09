@@ -250,42 +250,6 @@ async function getNewSummary(userId, isAdmin) {
                     VehicleNo: { $in: activeVehicleNos }
                 }
             },
-            {
-                $addFields: {
-                    tripDay: {
-                        $let: {
-                            vars: {
-                                startDate: "$StartDate",
-                                startOfYear: {
-                                    $dateFromParts: {
-                                        year: { $year: "$StartDate" },
-                                        month: 1,
-                                        day: 1
-                                    }
-                                }
-                            },
-                            in: {
-                                $toDouble: {
-                                    $concat: [
-                                        { $toString: { $year: "$$startDate" } },
-                                        ".",
-                                        {
-                                            $toString: {
-                                                $floor: {
-                                                    $divide: [
-                                                        { $subtract: ["$$startDate", "$$startOfYear"] },
-                                                        86400000 // milliseconds in a day (1000 * 60 * 60 * 24)
-                                                    ]
-                                                }
-                                            }
-                                        }
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                }
-            },
             // Sort by StartDate desc, then by rankindex asc (0 first)
             { $sort: { StartDate: -1, rankindex: 1 } },
             {
