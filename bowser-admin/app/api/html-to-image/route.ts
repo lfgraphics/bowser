@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     const width = body.width || 1280
     const height = body.height || 720
     const fullPage = body.fullPage !== undefined ? body.fullPage : true
-    const quality = body.quality || 90
+    const quality = 100
     const format = body.format || 'png'
     const filename = body.filename || `report-${Date.now()}.${format}`
 

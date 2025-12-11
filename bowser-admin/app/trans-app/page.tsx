@@ -9,6 +9,7 @@ import MorningUpdateReport, { MorningUpdateReportData as ReportDataTypeAlias } f
 import MorningUpdatesView from '@/components/transappComponents/MorningUpdatesView'
 import VehicleManagement from '@/components/transappComponents/VehicleManagement'
 import VehiclesSummary from '@/components/transappComponents/VehiclesSummary'
+import VehiclesSummaryOptimized from '@/components/transappComponents/VehiclesSummaryOptimized'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { BASE_URL } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -419,7 +420,8 @@ export default function Page() {
           }
           {
             tab === "Summary" &&
-            <VehiclesSummary user={user} />
+            // <VehiclesSummary user={user} />
+            <VehiclesSummaryOptimized user={user} />
           }
           {
             tab === "Morning Updates" &&
