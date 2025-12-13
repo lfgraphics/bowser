@@ -221,7 +221,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
     }, [viewingTrip])
 
     const isAdmin = user?.Division === "EthanolAdmin";
-    
+
     const { data: oldData, error: oldError, isLoading: oldLoading, mutate: mutateOld } = useSWR<TripsSummary>(
         user?._id && filter === 'all'
             ? `${BASE_URL}/trans-app/vehicles/get-summary/${user._id}?isAdmin=${isAdmin}`
@@ -234,15 +234,15 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
             dedupingInterval: 1000 * 60 * 60,
         }
     );
-    
+
     const { stats, error: statsError, isLoading: statsLoading, mutate: mutateStats } = useVehicleSummaryStats(user?._id, isAdmin);
-    const { 
-        data: bucketData, 
-        pagination, 
+    const {
+        data: bucketData,
+        pagination,
         totalCount,
-        error: bucketError, 
-        isLoading: bucketLoading, 
-        mutate: mutateBucket 
+        error: bucketError,
+        isLoading: bucketLoading,
+        mutate: mutateBucket
     } = useVehicleBucketData({
         userId: user?._id,
         isAdmin,
@@ -258,8 +258,8 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
     const data = oldData || stats;
     const counts = stats || oldData;
     const error = oldError || statsError || bucketError;
-    const isLoading = filter === 'all' 
-        ? (oldLoading && !oldData) 
+    const isLoading = filter === 'all'
+        ? (oldLoading && !oldData)
         : ((statsLoading && !stats) || (bucketLoading && bucketData.length === 0));
 
     const outsideStandingCount = stats?.empty?.outsideStanding?.count || 0;
@@ -267,9 +267,43 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
     const loadedCount = stats?.empty?.loaded?.count || 0;
 
     const handleDownload = () => {
-        if (!oldData) return;
+        // Create a proper TripsSummary structure for the current filter
+        let summaryForDownload: TripsSummary;
+        
+        if (filter === 'all') {
+            summaryForDownload = (data || stats) as TripsSummary;
+        } else {
+            // Create a minimal summary structure for filtered data
+            const baseSummary: TripsSummary = {
+                empty: {
+                    onWay: { count: 0, trips: [] },
+                    reported: { count: 0, trips: [] },
+                    standing: { count: 0, trips: [] }
+                },
+                loaded: {
+                    onWay: { count: 0, trips: [] },
+                    reported: { count: 0, trips: [] }
+                }
+            };
+
+            // Update the appropriate category based on the current filter
+            if (filter === 'loadedOnWay') {
+                baseSummary.loaded.onWay = { count: paginatedData.length, trips: paginatedData };
+            } else if (filter === 'loadedReported') {
+                baseSummary.loaded.reported = { count: paginatedData.length, trips: paginatedData };
+            } else if (filter === 'emptyOnWay') {
+                baseSummary.empty.onWay = { count: paginatedData.length, trips: paginatedData };
+            } else if (filter === 'emptyReported') {
+                baseSummary.empty.reported = { count: paginatedData.length, trips: paginatedData };
+            } else if (filter === 'emptyStanding') {
+                baseSummary.empty.standing = { count: paginatedData.length, trips: paginatedData };
+            }
+
+            summaryForDownload = baseSummary;
+        }
+
         generateTripsReport({
-            summary: oldData,
+            summary: summaryForDownload,
             username: user!.name,
             isAdmin: user?.Division === "EthanolAdmin",
             fileName: `Tankers_Report_Generated_at_${formatDate(new Date())}_by_${user?.name}.xlsx`,
@@ -281,7 +315,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
             const trip = bucketData.find(trip => trip?._id === tripId);
             return trip as TankersTrip;
         }
-        
+
         const allTrips = [
             ...(oldData?.loaded?.onWay?.trips ?? []),
             ...(oldData?.loaded?.reported?.trips ?? []),
@@ -428,17 +462,17 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
         if (filter !== 'all' || !oldData) return {};
         return groupTripsByEndTo(oldData.loaded, "loaded");
     }, [filter, oldData]);
-    
+
     const groupedLoadedBySupervisor = useMemo(() => {
         if (filter !== 'all' || !oldData) return {};
         return groupBySupervisors(oldData.loaded, "loaded");
     }, [filter, oldData]);
-    
+
     const groupedEmptyByEndTo = useMemo(() => {
         if (filter !== 'all' || !oldData) return {};
         return groupTripsByEndTo(oldData.empty, "empty");
     }, [filter, oldData]);
-    
+
     const groupedEmptyBySupervisor = useMemo(() => {
         if (filter !== 'all' || !oldData) return {};
         return groupBySupervisors(oldData.empty, "empty");
@@ -483,6 +517,8 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
         }
     };
 
+
+
     return (
         <>
             {isLoading && <Loading />}
@@ -491,107 +527,111 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                 <div className="text-red-500">{error.message || String(error)}</div>
             }
             {(data || stats) &&
-                <div className='mb-4'>
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Loaded Vehicles {(counts?.loaded?.onWay?.count || 0) + (counts?.loaded?.reported?.count || 0)}</CardTitle>
-                            </CardHeader>
-                            <CardContent className='grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2'>
-                                <Button
-                                    variant="outline"
-                                    className={`w-40 ${filter !== 'all' && filter === 'loadedOnWay' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
-                                    onClick={() => setFilter('loadedOnWay')}
-                                >
-                                    <strong>On Way: </strong><span>{counts?.loaded?.onWay?.count || 0}</span>
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    className={`w-40 ${filter !== 'all' && filter === 'loadedReported' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
-                                    onClick={() => setFilter('loadedReported')}
-                                >
-                                    <strong>Reported: </strong><span>{counts?.loaded?.reported?.count || 0}</span>
-                                </Button>
-                            </CardContent>
-                            {/* <CardFooter></CardFooter> */}
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Empty Vehicles {(counts?.empty?.onWay?.count || 0) + (counts?.empty?.reported?.count || 0) + (counts?.empty?.standing?.count || 0)}</CardTitle>
-                            </CardHeader>
-                            <CardContent className='grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2'>
-                                <Button
-                                    variant="outline"
-                                    className={`w-40 ${filter !== 'all' && filter === 'emptyOnWay' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
-                                    onClick={() => setFilter('emptyOnWay')}
-                                >
-                                    <strong>On Way: </strong>{counts?.empty?.onWay?.count || 0}
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    className={`w-40 ${filter !== 'all' && filter === 'emptyStanding' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
-                                    onClick={() => setFilter('emptyStanding')}
-                                >
-                                    <strong>Depo Standing: </strong>{counts?.empty?.standing?.count || 0}
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    className={`w-40 ${filter !== 'all' && filter === 'outsideStanding' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
-                                    onClick={() => setFilter("outsideStanding")}
-                                >
-                                    <strong>Outside Standing: </strong> {outsideStandingCount}
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    className={`w-40 ${filter !== 'all' && filter === 'loaded' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
-                                    onClick={() => setFilter("loaded")}
-                                >
-                                    <strong>Loaded: </strong> {loadedCount}
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    className={`w-40 ${filter !== 'all' && filter === 'otherStanding' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
-                                    onClick={() => setFilter('otherStanding')}
-                                >
-                                    <strong>Other Standing: </strong> {otherStandingCount}
-                                </Button>
-                            </CardContent>
-                            {/* <CardFooter></CardFooter> */}
-                        </Card>
-                        <div className='w-full flex justify-end gap-2 my-3'>
-                            <Button onClick={() => handleDownload()}>Download Report</Button>
-                            {filter !== 'all' && (
-                                <Button
-                                    variant="outline"
-                                    disabled={isGeneratingImage}
-                                    onClick={async () => {
-                                        setIsGeneratingImage(true);
-                                        try {
-                                            if (!tableRef.current) {
-                                                throw new Error('Table not found');
-                                            }
+                <>
+                    <div className='hidden'>
+                        mobile UI
+                    </div>
+                    <div className='mb-4'>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Loaded Vehicles {(counts?.loaded?.onWay?.count || 0) + (counts?.loaded?.reported?.count || 0)}</CardTitle>
+                                </CardHeader>
+                                <CardContent className='grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2'>
+                                    <Button
+                                        variant="outline"
+                                        className={`w-40 ${filter !== 'all' && filter === 'loadedOnWay' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
+                                        onClick={() => setFilter('loadedOnWay')}
+                                    >
+                                        <strong>On Way: </strong><span>{counts?.loaded?.onWay?.count || 0}</span>
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className={`w-40 ${filter !== 'all' && filter === 'loadedReported' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
+                                        onClick={() => setFilter('loadedReported')}
+                                    >
+                                        <strong>Reported: </strong><span>{counts?.loaded?.reported?.count || 0}</span>
+                                    </Button>
+                                </CardContent>
+                                {/* <CardFooter></CardFooter> */}
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Empty Vehicles {(counts?.empty?.onWay?.count || 0) + (counts?.empty?.reported?.count || 0) + (counts?.empty?.standing?.count || 0)}</CardTitle>
+                                </CardHeader>
+                                <CardContent className='grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2'>
+                                    <Button
+                                        variant="outline"
+                                        className={`w-40 ${filter !== 'all' && filter === 'emptyOnWay' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
+                                        onClick={() => setFilter('emptyOnWay')}
+                                    >
+                                        <strong>On Way: </strong>{counts?.empty?.onWay?.count || 0}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className={`w-40 ${filter !== 'all' && filter === 'emptyStanding' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
+                                        onClick={() => setFilter('emptyStanding')}
+                                    >
+                                        <strong>Depo Standing: </strong>{counts?.empty?.standing?.count || 0}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className={`w-40 ${filter !== 'all' && filter === 'outsideStanding' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
+                                        onClick={() => setFilter("outsideStanding")}
+                                    >
+                                        <strong>Outside Standing: </strong> {outsideStandingCount}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className={`w-40 ${filter !== 'all' && filter === 'loaded' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
+                                        onClick={() => setFilter("loaded")}
+                                    >
+                                        <strong>Loaded: </strong> {loadedCount}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className={`w-40 ${filter !== 'all' && filter === 'otherStanding' ? 'bg-accent text-accent-foreground dark:bg-input/50' : ''}`}
+                                        onClick={() => setFilter('otherStanding')}
+                                    >
+                                        <strong>Other Standing: </strong> {otherStandingCount}
+                                    </Button>
+                                </CardContent>
+                                {/* <CardFooter></CardFooter> */}
+                            </Card>
+                            <div className='w-full flex justify-end gap-2 my-3'>
+                                <Button onClick={() => handleDownload()}>Download Report</Button>
+                                {filter !== 'all' && (
+                                    <Button
+                                        variant="outline"
+                                        disabled={isGeneratingImage}
+                                        onClick={async () => {
+                                            setIsGeneratingImage(true);
+                                            try {
+                                                if (!tableRef.current) {
+                                                    throw new Error('Table not found');
+                                                }
 
-                                            // Store original styles
-                                            const originalMaxHeight = tableRef.current.style.maxHeight;
-                                            const originalOverflow = tableRef.current.style.overflow;
+                                                // Store original styles
+                                                const originalMaxHeight = tableRef.current.style.maxHeight;
+                                                const originalOverflow = tableRef.current.style.overflow;
 
-                                            // Temporarily remove height constraint to capture full content
-                                            tableRef.current.style.maxHeight = 'none';
-                                            tableRef.current.style.overflow = 'visible';
+                                                // Temporarily remove height constraint to capture full content
+                                                tableRef.current.style.maxHeight = 'none';
+                                                tableRef.current.style.overflow = 'visible';
 
-                                            // Wait for layout to update
-                                            await new Promise(resolve => setTimeout(resolve, 100));
+                                                // Wait for layout to update
+                                                await new Promise(resolve => setTimeout(resolve, 100));
 
-                                            // Clone and clean the table container
-                                            const clonedTable = tableRef.current.cloneNode(true) as HTMLElement;
-                                            const interactiveElements = clonedTable.querySelectorAll('button, a, input, select, textarea, [role="button"], .dropdown, .link');
-                                            interactiveElements.forEach(el => el.remove());
+                                                // Clone and clean the table container
+                                                const clonedTable = tableRef.current.cloneNode(true) as HTMLElement;
+                                                const interactiveElements = clonedTable.querySelectorAll('button, a, input, select, textarea, [role="button"], .dropdown, .link');
+                                                interactiveElements.forEach(el => el.remove());
 
-                                            // Restore original styles immediately
-                                            tableRef.current.style.maxHeight = originalMaxHeight;
-                                            tableRef.current.style.overflow = originalOverflow;
+                                                // Restore original styles immediately
+                                                tableRef.current.style.maxHeight = originalMaxHeight;
+                                                tableRef.current.style.overflow = originalOverflow;
 
-                                            const bodyContent = `
+                                                const bodyContent = `
                                                 <div class="p-8">
                                                     <h1 class="text-2xl font-bold mb-4 text-gray-900">${camelToWords(filter)} - Vehicles Report</h1>
                                                     <div class="text-sm text-gray-600 mb-4">Generated on ${formatDate(new Date())} by <span class="font-bold">${user?.name}</span></div>
@@ -599,192 +639,192 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                 </div>
                                             `;
 
-                                            const response = await fetch('/api/html-to-image', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({
-                                                    bodyContent,
-                                                    useTailwind: true,
-                                                    backgroundColor: 'bg-white',
-                                                    format: 'png',
-                                                    quality: 90,
-                                                    filename: `${camelToWords(filter)}_${formatDate(new Date())}.png`,
-                                                    width: 1920,
-                                                    fullPage: true,
-                                                }),
-                                            });
+                                                const response = await fetch('/api/html-to-image', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({
+                                                        bodyContent,
+                                                        useTailwind: true,
+                                                        backgroundColor: 'bg-white',
+                                                        format: 'png',
+                                                        quality: 90,
+                                                        filename: `${camelToWords(filter)}_${formatDate(new Date())}.png`,
+                                                        width: 1920,
+                                                        fullPage: true,
+                                                    }),
+                                                });
 
-                                            if (!response.ok) {
-                                                const error = await response.json();
-                                                throw new Error(error.error || 'Failed to generate image');
+                                                if (!response.ok) {
+                                                    const error = await response.json();
+                                                    throw new Error(error.error || 'Failed to generate image');
+                                                }
+
+                                                const blob = await response.blob();
+                                                const filename = `${camelToWords(filter)}_${formatDate(new Date())}.png`;
+                                                const url = URL.createObjectURL(blob);
+
+                                                // Show preview dialog
+                                                setImagePreview({ url, blob, filename });
+                                                toast.success('Report generated successfully!');
+                                            } catch (error) {
+                                                console.error(error);
+                                                toast.error('Failed to share table', { description: String(error) });
+                                            } finally {
+                                                setIsGeneratingImage(false);
                                             }
-
-                                            const blob = await response.blob();
-                                            const filename = `${camelToWords(filter)}_${formatDate(new Date())}.png`;
-                                            const url = URL.createObjectURL(blob);
-
-                                            // Show preview dialog
-                                            setImagePreview({ url, blob, filename });
-                                            toast.success('Report generated successfully!');
-                                        } catch (error) {
-                                            console.error(error);
-                                            toast.error('Failed to share table', { description: String(error) });
-                                        } finally {
-                                            setIsGeneratingImage(false);
-                                        }
-                                    }}
-                                >
-                                    <Share2 className="mr-2 h-4 w-4" />
-                                    {isGeneratingImage ? 'Generating...' : 'Share Table'}
-                                </Button>
-                            )}
-                        </div>
-                        {filter !== 'all' &&
-                            <div className='flex items-center gap-2'>
-                                <span>{camelToWords(filter)}</span>
-                                <Button variant="outline" className='w-max my-4' onClick={() => setFilter('all')}>View All Vehicles Summary</Button>
+                                        }}
+                                    >
+                                        <Share2 className="mr-2 h-4 w-4" />
+                                        {isGeneratingImage ? 'Generating...' : 'Share Table'}
+                                    </Button>
+                                )}
                             </div>
-                        }
-                    </div>
-                    <div className='flex justify-center gap-2 my-4'>
-                        <div className="relative w-[310px]">
-                            <Input
-                                id="searchInput"
-                                type="text"
-                                placeholder="Search by destination, supervisor, or vehicle no..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pr-8"
-                            />
-                            {searchTerm && (
-                                <Button
-                                    size="icon"
-                                    aria-label="Clear search"
-                                    onClick={() => { setSearchTerm(''); (document.getElementById('searchInput') as HTMLInputElement | null)?.focus(); }}
-                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full flex items-center justify-center text-sm"
-                                >
-                                    <X />
-                                </Button>
-                            )}
+                            {filter !== 'all' &&
+                                <div className='flex items-center gap-2'>
+                                    <span>{camelToWords(filter)}</span>
+                                    <Button variant="outline" className='w-max my-4' onClick={() => setFilter('all')}>View All Vehicles Summary</Button>
+                                </div>
+                            }
                         </div>
-                    </div>
-                    {
-                        filter !== 'all' &&
-                        <div ref={tableRef} className='relative w-full overflow-y-auto max-h-[70svh]'>
-                            <Table className='w-full min-w-max border-none bg-background'>
-                                <TableHeader>
-                                    {(filter !== "outsideStanding" && filter !== "notLoadedVehicles" && filter !== "loaded" && filter !== "loadedReported" && filter !== "emptyStanding" && filter !== "otherStanding") &&
-                                        <TableRow>
-                                            <TableHead sortable dataType='number'>SR No</TableHead>
-                                            {user?.Division.includes('Admin') && <TableHead filterable sortable dataType='string'>Started From</TableHead>}
-                                            {user?.Division.includes('Admin') && <TableHead filterable sortable dataType='date'>Start Date</TableHead>}
-                                            <TableHead filterable sortable dataType='string'>{(filter === 'loadedOnWay' || filter === 'emptyOnWay') ? "Destination" : "End Location"}</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Vehicle No</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Type/Capacity</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Last Updated Location</TableHead>
-                                            {filter === 'emptyReported' && <TableHead filterable sortable dataType='string'>Loading Supervisor</TableHead>}
-                                            {filter === 'emptyReported' && <TableHead filterable sortable dataType='date'>Reached On</TableHead>}
-                                            <TableHead filterable sortable dataType='string'>Current Status</TableHead>
-                                            {user?.Division.includes('Admin') && <TableHead filterable sortable dataType='string'>Supervisor</TableHead>}
-                                            <TableHead>Action</TableHead>
-                                        </TableRow>
-                                    }
-                                    {
-                                        filter == "loadedReported" &&
-                                        <TableRow>
-                                            <TableHead sortable dataType='number'>SR No</TableHead>
-                                            <TableHead sortable filterable dataType='string'>Vehicle No</TableHead>
-                                            <TableHead sortable filterable dataType='date'>Loading Date</TableHead>
-                                            <TableHead sortable filterable dataType='string'>Qty</TableHead>
-                                            <TableHead sortable filterable dataType='string'>From</TableHead>
-                                            <TableHead sortable filterable dataType='string'>To</TableHead>
-                                            <TableHead sortable filterable dataType='date'>Reporting Date</TableHead>
-                                            <TableHead sortable filterable dataType='number'>Days</TableHead>
-                                            <TableHead sortable filterable dataType='string'>Comment</TableHead>
-                                            {user?.Division.includes('Admin') && <TableHead filterable sortable dataType='string'>Vehicle Manager</TableHead>}
-                                            <TableHead>Action</TableHead>
-                                        </TableRow>
-                                    }
-                                    {
-                                        filter == "emptyStanding" &&
-                                        <TableRow>
-                                            <TableHead sortable dataType='number'>SR No</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Vehicle No</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Location</TableHead>
-                                            <TableHead filterable sortable dataType='date'>Loading Date</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Qty</TableHead>
-                                            <TableHead filterable sortable dataType='string'>From</TableHead>
-                                            <TableHead filterable sortable dataType='date'>Reporting Date</TableHead>
-                                            <TableHead filterable sortable dataType='date'>Unloading Date</TableHead>
-                                            <TableHead filterable sortable dataType='number'>Days</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Comment</TableHead>
-                                            {user?.Division.includes('Admin') && <TableHead filterable sortable dataType='string'>Vehicle Manager</TableHead>}
-                                            <TableHead>Action</TableHead>
-                                        </TableRow>
-                                    }
-                                    {
-                                        (filter == "outsideStanding" || filter == "notLoadedVehicles") &&
-                                        <TableRow>
-                                            <TableHead sortable dataType='number'>SR No</TableHead>
-                                            {user?.Division.includes('Admin') && <TableHead sortable dataType='string'>Started From</TableHead>}
-                                            {user?.Division.includes('Admin') && <TableHead sortable dataType='date'>Start Date</TableHead>}
-                                            <TableHead filterable sortable dataType='string'>Vehicle No</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Type/Capacity</TableHead>
-                                            {user?.Division.includes('Admin') && <TableHead filterable sortable dataType='string'>Vehicle Manager</TableHead>}
-                                            <TableHead filterable sortable dataType='string'>Loading Station</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Loading Supervisor</TableHead>
-                                            <TableHead filterable sortable dataType='date'>Reached On</TableHead>
-                                            <TableHead filterable sortable dataType='string'>{filter == "outsideStanding" ? "Current Status" : "Reason"}</TableHead>
-                                            <TableHead>Action</TableHead>
-                                        </TableRow>
-                                    }{
-                                        (filter == "loaded" || filter == "otherStanding") && !user?.Division.includes('Admin') &&
-                                        <TableRow>
-                                            <TableHead sortable dataType='number'>SR No</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Vehicle No</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Type/Capacity</TableHead>
-                                            {user?.Division.includes('Admin') && <TableHead filterable sortable dataType='string'>Vehicle Manager</TableHead>}
-                                            <TableHead filterable sortable dataType='string'>{filter == "loaded" ? "Loading Station" : "Location"}</TableHead>
-                                            {filter !== 'otherStanding' && <TableHead filterable sortable dataType='string'>Loading Supervisor</TableHead>}
-                                            <TableHead filterable sortable dataType='date'>Reached On</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Status {filter == "loaded" && "Update Time"}</TableHead>
-                                            <TableHead>Action</TableHead>
-                                        </TableRow>
-                                    }
-                                    {
-                                        filter == "loaded" && user?.Division.includes('Admin') &&
-                                        <TableRow>
-                                            <TableHead sortable dataType='number'>SR No</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Vehicle No</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Type/Capacity</TableHead>
-                                            {user?.Division.includes('Admin') && <TableHead filterable sortable dataType='string'>Vehicle Manager</TableHead>}
-                                            <TableHead filterable sortable dataType='string'>{filter == "loaded" ? "Loading Station" : "Location"}</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Loading Supervisor</TableHead>
-                                            <TableHead filterable sortable dataType='date'>Reached On</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Status {filter == "loaded" && "Update Time"}</TableHead>
-                                            {!user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
-                                        </TableRow>
-                                    }
-                                    {
-                                        filter == "otherStanding" && user?.Division.includes('Admin') &&
-                                        <TableRow>
-                                            <TableHead sortable dataType='number'>SR No</TableHead>
-                                            <TableHead filterable sortable dataType='string'>From</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Start Date</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Vehicle No</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Type/Capacity</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Supervisor</TableHead>
-                                            <TableHead filterable sortable dataType='string'>To</TableHead>
-                                            <TableHead filterable sortable dataType='date'>Reached On</TableHead>
-                                            <TableHead filterable sortable dataType='string'>Last Update</TableHead>
-                                            <TableHead>Actions</TableHead>
+                        <div className='flex justify-center gap-2 my-4'>
+                            <div className="relative w-[310px]">
+                                <Input
+                                    id="searchInput"
+                                    type="text"
+                                    placeholder="Search by destination, supervisor, or vehicle no..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pr-8"
+                                />
+                                {searchTerm && (
+                                    <Button
+                                        size="icon"
+                                        aria-label="Clear search"
+                                        onClick={() => { setSearchTerm(''); (document.getElementById('searchInput') as HTMLInputElement | null)?.focus(); }}
+                                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full flex items-center justify-center text-sm"
+                                    >
+                                        <X />
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                        {
+                            filter !== 'all' &&
+                            <div ref={tableRef} className='relative w-full overflow-y-auto max-h-[70svh]'>
+                                <Table className='w-full min-w-max border-none bg-background'>
+                                    <TableHeader>
+                                        {(filter !== "outsideStanding" && filter !== "notLoadedVehicles" && filter !== "loaded" && filter !== "loadedReported" && filter !== "emptyStanding" && filter !== "otherStanding") &&
+                                            <TableRow>
+                                                <TableHead sortable dataType='number'>SR No</TableHead>
+                                                {user?.Division?.includes('Admin') && <TableHead filterable sortable dataType='string'>Started From</TableHead>}
+                                                {user?.Division?.includes('Admin') && <TableHead filterable sortable dataType='date'>Start Date</TableHead>}
+                                                <TableHead filterable sortable dataType='string'>{(filter === 'loadedOnWay' || filter === 'emptyOnWay') ? "Destination" : "End Location"}</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Vehicle No</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Type/Capacity</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Last Updated Location</TableHead>
+                                                {filter === 'emptyReported' && <TableHead filterable sortable dataType='string'>Loading Supervisor</TableHead>}
+                                                {filter === 'emptyReported' && <TableHead filterable sortable dataType='date'>Reached On</TableHead>}
+                                                <TableHead filterable sortable dataType='string'>Current Status</TableHead>
+                                                {user?.Division?.includes('Admin') && <TableHead filterable sortable dataType='string'>Supervisor</TableHead>}
+                                                <TableHead>Action</TableHead>
+                                            </TableRow>
+                                        }
+                                        {
+                                            filter == "loadedReported" &&
+                                            <TableRow>
+                                                <TableHead sortable dataType='number'>SR No</TableHead>
+                                                <TableHead sortable filterable dataType='string'>Vehicle No</TableHead>
+                                                <TableHead sortable filterable dataType='date'>Loading Date</TableHead>
+                                                <TableHead sortable filterable dataType='string'>Qty</TableHead>
+                                                <TableHead sortable filterable dataType='string'>From</TableHead>
+                                                <TableHead sortable filterable dataType='string'>To</TableHead>
+                                                <TableHead sortable filterable dataType='date'>Reporting Date</TableHead>
+                                                <TableHead sortable filterable dataType='number'>Days</TableHead>
+                                                <TableHead sortable filterable dataType='string'>Comment</TableHead>
+                                                {user?.Division?.includes('Admin') && <TableHead filterable sortable dataType='string'>Vehicle Manager</TableHead>}
+                                                <TableHead>Action</TableHead>
+                                            </TableRow>
+                                        }
+                                        {
+                                            filter == "emptyStanding" &&
+                                            <TableRow>
+                                                <TableHead sortable dataType='number'>SR No</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Vehicle No</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Location</TableHead>
+                                                <TableHead filterable sortable dataType='date'>Loading Date</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Qty</TableHead>
+                                                <TableHead filterable sortable dataType='string'>From</TableHead>
+                                                <TableHead filterable sortable dataType='date'>Reporting Date</TableHead>
+                                                <TableHead filterable sortable dataType='date'>Unloading Date</TableHead>
+                                                <TableHead filterable sortable dataType='number'>Days</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Comment</TableHead>
+                                                {user?.Division?.includes('Admin') && <TableHead filterable sortable dataType='string'>Vehicle Manager</TableHead>}
+                                                <TableHead>Action</TableHead>
+                                            </TableRow>
+                                        }
+                                        {
+                                            (filter == "outsideStanding" || filter == "notLoadedVehicles") &&
+                                            <TableRow>
+                                                <TableHead sortable dataType='number'>SR No</TableHead>
+                                                {user?.Division?.includes('Admin') && <TableHead sortable dataType='string'>Started From</TableHead>}
+                                                {user?.Division?.includes('Admin') && <TableHead sortable dataType='date'>Start Date</TableHead>}
+                                                <TableHead filterable sortable dataType='string'>Vehicle No</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Type/Capacity</TableHead>
+                                                {user?.Division?.includes('Admin') && <TableHead filterable sortable dataType='string'>Vehicle Manager</TableHead>}
+                                                <TableHead filterable sortable dataType='string'>Loading Station</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Loading Supervisor</TableHead>
+                                                <TableHead filterable sortable dataType='date'>Reached On</TableHead>
+                                                <TableHead filterable sortable dataType='string'>{filter == "outsideStanding" ? "Current Status" : "Reason"}</TableHead>
+                                                <TableHead>Action</TableHead>
+                                            </TableRow>
+                                        }{
+                                            (filter == "loaded" || filter == "otherStanding") && !user?.Division?.includes('Admin') &&
+                                            <TableRow>
+                                                <TableHead sortable dataType='number'>SR No</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Vehicle No</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Type/Capacity</TableHead>
+                                                {user?.Division.includes('Admin') && <TableHead filterable sortable dataType='string'>Vehicle Manager</TableHead>}
+                                                <TableHead filterable sortable dataType='string'>{filter == "loaded" ? "Loading Station" : "Location"}</TableHead>
+                                                {filter !== 'otherStanding' && <TableHead filterable sortable dataType='string'>Loading Supervisor</TableHead>}
+                                                <TableHead filterable sortable dataType='date'>Reached On</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Status {filter == "loaded" && "Update Time"}</TableHead>
+                                                <TableHead>Action</TableHead>
+                                            </TableRow>
+                                        }
+                                        {
+                                            filter == "loaded" && user?.Division?.includes('Admin') &&
+                                            <TableRow>
+                                                <TableHead sortable dataType='number'>SR No</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Vehicle No</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Type/Capacity</TableHead>
+                                                {user?.Division.includes('Admin') && <TableHead filterable sortable dataType='string'>Vehicle Manager</TableHead>}
+                                                <TableHead filterable sortable dataType='string'>{filter == "loaded" ? "Loading Station" : "Location"}</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Loading Supervisor</TableHead>
+                                                <TableHead filterable sortable dataType='date'>Reached On</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Status {filter == "loaded" && "Update Time"}</TableHead>
+                                                {!user?.Division?.includes('Admin') && <TableHead>Action</TableHead>}
+                                            </TableRow>
+                                        }
+                                        {
+                                            filter == "otherStanding" && user?.Division?.includes('Admin') &&
+                                            <TableRow>
+                                                <TableHead sortable dataType='number'>SR No</TableHead>
+                                                <TableHead filterable sortable dataType='string'>From</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Start Date</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Vehicle No</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Type/Capacity</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Supervisor</TableHead>
+                                                <TableHead filterable sortable dataType='string'>To</TableHead>
+                                                <TableHead filterable sortable dataType='date'>Reached On</TableHead>
+                                                <TableHead filterable sortable dataType='string'>Last Update</TableHead>
+                                                <TableHead>Actions</TableHead>
 
-                                        </TableRow>
-                                    }
-                                </TableHeader>
-                                <TableBody>
-                                    {filter == 'loadedOnWay' &&
-                                        paginatedData.map((trip, index) =>
+                                            </TableRow>
+                                        }
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filter == 'loadedOnWay' &&
+                                            paginatedData.map((trip, index) =>
                                                 <TableRow key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.driverStatus == 0 ? "text-destructive" : ""}>
                                                     <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>}
@@ -833,15 +873,15 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                     </TableCell>
                                                 </TableRow>
                                             )
-                                    }
-                                    {filter == 'loadedReported' &&
-                                        paginatedData.map((trip, index) =>
+                                        }
+                                        {filter == 'loadedReported' &&
+                                            paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Depot" ? "bg-yellow-200 dark:text-background hover:bg-yellow-200" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                     <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                                     <TableCell>{highlightText(trip?.VehicleNo || "")}</TableCell>
-                                                    <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>
+                                                    <TableCell>{formatDate(trip?.StartDate)?.split(',')[0]}</TableCell>
                                                     <TableCell>{trip?.capacity}</TableCell>
                                                     <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>
                                                     <TableCell>{highlightText(trip?.EndTo || "")}</TableCell>
@@ -893,9 +933,9 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                     </TableCell>
                                                 </TableRow>
                                             )
-                                    }
-                                    {filter == 'emptyOnWay' &&
-                                        paginatedData.map((trip, index) =>
+                                        }
+                                        {filter == 'emptyOnWay' &&
+                                            paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
@@ -956,9 +996,9 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                     </TableCell>
                                                 </TableRow>
                                             )
-                                    }
-                                    {filter == 'outsideStanding' &&
-                                        paginatedData.map((trip, index) =>
+                                        }
+                                        {filter == 'outsideStanding' &&
+                                            paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
@@ -971,7 +1011,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.superwiser || "")}</TableCell>}
                                                     <TableCell>{highlightText(trip?.EndTo || "")}</TableCell>
                                                     <TableCell>{highlightText(trip?.loadingSuperVisor || "")}</TableCell>
-                                                    <TableCell>{formatDate(trip?.EmptyTripDetail.ReportDate)}</TableCell>
+                                                    <TableCell>{formatDate(trip?.EmptyTripDetail?.ReportDate)}</TableCell>
                                                     <TableCell>{trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status !== "Custom" ? trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status + `: ${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment || ""}` : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment}</TableCell>
                                                     <TableCell className='flex gap-2'>
                                                         <DropdownMenu>
@@ -1011,9 +1051,9 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                     </TableCell>
                                                 </TableRow>
                                             )
-                                    }
-                                    {filter == 'otherStanding' &&
-                                        paginatedData.map((trip, index) =>
+                                        }
+                                        {filter == 'otherStanding' &&
+                                            paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
@@ -1025,7 +1065,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                     <TableCell>{trip?.capacity}</TableCell>
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.superwiser || "")}</TableCell>}
                                                     <TableCell>{highlightText(trip?.EndTo || "")}</TableCell>
-                                                    <TableCell>{formatDate(trip?.EmptyTripDetail.ReportDate)}</TableCell>
+                                                    <TableCell>{formatDate(trip?.EmptyTripDetail?.ReportDate)}</TableCell>
                                                     <TableCell>{trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status !== "Custom" ? trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status + `: ${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment || ""}` : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment}</TableCell>
                                                     <TableCell className='flex gap-2'>
                                                         <DropdownMenu>
@@ -1065,9 +1105,9 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                     </TableCell>
                                                 </TableRow>
                                             )
-                                    }
-                                    {filter == 'loaded' &&
-                                        paginatedData.map((trip, index) =>
+                                        }
+                                        {filter == 'loaded' &&
+                                            paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
@@ -1078,7 +1118,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.superwiser || "")}</TableCell>}
                                                     <TableCell>{highlightText(trip?.EndTo || "")}</TableCell>
                                                     <TableCell>{highlightText(trip?.loadingSuperVisor || "")}</TableCell>
-                                                    <TableCell>{formatDate(trip?.EmptyTripDetail.ReportDate)}</TableCell>
+                                                    <TableCell>{formatDate(trip?.EmptyTripDetail?.ReportDate)}</TableCell>
                                                     <TableCell>{formatDate(trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.dateTime)}</TableCell>
                                                     <TableCell className='flex gap-2'>
                                                         {!user?.Division.includes('Admin') && <Button variant="outline" size="sm" className='link'>
@@ -1089,9 +1129,9 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                     </TableCell>
                                                 </TableRow>
                                             )
-                                    }
-                                    {filter == 'emptyReported' &&
-                                        paginatedData.map((trip, index) =>
+                                        }
+                                        {filter == 'emptyReported' &&
+                                            paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
@@ -1104,7 +1144,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                     <TableCell>{trip?.capacity}</TableCell>
                                                     <TableCell>{trip?.TravelHistory?.[trip?.TravelHistory?.length - 1]?.LocationOnTrackUpdate}</TableCell>
                                                     <TableCell>{highlightText(trip?.loadingSuperVisor || "")}</TableCell>
-                                                    <TableCell>{formatDate(trip?.EmptyTripDetail.ReportDate)}</TableCell>
+                                                    <TableCell>{formatDate(trip?.EmptyTripDetail?.ReportDate)}</TableCell>
                                                     <TableCell>{trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Custom" ? trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status}</TableCell>
                                                     {user?.Division.includes('Admin') && <TableCell>{highlightText(trip?.superwiser || "")}</TableCell>}
                                                     <TableCell className='flex gap-2'>
@@ -1145,17 +1185,17 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                     </TableCell>
                                                 </TableRow>
                                             )
-                                    }
-                                    {filter == 'emptyStanding' &&
-                                        paginatedData.map((trip, index) =>
+                                        }
+                                        {filter == 'emptyStanding' &&
+                                            paginatedData.map((trip, index) =>
                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                     const el = e.target as HTMLElement | null;
                                                     // if the click happened inside the dropdown, don't open the drawer
                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                     <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                                     <TableCell>{highlightText(trip?.VehicleNo || "")}</TableCell>
-                                                    <TableCell>{trip.EndTo}</TableCell>
-                                                    <TableCell>{formatDate(trip?.StartDate).split(',')[0]}</TableCell>
+                                                    <TableCell>{trip?.EndTo}</TableCell>
+                                                    <TableCell>{formatDate(trip?.StartDate)?.split(',')[0]}</TableCell>
                                                     <TableCell>{trip?.capacity}</TableCell>
                                                     <TableCell>{highlightText(trip?.StartFrom || "")}</TableCell>
                                                     <TableCell>{formatDate(trip?.ReportingDate)}</TableCell>
@@ -1206,162 +1246,162 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                     </TableCell>
                                                 </TableRow>
                                             )
-                                    }
-                                </TableBody>
-                            </Table>
-                        </div>
-                    }
-
-                    {/* Pagination Controls */}
-                    {filter !== 'all' && totalPages > 0 && (
-                        <div className="flex items-center justify-between px-4 py-3 border-t">
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <span>
-                                    Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, totalRecords)} of {totalRecords} records
-                                </span>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm">Records per page:</span>
-                                    <Select
-                                        value={itemsPerPage.toString()}
-                                        onValueChange={(value) => {
-                                            setItemsPerPage(Number(value));
-                                            setCurrentPage(1); // Reset to first page when changing page size
-                                        }}
-                                    >
-                                        <SelectTrigger className="w-20 h-8">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="10">10</SelectItem>
-                                            <SelectItem value="25">25</SelectItem>
-                                            <SelectItem value="50">50</SelectItem>
-                                            <SelectItem value="100">100</SelectItem>
-                                            <SelectItem value="200">200</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(1)}
-                                    disabled={currentPage === 1}
-                                >
-                                    First
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                    disabled={currentPage === 1}
-                                >
-                                    Previous
-                                </Button>
-                                <div className="flex items-center gap-1">
-                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                        let pageNum;
-                                        if (totalPages <= 5) {
-                                            pageNum = i + 1;
-                                        } else if (currentPage <= 3) {
-                                            pageNum = i + 1;
-                                        } else if (currentPage >= totalPages - 2) {
-                                            pageNum = totalPages - 4 + i;
-                                        } else {
-                                            pageNum = currentPage - 2 + i;
                                         }
-                                        return (
-                                            <Button
-                                                key={pageNum}
-                                                variant={currentPage === pageNum ? "default" : "outline"}
-                                                size="sm"
-                                                onClick={() => setCurrentPage(pageNum)}
-                                                className="w-10"
-                                            >
-                                                {pageNum}
-                                            </Button>
-                                        );
-                                    })}
-                                </div>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                    disabled={currentPage === totalPages}
-                                >
-                                    Next
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(totalPages)}
-                                    disabled={currentPage === totalPages}
-                                >
-                                    Last
-                                </Button>
+                                    </TableBody>
+                                </Table>
                             </div>
-                        </div>
-                    )}
+                        }
 
-                    {/* summary table for admins */}
-                    {user?.Division.includes('Admin') &&
-                        <Accordion type='single' collapsible >
-                            <AccordionItem value='locationwise'>
-                                <AccordionTrigger>
-                                    <div className='text-center mt-4 font-semibold text-xl'>Location Wise Summary</div>
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                    <div>
-                                        Programmed Vehicles
+                        {/* Pagination Controls */}
+                        {filter !== 'all' && totalPages > 0 && (
+                            <div className="flex items-center justify-between px-4 py-3 border-t">
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                    <span>
+                                        Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, totalRecords)} of {totalRecords} records
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm">Records per page:</span>
+                                        <Select
+                                            value={itemsPerPage.toString()}
+                                            onValueChange={(value) => {
+                                                setItemsPerPage(Number(value));
+                                                setCurrentPage(1); // Reset to first page when changing page size
+                                            }}
+                                        >
+                                            <SelectTrigger className="w-20 h-8">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="10">10</SelectItem>
+                                                <SelectItem value="25">25</SelectItem>
+                                                <SelectItem value="50">50</SelectItem>
+                                                <SelectItem value="100">100</SelectItem>
+                                                <SelectItem value="200">200</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                    <Table className='w-full'>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Sr No.</TableHead>
-                                                <TableHead>Location</TableHead>
-                                                <TableHead>On Way</TableHead>
-                                                <TableHead>Reported</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {Object.entries(groupedEmptyByEndTo)
-                                                .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
-                                                .map(([endTo, trips], index) => (
-                                                    <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("empty"); setSearchTerm(endTo) }}>
-                                                        <TableHead>{index + 1}</TableHead>
-                                                        <TableHead>{highlightText(endTo)}</TableHead>
-                                                        <TableHead>{trips.filter((trip) => trip?.status === "On Way")?.length}</TableHead>
-                                                        <TableHead>{trips.filter((trip) => trip?.status === "Reported")?.length}</TableHead>
-                                                    </TableRow>
-                                                ))}
-                                        </TableBody>
-                                    </Table>
-                                    <div className='text-center font-semibold text-lg mt-4'>
-                                        Loaded Vehicles
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCurrentPage(1)}
+                                        disabled={currentPage === 1}
+                                    >
+                                        First
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                        disabled={currentPage === 1}
+                                    >
+                                        Previous
+                                    </Button>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                            let pageNum;
+                                            if (totalPages <= 5) {
+                                                pageNum = i + 1;
+                                            } else if (currentPage <= 3) {
+                                                pageNum = i + 1;
+                                            } else if (currentPage >= totalPages - 2) {
+                                                pageNum = totalPages - 4 + i;
+                                            } else {
+                                                pageNum = currentPage - 2 + i;
+                                            }
+                                            return (
+                                                <Button
+                                                    key={pageNum}
+                                                    variant={currentPage === pageNum ? "default" : "outline"}
+                                                    size="sm"
+                                                    onClick={() => setCurrentPage(pageNum)}
+                                                    className="w-10"
+                                                >
+                                                    {pageNum}
+                                                </Button>
+                                            );
+                                        })}
                                     </div>
-                                    <Table className='w-full'>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Sr No.</TableHead>
-                                                <TableHead>Location</TableHead>
-                                                <TableHead>On Way</TableHead>
-                                                <TableHead>Reported</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {Object.entries(groupedLoadedByEndTo)
-                                                .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
-                                                .map(([endTo, trips], index) => (
-                                                    <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("loaded"); setSearchTerm(endTo) }}>
-                                                        <TableHead>{index + 1}</TableHead>
-                                                        <TableHead>{highlightText(endTo)}</TableHead>
-                                                        <TableHead>{trips.filter((trip) => trip?.status === "On Way")?.length}</TableHead>
-                                                        <TableHead>{trips.filter((trip) => trip?.status === "Reported")?.length}</TableHead>
-                                                    </TableRow>
-                                                ))}
-                                        </TableBody>
-                                    </Table>
-                                    {/* <div className='mt-4'>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        Next
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCurrentPage(totalPages)}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        Last
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* summary table for admins */}
+                        {user?.Division?.includes('Admin') &&
+                            <Accordion type='single' collapsible >
+                                <AccordionItem value='locationwise'>
+                                    <AccordionTrigger>
+                                        <div className='text-center mt-4 font-semibold text-xl'>Location Wise Summary</div>
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <div>
+                                            Programmed Vehicles
+                                        </div>
+                                        <Table className='w-full'>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Sr No.</TableHead>
+                                                    <TableHead>Location</TableHead>
+                                                    <TableHead>On Way</TableHead>
+                                                    <TableHead>Reported</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {Object.entries(groupedEmptyByEndTo)
+                                                    .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
+                                                    .map(([endTo, trips], index) => (
+                                                        <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("empty"); setSearchTerm(endTo) }}>
+                                                            <TableHead>{index + 1}</TableHead>
+                                                            <TableHead>{highlightText(endTo)}</TableHead>
+                                                            <TableHead>{trips.filter((trip) => trip?.status === "On Way")?.length}</TableHead>
+                                                            <TableHead>{trips.filter((trip) => trip?.status === "Reported")?.length}</TableHead>
+                                                        </TableRow>
+                                                    ))}
+                                            </TableBody>
+                                        </Table>
+                                        <div className='text-center font-semibold text-lg mt-4'>
+                                            Loaded Vehicles
+                                        </div>
+                                        <Table className='w-full'>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Sr No.</TableHead>
+                                                    <TableHead>Location</TableHead>
+                                                    <TableHead>On Way</TableHead>
+                                                    <TableHead>Reported</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {Object.entries(groupedLoadedByEndTo)
+                                                    .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
+                                                    .map(([endTo, trips], index) => (
+                                                        <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("loaded"); setSearchTerm(endTo) }}>
+                                                            <TableHead>{index + 1}</TableHead>
+                                                            <TableHead>{highlightText(endTo)}</TableHead>
+                                                            <TableHead>{trips.filter((trip) => trip?.status === "On Way")?.length}</TableHead>
+                                                            <TableHead>{trips.filter((trip) => trip?.status === "Reported")?.length}</TableHead>
+                                                        </TableRow>
+                                                    ))}
+                                            </TableBody>
+                                        </Table>
+                                        {/* <div className='mt-4'>
                                 Standing Vehicles
                             </div>
                             <Table className='w-full'>
@@ -1384,261 +1424,81 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     ))}
                                 </TableBody>
                             </Table> */}
-                                </AccordionContent>
-                            </AccordionItem>
-                            <AccordionItem value="superwiserwise">
-                                <AccordionTrigger>
-                                    <div className='text-center mt-4 font-semibold text-xl'>Supervisor Wise Summary</div>
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                    <Table className='w-full'>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Sr No.</TableHead>
-                                                <TableHead>Supervisor</TableHead>
-                                                <TableHead>On Way</TableHead>
-                                                <TableHead>Reported</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            <TableRow>
-                                                <TableCell className='text-center font-semibold text-lg' colSpan={5}>Empty Vehicles</TableCell>
-                                            </TableRow>
-                                            {Object.entries(groupedEmptyBySupervisor)
-                                                .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
-                                                .map(([endTo, trips], index) => (
-                                                    <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("supervisors"); setSearchTerm(endTo) }}>
-                                                        <TableHead>{index + 1}</TableHead>
-                                                        <TableHead>{highlightText(endTo)}</TableHead>
-                                                        <TableHead>{trips.filter((trip) => trip?.status === "On Way")?.length}</TableHead>
-                                                        <TableHead>{trips.filter((trip) => trip?.status === "Reported")?.length - trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Loaded").length}</TableHead>
-                                                    </TableRow>
-                                                ))
-                                            }
-                                            <TableRow>
-                                                <TableCell className='text-center font-semibold text-lg' colSpan={5}>Loaded Vehicles</TableCell>
-                                            </TableRow>
-                                            {Object.entries(groupedLoadedBySupervisor)
-                                                .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
-                                                .map(([endTo, trips], index) => (
-                                                    <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("supervisors"); setSearchTerm(endTo) }}>
-                                                        <TableHead>{index + 1}</TableHead>
-                                                        <TableHead>{highlightText(endTo)}</TableHead>
-                                                        <TableHead>{trips.filter((trip) => trip?.status === "On Way")?.length}</TableHead>
-                                                        <TableHead>{trips.filter((trip) => trip?.status === "Reported")?.length}</TableHead>
-                                                    </TableRow>
-                                                ))
-                                            }
-                                        </TableBody>
-                                    </Table>
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Accordion>
-                    }
-
-                    <div className='my-4'>
-                        {filter === "all" && <Accordion value={allVehiclesAccordion} onValueChange={setAllVehiclesAccordion} type="single" collapsible className="mb-2 p-4 w-full">
-                            {/* Loaded Vehicles */}
-                            <AccordionItem value="loaded">
-                                <AccordionTrigger className="text-lg font-semibold">Loaded Vehicles</AccordionTrigger>
-                                <AccordionContent>
-                                    {Object.entries(groupedLoadedByEndTo).map(([endTo, trips]: [string, GroupedTrip[]]) => (
-                                        <Card key={endTo} className="mb-4">
-                                            <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
-                                            <CardContent>
-                                                <Table className="w-max min-w-full">
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>Vehicle No</TableHead>
-                                                            <TableHead>Type/Capacity</TableHead>
-                                                            <TableHead>Status</TableHead>
-                                                            <TableHead>Update</TableHead>
-                                                            {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
-                                                            <TableHead>Action</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {trips.sort((a: GroupedTrip, b: GroupedTrip) => a.status.localeCompare(b.status)).map((trip: GroupedTrip) => (
-                                                            <TableRow onClick={(e: React.MouseEvent) => {
-                                                                const el = e.target as HTMLElement | null;
-                                                                // if the click happened inside the dropdown, don't open the drawer
-                                                                if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link') && !el.closest('#adminorder')) {
-                                                                    setViewingTrip(trip?._id)
-                                                                }
-                                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
-                                                                <TableCell>{trip?.VehicleNo}</TableCell>
-                                                                <TableCell>{trip?.capacity}</TableCell>
-                                                                <TableCell>{trip?.status}</TableCell>
-                                                                <TableCell>{trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === 'Custom' ? trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status}</TableCell>
-                                                                {user?.Division.includes('Admin') && <TableCell>{trip?.superwiser}</TableCell>}
-                                                                <TableCell className='flex gap-2'>
-                                                                    <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild>
-                                                                            <Button variant="outline" size="sm">
-                                                                                Update
-                                                                            </Button>
-                                                                        </DropdownMenuTrigger>
-                                                                        <DropdownMenuContent className='dropdown'>
-                                                                            {tripStatusUpdateVars.map((statupOpetion) => (
-                                                                                <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip?._id, status: statupOpetion as TripStatusUpdateEnums })}>
-                                                                                    {statupOpetion}
-                                                                                </DropdownMenuItem>
-                                                                            ))}
-                                                                            {trip?.status == "On Way" && <DropdownMenuItem>
-                                                                                <Link href={{
-                                                                                    pathname: "trans-app/unloading-tracker",
-                                                                                    query: {
-                                                                                        actionType: "report",
-                                                                                        tripId: trip?._id
-                                                                                    }
-                                                                                }}>Reported</Link>
-                                                                            </DropdownMenuItem>}
-                                                                        </DropdownMenuContent>
-                                                                    </DropdownMenu>
-                                                                    <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
-                                                                        <Eye />
-                                                                    </Button>
-                                                                    {!user?.Division.includes('Admin') && <Button className='link' variant="outline" size="sm">
-                                                                        <Link href={`/trans-app/trip-update/${trip?._id}`}>
-                                                                            <Pen />
-                                                                        </Link>
-                                                                    </Button>}
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </AccordionContent>
-                            </AccordionItem>
-
-                            {/* Empty Vehicles */}
-                            <AccordionItem value="empty">
-                                <AccordionTrigger className="text-lg font-semibold">Empty Vehicles</AccordionTrigger>
-                                <AccordionContent>
-                                    {Object.entries(groupedEmptyByEndTo).map(([endTo, trips]: [string, GroupedTrip[]]) => (
-                                        <Card key={endTo} className="mb-4">
-                                            <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
-                                            <CardContent>
-                                                <Table className="w-max min-w-full">
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>Vehicle No</TableHead>
-                                                            <TableHead>Type/Capacity</TableHead>
-                                                            <TableHead>Status</TableHead>
-                                                            {trips.some(trip => Boolean(trip?.loadingSupervisor)) && <TableHead>Loading Supervisor</TableHead>}
-                                                            <TableHead>Update</TableHead>
-                                                            {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
-                                                            {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {trips.sort((a: GroupedTrip, b: GroupedTrip) => a.status.localeCompare(b.status)).map((trip: GroupedTrip) => (
-                                                            <TableRow onClick={(e: React.MouseEvent) => {
-                                                                const el = e.target as HTMLElement | null;
-                                                                // if the click happened inside the dropdown, don't open the drawer
-                                                                if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link') && !el.closest('#adminorder')) {
-                                                                    setViewingTrip(trip?._id)
-                                                                }
-                                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
-                                                                <TableCell>{trip?.VehicleNo}</TableCell>
-                                                                <TableCell>{trip?.capacity}</TableCell>
-                                                                <TableCell>{trip?.status === "Standing" ? "Not Programmed" : trip?.status}</TableCell>
-                                                                {trips.some(trip => Boolean(trip?.loadingSupervisor)) && <TableCell>{trip?.loadingSupervisor}</TableCell>}
-                                                                <TableCell>{trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Custom" ? trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status}</TableCell>
-                                                                {user?.Division.includes('Admin') && <TableCell>{trip?.superwiser}</TableCell>}
-                                                                <TableCell className='flex gap-2'>
-                                                                    <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild>
-                                                                            <Button variant="outline" size="sm">
-                                                                                Update
-                                                                            </Button>
-                                                                        </DropdownMenuTrigger>
-                                                                        <DropdownMenuContent className='dropdown'>
-                                                                            {tripStatusUpdateVars.map((statupOpetion) => (
-                                                                                <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip?._id, status: statupOpetion as TripStatusUpdateEnums })}>
-                                                                                    {statupOpetion}
-                                                                                </DropdownMenuItem>
-                                                                            ))}
-                                                                            {(trip?.status == "Reported" || trip?.status == "On Way") &&
-                                                                                <DropdownMenuItem>
-                                                                                    <Link href={{
-                                                                                        pathname: "trans-app/loading-tracker",
-                                                                                        query: {
-                                                                                            actionType: "destinationChange",
-                                                                                            tripId: trip?._id
-                                                                                        }
-                                                                                    }}>Change Destination</Link>
-                                                                                </DropdownMenuItem>
-                                                                            }
-                                                                            {trip?.status == "On Way" && <DropdownMenuItem>
-                                                                                <Link href={{
-                                                                                    pathname: "trans-app/loading-tracker",
-                                                                                    query: {
-                                                                                        actionType: "report",
-                                                                                        tripId: trip?._id
-                                                                                    }
-                                                                                }}>Reported</Link>
-                                                                            </DropdownMenuItem>}
-                                                                            {trip?.status == "Standing" &&
-                                                                                <DropdownMenuItem>
-                                                                                    <Link href={{
-                                                                                        pathname: "trans-app/loading-planner",
-                                                                                        query: {
-                                                                                            tripId: trip?._id
-                                                                                        }
-                                                                                    }}>Give Plane</Link>
-                                                                                </DropdownMenuItem>}
-                                                                        </DropdownMenuContent>
-                                                                    </DropdownMenu>
-                                                                    <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
-                                                                        <Eye />
-                                                                    </Button>
-                                                                    {!user?.Division.includes('Admin') && <Button variant="outline" size="sm">
-                                                                        <Link href={`/trans-app/trip-update/${trip?._id}`}>
-                                                                            <Pen />
-                                                                        </Link>
-                                                                    </Button>}
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </AccordionContent>
-                            </AccordionItem>
-
-                            {/* Super visor wise Vehicles */}
-                            {user?.Division.includes('Admin') &&
-                                <AccordionItem value="supervisors">
-                                    <AccordionTrigger className="text-lg font-semibold">Supervisor Wise Data</AccordionTrigger>
+                                    </AccordionContent>
+                                </AccordionItem>
+                                <AccordionItem value="superwiserwise">
+                                    <AccordionTrigger>
+                                        <div className='text-center mt-4 font-semibold text-xl'>Supervisor Wise Summary</div>
+                                    </AccordionTrigger>
                                     <AccordionContent>
-                                        <div className='text-center font-semibold text-lg'>Empty Vehicles</div>
-                                        {Object.entries(groupedEmptyBySupervisor).map(([endTo, trips]: [string, GroupedTrip[]]) => (
+                                        <Table className='w-full'>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Sr No.</TableHead>
+                                                    <TableHead>Supervisor</TableHead>
+                                                    <TableHead>On Way</TableHead>
+                                                    <TableHead>Reported</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                <TableRow>
+                                                    <TableCell className='text-center font-semibold text-lg' colSpan={5}>Empty Vehicles</TableCell>
+                                                </TableRow>
+                                                {Object.entries(groupedEmptyBySupervisor)
+                                                    .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
+                                                    .map(([endTo, trips], index) => (
+                                                        <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("supervisors"); setSearchTerm(endTo) }}>
+                                                            <TableHead>{index + 1}</TableHead>
+                                                            <TableHead>{highlightText(endTo)}</TableHead>
+                                                            <TableHead>{trips.filter((trip) => trip?.status === "On Way")?.length}</TableHead>
+                                                            <TableHead>{trips.filter((trip) => trip?.status === "Reported")?.length - trips.filter((trip) => trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Loaded").length}</TableHead>
+                                                        </TableRow>
+                                                    ))
+                                                }
+                                                <TableRow>
+                                                    <TableCell className='text-center font-semibold text-lg' colSpan={5}>Loaded Vehicles</TableCell>
+                                                </TableRow>
+                                                {Object.entries(groupedLoadedBySupervisor)
+                                                    .filter(([endTo]) => !searchTerm || endTo.toLowerCase().includes(searchTerm.toLowerCase()))
+                                                    .map(([endTo, trips], index) => (
+                                                        <TableRow key={endTo} id={endTo} onClick={() => { setAllVehiclesAccordion("supervisors"); setSearchTerm(endTo) }}>
+                                                            <TableHead>{index + 1}</TableHead>
+                                                            <TableHead>{highlightText(endTo)}</TableHead>
+                                                            <TableHead>{trips.filter((trip) => trip?.status === "On Way")?.length}</TableHead>
+                                                            <TableHead>{trips.filter((trip) => trip?.status === "Reported")?.length}</TableHead>
+                                                        </TableRow>
+                                                    ))
+                                                }
+                                            </TableBody>
+                                        </Table>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
+                        }
+
+                        <div className='my-4'>
+                            {filter === "all" && <Accordion value={allVehiclesAccordion} onValueChange={setAllVehiclesAccordion} type="single" collapsible className="mb-2 p-4 w-full">
+                                {/* Loaded Vehicles */}
+                                <AccordionItem value="loaded">
+                                    <AccordionTrigger className="text-lg font-semibold">Loaded Vehicles</AccordionTrigger>
+                                    <AccordionContent>
+                                        {Object.entries(groupedLoadedByEndTo).map(([endTo, trips]: [string, GroupedTrip[]]) => (
                                             <Card key={endTo} className="mb-4">
                                                 <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
                                                 <CardContent>
                                                     <Table className="w-max min-w-full">
                                                         <TableHeader>
                                                             <TableRow>
-                                                                <TableHead>Sr No</TableHead>
                                                                 <TableHead>Vehicle No</TableHead>
-                                                                <TableHead>Capacity</TableHead>
-                                                                {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
-                                                                <TableHead>Loading Station</TableHead>
-                                                                <TableHead>Loading Supervisor</TableHead>
-                                                                <TableHead>Reached On</TableHead>
+                                                                <TableHead>Type/Capacity</TableHead>
                                                                 <TableHead>Status</TableHead>
                                                                 <TableHead>Update</TableHead>
-                                                                {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
+                                                                {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
+                                                                <TableHead>Action</TableHead>
                                                             </TableRow>
                                                         </TableHeader>
                                                         <TableBody>
-                                                            {trips.sort((a: GroupedTrip, b: GroupedTrip) => a.status.localeCompare(b.status)).map((trip: GroupedTrip, index) => (
+                                                            {trips.sort((a: GroupedTrip, b: GroupedTrip) => a.status.localeCompare(b.status)).map((trip: GroupedTrip) => (
                                                                 <TableRow onClick={(e: React.MouseEvent) => {
                                                                     const el = e.target as HTMLElement | null;
                                                                     // if the click happened inside the dropdown, don't open the drawer
@@ -1646,15 +1506,89 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                                         setViewingTrip(trip?._id)
                                                                     }
                                                                 }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
-                                                                    <TableCell>{index + 1}</TableCell>
                                                                     <TableCell>{trip?.VehicleNo}</TableCell>
                                                                     <TableCell>{trip?.capacity}</TableCell>
+                                                                    <TableCell>{trip?.status}</TableCell>
+                                                                    <TableCell>{trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === 'Custom' ? trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status}</TableCell>
                                                                     {user?.Division.includes('Admin') && <TableCell>{trip?.superwiser}</TableCell>}
-                                                                    <TableCell>{trip?.EndTo}</TableCell>
-                                                                    <TableCell>{trip?.loadingSupervisor}</TableCell>
-                                                                    <TableCell>{formatDate(trip?.LoadTripDetail?.ReportDate || trip?.LoadTripDetail?.UnloadDate || trip?.TallyLoadDetail?.ReportedDate || trip?.TallyLoadDetail?.UnloadingDate)}</TableCell>
+                                                                    <TableCell className='flex gap-2'>
+                                                                        <DropdownMenu>
+                                                                            <DropdownMenuTrigger asChild>
+                                                                                <Button variant="outline" size="sm">
+                                                                                    Update
+                                                                                </Button>
+                                                                            </DropdownMenuTrigger>
+                                                                            <DropdownMenuContent className='dropdown'>
+                                                                                {tripStatusUpdateVars.map((statupOpetion) => (
+                                                                                    <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip?._id, status: statupOpetion as TripStatusUpdateEnums })}>
+                                                                                        {statupOpetion}
+                                                                                    </DropdownMenuItem>
+                                                                                ))}
+                                                                                {trip?.status == "On Way" && <DropdownMenuItem>
+                                                                                    <Link href={{
+                                                                                        pathname: "trans-app/unloading-tracker",
+                                                                                        query: {
+                                                                                            actionType: "report",
+                                                                                            tripId: trip?._id
+                                                                                        }
+                                                                                    }}>Reported</Link>
+                                                                                </DropdownMenuItem>}
+                                                                            </DropdownMenuContent>
+                                                                        </DropdownMenu>
+                                                                        <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
+                                                                            <Eye />
+                                                                        </Button>
+                                                                        {!user?.Division.includes('Admin') && <Button className='link' variant="outline" size="sm">
+                                                                            <Link href={`/trans-app/trip-update/${trip?._id}`}>
+                                                                                <Pen />
+                                                                            </Link>
+                                                                        </Button>}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                    </AccordionContent>
+                                </AccordionItem>
+
+                                {/* Empty Vehicles */}
+                                <AccordionItem value="empty">
+                                    <AccordionTrigger className="text-lg font-semibold">Empty Vehicles</AccordionTrigger>
+                                    <AccordionContent>
+                                        {Object.entries(groupedEmptyByEndTo).map(([endTo, trips]: [string, GroupedTrip[]]) => (
+                                            <Card key={endTo} className="mb-4">
+                                                <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
+                                                <CardContent>
+                                                    <Table className="w-max min-w-full">
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead>Vehicle No</TableHead>
+                                                                <TableHead>Type/Capacity</TableHead>
+                                                                <TableHead>Status</TableHead>
+                                                                {trips.some(trip => Boolean(trip?.loadingSupervisor)) && <TableHead>Loading Supervisor</TableHead>}
+                                                                <TableHead>Update</TableHead>
+                                                                {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
+                                                                {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {trips.sort((a: GroupedTrip, b: GroupedTrip) => a.status.localeCompare(b.status)).map((trip: GroupedTrip) => (
+                                                                <TableRow onClick={(e: React.MouseEvent) => {
+                                                                    const el = e.target as HTMLElement | null;
+                                                                    // if the click happened inside the dropdown, don't open the drawer
+                                                                    if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link') && !el.closest('#adminorder')) {
+                                                                        setViewingTrip(trip?._id)
+                                                                    }
+                                                                }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                                                    <TableCell>{trip?.VehicleNo}</TableCell>
+                                                                    <TableCell>{trip?.capacity}</TableCell>
                                                                     <TableCell>{trip?.status === "Standing" ? "Not Programmed" : trip?.status}</TableCell>
+                                                                    {trips.some(trip => Boolean(trip?.loadingSupervisor)) && <TableCell>{trip?.loadingSupervisor}</TableCell>}
                                                                     <TableCell>{trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Custom" ? trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status}</TableCell>
+                                                                    {user?.Division.includes('Admin') && <TableCell>{trip?.superwiser}</TableCell>}
                                                                     <TableCell className='flex gap-2'>
                                                                         <DropdownMenu>
                                                                             <DropdownMenuTrigger asChild>
@@ -1715,87 +1649,194 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                 </CardContent>
                                             </Card>
                                         ))}
-                                        <div className='text-center font-semibold text-lg'>Loaded Vehicles</div>
-                                        {Object.entries(groupedLoadedBySupervisor).map(([endTo, trips]: [string, GroupedTrip[]]) => (
-                                            <Card key={endTo} className="mb-4">
-                                                <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
-                                                <CardContent>
-                                                    <Table className="w-max min-w-full">
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead>Sr No.</TableHead>
-                                                                <TableHead>Vehicle No</TableHead>
-                                                                <TableHead>Type/Capacity</TableHead>
-                                                                <TableHead>Status</TableHead>
-                                                                {trips.some(trip => Boolean(trip?.loadingSupervisor)) && <TableHead>Loading Supervisor</TableHead>}
-                                                                <TableHead>Update</TableHead>
-                                                                {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
-                                                                {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {trips.sort((a: GroupedTrip, b: GroupedTrip) => a.status.localeCompare(b.status)).map((trip: GroupedTrip, index) => (
-                                                                <TableRow onClick={(e: React.MouseEvent) => {
-                                                                    const el = e.target as HTMLElement | null;
-                                                                    // if the click happened inside the dropdown, don't open the drawer
-                                                                    if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link') && !el.closest('#adminorder')) {
-                                                                        setViewingTrip(trip?._id)
-                                                                    }
-                                                                }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
-                                                                    <TableCell>{index + 1}</TableCell>
-                                                                    <TableCell>{trip?.VehicleNo}</TableCell>
-                                                                    <TableCell>{trip?.capacity}</TableCell>
-                                                                    <TableCell>{trip?.status === "Standing" ? "Not Programmed" : trip?.status}</TableCell>
-                                                                    {trips.some(trip => Boolean(trip?.loadingSupervisor)) && <TableCell className='w-max'>{trip?.loadingSupervisor}</TableCell>}
-                                                                    <TableCell>{trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Custom" ? trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status}</TableCell>
-                                                                    {user?.Division.includes('Admin') && <TableCell>{trip?.superwiser}</TableCell>}
-                                                                    <TableCell className='flex gap-2'>
-                                                                        <DropdownMenu>
-                                                                            <DropdownMenuTrigger asChild>
-                                                                                <Button variant="outline" size="sm">
-                                                                                    Update
-                                                                                </Button>
-                                                                            </DropdownMenuTrigger>
-                                                                            <DropdownMenuContent className='dropdown'>
-                                                                                {tripStatusUpdateVars.map((statupOpetion) => (
-                                                                                    <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip?._id, status: statupOpetion as TripStatusUpdateEnums })}>
-                                                                                        {statupOpetion}
-                                                                                    </DropdownMenuItem>
-                                                                                ))}
-                                                                                {trip?.status == "On Way" && <DropdownMenuItem>
-                                                                                    <Link href={{
-                                                                                        pathname: "trans-app/unloading-tracker",
-                                                                                        query: {
-                                                                                            actionType: "report",
-                                                                                            tripId: trip?._id
-                                                                                        }
-                                                                                    }}>Reported</Link>
-                                                                                </DropdownMenuItem>}
-                                                                            </DropdownMenuContent>
-                                                                        </DropdownMenu>
-                                                                        <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
-                                                                            <Eye />
-                                                                        </Button>
-                                                                        {!user?.Division.includes('Admin') && <Button variant="outline" size="sm">
-                                                                            <Link href={`/trans-app/trip-update/${trip?._id}`}>
-                                                                                <Pen />
-                                                                            </Link>
-                                                                        </Button>}
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            ))}
-                                                        </TableBody>
-                                                    </Table>
-                                                </CardContent>
-                                            </Card>
-                                        ))}
                                     </AccordionContent>
                                 </AccordionItem>
+
+                                {/* Super visor wise Vehicles */}
+                                {user?.Division?.includes('Admin') &&
+                                    <AccordionItem value="supervisors">
+                                        <AccordionTrigger className="text-lg font-semibold">Supervisor Wise Data</AccordionTrigger>
+                                        <AccordionContent>
+                                            <div className='text-center font-semibold text-lg'>Empty Vehicles</div>
+                                            {Object.entries(groupedEmptyBySupervisor).map(([endTo, trips]: [string, GroupedTrip[]]) => (
+                                                <Card key={endTo} className="mb-4">
+                                                    <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
+                                                    <CardContent>
+                                                        <Table className="w-max min-w-full">
+                                                            <TableHeader>
+                                                                <TableRow>
+                                                                    <TableHead>Sr No</TableHead>
+                                                                    <TableHead>Vehicle No</TableHead>
+                                                                    <TableHead>Capacity</TableHead>
+                                                                    {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
+                                                                    <TableHead>Loading Station</TableHead>
+                                                                    <TableHead>Loading Supervisor</TableHead>
+                                                                    <TableHead>Reached On</TableHead>
+                                                                    <TableHead>Status</TableHead>
+                                                                    <TableHead>Update</TableHead>
+                                                                    {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {trips.sort((a: GroupedTrip, b: GroupedTrip) => a.status.localeCompare(b.status)).map((trip: GroupedTrip, index) => (
+                                                                    <TableRow onClick={(e: React.MouseEvent) => {
+                                                                        const el = e.target as HTMLElement | null;
+                                                                        // if the click happened inside the dropdown, don't open the drawer
+                                                                        if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link') && !el.closest('#adminorder')) {
+                                                                            setViewingTrip(trip?._id)
+                                                                        }
+                                                                    }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                                                        <TableCell>{index + 1}</TableCell>
+                                                                        <TableCell>{trip?.VehicleNo}</TableCell>
+                                                                        <TableCell>{trip?.capacity}</TableCell>
+                                                                        {user?.Division.includes('Admin') && <TableCell>{trip?.superwiser}</TableCell>}
+                                                                        <TableCell>{trip?.EndTo}</TableCell>
+                                                                        <TableCell>{trip?.loadingSupervisor}</TableCell>
+                                                                        <TableCell>{formatDate(trip?.LoadTripDetail?.ReportDate || trip?.LoadTripDetail?.UnloadDate || trip?.TallyLoadDetail?.ReportedDate || trip?.TallyLoadDetail?.UnloadingDate)}</TableCell>
+                                                                        <TableCell>{trip?.status === "Standing" ? "Not Programmed" : trip?.status}</TableCell>
+                                                                        <TableCell>{trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Custom" ? trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status}</TableCell>
+                                                                        <TableCell className='flex gap-2'>
+                                                                            <DropdownMenu>
+                                                                                <DropdownMenuTrigger asChild>
+                                                                                    <Button variant="outline" size="sm">
+                                                                                        Update
+                                                                                    </Button>
+                                                                                </DropdownMenuTrigger>
+                                                                                <DropdownMenuContent className='dropdown'>
+                                                                                    {tripStatusUpdateVars.map((statupOpetion) => (
+                                                                                        <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip?._id, status: statupOpetion as TripStatusUpdateEnums })}>
+                                                                                            {statupOpetion}
+                                                                                        </DropdownMenuItem>
+                                                                                    ))}
+                                                                                    {(trip?.status == "Reported" || trip?.status == "On Way") &&
+                                                                                        <DropdownMenuItem>
+                                                                                            <Link href={{
+                                                                                                pathname: "trans-app/loading-tracker",
+                                                                                                query: {
+                                                                                                    actionType: "destinationChange",
+                                                                                                    tripId: trip?._id
+                                                                                                }
+                                                                                            }}>Change Destination</Link>
+                                                                                        </DropdownMenuItem>
+                                                                                    }
+                                                                                    {trip?.status == "On Way" && <DropdownMenuItem>
+                                                                                        <Link href={{
+                                                                                            pathname: "trans-app/loading-tracker",
+                                                                                            query: {
+                                                                                                actionType: "report",
+                                                                                                tripId: trip?._id
+                                                                                            }
+                                                                                        }}>Reported</Link>
+                                                                                    </DropdownMenuItem>}
+                                                                                    {trip?.status == "Standing" &&
+                                                                                        <DropdownMenuItem>
+                                                                                            <Link href={{
+                                                                                                pathname: "trans-app/loading-planner",
+                                                                                                query: {
+                                                                                                    tripId: trip?._id
+                                                                                                }
+                                                                                            }}>Give Plane</Link>
+                                                                                        </DropdownMenuItem>}
+                                                                                </DropdownMenuContent>
+                                                                            </DropdownMenu>
+                                                                            <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
+                                                                                <Eye />
+                                                                            </Button>
+                                                                            {!user?.Division.includes('Admin') && <Button variant="outline" size="sm">
+                                                                                <Link href={`/trans-app/trip-update/${trip?._id}`}>
+                                                                                    <Pen />
+                                                                                </Link>
+                                                                            </Button>}
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                            <div className='text-center font-semibold text-lg'>Loaded Vehicles</div>
+                                            {Object.entries(groupedLoadedBySupervisor).map(([endTo, trips]: [string, GroupedTrip[]]) => (
+                                                <Card key={endTo} className="mb-4">
+                                                    <CardHeader className="font-semibold text-md flex flex-row">{highlightText(endTo)}</CardHeader>
+                                                    <CardContent>
+                                                        <Table className="w-max min-w-full">
+                                                            <TableHeader>
+                                                                <TableRow>
+                                                                    <TableHead>Sr No.</TableHead>
+                                                                    <TableHead>Vehicle No</TableHead>
+                                                                    <TableHead>Type/Capacity</TableHead>
+                                                                    <TableHead>Status</TableHead>
+                                                                    {trips.some(trip => Boolean(trip?.loadingSupervisor)) && <TableHead>Loading Supervisor</TableHead>}
+                                                                    <TableHead>Update</TableHead>
+                                                                    {user?.Division.includes('Admin') && <TableHead>Superviser</TableHead>}
+                                                                    {user?.Division.includes('Admin') && <TableHead>Action</TableHead>}
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {trips.sort((a: GroupedTrip, b: GroupedTrip) => a.status.localeCompare(b.status)).map((trip: GroupedTrip, index) => (
+                                                                    <TableRow onClick={(e: React.MouseEvent) => {
+                                                                        const el = e.target as HTMLElement | null;
+                                                                        // if the click happened inside the dropdown, don't open the drawer
+                                                                        if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link') && !el.closest('#adminorder')) {
+                                                                            setViewingTrip(trip?._id)
+                                                                        }
+                                                                    }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                                                        <TableCell>{index + 1}</TableCell>
+                                                                        <TableCell>{trip?.VehicleNo}</TableCell>
+                                                                        <TableCell>{trip?.capacity}</TableCell>
+                                                                        <TableCell>{trip?.status === "Standing" ? "Not Programmed" : trip?.status}</TableCell>
+                                                                        {trips.some(trip => Boolean(trip?.loadingSupervisor)) && <TableCell className='w-max'>{trip?.loadingSupervisor}</TableCell>}
+                                                                        <TableCell>{trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Custom" ? trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.comment : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status}</TableCell>
+                                                                        {user?.Division.includes('Admin') && <TableCell>{trip?.superwiser}</TableCell>}
+                                                                        <TableCell className='flex gap-2'>
+                                                                            <DropdownMenu>
+                                                                                <DropdownMenuTrigger asChild>
+                                                                                    <Button variant="outline" size="sm">
+                                                                                        Update
+                                                                                    </Button>
+                                                                                </DropdownMenuTrigger>
+                                                                                <DropdownMenuContent className='dropdown'>
+                                                                                    {tripStatusUpdateVars.map((statupOpetion) => (
+                                                                                        <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip?._id, status: statupOpetion as TripStatusUpdateEnums })}>
+                                                                                            {statupOpetion}
+                                                                                        </DropdownMenuItem>
+                                                                                    ))}
+                                                                                    {trip?.status == "On Way" && <DropdownMenuItem>
+                                                                                        <Link href={{
+                                                                                            pathname: "trans-app/unloading-tracker",
+                                                                                            query: {
+                                                                                                actionType: "report",
+                                                                                                tripId: trip?._id
+                                                                                            }
+                                                                                        }}>Reported</Link>
+                                                                                    </DropdownMenuItem>}
+                                                                                </DropdownMenuContent>
+                                                                            </DropdownMenu>
+                                                                            <Button variant="outline" size="sm" onClick={() => setViewingTrip(trip?._id)}>
+                                                                                <Eye />
+                                                                            </Button>
+                                                                            {!user?.Division.includes('Admin') && <Button variant="outline" size="sm">
+                                                                                <Link href={`/trans-app/trip-update/${trip?._id}`}>
+                                                                                    <Pen />
+                                                                                </Link>
+                                                                            </Button>}
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                }
+                            </Accordion>
                             }
-                        </Accordion>
-                        }
-                    </div>
-                </div >
+                        </div>
+                    </div >
+                </>
             }
             {
                 <AlertDialog open={Boolean(statusUpdate)} onOpenChange={() => setStatusUpdate(null)}>
@@ -1917,7 +1958,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                 <strong>Route: </strong> {findTripById(viewingTrip)?.StartFrom} to {findTripById(viewingTrip)?.EndTo}
                             </div>
                             <div className='flex gap-2'>
-                                <strong>Started at: </strong> {formatDate(findTripById(viewingTrip)?.StartDate).split(",")[0]} <span className={findTripById(viewingTrip)?.LoadStatus === 0 ? "text-red-500" : "text-green-500"}>{findTripById(viewingTrip)?.LoadStatus === 0 ? "Empty" : "Loaded"}</span>
+                                <strong>Started at: </strong> {formatDate(findTripById(viewingTrip)?.StartDate)?.split(",")[0]} <span className={findTripById(viewingTrip)?.LoadStatus === 0 ? "text-red-500" : "text-green-500"}>{findTripById(viewingTrip)?.LoadStatus === 0 ? "Empty" : "Loaded"}</span>
                             </div>
                             <div className='flex gap-2'>
                                 <strong>Start Driver: </strong> {findTripById(viewingTrip)?.StartDriver}
@@ -1943,12 +1984,12 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                         .map((history, index) => (
                                             <Card key={index}>
                                                 <CardHeader>
-                                                    <CardTitle className="text-md font-semibold">{(history.ManagerComment.match(/#(\w+)/) || [])[1] + " marked on " + formatDate(history.TrackUpdateDate)}</CardTitle>
+                                                    <CardTitle className="text-md font-semibold">{((history?.ManagerComment?.match(/#(\w+)/) || [])[1] || "Update") + " marked on " + formatDate(history?.TrackUpdateDate)}</CardTitle>
                                                     <CardDescription>
-                                                        {history.LocationOnTrackUpdate && <div><strong>Location on Track Update:</strong> {history.LocationOnTrackUpdate}</div>}
-                                                        {typeof history.OdometerOnTrackUpdate === "number" && <div><strong>Odometer:</strong> {history.OdometerOnTrackUpdate} km</div>}
-                                                        {history.ManagerComment && <div><strong>Manager Comment:</strong> {history.ManagerComment}</div>}
-                                                        {history.Driver && <div><strong>Driver:</strong> {history.Driver}</div>}
+                                                        {history?.LocationOnTrackUpdate && <div><strong>Location on Track Update:</strong> {history.LocationOnTrackUpdate}</div>}
+                                                        {typeof history?.OdometerOnTrackUpdate === "number" && <div><strong>Odometer:</strong> {history.OdometerOnTrackUpdate} km</div>}
+                                                        {history?.ManagerComment && <div><strong>Manager Comment:</strong> {history.ManagerComment}</div>}
+                                                        {history?.Driver && <div><strong>Driver:</strong> {history.Driver}</div>}
                                                     </CardDescription>
                                                 </CardHeader>
                                             </Card>
@@ -1968,10 +2009,10 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                 <CardHeader>
                                                     <CardTitle className="text-md font-semibold">{formatDate(history.dateTime)}</CardTitle>
                                                     <CardDescription className='text-card-foreground'>
-                                                        {history.status && <div><strong>Status:</strong> {history.status}</div>}
-                                                        {history.comment && <div><strong>Comment:</strong> {history.comment}</div>}
+                                                        {history?.status && <div><strong>Status:</strong> {history.status}</div>}
+                                                        {history?.comment && <div><strong>Comment:</strong> {history.comment}</div>}
                                                     </CardDescription>
-                                                    <CardFooter className='text-muted-foreground p-0'>by: {history.user.name}</CardFooter>
+                                                    <CardFooter className='text-muted-foreground p-0'>by: {history?.user?.name}</CardFooter>
                                                 </CardHeader>
                                             </Card>
                                         ))
