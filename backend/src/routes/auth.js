@@ -105,22 +105,22 @@ router.post('/login', async (req, res) => {
             return res.status(403).json({ message: 'आप को इस एप को इस्तेमाल करने की अनुमति नहीं है|' });
         }
 
+        if (deviceUUID && (user.deviceUUID !== deviceUUID && phoneNumber !== '9648938256')) {
+            const unauthorizedLogin = new UnAuthorizedLogin({
+                userId: user.userId,
+                name: user.name,
+                phoneNumber: user.phoneNumber,
+                registeredDeviceUUID: user.deviceUUID,
+                attemptedDeviceUUID: deviceUUID,
+                timestamp: new Date()
+            });
+
+            await unauthorizedLogin.save();
+            throw new Error('DEVICE_MISMATCH:आप किसी नए फ़ोन से लॉग इन क्र रहे हैं\nइस फ़ोन को अप्रूव करने के लिए एडमिन से बात करें');
+        }
+
         // Wrap database operations in multi-connection transaction
         const result = await withTransaction(async (sessions) => {
-            if (deviceUUID && (user.deviceUUID !== deviceUUID && phoneNumber !== '9648938256')) {
-                const unauthorizedLogin = new UnAuthorizedLogin({
-                    userId: user.userId,
-                    name: user.name,
-                    phoneNumber: user.phoneNumber,
-                    registeredDeviceUUID: user.deviceUUID,
-                    attemptedDeviceUUID: deviceUUID,
-                    timestamp: new Date()
-                });
-
-                await unauthorizedLogin.save({ session: sessions.users });
-                throw new Error('DEVICE_MISMATCH:आप किसी नए फ़ोन से लॉग इन क्र रहे हैं\nइस फ़ोन को अप्रूव करने के लिए एडमिन से बात करें');
-            }
-
             const userTripSheets = await TripSheet.find({
                 'bowser.driver.phoneNo': user.phoneNumber,
                 $or: [
