@@ -142,7 +142,7 @@ const UpdateManager: React.FC = () => {
 
                                     <CardFooter className="mt-auto">
                                         <Link
-                                            href={update.url}
+                                            href='https://play.google.com/store/apps/details?id=com.itplfirebase.bowsersdispensing'
                                             download
                                             className="w-full inline-flex items-center text-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
                                         >
