@@ -21,9 +21,9 @@ const vehicleSchema = new Schema({
 
 vehicleSchema.virtual("lastDriverLog", {
     ref: "DriversLog",
-    localField: "driverLogs",
-    foreignField: "_id",
-    options: { sort: { _id: -1 }, limit: 1 }
+    localField: "VehicleNo",
+    foreignField: "vehicleNo",
+    options: { sort: { creationDate: -1, _id: -1 }, limit: 1 }
 });
 
 // Add indexes to optimize query performance and reduce lock contention
