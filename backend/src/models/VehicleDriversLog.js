@@ -29,7 +29,7 @@ const driversLogSchema = new Schema({
         }, { _id: false }),
         required: false
     },
-    creationDate: { type: Date, default: new Date() },
+    creationDate: { type: Date, default: Date.now },
     statusUpdate: [{
         dateTime: { type: Date, default: Date.now, required: true },
         remark: { type: String, required: true }

@@ -86,7 +86,7 @@ async function getDriverFromLog(vehicleNumbers) {
     const logs = await findVehicleDriversLogs({
         vehicleNo: { $in: vehicleNumbers }
     }).populate("driver", "_id Name MobileNo")
-        .sort({ creationDate: -1 });
+        .sort({ creationDate: -1, _id: -1 });
 
     const logMap = new Map();
     logs.forEach(log => {
