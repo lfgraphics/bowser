@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -56,6 +56,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
         odometer: "",
         location: "",
         remark: "",
+        tripId: updatingTrip?._id || "",
     });
 
     const [leaving, setLeaving] = useState({
@@ -64,17 +65,27 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
         odometer: "",
         location: "",
         remark: "",
+        tripId: updatingTrip?._id || "",
     });
 
+    useEffect(() => {
+        setJoining({
+            ...joining,
+            tripId: updatingTrip?._id || "",
+        })
+        setLeaving({
+            ...leaving,
+            tripId: updatingTrip?._id || "",
+        })
+    }, [updatingTrip])
+
     const fetchTripOnLeavingDate = async (date: string) => {
-        console.log('Called Fetching trip function')
         setLoading(true)
         try {
             const response = await fetch(`${BASE_URL}/driver-log/last-trip/${vehicle?.vehicle?.VehicleNo}/${date}`);
             const lastTripObj = await response.json();
             const latestTrip = lastTripObj.latestTrip;
             setUpdatingTrip(latestTrip)
-            console.log(latestTrip)
         } catch (error) {
             console.log(error);
             toast.error('Error fetching trip on leaving date', { description: String(error) })
@@ -156,9 +167,9 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
 
             const continuingData = {
                 date: new Date().toISOString().split('T')[0], // Today's date
-                odometer: vehicle?.latestTrip?.LoadTripDetail?.EndOdometer || 
-                         vehicle?.latestTrip?.EmptyTripDetail?.EndOdometer || 
-                         "0",
+                odometer: vehicle?.latestTrip?.LoadTripDetail?.EndOdometer ||
+                    vehicle?.latestTrip?.EmptyTripDetail?.EndOdometer ||
+                    "0",
                 location,
                 remark: "Continued after leave period"
             };
@@ -175,7 +186,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed");
-            
+
             setCache((prev) => {
                 const updated = { ...prev.vehicleDetails };
                 const target = updated[vehicle?.vehicle?._id];
@@ -562,17 +573,17 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
                                 <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
                                     <span className="font-medium">Name:</span>
                                     <span>{vehicle?.lastDriverLog?.driver?.Name || "Unknown"}</span>
-                                    
+
                                     <span className="font-medium">Left On:</span>
                                     <span>{formatDate(vehicle?.driver?.leaving?.from!)}</span>
-                                    
+
                                     {vehicle?.driver?.leaving?.tillDate && (
                                         <>
                                             <span className="font-medium">Till Date:</span>
                                             <span>{formatDate(vehicle?.driver?.leaving?.tillDate)}</span>
                                         </>
                                     )}
-                                    
+
                                     <span className="font-medium">Location:</span>
                                     <span>
                                         {vehicle?.latestTrip?.TravelHistory && vehicle.latestTrip.TravelHistory.length > 0

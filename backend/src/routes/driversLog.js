@@ -4,12 +4,16 @@ import DriversLog from "../models/VehicleDriversLog.js";
 import Vehicle from "../models/vehicle.js";
 import VehiclesTrip from "../models/VehiclesTrip.js";
 import { getOneTripOfVehicleByDate } from "../utils/vehicles.js";
+import { getTransportDatabaseConnection } from "../../config/database.js";
 
 // ---------------------------
 // Add Driver (Joining)
 // ---------------------------
 router.post("/join", async (req, res) => {
+    let session = null;
     try {
+        session = await getTransportDatabaseConnection().startSession();
+        session.startTransaction();
         const { vehicleNo, driverId, joining, driverName } = req.body;
 
         // Validation
@@ -35,7 +39,7 @@ router.post("/join", async (req, res) => {
             const trip = await VehiclesTrip.findOne({
                 VehicleNo: vehicleNo,
                 StartDate: { $lte: joiningDate }
-            }).sort({ StartDate: -1, rankindex: 1, _id: -1 }).lean();
+            }).sort({ StartDate: -1, rankindex: 1, _id: -1 }).session(session).lean();
 
             if (!trip) {
                 console.log(`[DRIVER-JOIN] No trip found for vehicle ${vehicleNo}`);
@@ -51,7 +55,7 @@ router.post("/join", async (req, res) => {
             vehicleNo,
             driver: driverId,
             leaving: { $exists: false }
-        });
+        }).session(session);
 
         if (existingLog) {
             console.log(`[DRIVER-JOIN] Driver ${driverId} already assigned to vehicle ${vehicleNo}`);
@@ -70,7 +74,7 @@ router.post("/join", async (req, res) => {
                 tripId
             }
         });
-        const savedLog = await newLog.save();
+        const savedLog = await newLog.save({ session });
         console.log(`[DRIVER-JOIN] Driver log created with ID: ${savedLog._id}`);
 
         // Update vehicle - remove hint to avoid index conflicts
@@ -81,14 +85,12 @@ router.post("/join", async (req, res) => {
                 $addToSet: { driverLogs: savedLog._id },
                 $set: { "tripDetails.driver": driverName },
             },
-            { new: true }
+            { new: true, session }
         );
 
         if (!updatedVehicle) {
-            // Rollback: Remove the created log
-            await DriversLog.findByIdAndDelete(savedLog._id);
-            console.log(`[DRIVER-JOIN] Vehicle ${vehicleNo} not found, rolled back driver log`);
-            return res.status(404).json({ error: "Vehicle not found" });
+            console.log(`[DRIVER-JOIN] Vehicle ${vehicleNo} not found, aborting transaction`);
+            throw new Error(`Vehicle ${vehicleNo} not found`);
         }
         console.log(`[DRIVER-JOIN] Successfully updated vehicle ${vehicleNo}`);
 
@@ -97,7 +99,7 @@ router.post("/join", async (req, res) => {
         const updatedTrip = await VehiclesTrip.findByIdAndUpdate(
             tripId,
             { $set: { driverStatus: 1 } },
-            { new: true }
+            { new: true, session }
         );
 
         if (!updatedTrip) {
@@ -108,6 +110,8 @@ router.post("/join", async (req, res) => {
         }
 
         console.log(`[DRIVER-JOIN] Successfully completed driver join for ${driverName} to vehicle ${vehicleNo}`);
+        await session.commitTransaction();
+
         return res.json({
             message: "Driver joined successfully",
             entry: savedLog,
@@ -117,7 +121,10 @@ router.post("/join", async (req, res) => {
 
     } catch (error) {
         console.error(`[DRIVER-JOIN] Failed to join driver to vehicle ${req.body.vehicleNo || 'unknown'}:`, error.message);
+        if (session) await session.abortTransaction();
         return res.status(500).json({ error: "Failed to join driver", details: error.message });
+    } finally {
+        if (session) await session.endSession();
     }
 });
 
@@ -125,7 +132,10 @@ router.post("/join", async (req, res) => {
 // Driver Leaving
 // ---------------------------
 router.post("/leave", async (req, res) => {
+    let session = null;
     try {
+        session = await getTransportDatabaseConnection().startSession();
+        session.startTransaction();
         const { vehicleNo, driverId, leaving } = req.body;
 
         // Validation
@@ -149,7 +159,7 @@ router.post("/leave", async (req, res) => {
         const trip = await VehiclesTrip.findOne({
             VehicleNo: vehicleNo,
             StartDate: { $lte: leavingDate }
-        }).sort({ StartDate: -1, rankindex: 1, _id: -1 }).lean();
+        }).sort({ StartDate: -1, rankindex: 1, _id: -1 }).session(session).lean();
 
         if (!trip) {
             console.log(`[DRIVER-LEAVE] No trip found for vehicle ${vehicleNo}`);
@@ -171,7 +181,7 @@ router.post("/leave", async (req, res) => {
                     }
                 }
             },
-            { new: true, upsert: true }
+            { new: true, upsert: true, session }
         );
 
         if (!log) {
@@ -188,7 +198,7 @@ router.post("/leave", async (req, res) => {
                 $set: { "tripDetails.driver": "no driver" },
                 $addToSet: { driverLogs: log._id }
             },
-            { new: true }
+            { new: true, session }
         );
 
         if (!updatedVehicle) {
@@ -202,7 +212,7 @@ router.post("/leave", async (req, res) => {
         const updatedTrip = await VehiclesTrip.findByIdAndUpdate(
             tripId,
             { $set: { driverStatus: 0 } },
-            { new: true }
+            { new: true, session }
         );
 
         if (!updatedTrip) {
@@ -213,6 +223,7 @@ router.post("/leave", async (req, res) => {
         }
 
         console.log(`[DRIVER-LEAVE] Successfully completed driver leave for vehicle ${vehicleNo}`);
+        await session.commitTransaction();
         return res.json({
             message: "Driver leaving updated",
             entry: log,
@@ -222,7 +233,10 @@ router.post("/leave", async (req, res) => {
 
     } catch (error) {
         console.error(`[DRIVER-LEAVE] Failed to process driver leave for vehicle ${req.body.vehicleNo || 'unknown'}:`, error.message);
+        if (session) await session.abortTransaction();
         return res.status(500).json({ error: "Failed to process driver leave", details: error.message });
+    } finally {
+        if (session) await session.endSession();
     }
 });
 
@@ -267,18 +281,18 @@ router.post("/status-update", async (req, res) => {
 // ---------------------------
 router.get("/last-trip/:vehicleNo/:date", async (req, res) => {
     const { vehicleNo, date } = req.params;
-    
+
     // Validate date format
     const parsedDate = new Date(date);
     if (isNaN(parsedDate.getTime())) {
         console.error(`[LAST-TRIP] Invalid date format received: ${date}`);
-        return res.status(400).json({ 
-            error: "Invalid date format", 
+        return res.status(400).json({
+            error: "Invalid date format",
             details: `Date '${date}' is not valid. Expected format: YYYY-MM-DD or ISO date string`,
             received: date
         });
     }
-    
+
     try {
         console.log(`[LAST-TRIP] Fetching last trip for vehicle ${vehicleNo} before date ${parsedDate.toISOString()} (received: ${date})`);
         const response = await getOneTripOfVehicleByDate(vehicleNo, date);
