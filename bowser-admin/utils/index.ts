@@ -264,3 +264,19 @@ export function formatVehicleRemark(remark: string): string {
 
     return formatted;
 }
+
+import { createElement, Fragment } from 'react';
+
+export const formatManagerName = (manager: string) => {
+    if (!manager) return null;
+    const names = manager.split(',');
+    return createElement(Fragment, null,
+        names.map((name, index) =>
+            createElement(Fragment, { key: index },
+                createElement('span', { className: 'text-green-500' }, name.trim().slice(-2) + " "),
+                createElement('span', null, name.trim().slice(0, -2)),
+                index < names.length - 1 && ", "
+            )
+        )
+    );
+}

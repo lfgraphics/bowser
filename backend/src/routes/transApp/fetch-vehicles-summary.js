@@ -36,7 +36,7 @@ router.get('/summary-stats/:userId', async (req, res) => {
             },
             {
                 $facet: {
-                    loadedOnWay: [
+                    loadedOnWay: [ // total on way
                         {
                             $match: {
                                 LoadStatus: 1,
@@ -48,7 +48,7 @@ router.get('/summary-stats/:userId', async (req, res) => {
                         },
                         { $count: 'count' }
                     ],
-                    loadedReported: [
+                    loadedReported: [ // total reported
                         {
                             $match: {
                                 LoadStatus: 1,
@@ -76,7 +76,8 @@ router.get('/summary-stats/:userId', async (req, res) => {
                         },
                         { $count: 'count' }
                     ],
-                    emptyOnWay: [
+
+                    emptyOnWay: [ // empty onway
                         {
                             $match: {
                                 LoadStatus: 0,
@@ -88,17 +89,35 @@ router.get('/summary-stats/:userId', async (req, res) => {
                         },
                         { $count: 'count' }
                     ],
-                    emptyReported: [
+                    outsideStanding: [ // empty, reported, not inside distillery, with driver and not accidental
                         {
                             $match: {
                                 LoadStatus: 0,
                                 ReportingDate: { $exists: true },
-                                ReportingDate: { $ne: null }
+                                ReportingDate: { $ne: null },
+                                $and: [
+                                    { "lastStatusUpdate.status": { $nin: ["Accident", "Breakdown", "Loaded"] } },
+                                    { endToLower: { $not: { $regex: "gida office|maintenece|indian tanker|maintenance" } } },
+                                    { driverStatus: { $ne: 0 } }
+                                ]
                             }
                         },
                         { $count: 'count' }
                     ],
-                    emptyStanding: [
+                    factoryIn: [ // entered in distillery for loading
+                        {
+                            $match: {
+                                LoadStatus: 0,
+                                ReportingDate: { $exists: true },
+                                ReportingDate: { $ne: null },
+                                "lastStatusUpdate.status": "In Distillery"
+
+                            }
+                        },
+                        { $count: 'count' }
+                    ],
+
+                    emptyStanding: [ //second outside standing | depo standing
                         {
                             $match: {
                                 LoadStatus: 1,
@@ -110,17 +129,13 @@ router.get('/summary-stats/:userId', async (req, res) => {
                         },
                         { $count: 'count' }
                     ],
-                    outsideStanding: [
+                    otherStanding: [ // standing at gida office
                         {
                             $match: {
                                 LoadStatus: 0,
                                 ReportingDate: { $exists: true },
                                 ReportingDate: { $ne: null },
-                                $and: [
-                                    { "lastStatusUpdate.status": { $nin: ["Accident", "Breakdown", "Loaded"] } },
-                                    { endToLower: { $not: { $regex: "gida office|maintenece|indian tanker|maintenance" } } },
-                                    { driverStatus: { $ne: 0 } }
-                                ]
+                                endToLower: { $regex: "gida office|indian tanker" },
                             }
                         },
                         { $count: 'count' }
@@ -136,27 +151,32 @@ router.get('/summary-stats/:userId', async (req, res) => {
                         },
                         { $count: 'count' }
                     ],
-                    otherStanding: [
+
+                    noDriver: [
                         {
                             $match: {
-                                LoadStatus: 0,
-                                ReportingDate: { $exists: true },
-                                ReportingDate: { $ne: null },
-                                $or: [
-                                    {
-                                        $and: [
-                                            { "lastStatusUpdate.status": { $ne: "Loaded" } },
-                                            { "lastStatusUpdate.status": { $in: ["Accident", "Breakdown"] } }
-                                        ]
-                                    },
-                                    { endToLower: { $regex: "gida office|maintenece|indian tanker|maintenance" } },
-                                    { driverStatus: 0 }
-                                ]
+                                driverStatus: 0
                             }
                         },
                         { $count: 'count' }
-                    ]
-                }
+                    ],
+                    underMaintenance: [
+                        {
+                            $match: {
+                                endToLower: { $regex: "maintenece|maintenance" },
+                            },
+                        },
+                        { $count: 'count' }
+                    ],
+                    accidental: [
+                        {
+                            $match: {
+                                "lastStatusUpdate.status": { $in: ["Accident", "Breakdown"] }
+                            }
+                        },
+                        { $count: 'count' }
+                    ],
+                },
             }
         ]).allowDiskUse(true);
 
@@ -164,16 +184,88 @@ router.get('/summary-stats/:userId', async (req, res) => {
 
         res.status(200).json({
             loaded: {
-                onWay: { count: stats.loadedOnWay?.[0]?.count || 0 },
-                reported: { count: stats.loadedReported?.[0]?.count || 0 }
+                key: '1',
+                icon: '/icons/newThemeIcons/just-loaded-vehicles.svg',
+                filters: [
+                    {
+                        icon: '/icons/newThemeIcons/just-loaded.svg',
+                        count: (stats.loadedReported?.[0]?.count || 0) + (stats.loadedOnWay?.[0]?.count || 0),
+                        label: 'Total Loaded'
+                    },
+                    {
+                        icon: '/icons/newThemeIcons/load-onway.svg',
+                        count: stats.loadedOnWay?.[0]?.count || 0,
+                        label: 'Total On Way'
+                    },
+                    {
+                        icon: '/icons/newThemeIcons/reported-for-unload.svg',
+                        count: stats.loadedReported?.[0]?.count || 0,
+                        label: 'Reported'
+                    }
+                ]
             },
-            empty: {
-                onWay: { count: stats.emptyOnWay?.[0]?.count || 0 },
-                reported: { count: stats.emptyReported?.[0]?.count || 0 },
-                standing: { count: stats.emptyStanding?.[0]?.count || 0 },
-                outsideStanding: { count: stats.outsideStanding?.[0]?.count || 0 },
-                loaded: { count: stats.loaded?.[0]?.count || 0 },
-                otherStanding: { count: stats.otherStanding?.[0]?.count || 0 }
+            emptyForLoading: {
+                key: '2',
+                icon: '/icons/newThemeIcons/factory-entered-vehicles.svg',
+                filters: [
+                    {
+                        icon: '/icons/newThemeIcons/outside-standing.svg',
+                        count: stats.outsideStanding?.[0]?.count || 0,
+                        label: 'Outside Standing'
+                    },
+                    {
+                        icon: '/icons/newThemeIcons/in-loading.svg',
+                        count: stats.factoryIn?.[0]?.count || 0,
+                        label: 'Factory In'
+                    },
+                    {
+                        icon: '/icons/newThemeIcons/empty-onway.svg',
+                        count: stats.emptyOnWay?.[0]?.count || 0,
+                        label: 'On Way'
+                    }
+                ]
+            },
+            emptyOther: {
+                key: '3',
+                icon: '/icons/newThemeIcons/depot-standing-vehicles.svg',
+                filters: [
+                    {
+                        icon: '/icons/newThemeIcons/depot-standing.svg',
+                        count: stats.emptyStanding?.[0]?.count || 0,
+                        label: 'Depot Standing'
+                    },
+                    {
+                        icon: '/icons/newThemeIcons/standing-at-office.svg',
+                        count: stats.otherStanding?.[0]?.count || 0,
+                        label: 'Other Standing'
+                    },
+                    {
+                        icon: '/icons/newThemeIcons/just-loaded.svg',
+                        count: stats.loaded?.[0]?.count || 0,
+                        lable: 'Loaded'
+                    }
+                ]
+            },
+            underMaintenance: {
+                key: '4',
+                icon: '/icons/newThemeIcons/vehicles-under-maintanance.svg',
+                filters: [
+                    {
+                        icon: '/icons/newThemeIcons/under-maintanance.svg',
+                        count: stats.underMaintenance?.[0]?.count || 0,
+                        label: 'Under Maintenance'
+                    },
+                    {
+                        icon: '/icons/newThemeIcons/accidental.svg',
+                        count: stats.accidental?.[0]?.count || 0,
+                        label: 'Accidental'
+                    },
+                    {
+                        icon: '/icons/newThemeIcons/no-driver.svg',
+                        count: stats.noDriver?.[0]?.count || 0,
+                        label: 'No Driver'
+                    }
+                ]
             }
         });
 
@@ -190,20 +282,21 @@ router.get('/summary-stats/:userId', async (req, res) => {
 router.get('/bucket-data/:userId', async (req, res) => {
     const userId = req.params.userId;
     const {
-        bucket = 'loadedOnWay',
+        bucket = 'loaded',
         searchTerm = '',
-        sortBy = 'EndTo',
+        sortBy: sortByParam,
         direction = 'asc',
         pageSize = 100,
         pageNo,
-        page: pageParam,
+        page: pageQuery,
         isAdmin: isAdminQuery
     } = req.query;
 
     try {
+        const sortBy = sortByParam || 'EndTo';
         const isAdmin = isAdminQuery === 'true' || isAdminQuery === '1';
         const limit = Math.max(1, parseInt(pageSize));
-        const page = Math.max(1, parseInt(pageNo || pageParam || 1));
+        const page = Math.max(1, parseInt(pageNo || pageQuery || 1));
         const skip = (page - 1) * limit;
         const sortDirection = direction === 'desc' ? -1 : 1;
         const vehicles = await getUserVehicles(userId);
@@ -215,7 +308,30 @@ router.get('/bucket-data/:userId', async (req, res) => {
         let needsStatusFields = false;
 
         switch (bucket) {
-            case 'loadedOnWay':
+            // ===================================
+            // Loaded Category (key: 1, label: loaded)
+            // ===================================
+            case 'loaded': // Main Category
+            case 'loaded_total_loaded':
+                bucketMatch = {
+                    LoadStatus: 1,
+                    $or: [
+                        {
+                            $or: [
+                                { EndDate: { $exists: false } },
+                                { EndDate: { $eq: null } }
+                            ]
+                        },
+                        {
+                            $or: [
+                                { "LoadTripDetail.UnloadDate": { $exists: false } },
+                                { "LoadTripDetail.UnloadDate": { $eq: null } }
+                            ]
+                        }
+                    ]
+                };
+                break;
+            case 'loaded_total_on_way':
                 bucketMatch = {
                     LoadStatus: 1,
                     $or: [
@@ -224,7 +340,7 @@ router.get('/bucket-data/:userId', async (req, res) => {
                     ]
                 };
                 break;
-            case 'loadedReported':
+            case 'loaded_reported':
                 bucketMatch = {
                     LoadStatus: 1,
                     $and: [
@@ -249,7 +365,64 @@ router.get('/bucket-data/:userId', async (req, res) => {
                     ]
                 };
                 break;
-            case 'emptyOnWay':
+
+            // ===================================
+            // Empty For Loading Category (key: 2, label: emptyForLoading)
+            // ===================================
+            case 'emptyForLoading': // Main Category
+                needsStatusFields = true;
+                bucketMatch = {
+                    $or: [
+                        // emptyOnWay
+                        {
+                            LoadStatus: 0,
+                            $or: [
+                                { ReportingDate: { $exists: false } },
+                                { ReportingDate: { $eq: null } }
+                            ]
+                        },
+                        // factoryIn
+                        {
+                            LoadStatus: 0,
+                            ReportingDate: { $exists: true }, // implied $ne: null
+                            "lastStatusUpdate.status": "In Distillery"
+                        },
+                        // outsideStanding
+                        {
+                            LoadStatus: 0,
+                            ReportingDate: { $exists: true },
+                            $and: [
+                                { "lastStatusUpdate.status": { $nin: ["Accident", "Breakdown", "In Distillery"] } },
+                                { endToLower: { $not: { $regex: "gida office|maintenece|indian tanker|maintenance" } } },
+                                { driverStatus: { $ne: 0 } }
+                            ]
+                        }
+                    ]
+                };
+                break;
+            case 'emptyForLoading_outside_standing':
+                needsStatusFields = true;
+                bucketMatch = {
+                    LoadStatus: 0,
+                    ReportingDate: { $exists: true },
+                    ReportingDate: { $ne: null },
+                    $and: [
+                        { "lastStatusUpdate.status": { $nin: ["Accident", "Breakdown", "In Distillery"] } },
+                        { endToLower: { $not: { $regex: "gida office|maintenece|indian tanker|maintenance" } } },
+                        { driverStatus: { $ne: 0 } }
+                    ]
+                };
+                break;
+            case 'emptyForLoading_factory_in':
+                needsStatusFields = true;
+                bucketMatch = {
+                    LoadStatus: 0,
+                    ReportingDate: { $exists: true },
+                    ReportingDate: { $ne: null },
+                    "lastStatusUpdate.status": "In Distillery"
+                };
+                break;
+            case 'emptyForLoading_on_way':
                 bucketMatch = {
                     LoadStatus: 0,
                     $or: [
@@ -258,14 +431,40 @@ router.get('/bucket-data/:userId', async (req, res) => {
                     ]
                 };
                 break;
-            case 'emptyReported':
+
+            // ===================================
+            // Empty Other Category (key: 3, label: emptyOther)
+            // ===================================
+            case 'emptyOther': // Main Category
+                needsStatusFields = true;
                 bucketMatch = {
-                    LoadStatus: 0,
-                    ReportingDate: { $exists: true },
-                    ReportingDate: { $ne: null }
+                    $or: [
+                        // emptyStanding (Depot Standing)
+                        {
+                            LoadStatus: 1,
+                            $and: [
+                                { "LoadTripDetail.UnloadDate": { $exists: true } },
+                                { "LoadTripDetail.UnloadDate": { $ne: null } }
+                            ]
+                        },
+                        // otherStanding (Other Standing)
+                        {
+                            LoadStatus: 0,
+                            ReportingDate: { $exists: true },
+                            ReportingDate: { $ne: null },
+                            endToLower: { $regex: "gida office|indian tanker" }
+                        },
+                        // loaded (Loaded)
+                        {
+                            LoadStatus: 0,
+                            ReportingDate: { $exists: true },
+                            ReportingDate: { $ne: null },
+                            "lastStatusUpdate.status": "Loaded"
+                        }
+                    ]
                 };
                 break;
-            case 'emptyStanding':
+            case 'emptyOther_depot_standing':
                 bucketMatch = {
                     LoadStatus: 1,
                     $and: [
@@ -274,20 +473,16 @@ router.get('/bucket-data/:userId', async (req, res) => {
                     ]
                 };
                 break;
-            case 'outsideStanding':
+            case 'emptyOther_other_standing':
                 needsStatusFields = true;
                 bucketMatch = {
                     LoadStatus: 0,
                     ReportingDate: { $exists: true },
                     ReportingDate: { $ne: null },
-                    $and: [
-                        { "lastStatusUpdate.status": { $nin: ["Accident", "Breakdown", "Loaded"] } },
-                        { endToLower: { $not: { $regex: "gida office|maintenece|indian tanker|maintenance" } } },
-                        { driverStatus: { $ne: 0 } }
-                    ]
+                    endToLower: { $regex: "gida office|indian tanker" }
                 };
                 break;
-            case 'loaded':
+            case 'emptyOther_loaded':
                 needsStatusFields = true;
                 bucketMatch = {
                     LoadStatus: 0,
@@ -296,24 +491,38 @@ router.get('/bucket-data/:userId', async (req, res) => {
                     "lastStatusUpdate.status": "Loaded"
                 };
                 break;
-            case 'otherStanding':
+
+            // ===================================
+            // Under Maintenance Category (key: 4, label: underMaintenance)
+            // ===================================
+            case 'underMaintenance': // Main Category
                 needsStatusFields = true;
                 bucketMatch = {
-                    LoadStatus: 0,
-                    ReportingDate: { $exists: true },
-                    ReportingDate: { $ne: null },
                     $or: [
-                        {
-                            $and: [
-                                { "lastStatusUpdate.status": { $ne: "Loaded" } },
-                                { "lastStatusUpdate.status": { $in: ["Accident", "Breakdown"] } }
-                            ]
-                        },
-                        { endToLower: { $regex: "gida office|maintenece|indian tanker|maintenance" } },
+                        { endToLower: { $regex: "maintenece|maintenance" } },
+                        { "lastStatusUpdate.status": { $in: ["Accident", "Breakdown"] } },
                         { driverStatus: 0 }
                     ]
                 };
                 break;
+            case 'underMaintenance_under_maintenance':
+                needsStatusFields = true;
+                bucketMatch = {
+                    endToLower: { $regex: "maintenece|maintenance" }
+                };
+                break;
+            case 'underMaintenance_accidental':
+                needsStatusFields = true;
+                bucketMatch = {
+                    "lastStatusUpdate.status": { $in: ["Accident", "Breakdown"] }
+                };
+                break;
+            case 'underMaintenance_no_driver':
+                bucketMatch = {
+                    driverStatus: 0
+                };
+                break;
+
             default:
                 return res.status(400).json({ error: 'Invalid bucket type' });
         }
@@ -326,8 +535,7 @@ router.get('/bucket-data/:userId', async (req, res) => {
                     { EndTo: { $regex: searchTerm, $options: 'i' } },
                     { StartFrom: { $regex: searchTerm, $options: 'i' } },
                     { superwiser: { $regex: searchTerm, $options: 'i' } },
-                    { loadingSupervisor: { $regex: searchTerm, $options: 'i' } },
-                    { loadingSuperVisor: { $regex: searchTerm, $options: 'i' } }
+                    { loadingSupervisor: { $regex: searchTerm, $options: 'i' } }
                 ]
             });
         }

@@ -362,7 +362,7 @@ export default function Page() {
             onValueChange={(v) => setTab(v as Tabslist)}
             className="sm:mb-2 flex flex-col md:flex-row items-start md:items-center justify-between"
           >
-            <TabsList>
+            <TabsList className='w-fit max-w-full overflow-auto'>
               <TabsTrigger value="Summary">Vehicles Summary</TabsTrigger>
               <TabsTrigger value="Vehicles">{!user?.Division?.includes('Admin') ? "My Vehicles" : "All Vehicles"}</TabsTrigger>
               {user?.Division?.includes('Admin') &&

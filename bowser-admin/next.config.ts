@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  serverExternalPackages: ['rimraf', 'fstream'],
   typescript: {
     // Enable this setting to ignore type errors during builds
     ignoreBuildErrors: true,

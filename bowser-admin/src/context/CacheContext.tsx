@@ -1,12 +1,16 @@
 "use client";
 import { TransAppUser, TripStatusUpdateEnums } from "@/types";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 
 export type CacheData = {
     user?: TransAppUser;
-    filter?: 'all' | 'loadedOnWay' | 'loadedReported' | 'emptyOnWay' | 'emptyReported' | 'emptyStanding' | 'outsideStanding' | 'notLoadedVehicles' | 'loaded' | 'otherStanding';
+    filter?: string;
     viewingTrip?: string | null;
     searchTerm?: string;
+    sortBy?: string;
+    direction?: string;
+    page?: number;
+    pageSize?: number;
     allVehiclesAccordion?: string;
     statusUpdate?: { tripId: string; status: TripStatusUpdateEnums; comment?: string } | null;
 };
@@ -45,13 +49,15 @@ export const CacheProvider = ({ children }: { children: React.ReactNode }) => {
         );
     }, [cache]);
 
-    const setCache = (updater: (prev: CacheData) => CacheData) =>
-        setCacheState((prev) => updater(prev));
+    const setCache = useCallback((updater: (prev: CacheData) => CacheData) =>
+        setCacheState((prev) => updater(prev)), []);
 
-    const clearCache = () => setCacheState({});
+    const clearCache = useCallback(() => setCacheState({}), []);
+
+    const contextValue = useMemo(() => ({ cache, setCache, clearCache }), [cache, setCache, clearCache]);
 
     return (
-        <CacheContext.Provider value={{ cache, setCache, clearCache }}>
+        <CacheContext.Provider value={contextValue}>
             {children}
         </CacheContext.Provider>
     );

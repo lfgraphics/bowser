@@ -3,7 +3,7 @@ import { find as findVehicles } from '../models/vehicle.js';
 import { find as findDrivers } from '../models/driver.js';
 import { aggregate as aggregateVehicleTrips } from '../models/VehiclesTrip.js';
 import { find as findVehicleDriversLogs } from '../models/VehicleDriversLog.js';
-import { find as findTransUsers } from '../models/TransUser.js';
+import { find as findTransAppUsers } from '../models/TransUser.js';
 import { getLatestVehicleUpdates } from './vehicles.js';
 
 /**
@@ -128,7 +128,7 @@ async function getVehiclesFullDetails(vehicleNumbers, isAdmin = false) {
     if (isAdmin) {
         try {
             const allVehicleNos = enrichedVehicles.map(v => v.vehicle.VehicleNo);
-            const users = await findTransUsers(
+            const users = await findTransAppUsers(
                 {
                     Division: { $in: [0, 1, 2, 3] },
                     myVehicles: { $in: allVehicleNos }

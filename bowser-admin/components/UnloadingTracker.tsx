@@ -205,27 +205,33 @@ export default function LoadVehicleTracker({ tripsData, query }: { tripsData: Ta
                 <div className="p-4 min-h-[80svh] flex flex-col justify-center gap-4 w-full sm:max-w-xl">
                     {tripId &&
                         <>
-                            <div className="flex flex-col gap-2 md:gap-4 w-full  justify-start text-sm">
-                                id: {tripId}
-                                <h4 className="text-lg font-semibold">Trip Details</h4>
-                                <div className="flex">
-                                    <strong>Loaded From: </strong>{data.find(trip => trip?._id === tripId)?.StartFrom}
-                                </div>
-                                <div className="flex">
-                                    <strong>Loading Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.StartDate))}
-                                </div>
-                                <div className="flex">
-                                    <strong>Reporting Date: </strong>{formatDate(String(data.find(trip => trip?._id === tripId)?.ReportingDate))}
-                                </div>
-                                <div className="flex">
-                                    <strong>Unloading Factory: </strong> {data.find(trip => trip?._id === tripId)?.TallyLoadDetail.Consignee}
-                                </div>
-                                <div className="flex">
-                                    <strong>Ending Location: </strong> {data.find(trip => trip?._id === tripId)?.EndTo}
-                                </div>
-                                <div className="flex">
-                                    <strong>Starat Driver: </strong> {data.find(trip => trip?._id === tripId)?.StartDriver}
-                                </div>
+                            id: {tripId}
+                            <h4 className="text-lg font-semibold my-2">Trip Details</h4>
+                            <div className="grid grid-cols-3 gap-3">
+                                <strong>Loaded From: </strong>
+                                <span className="col-span-2">
+                                    {data.find(trip => trip?._id === tripId)?.StartFrom}
+                                </span>
+                                <strong>Loading Date: </strong>
+                                <span className="col-span-2">
+                                    {formatDate(String(data.find(trip => trip?._id === tripId)?.StartDate))}
+                                </span>
+                                <strong>Reporting Date: </strong>
+                                <span className="col-span-2">
+                                    {formatDate(String(data.find(trip => trip?._id === tripId)?.ReportingDate))}
+                                </span>
+                                <strong>Unloading Factory: </strong>
+                                <span className="col-span-2">
+                                    {data.find(trip => trip?._id === tripId)?.TallyLoadDetail.Consignee}
+                                </span>
+                                <strong>Ending Location: </strong>
+                                <span className="col-span-2">
+                                    {data.find(trip => trip?._id === tripId)?.EndTo}
+                                </span>
+                                <strong>Starat Driver: </strong>
+                                <span className="col-span-2">
+                                    {data.find(trip => trip?._id === tripId)?.StartDriver}
+                                </span>
                             </div>
                         </>
                     }

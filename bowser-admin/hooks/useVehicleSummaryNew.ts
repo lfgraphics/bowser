@@ -70,7 +70,7 @@ export function useVehicleBucketData({
     userId: string | undefined;
     isAdmin: boolean;
     bucket: FilterType;
-    searchTerm?: string;
+        searchTerm?: string | number;
     sortBy?: string;
     direction?: 'asc' | 'desc';
     pageSize?: number;

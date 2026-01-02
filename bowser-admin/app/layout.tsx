@@ -1,7 +1,6 @@
 "use client"
 import { ThemeProvider } from "@/components/theme-provider"
 import { useEffect, useState } from 'react';
-import { Roboto } from "next/font/google";
 import "./globals.css";
 import "./loading";
 import { CacheProvider } from '@/src/context/CacheContext'
@@ -12,8 +11,6 @@ import { Toaster } from "sonner";
 import { VehiclesCacheProvider } from "@/src/context/VehiclesCacheContext";
 import NetStatus from "@/components/NetStatus";
 
-const roboto = Roboto({ subsets: ["latin"] });
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [isAuth, setIsAuth] = useState(false);
   const pathname = usePathname();
@@ -23,13 +20,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   }, [pathname]);
 
   return (
-    <html lang="en" className={roboto.className} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body className={`dark:bg-background dark:text-foreground`}>
         <NetStatus />
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          // enableSystem
           disableTransitionOnChange
         >
           {isAuth && <Sidebar />}

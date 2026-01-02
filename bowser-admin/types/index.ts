@@ -798,6 +798,27 @@ export interface StackHolder {
   loadingSupervisor: string;
 }
 
+export interface TripStatFilter {
+  icon: string;
+  count: number;
+  label?: string;
+  lable?: string; // To accommodate typo in API response
+}
+
+export interface TripStatItem {
+  key: string;
+  icon: string;
+  filters: TripStatFilter[];
+}
+
+export interface TripsStats {
+  loaded?: TripStatItem;
+  emptyForLoading?: TripStatItem;
+  emptyOther?: TripStatItem;
+  underMaintenance?: TripStatItem;
+  [key: string]: TripStatItem | undefined;
+}
+
 export interface TripsSummary {
   empty: {
     onWay: {
