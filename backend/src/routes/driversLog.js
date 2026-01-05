@@ -50,18 +50,18 @@ router.post("/join", async (req, res) => {
         }
 
         // Check if driver is already assigned to prevent duplicate assignments
-        console.log(`[DRIVER-JOIN] Checking existing assignment for driver ${driverId} on vehicle ${vehicleNo}`);
-        const existingLog = await DriversLog.findOne({
-            vehicleNo,
-            driver: driverId,
-            leaving: { $exists: false }
-        }).session(session);
+        // console.log(`[DRIVER-JOIN] Checking existing assignment for driver ${driverId} on vehicle ${vehicleNo}`);
+        // const existingLog = await DriversLog.findOne({
+        //     vehicleNo,
+        //     driver: driverId,
+        //     leaving: { $exists: false }
+        // }).session(session);
 
-        if (existingLog) {
-            console.log(`[DRIVER-JOIN] Driver ${driverId} already assigned to vehicle ${vehicleNo}`);
-            return res.status(409).json({ error: "Driver is already assigned to this vehicle" });
-        }
-        console.log(`[DRIVER-JOIN] No existing assignment found, proceeding with join`);
+        // if (existingLog) {
+        //     console.log(`[DRIVER-JOIN] Driver ${driverId} already assigned to vehicle ${vehicleNo}`);
+        //     return res.status(409).json({ error: "Driver is already assigned to this vehicle" });
+        // }
+        // console.log(`[DRIVER-JOIN] No existing assignment found, proceeding with join`);
 
         // Create driver log
         console.log(`[DRIVER-JOIN] Creating driver log entry`);
