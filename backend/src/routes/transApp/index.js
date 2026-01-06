@@ -8,7 +8,8 @@ import stackHoldersRoutes from './stack-holders.js';
 import goodsRoutes from './goods.js';
 import loadingNotificationRoutes from './loading-notification.js';
 import loadedTripsRoutes from './loaded-trips.js';
-
+import customersRoutes from './customers.js';
+import customerGroupsRoutes from './customer-groups.js';
 
 const router = Router();
 
@@ -21,5 +22,7 @@ router.use('/stack-holders', stackHoldersRoutes);
 router.use('/goods', goodsRoutes);
 router.use('/loading-notification', loadingNotificationRoutes);
 router.use('/loaded-trips', loadedTripsRoutes)
+router.use('/customers', customersRoutes)
+router.use('/customer-groups', customerGroupsRoutes)
 
 export default router;

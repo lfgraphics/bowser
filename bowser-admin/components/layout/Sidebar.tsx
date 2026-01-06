@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideSquareArrowOutUpRight, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List, Bell, FileUp, FileDown, AudioWaveform, Home, UserCogIcon, User2Icon, TextQuote } from 'lucide-react'
+import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideSquareArrowOutUpRight, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List, Bell, FileUp, FileDown, AudioWaveform, Home, UserCogIcon, User2Icon, TextQuote, WifiCog } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 import ThemeChanger from '../ThemeChanger'
@@ -234,8 +234,6 @@ export function Sidebar() {
                       </Button>
                     </Link>
                   </li>
-                </OnlyAllowed>
-                <OnlyAllowed allowedRoles={["Admin", "Diesel Control Center Staff"]}>
                   <li onClick={toggleSidebar}>
                     <Link href="/manage-requests">
                       <Button
@@ -247,8 +245,6 @@ export function Sidebar() {
                       </Button>
                     </Link>
                   </li>
-                </OnlyAllowed>
-                <OnlyAllowed allowedRoles={["Admin", "Diesel Control Center Staff"]}>
                   <li onClick={toggleSidebar}>
                     <Link href={`/my-allocation?allocator=${user?.userId}`}>
                       <Button
@@ -273,8 +269,6 @@ export function Sidebar() {
                       </Button>
                     </Link>
                   </li>
-                </OnlyAllowed>
-                <OnlyAllowed allowedRoles={["Admin"]}>
                   <li onClick={toggleSidebar}>
                     <Link href='/fuel-requests'>
                       <Button
@@ -304,6 +298,19 @@ export function Sidebar() {
                       >
                         <ListChecks className="mr-2 w-4 h-4" />
                         Dispense Records
+                      </Button>
+                    </Link>
+                  </li>
+                </OnlyAllowed>
+                <OnlyAllowed allowedRoles={["Admin", "Data Entry"]}>
+                  <li onClick={toggleSidebar}>
+                    <Link href="/customers-crud">
+                      <Button
+                        variant="ghost"
+                        className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/customers-crud" ? "bg-primary text-primary-foreground" : ""}`}
+                      >
+                        <WifiCog className="mr-2 w-4 h-4" />
+                        Manage Customers
                       </Button>
                     </Link>
                   </li>

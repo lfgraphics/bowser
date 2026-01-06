@@ -564,6 +564,23 @@ async function updateEmptyTrip(tripId, postData) {
     return updatedTrip;
 }
 
+const createLoadedTrip = async (data) => {
+    const {
+        lastTripId,
+        VehicleNo,
+        StartDate,
+        targetTime,
+        StartFrom,
+        EndTo,
+        LoadStatus = 1,
+        LoadTripDetail,
+        TallyLoadDetail,
+        StartDriver,
+        StartDriverMobile,
+        OpretionallyModified,
+    } = data
+}
+
 
 // Named exports
 export {
@@ -580,6 +597,7 @@ export {
     getDivisionKeyByValue,
     createEmptyTrip,
     updateEmptyTrip,
+    createLoadedTrip,
     getNewSummary,
     getTripById
 };

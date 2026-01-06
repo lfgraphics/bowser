@@ -193,7 +193,6 @@ const rateLimiter = new RateLimiter();
 
 const tankerTripSchema = new Schema({
     VehicleNo: { type: String, required: true },
-    // Day-wise ranking index for trips starting on the same date (lower value = higher priority)
     rankindex: { type: Number, default: 0 },
     StartDate: { type: Date },
     targetTime: { type: Date },
@@ -300,6 +299,12 @@ const tankerTripSchema = new Schema({
         }
     ],
     driverStatus: { type: Number, default: 1 },
+    posted: {
+        type: {
+            by: String,
+            date: Date
+        }, default: null
+    }
 }, {
     versionKey: false,
     toJSON: { virtuals: true },
@@ -310,12 +315,12 @@ tankerTripSchema.virtual('tripDay').get(function () {
     if (!this.StartDate) {
         return null;
     }
-    
+
     var now = new Date(this.StartDate);
     if (isNaN(now.getTime())) {
         return null;
     }
-    
+
     var start = new Date(now.getFullYear(), 0, 0);
     var diff = now - start;
     var oneDay = 1000 * 60 * 60 * 24;

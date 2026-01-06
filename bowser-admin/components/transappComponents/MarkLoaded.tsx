@@ -408,10 +408,10 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
                     />
                 </div>
 
-                <div className="flex gap-2 flex-row justify-between mt-2">
-                    <Button className="w-full" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
+                <div className="w-full flex gap-2 flex-row justify-between mt-2">
+                    <Button className="flex-1" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
                     {/* {if (validateInputs()) } */}
-                    <Button className="w-full" type="button" onClick={() => { setIsConfirmationDialogueOpen(true) }} >Submit</Button>
+                    <Button className="flex-1" type="button" onClick={() => { setIsConfirmationDialogueOpen(true) }} >Submit</Button>
                 </div>
             </div>
 
