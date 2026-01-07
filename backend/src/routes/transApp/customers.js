@@ -2,6 +2,7 @@ import { Router } from 'express';
 const router = Router();
 import Customer from '../../models/Customer.js';
 import Joi from 'joi';
+import { ObjectId } from 'mongodb';
 
 const schema = Joi.object({
     Name: Joi.string().required(),
@@ -48,25 +49,34 @@ router.post('/', async (req, res) => {
 // R
 router.get('/', async (req, res) => {
     const query = req.query.search;
-    try {
-        const customers = await Customer.find({
-            $or: [
-                { Name: { $regex: query, $options: 'i' } },
-                { CustomerName: { $regex: query, $options: 'i' } },
-                { MailingName: { $regex: query, $options: 'i' } },
-                { Location: { $regex: query, $options: 'i' } },
-                { State: { $regex: query, $options: 'i' } },
-                { Country: { $regex: query, $options: 'i' } },
-                { PanNo: { $regex: query, $options: 'i' } },
-                { RegtType: { $regex: query, $options: 'i' } },
-                { GSTIN: { $regex: query, $options: 'i' } },
-            ]
-        }).lean();
-        res.send(customers);
-    }
-    catch (error) {
-        console.error('Error fetching customers:', error);
-        return res.status(500).json({ error: 'Internal server error.' });
+
+    if (query && ObjectId.isValid(query)) {
+        const customer = await Customer.findById(query);
+        if (!customer) {
+            return res.status(404).json({ error: 'Customer not found.' });
+        }
+        return res.send(customer);
+    } else {
+        try {
+            const customers = await Customer.find({
+                $or: [
+                    { Name: { $regex: query, $options: 'i' } },
+                    { CustomerName: { $regex: query, $options: 'i' } },
+                    { MailingName: { $regex: query, $options: 'i' } },
+                    { Location: { $regex: query, $options: 'i' } },
+                    { State: { $regex: query, $options: 'i' } },
+                    { Country: { $regex: query, $options: 'i' } },
+                    { PanNo: { $regex: query, $options: 'i' } },
+                    { RegtType: { $regex: query, $options: 'i' } },
+                    { GSTIN: { $regex: query, $options: 'i' } },
+                ]
+            }).lean();
+            res.send(customers);
+        }
+        catch (error) {
+            console.error('Error fetching customers:', error);
+            return res.status(500).json({ error: 'Internal server error.' });
+        }
     }
 });
 

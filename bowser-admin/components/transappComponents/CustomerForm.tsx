@@ -38,9 +38,8 @@ export interface CustomerFormData {
     CompanyName: string
     Name: string
     IsMainParty: "Yes" | "No"
-    CompanyTag: "Not Applicable" | "Expo" | "Infra" | "ITA" | "ITPL"
+    CompanyTag: "Not Applicable" | "EXPO" | "Expo" | "INFRA" | "Infra" | "ITA" | "Ita" | "ITPL" | "Itpl"
     MailingName: string
-    CustomerName: string
     CustGroup: string
     Address: string
     Pincode: string
@@ -75,7 +74,6 @@ export const initialFormData: CustomerFormData = {
     IsMainParty: 'No',
     CompanyTag: 'Not Applicable',
     MailingName: '',
-    CustomerName: '',
     CustGroup: '',
     Address: '',
     Pincode: '',
@@ -129,7 +127,14 @@ const CustomerForm = ({
         } else {
             setSelectedCustomerId("")
         }
+
+        if (initialData.CustGroup) {
+            setSelectedCustomerGroupId(initialData.CustGroup)
+        } else {
+            setSelectedCustomerGroupId("")
+        }
     }, [initialData])
+
 
     // Goods fetching for Product Wise section
     const [goodsSearch, setGoodsSearch] = useState<string>("")
@@ -226,6 +231,7 @@ const CustomerForm = ({
             setFormData(prev => ({
                 ...prev,
                 MailingName: selectedCustomerData.MailingName || "",
+                Address: selectedCustomerData.Address || "",
                 ROuteDetention: selectedCustomerData.ROuteDetention || [],
                 "Product Wise": selectedCustomerData["Product Wise"] || [],
                 CommanLedger: selectedCustomerId
@@ -237,6 +243,14 @@ const CustomerForm = ({
             }))
         }
     }, [selectedCustomerData, selectedCustomerId, formData.IsMainParty])
+
+    // Sync CustGroup selection to formData
+    useEffect(() => {
+        setFormData(prev => ({
+            ...prev,
+            CustGroup: selectedCustomerGroupId
+        }))
+    }, [selectedCustomerGroupId])
 
 
     useEffect(() => {
@@ -271,7 +285,7 @@ const CustomerForm = ({
 
             setFetchingCustomerGroup(true)
             try {
-                const response = await fetch(`${BASE_URL}/trans-app/customer-groups/get-customer-group/${selectedCustomerGroupId}`)
+                const response = await fetch(`${BASE_URL}/trans-app/customer-groups/get/${selectedCustomerGroupId}`)
                 const data = await response.json()
 
                 // Ensure all fields are present with correct defaults
@@ -463,13 +477,15 @@ const CustomerForm = ({
         setFormData(initialFormData)
         setSelectedCustomerId("")
         setSelectedCustomerData(null)
+        setSelectedCustomerGroupId("")
+        setSelectedCustomerGroupData(null)
         setErrors({})
         if (onReset) onReset()
     }
 
-    const YesNoSelect = ({ field, value }: { field: keyof CustomerFormData, value: "Yes" | "No" }) => (
+    const YesNoSelect = ({ field, value, id }: { field: keyof CustomerFormData, value: "Yes" | "No", id?: string }) => (
         <Select value={value} onValueChange={(val) => handleSelectChange(field, val as "Yes" | "No")}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger id={id} className="w-full">
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -499,13 +515,14 @@ const CustomerForm = ({
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div className="space-y-2">
-                            <Label>Is Main Party</Label>
-                            <YesNoSelect field="IsMainParty" value={formData.IsMainParty} />
+                            <Label htmlFor="IsMainParty">Is Main Party</Label>
+                            <YesNoSelect id="IsMainParty" field="IsMainParty" value={formData.IsMainParty} />
                         </div>
 
                         {formData.IsMainParty === "No" && <div className='space-y-2'>
-                            <Label>Common Ledger *</Label>
+                            <Label htmlFor="CommanLedger">Common Ledger *</Label>
                             <Combobox
+                                id="CommanLedger"
                                 className="w-full"
                                 options={customerOptions}
                                 value={selectedCustomerId}
@@ -522,6 +539,7 @@ const CustomerForm = ({
                                 value={formData.Name}
                                 onChange={(e) => handleInputChange('Name', e.target.value)}
                                 placeholder="Enter name"
+                                autoComplete="organization"
                                 className={errors.Name ? 'border-red-500' : ''}
                             />
                             {errors.Name && <p className="text-xs text-red-500">{errors.Name}</p>}
@@ -532,13 +550,13 @@ const CustomerForm = ({
                             <Select value={formData.CompanyTag} onValueChange={(val) => {
                                 handleInputChange("CompanyTag", val);
                             }}>
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger id="CompanyTag" className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="Not Applicable">Not Applicable</SelectItem>
-                                    <SelectItem value="Expo">Expo</SelectItem>
-                                    <SelectItem value="Infra">Infra</SelectItem>
+                                    <SelectItem value="EXPO">EXPO</SelectItem>
+                                    <SelectItem value="INFRA">INFRA</SelectItem>
                                     <SelectItem value="ITA">ITA</SelectItem>
                                     <SelectItem value="ITPL">ITPL</SelectItem>
                                 </SelectContent>
@@ -552,6 +570,7 @@ const CustomerForm = ({
                                 value={formData.MailingName}
                                 onChange={(e) => handleInputChange('MailingName', e.target.value)}
                                 placeholder="Enter mailing name"
+                                autoComplete="organization"
                                 className={errors.MailingName ? 'border-red-500' : ''}
                             />
                             {errors.MailingName && <p className="text-xs text-red-500">{errors.MailingName}</p>}
@@ -560,6 +579,7 @@ const CustomerForm = ({
                         <div className="space-y-2">
                             <Label htmlFor="CustGroup">Customer Group</Label>
                             <Combobox
+                                id="CustGroup"
                                 className="w-full"
                                 options={customerGroupOptions}
                                 value={selectedCustomerGroupId}
@@ -588,6 +608,7 @@ const CustomerForm = ({
                                 value={formData.Address}
                                 onChange={(e) => handleInputChange('Address', e.target.value)}
                                 placeholder="Enter full address"
+                                autoComplete="street-address"
                                 className={errors.Address ? 'border-red-500' : ''}
                             />
                             {errors.Address && <p className="text-xs text-red-500">{errors.Address}</p>}
@@ -599,6 +620,7 @@ const CustomerForm = ({
                                 value={formData.Pincode}
                                 onChange={(e) => handleInputChange('Pincode', e.target.value)}
                                 placeholder="Enter pincode"
+                                autoComplete="postal-code"
                                 className={errors.Pincode ? 'border-red-500' : ''}
                             />
                             {errors.Pincode && <p className="text-xs text-red-500">{errors.Pincode}</p>}
@@ -610,6 +632,7 @@ const CustomerForm = ({
                                 value={formData.Country}
                                 onChange={(e) => handleInputChange('Country', e.target.value)}
                                 placeholder="Enter country"
+                                autoComplete="country-name"
                                 className={errors.Country ? 'border-red-500' : ''}
                             />
                             {errors.Country && <p className="text-xs text-red-500">{errors.Country}</p>}
@@ -621,6 +644,7 @@ const CustomerForm = ({
                                 value={formData.State}
                                 onChange={(e) => handleInputChange('State', e.target.value)}
                                 placeholder="Enter state"
+                                autoComplete="address-level1"
                                 className={errors.State ? 'border-red-500' : ''}
                             />
                             {errors.State && <p className="text-xs text-red-500">{errors.State}</p>}
@@ -632,6 +656,7 @@ const CustomerForm = ({
                                 value={formData.Location}
                                 onChange={(e) => handleInputChange('Location', e.target.value)}
                                 placeholder="Enter location"
+                                autoComplete="address-level2"
                                 className={errors.Location ? 'border-red-500' : ''}
                             />
                             {errors.Location && <p className="text-xs text-red-500">{errors.Location}</p>}
@@ -655,6 +680,7 @@ const CustomerForm = ({
                                 value={formData.ContactPerson}
                                 onChange={(e) => handleInputChange('ContactPerson', e.target.value)}
                                 placeholder="Enter contact person name"
+                                autoComplete="name"
                                 className={errors.ContactPerson ? 'border-red-500' : ''}
                             />
                             {errors.ContactPerson && <p className="text-xs text-red-500">{errors.ContactPerson}</p>}
@@ -666,6 +692,7 @@ const CustomerForm = ({
                                 value={formData.MobileNo}
                                 onChange={(e) => handleInputChange('MobileNo', e.target.value)}
                                 placeholder="Enter mobile number"
+                                autoComplete="tel"
                                 className={errors.MobileNo ? 'border-red-500' : ''}
                             />
                             {errors.MobileNo && <p className="text-xs text-red-500">{errors.MobileNo}</p>}
@@ -677,6 +704,7 @@ const CustomerForm = ({
                                 value={formData.LandLineNo}
                                 onChange={(e) => handleInputChange('LandLineNo', e.target.value)}
                                 placeholder="Enter landline number"
+                                autoComplete="tel"
                                 className={errors.LandLineNo ? 'border-red-500' : ''}
                             />
                             {errors.LandLineNo && <p className="text-xs text-red-500">{errors.LandLineNo}</p>}
@@ -688,6 +716,7 @@ const CustomerForm = ({
                                 value={formData.EMailID}
                                 onChange={(e) => handleInputChange('EMailID', e.target.value)}
                                 placeholder="Enter email"
+                                autoComplete="email"
                                 className={errors.EMailID ? 'border-red-500' : ''}
                             />
                             {errors.EMailID && <p className="text-xs text-red-500">{errors.EMailID}</p>}
@@ -712,6 +741,7 @@ const CustomerForm = ({
                                 onChange={(e) => handleInputChange('PanNo', e.target.value.toUpperCase())}
                                 placeholder="ABCDE1234F"
                                 maxLength={10}
+                                autoComplete="off"
                                 className={errors.PanNo ? 'border-red-500' : ''}
                             />
                             {errors.PanNo && <p className="text-xs text-red-500">{errors.PanNo}</p>}
@@ -724,6 +754,7 @@ const CustomerForm = ({
                                 onChange={(e) => handleInputChange('GSTIN', e.target.value.toUpperCase())}
                                 placeholder="22AAAAA0000A1Z5"
                                 maxLength={15}
+                                autoComplete="off"
                                 className={errors.GSTIN ? 'border-red-500' : ''}
                             />
                             {errors.GSTIN && <p className="text-xs text-red-500">{errors.GSTIN}</p>}
@@ -736,7 +767,7 @@ const CustomerForm = ({
                                     handleInputChange('RegtType', value);
                                 }}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger id="RegtType">
                                     <SelectValue placeholder="Select registration type" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -761,30 +792,30 @@ const CustomerForm = ({
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                         <div className="space-y-2">
-                            <Label>Is Active Customer</Label>
-                            <YesNoSelect field="IsActiveCustomer" value={formData.IsActiveCustomer} />
+                            <Label htmlFor="IsActiveCustomer">Is Active Customer</Label>
+                            <YesNoSelect id="IsActiveCustomer" field="IsActiveCustomer" value={formData.IsActiveCustomer} />
                         </div>
                         <div className="space-y-2">
-                            <Label>Is Billing Party</Label>
-                            <YesNoSelect field="IsBillingParty" value={formData.IsBillingParty} />
+                            <Label htmlFor="IsBillingParty">Is Billing Party</Label>
+                            <YesNoSelect id="IsBillingParty" field="IsBillingParty" value={formData.IsBillingParty} />
                         </div>
                         {
                             formData.IsMainParty === "Yes" && (
                                 <>
                                     <div className="space-y-2">
-                                        <Label>Is Attached Owner</Label>
-                                        <YesNoSelect field="IsAttachedOwner" value={formData.IsAttachedOwner} />
+                                        <Label htmlFor="IsAttachedOwner">Is Attached Owner</Label>
+                                        <YesNoSelect id="IsAttachedOwner" field="IsAttachedOwner" value={formData.IsAttachedOwner} />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Is Consignor</Label>
-                                        <YesNoSelect field="IsConsiGnor" value={formData.IsConsiGnor} />
+                                        <Label htmlFor="IsConsiGnor">Is Consignor</Label>
+                                        <YesNoSelect id="IsConsiGnor" field="IsConsiGnor" value={formData.IsConsiGnor} />
                                     </div>
                                 </>
                             )
                         }
                         <div className="space-y-2">
-                            <Label>Is Consignee</Label>
-                            <YesNoSelect field="IsConsignee" value={formData.IsConsignee} />
+                            <Label htmlFor="IsConsignee">Is Consignee</Label>
+                            <YesNoSelect id="IsConsignee" field="IsConsignee" value={formData.IsConsignee} />
                         </div>
                     </div>
                 </section>

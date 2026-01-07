@@ -21,6 +21,7 @@ type ComboboxProps = {
     width?: string;
     showAddButton?: boolean;
     onAddOption?: (searchTerm: string) => void;
+    id?: string;
 };
 
 const Combobox = ({
@@ -34,6 +35,7 @@ const Combobox = ({
     width = "w-[200px]",
     showAddButton = true,
     onAddOption,
+    id,
 }: ComboboxProps) => {
     const [highlightedIndex, setHighlightedIndex] = React.useState<number>(-1);
     const inputRef = React.useRef<HTMLInputElement>(null);
@@ -106,6 +108,7 @@ const Combobox = ({
             tabIndex={0}
         >
             <button
+                id={id}
                 type="button"
                 onClick={() => setOpen((prev) => !prev)}
                 className="flex items-center justify-between w-full border px-3 py-2 rounded-md text-left bg-background"

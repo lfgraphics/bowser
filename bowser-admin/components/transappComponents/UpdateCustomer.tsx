@@ -64,14 +64,25 @@ const UpdateCustomer = () => {
                 const response = await fetch(`${BASE_URL}/trans-app/customers/get-customer/${selectedCustomerId}`)
                 const data = await response.json()
                 
+                // Normalize CompanyTag
+                let normalizedTag = data.CompanyTag || "Not Applicable";
+                const upperTag = String(normalizedTag).trim().toUpperCase();
+                const validTags = ["EXPO", "INFRA", "ITA", "ITPL"];
+                
+                if (validTags.includes(upperTag)) {
+                    // Match the case in COMPANIES constant
+                    normalizedTag = upperTag === "EXPO" ? "Expo" : 
+                                    upperTag === "INFRA" ? "Infra" : 
+                                    upperTag === "ITA" ? "ITA" : "ITPL";
+                } else if (upperTag === "NOT APPLICABLE" || !normalizedTag) {
+                    normalizedTag = "Not Applicable";
+                }
+
                 // Ensure all fields are present with correct defaults
                 const formData: CustomerFormData = {
                     ...data,
-                    CompanyTag: data.CompanyTag || "",
-                    MailingName: data.MailingName || "",
-                    IsMainParty: data.IsMainParty || "Yes",
-                    ROuteDetention: data.ROuteDetention || [],
-                    "Product Wise": data["Product Wise"] || []
+                    "Product Wise": data["Product Wise"] || [],
+                    CompanyTag: normalizedTag
                 }
                 
                 setSelectedCustomerData(formData)
@@ -116,7 +127,7 @@ const UpdateCustomer = () => {
             // Update local state with returned data
             setSelectedCustomerData({
                 ...result,
-                CompanyTag: result.CompanyTag || ""
+                CompanyTag: result.CompanyTag || "Not Applicable"
             })
         } catch (error) {
             console.error('Error updating customer:', error)
