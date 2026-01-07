@@ -818,11 +818,20 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                             </Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent className='dropdown'>
-                                                            {tripStatusUpdateVars.filter((option) => !["In Depot"].includes(option)).map((statupOpetion) => (
+                                                            {tripStatusUpdateVars.filter((option) => !["In Depot", "Loaded"].includes(option)).map((statupOpetion) => (
                                                                 <DropdownMenuItem key={statupOpetion} onClick={() => setStatusUpdate({ tripId: trip?._id, status: statupOpetion as TripStatusUpdateEnums })}>
                                                                     {statupOpetion}
                                                                 </DropdownMenuItem>
                                                             ))}
+                                                            <DropdownMenuItem>
+                                                                <Link href={{
+                                                                    pathname: "trans-app/loading-tracker",
+                                                                    query: {
+                                                                        tripId: trip?._id,
+                                                                        actionType: "loaded"
+                                                                    }
+                                                                }}>Loaded</Link>
+                                                            </DropdownMenuItem>
                                                             <DropdownMenuItem>
                                                                 <Link href={{
                                                                     pathname: "trans-app/loading-tracker",

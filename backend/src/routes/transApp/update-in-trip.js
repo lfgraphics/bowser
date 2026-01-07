@@ -4,7 +4,7 @@ const { tz } = momentTz;
 import { Router } from 'express';
 const router = Router();
 import { findById as findTripById, findByIdAndUpdate as updateTripById } from '../../models/VehiclesTrip.js';
-import { createEmptyTrip, updateEmptyTrip } from './utils.js';
+import { createEmptyTrip, createLoadedTrip, updateEmptyTrip } from './utils.js';
 import LoadingOrderNotification from '../../models/LoadingOrderNotification.js';
 
 // const { getCurrentTrip, getAllTrips } = require('./utils');
@@ -222,12 +222,10 @@ router.post('/loaded', async (req, res) => {
         const tripToUpdate = await updateTripById(tripId,
             {
                 $set: {
-                    EndTo: data.EndLocation,
-                    'EmptyTripDetail.EndDate': data.TrackUpdateDate,
-                    'EmptyTripDetail.EndDestination': data.EndDestination,
-                    'EmptyTripDetail.EndLocation': data.EndLocation,
-                    'EmptyTripDetail.GoodsLoaded': data.GoodsLoaded,
-                    'EmptyTripDetail.QtyLoaded': data.QtyLoaded
+                    'EmptyTripDetail.EndDate': data.TallyLoadDetail.LoadingDate,
+                    'EmptyTripDetail.EndDestination': data.TallyLoadDetail.Consignee,
+                    'EmptyTripDetail.GoodsLoaded': data.TallyLoadDetail.Goods,
+                    'EmptyTripDetail.QtyLoaded': data.TallyLoadDetail.LoadingQty
                 },
                 $push: {
                     TravelHistory: {
@@ -245,6 +243,7 @@ router.post('/loaded', async (req, res) => {
         }
 
         const saveTrip = await tripToUpdate.save()
+        await createLoadedTrip(data)
         if (saveTrip) {
             return res.status(200).json({ message: 'Trip updated successfully', saveTrip })
         } else {
@@ -294,10 +293,10 @@ router.post('/create-empty-trip', async (req, res) => {
     try {
         const savedTrip = await createEmptyTrip(postData);
         console.log('Created empty trip: ', savedTrip);
-        if (postData.notificationId){
+        if (postData.notificationId) {
             const updateResponse = await LoadingOrderNotification.findByIdAndUpdate(postData.notificationId, { status: 'completed' }, { new: true });
             console.log('Updated loading order notification status: ', updateResponse);
-        }else{
+        } else {
             console.log('No notification id provided')
         }
         return res.status(201).json({ message: 'Empty trip created successfully', trip: savedTrip });

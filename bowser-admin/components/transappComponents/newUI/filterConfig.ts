@@ -30,124 +30,6 @@ const getUpdateItems = (excluded: string[] = []): DropdownItem[] => {
         }));
 };
 
-// --- Behavior Definitions ---
-
-// Configuration for Loaded category on way
-const loadedOnWayBehavior: FilterConfig = {
-    showAdminLoadingPlanner: true,
-    adminPlannerProps: { trigger: 'Order', type: 'new' },
-    showDropdown: true,
-    dropdownItems: [
-        ...getUpdateItems(),
-        {
-            label: 'Reported',
-            action: 'link',
-            link: { pathname: 'trans-app/unloading-tracker', query: { actionType: 'report' } }
-        }
-    ]
-};
-
-// Configuration for Loaded category reported
-const loadedReportedBehavior: FilterConfig = {
-    showAdminLoadingPlanner: true,
-    adminPlannerProps: { trigger: 'Order', type: 'new' },
-    showDropdown: true,
-    dropdownItems: [
-        ...getUpdateItems(),
-        {
-            label: 'Unloaded',
-            action: 'link',
-            link: { pathname: 'trans-app/unloading-tracker', query: { actionType: 'unload' } }
-        }
-    ]
-};
-
-// Configuration for EmptyForLoading category on way
-const emptyOnWayBehavior: FilterConfig = {
-    showAdminLoadingPlanner: true,
-    adminPlannerProps: { trigger: 'Divert', type: 'divert' },
-    showDropdown: true,
-    dropdownItems: [
-        ...getUpdateItems(),
-        {
-            label: 'Change Destination',
-            action: 'link',
-            link: { pathname: 'trans-app/loading-tracker', query: { actionType: 'destinationChange' } }
-        },
-        {
-            label: 'Reported',
-            action: 'link',
-            link: { pathname: 'trans-app/loading-tracker', query: { actionType: 'report' } }
-        }
-    ]
-};
-
-// Configuration for EmptyForLoading factor in / Depot Standing
-const outsideStandingBehavior: FilterConfig = {
-    showAdminLoadingPlanner: true,
-    adminPlannerProps: { trigger: 'Divert', type: 'divert' },
-    showDropdown: true,
-    dropdownItems: [
-        ...getUpdateItems(),
-        {
-            label: 'Change Destination',
-            action: 'link',
-            link: { pathname: 'trans-app/loading-tracker', query: { actionType: 'destinationChange' } }
-        },
-        {
-            label: 'Give Plan',
-            action: 'link',
-            link: { pathname: 'trans-app/loading-planner', query: {} }
-        }
-    ]
-};
-
-// Configuration for Other Standing / Maintenance
-const otherStandingBehavior: FilterConfig = {
-    showAdminLoadingPlanner: true,
-    adminPlannerProps: { trigger: 'Order', type: 'divert' },
-    showDropdown: true,
-    dropdownItems: [
-        ...getUpdateItems(["In Depot", "In Distillery", "Loaded"]),
-        {
-            label: 'Change Destination',
-            action: 'link',
-            link: { pathname: 'trans-app/loading-tracker', query: { actionType: 'destinationChange' } }
-        }
-    ]
-};
-
-// Configuration for EmptyForLoading / Depot Standing (Give Plan)
-// MATCHES LEGACY: emptyForLoading_depo_standing (Note 'depo' spelling)
-const depotStandingBehavior: FilterConfig = {
-    showAdminLoadingPlanner: true,
-    adminPlannerProps: { trigger: 'Order', type: 'new' },
-    showDropdown: true,
-    dropdownItems: [
-        ...getUpdateItems(["In Depot", "In Distillery", "Loaded"]),
-        {
-            label: 'Give Plan',
-            action: 'link',
-            link: { pathname: 'trans-app/loading-planner', query: {} }
-        }
-    ]
-};
-
-// Configuration for EmptyForLoading / Reported (Change Destination)
-const reportedBehavior: FilterConfig = {
-    showAdminLoadingPlanner: true,
-    adminPlannerProps: { trigger: 'Divert', type: 'divert' },
-    showDropdown: true,
-    dropdownItems: [
-        ...getUpdateItems(),
-        {
-            label: 'Change Destination',
-            action: 'link',
-            link: { pathname: 'trans-app/loading-tracker', query: { actionType: 'destinationChange' } }
-        }
-    ]
-};
-
 // Standard behavior (fallback if needed)
 const standardBehavior: FilterConfig = {
     showAdminLoadingPlanner: true,
@@ -162,8 +44,6 @@ export const defaultConfig: FilterConfig = {
     showDropdown: false,
     dropdownItems: null,
 };
-
-// --- The Config Mapping & Logic ---
 
 export const getFilterConfig = (filterKey: string, isAdmin: boolean): FilterConfig => {
     const key = (filterKey || "").toLowerCase();
@@ -229,7 +109,12 @@ export const getFilterConfig = (filterKey: string, isAdmin: boolean): FilterConf
             adminPlannerProps: { trigger: 'Order', type: 'divert' },
             showDropdown: true,
             dropdownItems: [
-                ...getUpdateItems(["In Depot"]),
+                ...getUpdateItems(["In Depot", "Loaded"]),
+                {
+                    label: 'Loaded',
+                    action: 'link',
+                    link: { pathname: 'trans-app/loading-tracker', query: { actionType: 'loaded' } }
+                },
                 {
                     label: 'Change Destination',
                     action: 'link',
