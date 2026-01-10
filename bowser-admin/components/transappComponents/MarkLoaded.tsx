@@ -15,6 +15,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { SearchModal } from '../SearchModal'
+import { CustomerFormData } from './CustomerForm'
 
 interface MarkLoadedProps {
     selectedTrip: TankersTrip
@@ -40,7 +41,7 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
     });
     const [search, setSearch] = useState<string>("")
     const [stackHolders, setStackHolders] = useState<ComboboxOption[]>([])
-    const [fullStackHolders, setFullStackHolders] = useState<{ _id: string, Location: string, InstitutionName: string }[]>([])
+    const [fullStackHolders, setFullStackHolders] = useState<CustomerFormData[]>([])
     const [stackHolder, setStackHolder] = useState<string>("")
     const [Driver, setDriver] = useState<string>("");
     const [targetTime, setTargetTime] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
@@ -56,6 +57,8 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
     const [goods, setGoods] = useState<ComboboxOption[]>([])
     const [fullGoods, setFullGoods] = useState<{ _id: string, GoodsName: string, Division: number }[]>([])
     const [good, setGood] = useState<string>("")
+    const [availableRoutes, setAvailableRoutes] = useState<CustomerFormData[]>([])
+    const [selectedRoute, setSelectedRoute] = useState<string>("")
 
     useEffect(() => {
         let user = localStorage.getItem("adminUser")
@@ -109,15 +112,24 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
         setManagerComment("#Loaded ");
         setDriver(selectedTrip.StartDriver)
         setDriverMobile(selectedTrip.StartDriverMobile)
+
+        if (selectedTrip && selectedTrip.EndTo) {
+            toast.success("Trip data loaded. Fetching routes...");
+            fetchRoutes();
+        }
     }, [selectedTrip])
+
+    // useEffect(() => {
+    //     setSearch(selectedRoute.split('To ')[1])
+    // }, [selectedRoute])
 
     const fetchStackHolders = async () => {
         try {
-            const response = await fetch(`${BASE_URL}/trans-app/stack-holders?params=${search}`);
+            const response = await fetch(`${BASE_URL}/trans-app/customers?search=${search}`);
             const data = await response.json();
-            const formattedData: ComboboxOption[] = data.map((item: { _id: string, InstitutionName: string }) => ({
-                value: item._id,
-                label: item.InstitutionName
+            const formattedData: ComboboxOption[] = data.map((item: { _id: string, Name: string }) => ({
+                value: item.Name,
+                label: item.Name
             }));
             setStackHolders(formattedData);
             setFullStackHolders(data);
@@ -131,7 +143,7 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
     }, [search]);
 
     useEffect(() => {
-        setLocation(fullStackHolders.find((holder) => holder._id === stackHolder)?.Location)
+        setLocation(fullStackHolders.find((holder) => holder.Name === stackHolder)?.Location)
     }, [stackHolder, fullStackHolders, stackHolders])
 
     const fetchGoods = async () => {
@@ -161,6 +173,7 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
         setGood('')
         setQty(parseFloat(''))
         setManagerComment('#Loaded ')
+        setSelectedRoute('')
         setOrderedBy('')
         setProposedBy('')
     }
@@ -209,18 +222,12 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
             const data = {
                 driverName: Driver,
                 driverMobile,
-                EndDestination: fullStackHolders.find((holder) => holder._id == stackHolder)?.InstitutionName,
-                EndLocation: location,
-                EndDate: loadDate,
-                GoodsLoaded: fullGoods.find((each) => each._id == good)?.GoodsName,
-                QtyLoaded: qty,
-                OdometerOnTrackUpdate: odometer,
-                LocationOnTrackUpdate: fullStackHolders.find((holder) => holder._id == stackHolder)?.InstitutionName,
                 TrackUpdateDate: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
                 ManagerComment,
                 targetTime,
                 orderedBy,
                 proposedBy,
+                Route: selectedRoute,
             }
             const url = `${BASE_URL}/trans-app/trip-update/loaded`;
             const tripId = selectedTrip._id;
@@ -245,6 +252,65 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
             });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchRoutes = async () => {
+        try {
+            const response = await fetch(`${BASE_URL}/trans-app/customers?search=${selectedTrip.EndTo.split(':')[0]}`);
+            const data: any[] = await response.json();
+            const routes: any[] = [];
+            data.forEach(customer => {
+                if (customer.ROuteDetention) {
+                    customer.ROuteDetention.forEach((rd: any) => {
+                        routes.push({
+                            ...rd,
+                            customerName: customer.CustomerName || customer.Name,
+                            customerId: customer._id
+                        });
+                    });
+                }
+            });
+            setAvailableRoutes(routes);
+            if (routes.length > 0) {
+                openRouteSelection(routes);
+            } else {
+                toast.error("No routes found for this destination.");
+            }
+        } catch (error) {
+            console.error('Error fetching routes:', error);
+            toast.error("Failed to fetch routes.");
+        }
+    }
+
+    const openRouteSelection = (routes: any[]) => {
+        if (routes.length > 0) {
+            setSearchModalConfig({
+                isOpen: true,
+                title: "Select a Route",
+                items: routes,
+                onSelect: (route: any) => {
+                    setSelectedRoute(route.Route);
+                    setSearch(route.Route.split('To ')[1])
+                    setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
+                },
+                renderItem: (route) => (
+                    <div className="flex flex-col text-left w-full h-[80px]">
+                        <span className="font-bold">{route.Route}</span>
+                        <span className="text-xs text-muted-foreground">{route.customerName}</span>
+                        {route.Detention && route.Detention.length > 0 && (
+                            <div className="mt-1 text-xs border-t pt-1">
+                                {route.Detention.map((det: any, idx: number) => (
+                                    <div key={idx}>
+                                        {det.Product}: ₹{det.Charges} <br /> {det.DetMethod}, {det.DetDays} days
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ),
+                keyExtractor: (route: any) => `${route.customerId}-${route.Route}`,
+            });
         }
     };
 
@@ -311,6 +377,24 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
                     <Input type='string' id='location' readOnly onChange={(e) => setLocation(e.target.value)} value={location} className={`${!location ? "bg-yellow-100" : ""}`} />
                 </div>
 
+                <div>
+                    <Label htmlFor="route">Route</Label>
+                    <Input
+                        id="route"
+                        value={selectedRoute}
+                        readOnly
+                        onClick={() => {
+                            if (availableRoutes.length > 0) {
+                                openRouteSelection(availableRoutes);
+                            } else {
+                                fetchRoutes();
+                            }
+                        }}
+                        placeholder="Click to select route"
+                        className={`${!selectedRoute ? "bg-yellow-100" : ""}`}
+                    />
+                </div>
+                
                 <div>
                     <Label htmlFor="dateTime">Load Date Time</Label>
                     <Input

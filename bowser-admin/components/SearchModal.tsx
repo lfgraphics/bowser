@@ -31,7 +31,7 @@ export function SearchModal<T>({
           {items.map((item) => (
             <Button
               key={keyExtractor(item)}
-              className="justify-start w-full"
+              className="justify-start w-full h-auto"
               variant="outline"
               onClick={() => onSelect(item)}
             >
