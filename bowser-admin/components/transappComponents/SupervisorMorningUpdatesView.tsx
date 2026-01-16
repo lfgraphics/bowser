@@ -122,6 +122,8 @@ export default function SupervisorMorningUpdatesView({ userId, className = "" }:
 
       const data = await response.json();
 
+      console.table(data.data);
+
       if (resetData || page === 1) {
         setMorningUpdates(data.data || []);
       } else {
@@ -283,9 +285,9 @@ export default function SupervisorMorningUpdatesView({ userId, className = "" }:
         )}
 
         {Object.entries(groupedUpdates).map(([date, updates]) => (
-          <Card key={date}>
+          <Card key={date} className='gap-0'>
             <CardHeader
-              className="hover:bg-muted cursor-pointer"
+              className="hover:bg-muted cursor-pointer pt-2"
               onClick={() => toggleSection(date)}
             >
               <CardTitle className="flex items-center justify-between">
@@ -320,52 +322,53 @@ export default function SupervisorMorningUpdatesView({ userId, className = "" }:
                           <ChevronDown className="h-5 w-5" />
                         )}
                       </div>
-                    </CardHeader> */}
+                    </CardHeader>
 
                     {expandedUpdates[update._id] && (
-                      <CardContent className="pt-0">
-                        <div className="rounded-md overflow-hidden">
-                          <Table>
-                            <TableHeader>
-                              <TableRow className="bg-muted/50">
-                                <TableHead className="font-semibold">Sr No.</TableHead>
-                                <TableHead className="font-semibold">Vehicle No.</TableHead>
-                                <TableHead className="font-semibold">Planned For</TableHead>
-                                <TableHead className="font-semibold">At</TableHead>
-                                <TableHead className="font-semibold">Unloaded At</TableHead>
-                                <TableHead className="font-semibold">Remark</TableHead>
+                    )} */}
+
+                    <CardContent className="pt-0">
+                      <div className="rounded-md overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-muted/50">
+                              <TableHead className="font-semibold">Sr No.</TableHead>
+                              <TableHead className="font-semibold">Vehicle No.</TableHead>
+                              <TableHead className="font-semibold">Planned For</TableHead>
+                              <TableHead className="font-semibold">At</TableHead>
+                              <TableHead className="font-semibold">Unloaded At</TableHead>
+                              <TableHead className="font-semibold">Remark</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {update.report.map((vehicle, index) => (
+                              <TableRow key={`${vehicle.vehicleNo}-${index}`} className="hover:bg-muted/30">
+                                <TableCell className="font-medium text-center">
+                                  {index + 1}
+                                </TableCell>
+                                <TableCell className="font-bold text-primary">
+                                  {vehicle.vehicleNo}
+                                </TableCell>
+                                <TableCell>
+                                  {getPlannedFor(vehicle.trip?.EndTo!)}
+                                </TableCell>
+                                <TableCell>
+                                  {getCurrentlyAt(toProperTitleCase(vehicle.location))}
+                                </TableCell>
+                                <TableCell>
+                                  {toProperTitleCase(vehicle.trip?.StartFrom!)}
+                                </TableCell>
+                                <TableCell className="max-w-xs">
+                                  <div className="truncate" title={formatRemark(vehicle.remark)}>
+                                    {formatRemark(vehicle.remark)}
+                                  </div>
+                                </TableCell>
                               </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {update.report.map((vehicle, index) => (
-                                <TableRow key={`${vehicle.vehicleNo}-${index}`} className="hover:bg-muted/30">
-                                  <TableCell className="font-medium text-center">
-                                    {index + 1}
-                                  </TableCell>
-                                  <TableCell className="font-bold text-primary">
-                                    {vehicle.vehicleNo}
-                                  </TableCell>
-                                  <TableCell>
-                                    {getPlannedFor(vehicle.trip?.EndTo!)}
-                                  </TableCell>
-                                  <TableCell>
-                                    {getCurrentlyAt(toProperTitleCase(vehicle.location))}
-                                  </TableCell>
-                                  <TableCell>
-                                    {toProperTitleCase(vehicle.trip?.StartFrom!)}
-                                  </TableCell>
-                                  <TableCell className="max-w-xs">
-                                    <div className="truncate" title={formatRemark(vehicle.remark)}>
-                                      {formatRemark(vehicle.remark)}
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      </CardContent>
-                    )}
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
                   </Card>
                 ))}
               </CardContent>

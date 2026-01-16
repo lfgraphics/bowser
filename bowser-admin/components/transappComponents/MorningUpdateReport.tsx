@@ -220,6 +220,7 @@ const MorningUpdateReport: React.FC<Props> = ({ isOpen, onClose, reportData }) =
             });
         } finally {
             setIsGenerating(false);
+            handleDownload()
         }
     };
 
