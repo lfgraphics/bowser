@@ -163,10 +163,10 @@ router.post("/leave", async (req, res) => {
 
         if (!trip) {
             console.log(`[DRIVER-LEAVE] No trip found for vehicle ${vehicleNo}`);
-            return res.status(404).json({ error: "No trip found for given vehicle and date" });
+            // return res.status(404).json({ error: "No trip found for given vehicle and date" });
         }
         console.log(`[DRIVER-LEAVE] Found trip ${trip._id} for vehicle ${vehicleNo}`);
-        const tripId = trip._id;
+        const tripId = trip?._id || null;
 
         // Update latest driver log for this driver & vehicle
         console.log(`[DRIVER-LEAVE] Updating driver log for driver ${driverId} on vehicle ${vehicleNo}`);
