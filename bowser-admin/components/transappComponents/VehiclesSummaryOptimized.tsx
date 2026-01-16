@@ -652,9 +652,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     }
                                     {filter == 'loaded_reported' &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow onClick={(e: React.MouseEvent) => {
-                                                const el = e.target as HTMLElement | null;
-                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Depot" ? "bg-yellow-200 dark:text-background hover:bg-yellow-200" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Depot" ? "bg-yellow-200 dark:text-background hover:bg-yellow-200" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
@@ -719,10 +717,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     }
                                     {(filter == 'emptyForLoading_on_way' || filter == 'emptyOther_on_way') &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow onClick={(e: React.MouseEvent) => {
-                                                const el = e.target as HTMLElement | null;
-                                                // if the click happened inside the dropdown, don't open the drawer
-                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
@@ -789,10 +784,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     }
                                     {(filter == 'emptyForLoading_outside_standing' || filter == 'emptyForLoading_factory_in' || filter == 'underMaintenance_outside_standing' || filter == 'underMaintenance_factory_in') &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow onClick={(e: React.MouseEvent) => {
-                                                const el = e.target as HTMLElement | null;
-                                                // if the click happened inside the dropdown, don't open the drawer
-                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
@@ -868,10 +860,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     }
                                     {(filter == 'emptyOther_standing' || filter == 'emptyOther_other_standing' || filter == 'emptyOther_depot_standing' || filter.startsWith('underMaintenance')) &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow onClick={(e: React.MouseEvent) => {
-                                                const el = e.target as HTMLElement | null;
-                                                // if the click happened inside the dropdown, don't open the drawer
-                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
@@ -937,10 +926,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     }
                                     {filter == 'loaded' &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow onClick={(e: React.MouseEvent) => {
-                                                const el = e.target as HTMLElement | null;
-                                                // if the click happened inside the dropdown, don't open the drawer
-                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
@@ -968,10 +954,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     }
                                     {filter == 'emptyForLoading_reported' &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow onClick={(e: React.MouseEvent) => {
-                                                const el = e.target as HTMLElement | null;
-                                                // if the click happened inside the dropdown, don't open the drawer
-                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
@@ -1031,10 +1014,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     }
                                     {(filter == 'emptyForLoading_depo_standing' || filter == 'emptyOther_loaded') &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow onClick={(e: React.MouseEvent) => {
-                                                const el = e.target as HTMLElement | null;
-                                                // if the click happened inside the dropdown, don't open the drawer
-                                            }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
