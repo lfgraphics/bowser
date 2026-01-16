@@ -271,7 +271,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                         aria-label="Search vehicles"
                     />
                 </div>
-                <Button 
+                <Button
                     variant="outline"
                     size="sm"
                     disabled={isGeneratingImage}
@@ -285,15 +285,15 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                             // Store original styles
                             const originalMaxHeight = tableRef.current.style.maxHeight;
                             const originalOverflow = tableRef.current.style.overflow;
-                            
+
                             // Temporarily remove height constraint and show all pages
                             tableRef.current.style.maxHeight = 'none';
                             tableRef.current.style.overflow = 'visible';
-                            
+
                             // Temporarily set page size to show all records
                             const originalPageSize = pageSize;
                             setPageSize(filteredVehicles.length);
-                            
+
                             // Wait for layout to update
                             await new Promise(resolve => setTimeout(resolve, 200));
 
@@ -339,7 +339,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                             const blob = await response.blob();
                             const filename = `Vehicle_Management_${formatDate(new Date())}.png`;
                             const url = URL.createObjectURL(blob);
-                            
+
                             // Show preview dialog
                             setImagePreview({ url, blob, filename });
                             toast.success('Report generated successfully!');
@@ -440,7 +440,17 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                                         <div className="flex flex-col">
                                             <span>{
                                                 v?.vehicle?.tripDetails?.driver === "no driver"
-                                                    ? highlight(v?.vehicle?.tripDetails?.driver?.toUpperCase())
+                                                    ? <>
+                                                        {
+                                                            <>
+                                                                {highlight(v?.vehicle?.tripDetails?.driver?.toUpperCase())}
+                                                                <br />
+                                                                {v?.lastDriverLog?.leaving?.tillDate && (
+                                                                    <span><strong>Till: </strong>{formatDate(v?.lastDriverLog?.leaving?.tillDate).split(",")[0]}</span>
+                                                                )}
+                                                            </>
+                                                        }
+                                                    </>
                                                     : highlight(v?.driver?.name || v?.vehicle?.tripDetails?.driver)
                                             }</span>
                                             {(() => {
@@ -670,7 +680,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                             Preview your generated report. You can share or download it below.
                         </DialogDescription>
                     </DialogHeader>
-                    
+
                     {imagePreview && (
                         <div className="flex flex-col items-center space-y-4">
                             <div className="border rounded-lg overflow-hidden shadow-lg max-w-full">
@@ -719,7 +729,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                                     try {
                                         const file = new File([imagePreview.blob], imagePreview.filename, { type: 'image/png' });
                                         const nav: any = typeof navigator !== "undefined" ? navigator : undefined;
-                                        
+
                                         if (nav && typeof nav.share === "function") {
                                             await nav.share({
                                                 files: [file],
