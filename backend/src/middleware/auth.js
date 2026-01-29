@@ -64,7 +64,7 @@ export const checkAdminAccess = async (req, res, next) => {
 
         // Check if it's a trans app admin (would need to check trans app user model)
         // For now, we'll assume trans app users with admin role are allowed
-        if (user.type === 'transapp' && user.role === 'admin') {
+        if (user.roles.includes('Trans App')) {
             req.isTransAppAdmin = true;
             return next();
         }
