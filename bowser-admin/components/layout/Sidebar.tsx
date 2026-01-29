@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideSquareArrowOutUpRight, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List, Bell, FileUp, FileDown, AudioWaveform, Home, UserCogIcon, User2Icon, TextQuote, WifiCog } from 'lucide-react'
+import { ListCheck, LogOut, Menu, X, CaravanIcon, User2, Fuel, ListChecks, AlignJustify, FileSpreadsheet, UserRoundCog, LucideSquareArrowOutUpRight, KeyRound, LayoutDashboard, Download, ArrowLeftRight, List, Bell, FileUp, FileDown, AudioWaveform, Home, UserCogIcon, User2Icon, TextQuote, WifiCog, Waypoints, MapPin, MapIcon, Target } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 import ThemeChanger from '../ThemeChanger'
@@ -14,6 +14,37 @@ import {
 } from "@/components/ui/tooltip"
 import { User } from '@/types/auth'
 import OnlyAllowed from '../OnlyAllowed'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion'
+import { GearIcon } from '@radix-ui/react-icons'
+
+const CampManagementUI = ({ toggleSidebar }: { toggleSidebar: () => void }) => {
+  return (
+    <>
+      <li onClick={toggleSidebar}>
+        <Link href="/camp/admin/dashboard">
+          <Button
+            variant="ghost"
+            className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/camp/admin/dashboard" ? "bg-primary text-primary-foreground" : ""}`}
+          >
+            <LayoutDashboard className="mr-2 w-4 h-4" />
+            Camp Dashboard
+          </Button>
+        </Link>
+      </li>
+      <li onClick={toggleSidebar}>
+        <Link href="/camp/admin/users">
+          <Button
+            variant="ghost"
+            className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/camp/admin/users" ? "bg-primary text-primary-foreground" : ""}`}
+          >
+            <UserRoundCog className="mr-2 w-4 h-4" />
+            Manage Camp Users
+          </Button>
+        </Link>
+      </li>
+    </>
+  )
+}
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false)
@@ -66,6 +97,9 @@ export function Sidebar() {
       return !prev;
     });
   }
+
+  const isAdmin = user?.Division === "EthanolAdmin";
+  const isTransAppUser = user?.roles.includes("Trans App");
 
   return (
     <>
@@ -303,17 +337,68 @@ export function Sidebar() {
                   </li>
                 </OnlyAllowed>
                 <OnlyAllowed allowedRoles={["Admin", "Data Entry"]}>
-                  <li onClick={toggleSidebar}>
-                    <Link href="/customers-crud">
-                      <Button
-                        variant="ghost"
-                        className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/customers-crud" ? "bg-primary text-primary-foreground" : ""}`}
-                      >
-                        <WifiCog className="mr-2 w-4 h-4" />
-                        Manage Customers
-                      </Button>
-                    </Link>
-                  </li>
+                  <Accordion type="single" collapsible className='w-full p-3'>
+                    <AccordionItem value="item-1">
+                      <AccordionTrigger> <GearIcon className="mr-2 w-4 h-4" /> Manage TransApp</AccordionTrigger>
+                      <AccordionContent>
+                        <li onClick={toggleSidebar}>
+                          <Link href="/customers-crud">
+                            <Button
+                              variant="ghost"
+                              className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/customers-crud" ? "bg-primary text-primary-foreground" : ""}`}
+                            >
+                              <WifiCog className="mr-2 w-4 h-4" />
+                              Manage Customers
+                            </Button>
+                          </Link>
+                        </li>
+                        <li onClick={toggleSidebar}>
+                          <Link href="/routes-crud">
+                            <Button
+                              variant="ghost"
+                              className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/routes-crud" ? "bg-primary text-primary-foreground" : ""}`}
+                            >
+                              <Waypoints className="mr-2 w-4 h-4" />
+                              Manage Routes
+                            </Button>
+                          </Link>
+                        </li>
+                        <li onClick={toggleSidebar}>
+                          <Link href="/cities-crud">
+                            <Button
+                              variant="ghost"
+                              className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/routes-crud" ? "bg-primary text-primary-foreground" : ""}`}
+                            >
+                              <MapIcon className="mr-2 w-4 h-4" />
+                              Manage Cities
+                            </Button>
+                          </Link>
+                        </li>
+                        <li onClick={toggleSidebar}>
+                          <Link href="/locations-crud">
+                            <Button
+                              variant="ghost"
+                              className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/locations-crud" ? "bg-primary text-primary-foreground" : ""}`}
+                            >
+                              <Target className="mr-2 w-4 h-4" />
+                              Manage Locations
+                            </Button>
+                          </Link>
+                        </li>
+                        <li onClick={toggleSidebar}>
+                          <Link href="/destinations-crud">
+                            <Button
+                              variant="ghost"
+                              className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/destinations-crud" ? "bg-primary text-primary-foreground" : ""}`}
+                            >
+                              <MapPin className="mr-2 w-4 h-4" />
+                              Manage Destinations
+                            </Button>
+                          </Link>
+                        </li>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
                 </OnlyAllowed>
                 <OnlyAllowed
                   allowedRoles={[
@@ -462,18 +547,13 @@ export function Sidebar() {
                   </li>
                 </OnlyAllowed>
                 {/* Camp Management - Available for Trans App Admins and Camp Admins */}
-                <OnlyAllowed allowedRoles={["Admin", "Trans App", "admin"]}>
-                  <li onClick={toggleSidebar}>
-                    <Link href="/camp/admin/dashboard">
-                      <Button
-                        variant="ghost"
-                        className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/camp/admin/dashboard" ? "bg-primary text-primary-foreground" : ""}`}
-                      >
-                        <LayoutDashboard className="mr-2 w-4 h-4" />
-                        Camp Dashboard
-                      </Button>
-                    </Link>
-                  </li>
+                {isTransAppUser ? isAdmin &&
+                  <CampManagementUI toggleSidebar={toggleSidebar} />
+                  :
+                  null
+                }
+                <OnlyAllowed allowedRoles={["Admin", "admin"]}>
+                  <CampManagementUI toggleSidebar={toggleSidebar} />
                 </OnlyAllowed>
                 <OnlyAllowed allowedRoles={["officer"]}>
                   <li onClick={toggleSidebar}>
@@ -484,19 +564,6 @@ export function Sidebar() {
                       >
                         <LayoutDashboard className="mr-2 w-4 h-4" />
                         Dashboard
-                      </Button>
-                    </Link>
-                  </li>
-                </OnlyAllowed>
-                <OnlyAllowed allowedRoles={["Admin", "Trans App", "admin"]}>
-                  <li onClick={toggleSidebar}>
-                    <Link href="/camp/admin/users">
-                      <Button
-                        variant="ghost"
-                        className={`justify-start w-full ${typeof window !== "undefined" && window.location.pathname === "/camp/admin/users" ? "bg-primary text-primary-foreground" : ""}`}
-                      >
-                        <UserRoundCog className="mr-2 w-4 h-4" />
-                        Manage Camp Users
                       </Button>
                     </Link>
                   </li>
