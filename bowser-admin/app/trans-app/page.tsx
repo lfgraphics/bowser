@@ -26,6 +26,7 @@ import { searchItems } from '@/utils/searchUtils'
 import Loading from '../loading'
 import { TransAppContext } from "./layout";
 import SupervisorMorningUpdatesView from '@/components/transappComponents/SupervisorMorningUpdatesView'
+import { InstallPrompt } from '../page'
 
 type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary" | "Morning Updates" | "Supervisors Morning Updates";
 
@@ -429,6 +430,9 @@ export default function Page() {
           }
         </div>
       )}
+
+      <InstallPrompt />
+
       <SearchModal
         isOpen={searchModalConfig.isOpen}
         onClose={() => setSearchModalConfig((prev) => ({ ...prev, isOpen: false }))}
