@@ -83,13 +83,6 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
         return base;
     };
 
-    // Log vehicle state updates (non-blocking)
-    useEffect(() => {
-        if (vehicles.length > 0) {
-            console.log('Vehicles state updated:', vehicles);
-        }
-    }, [vehicles]);
-
     useEffect(() => {
         if (!user?._id) return;
 

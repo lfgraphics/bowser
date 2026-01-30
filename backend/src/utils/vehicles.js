@@ -75,7 +75,11 @@ const getLatestVehicleUpdates = async (vehicleNumbers = []) => {
         }
 
         if (latest.comment) {
-            updatesMap.set(vehicleNo, latest);
+            const current = updatesMap.get(vehicleNo);
+            const isMoreRecent = !current || new Date(latest.dateTime) > new Date(current.dateTime);
+            if (isMoreRecent) {
+                updatesMap.set(vehicleNo, latest);
+            }
         }
     }
 
