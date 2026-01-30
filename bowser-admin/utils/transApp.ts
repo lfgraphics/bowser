@@ -21,7 +21,7 @@ export const fetchUnloadedButPlanned = async (userId: string) => { // loading tr
 }
 
 export const fetchUserVehicles = async (userId: string, isAdmin: boolean) => {
-    const response = await fetch(`${BASE_URL}/trans-app/vehicles/user-detailed-vehicles?userId=${userId}&isAdmin=${isAdmin}`)
+    const response = await fetch(`${BASE_URL}/trans-app/vehicles/user-detailed-vehicles?userId=${userId}&isAdmin=${isAdmin}`, { cache: "no-store" })
     const vehiclesData: DetailedVehicleData[] = await response.json()
     return vehiclesData
 }

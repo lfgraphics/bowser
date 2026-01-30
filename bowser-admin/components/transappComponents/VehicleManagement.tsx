@@ -88,10 +88,8 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
 
         if (cache.vehicleDetails && Object.keys(cache.vehicleDetails).length > 0) {
             setVehicles(Object.values(cache.vehicleDetails));
-            return;
         }
 
-        // Otherwise fetch and update cache
         setIsLoadingVehicles(true);
         fetchUserVehicles(user._id, user?.Division?.includes('Admin') || false)
             .then((data) => {
