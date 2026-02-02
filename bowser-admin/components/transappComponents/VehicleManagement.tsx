@@ -245,6 +245,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
     const pageEnd = Math.min(total, pageStart + pageSize);
     const pageVehicles = useMemo(() => filteredVehicles.slice(pageStart, pageEnd), [filteredVehicles, pageStart, pageEnd]);
 
+    console.log(pageVehicles);
     // (virtualization removed) no need for dynamic column span now
 
     return (
@@ -353,10 +354,10 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                             <TableHead sortable dataType="number" className="bg-background">Sn</TableHead>
                             <TableHead sortable dataType="string" filterable className="bg-background">Vehicle no.</TableHead>
                             <TableHead sortable dataType="number" filterable className="bg-background">Capacity</TableHead>
-                            <TableHead sortable dataType="string" filterable className="bg-background flex flex-row gap-3 items-center">Driver</TableHead>
+                            <TableHead className="bg-background flex flex-row gap-3 items-center">Driver</TableHead>
                             {hasAnyNoDriver && (
                                 <>
-                                    <TableHead sortable dataType="number" filterable className="bg-background">No Driver Since</TableHead>
+                                    <TableHead className="bg-background">No Driver Since</TableHead>
                                     <TableHead sortable dataType="string" filterable className="bg-background">Location</TableHead>
                                 </>
                             )}
@@ -435,6 +436,8 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
                                                         {
                                                             <>
                                                                 {highlight(v?.vehicle?.tripDetails?.driver?.toUpperCase())}
+                                                                <br />
+                                                                <span className="text-xs text-muted-foreground">{highlight(v?.driver?.name)} {v?.driver?.mobile && ` - ${highlight(v?.driver?.mobile)}`}</span>
                                                                 <br />
                                                                 {v?.lastDriverLog?.leaving?.tillDate && (
                                                                     <span><strong>Till: </strong>{formatDate(v?.lastDriverLog?.leaving?.tillDate).split(",")[0]}</span>
