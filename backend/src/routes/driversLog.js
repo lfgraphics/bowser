@@ -170,19 +170,15 @@ router.post("/leave", async (req, res) => {
 
         // Update latest driver log for this driver & vehicle
         console.log(`[DRIVER-LEAVE] Updating driver log for driver ${driverId} on vehicle ${vehicleNo}`);
-        const log = await DriversLog.findOneAndUpdate(
-            { vehicleNo, driver: driverId },
-            {
-                $set: {
-                    leaving: {
-                        ...leaving,
-                        from: leavingDate,
-                        tripId
-                    }
-                }
-            },
-            { new: true, upsert: true, session }
-        );
+        const log = await new DriversLog({
+            vehicleNo,
+            driver: driverId,
+            leaving: {
+                ...leaving,
+                from: leavingDate,
+                tripId
+            }
+        }).save({ session });
 
         if (!log) {
             console.log(`[DRIVER-LEAVE] Failed to update driver log for driver ${driverId}`);
