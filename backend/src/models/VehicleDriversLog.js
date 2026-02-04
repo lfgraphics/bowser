@@ -24,7 +24,7 @@ const driversLogSchema = new Schema({
             odometer: { type: Number, required: true },
             location: { type: String, required: true },
             tripId: { type: Schema.Types.ObjectId, ref: "TankersTrip", required: false },
-            vehicleLoadStatus: { type: Number, required: true },
+            vehicleLoadStatus: { type: Number, required: false },
             remark: { type: String }
         }, { _id: false }),
         required: false
