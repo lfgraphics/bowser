@@ -347,7 +347,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     key={key}
                                     mainFilterKey={key}
                                     icon={item.icon}
-                                    filters={item.filters.map((f: any) => ({
+                                    filters={(item.filters || []).map((f: any) => ({
                                         icon: f.icon,
                                         count: f.count,
                                         label: f.label || f.lable || "",
@@ -594,7 +594,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                 <TableBody>
                                     {(filter == 'loaded_total_on_way' || filter == 'loaded_total_loaded' || filter == 'loaded') &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.driverStatus == 0 ? "text-destructive" : ""}>
+                                            <TableRow key={trip?._id} className={trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-orange-300" : trip?.driverStatus == 0 ? "text-destructive" : ""}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
@@ -652,7 +652,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     }
                                     {filter == 'loaded_reported' &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Depot" ? "bg-yellow-200 dark:text-background hover:bg-yellow-200" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-orange-300" : trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "In Depot" ? "bg-yellow-200 dark:text-background hover:bg-yellow-200" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
@@ -717,7 +717,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     }
                                     {(filter == 'emptyForLoading_on_way' || filter == 'emptyOther_on_way') &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-orange-300" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
@@ -784,7 +784,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     }
                                     {(filter == 'emptyForLoading_outside_standing' || filter == 'emptyForLoading_factory_in' || filter == 'underMaintenance_outside_standing' || filter == 'underMaintenance_factory_in') &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-orange-300" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
@@ -860,7 +860,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     }
                                     {(filter == 'emptyOther_standing' || filter == 'emptyOther_other_standing' || filter == 'emptyOther_depot_standing' || filter.startsWith('underMaintenance')) &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-orange-300" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
@@ -926,7 +926,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     }
                                     {filter == 'loaded' &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-orange-300" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
@@ -954,7 +954,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     }
                                     {filter == 'emptyForLoading_reported' &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-orange-300" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
@@ -1014,7 +1014,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                     }
                                     {(filter == 'emptyForLoading_depo_standing' || filter == 'emptyOther_loaded') &&
                                         (paginatedData as any[]).map((trip: any, index: number) =>
-                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                            <TableRow key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-orange-300" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                 <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                                                 <TableCell>
                                                     <img
@@ -1205,7 +1205,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                                     if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link') && !el.closest('#adminorder')) {
                                                                         setViewingTrip(trip?._id)
                                                                     }
-                                                                }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                                                }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-orange-300" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                                     <TableCell>{trip?.VehicleNo}</TableCell>
                                                                     <TableCell>{trip?.capacity}</TableCell>
                                                                     <TableCell>{trip?.status}</TableCell>
@@ -1282,7 +1282,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                                     if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link') && !el.closest('#adminorder')) {
                                                                         setViewingTrip(trip?._id)
                                                                     }
-                                                                }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                                                }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-orange-300" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                                     <TableCell>{trip?.VehicleNo}</TableCell>
                                                                     <TableCell>{trip?.capacity}</TableCell>
                                                                     <TableCell>{trip?.status === "Standing" ? "Not Programmed" : trip?.status}</TableCell>
@@ -1385,7 +1385,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                                         if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link') && !el.closest('#adminorder')) {
                                                                             setViewingTrip(trip?._id)
                                                                         }
-                                                                    }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                                                    }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-orange-300" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                                         <TableCell>{index + 1}</TableCell>
                                                                         <TableCell>{trip?.VehicleNo}</TableCell>
                                                                         <TableCell>{trip?.capacity}</TableCell>
@@ -1481,7 +1481,7 @@ const VehiclesSummaryOptimized = ({ user }: { user: TransAppUser | undefined }) 
                                                                         if (!el?.closest || !el.closest('.dropdown') && !el.closest('.link') && !el.closest('#adminorder')) {
                                                                             setViewingTrip(trip?._id)
                                                                         }
-                                                                    }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-red-500" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
+                                                                    }} key={trip?._id} className={`${trip?.statusUpdate?.[trip?.statusUpdate?.length - 1]?.status === "Accident" ? "bg-orange-300" : ""} ${trip?.driverStatus === 0 ? "text-destructive" : ""}`}>
                                                                         <TableCell>{index + 1}</TableCell>
                                                                         <TableCell>{trip?.VehicleNo}</TableCell>
                                                                         <TableCell>{trip?.capacity}</TableCell>

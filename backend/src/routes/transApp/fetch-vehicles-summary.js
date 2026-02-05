@@ -70,7 +70,8 @@ router.get('/summary-stats/:userId', async (req, res) => {
                                                 ]
                                             }
                                         ]
-                                    }
+                                    },
+                                    { driverStatus: { $ne: 0 } }
                                 ]
                             }
                         },
@@ -99,8 +100,9 @@ router.get('/summary-stats/:userId', async (req, res) => {
                                     { "lastStatusUpdate.status": { $nin: ["Accident", "Breakdown", "Loaded"] } },
                                     { endToLower: { $not: { $regex: "gida office|maintenece|indian tanker|maintenance" } } },
                                     { driverStatus: { $ne: 0 } }
-                                ]
-                            }
+                                ],
+                                driverStatus: { $ne: 0 }
+                            },
                         },
                         { $count: 'count' }
                     ],
@@ -124,7 +126,8 @@ router.get('/summary-stats/:userId', async (req, res) => {
                                 $and: [
                                     { "LoadTripDetail.UnloadDate": { $exists: true } },
                                     { "LoadTripDetail.UnloadDate": { $ne: null } }
-                                ]
+                                ],
+                                driverStatus: { $ne: 0 }
                             }
                         },
                         { $count: 'count' }
@@ -136,6 +139,7 @@ router.get('/summary-stats/:userId', async (req, res) => {
                                 ReportingDate: { $exists: true },
                                 ReportingDate: { $ne: null },
                                 endToLower: { $regex: "gida office|indian tanker" },
+                                driverStatus: { $ne: 0 }
                             }
                         },
                         { $count: 'count' }
@@ -146,7 +150,8 @@ router.get('/summary-stats/:userId', async (req, res) => {
                                 LoadStatus: 0,
                                 ReportingDate: { $exists: true },
                                 ReportingDate: { $ne: null },
-                                "lastStatusUpdate.status": "Loaded"
+                                "lastStatusUpdate.status": "Loaded",
+                                driverStatus: { $ne: 0 }
                             }
                         },
                         { $count: 'count' }
@@ -164,6 +169,8 @@ router.get('/summary-stats/:userId', async (req, res) => {
                         {
                             $match: {
                                 endToLower: { $regex: "maintenece|maintenance" },
+                                "lastStatusUpdate.status": { $in: ["Maintenance"] },
+                                driverStatus: { $ne: 0 }
                             },
                         },
                         { $count: 'count' }
@@ -361,7 +368,8 @@ router.get('/bucket-data/:userId', async (req, res) => {
                                     ]
                                 }
                             ]
-                        }
+                        },
+                        { driverStatus: { $ne: 0 } }
                     ]
                 };
                 break;
@@ -379,13 +387,15 @@ router.get('/bucket-data/:userId', async (req, res) => {
                             $or: [
                                 { ReportingDate: { $exists: false } },
                                 { ReportingDate: { $eq: null } }
-                            ]
+                            ],
+                            driverStatus: { $ne: 0 }
                         },
                         // factoryIn
                         {
                             LoadStatus: 0,
                             ReportingDate: { $exists: true }, // implied $ne: null
-                            "lastStatusUpdate.status": "In Distillery"
+                            "lastStatusUpdate.status": "In Distillery",
+                            driverStatus: { $ne: 0 }
                         },
                         // outsideStanding
                         {
@@ -395,7 +405,8 @@ router.get('/bucket-data/:userId', async (req, res) => {
                                 { "lastStatusUpdate.status": { $nin: ["Accident", "Breakdown", "In Distillery"] } },
                                 { endToLower: { $not: { $regex: "gida office|maintenece|indian tanker|maintenance" } } },
                                 { driverStatus: { $ne: 0 } }
-                            ]
+                            ],
+                            driverStatus: { $ne: 0 }
                         }
                     ]
                 };
@@ -407,10 +418,11 @@ router.get('/bucket-data/:userId', async (req, res) => {
                     ReportingDate: { $exists: true },
                     ReportingDate: { $ne: null },
                     $and: [
-                        { "lastStatusUpdate.status": { $nin: ["Accident", "Breakdown", "In Distillery"] } },
+                        { "lastStatusUpdate.status": { $nin: ["Accident", "Breakdown", "Loaded"] } },
                         { endToLower: { $not: { $regex: "gida office|maintenece|indian tanker|maintenance" } } },
                         { driverStatus: { $ne: 0 } }
-                    ]
+                    ],
+                    driverStatus: { $ne: 0 }
                 };
                 break;
             case 'emptyForLoading_factory_in':
@@ -445,21 +457,24 @@ router.get('/bucket-data/:userId', async (req, res) => {
                             $and: [
                                 { "LoadTripDetail.UnloadDate": { $exists: true } },
                                 { "LoadTripDetail.UnloadDate": { $ne: null } }
-                            ]
+                            ],
+                            driverStatus: { $ne: 0 }
                         },
                         // otherStanding (Other Standing)
                         {
                             LoadStatus: 0,
                             ReportingDate: { $exists: true },
                             ReportingDate: { $ne: null },
-                            endToLower: { $regex: "gida office|indian tanker" }
+                            endToLower: { $regex: "gida office|indian tanker" },
+                            driverStatus: { $ne: 0 }
                         },
                         // loaded (Loaded)
                         {
                             LoadStatus: 0,
                             ReportingDate: { $exists: true },
                             ReportingDate: { $ne: null },
-                            "lastStatusUpdate.status": "Loaded"
+                            "lastStatusUpdate.status": "Loaded",
+                            driverStatus: { $ne: 0 }
                         }
                     ]
                 };
@@ -470,7 +485,8 @@ router.get('/bucket-data/:userId', async (req, res) => {
                     $and: [
                         { "LoadTripDetail.UnloadDate": { $exists: true } },
                         { "LoadTripDetail.UnloadDate": { $ne: null } }
-                    ]
+                    ],
+                    driverStatus: { $ne: 0 }
                 };
                 break;
             case 'emptyOther_other_standing':
@@ -479,7 +495,8 @@ router.get('/bucket-data/:userId', async (req, res) => {
                     LoadStatus: 0,
                     ReportingDate: { $exists: true },
                     ReportingDate: { $ne: null },
-                    endToLower: { $regex: "gida office|indian tanker" }
+                    endToLower: { $regex: "gida office|indian tanker" },
+                    driverStatus: { $ne: 0 }
                 };
                 break;
             case 'emptyOther_loaded':
@@ -488,7 +505,8 @@ router.get('/bucket-data/:userId', async (req, res) => {
                     LoadStatus: 0,
                     ReportingDate: { $exists: true },
                     ReportingDate: { $ne: null },
-                    "lastStatusUpdate.status": "Loaded"
+                    "lastStatusUpdate.status": "Loaded",
+                    driverStatus: { $ne: 0 }
                 };
                 break;
 
@@ -500,15 +518,16 @@ router.get('/bucket-data/:userId', async (req, res) => {
                 bucketMatch = {
                     $or: [
                         { endToLower: { $regex: "maintenece|maintenance" } },
-                        { "lastStatusUpdate.status": { $in: ["Accident", "Breakdown"] } },
-                        { driverStatus: 0 }
-                    ]
+                        { "lastStatusUpdate.status": { $in: ["Accident", "Breakdown", "Maintenance"] } },
+                    ],
+                    driverStatus: { $ne: 0 }
                 };
                 break;
             case 'underMaintenance_under_maintenance':
                 needsStatusFields = true;
                 bucketMatch = {
-                    endToLower: { $regex: "maintenece|maintenance" }
+                    endToLower: { $regex: "maintenece|maintenance" },
+                    driverStatus: { $ne: 0 }
                 };
                 break;
             case 'underMaintenance_accidental':
