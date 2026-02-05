@@ -36,17 +36,16 @@ router.post("/join", async (req, res) => {
         let tripId = joining?.tripId;
         if (!tripId) {
             console.log(`[DRIVER-JOIN] Fetching trip for vehicle ${vehicleNo} on date ${joiningDate}`);
-            const trip = await VehiclesTrip.findOne({
+            const trip = await VehiclesTrip.find({
                 VehicleNo: vehicleNo,
-                StartDate: { $lte: joiningDate }
             }).sort({ StartDate: -1, rankindex: 1, _id: -1 }).session(session).lean();
 
             if (!trip) {
                 console.log(`[DRIVER-JOIN] No trip found for vehicle ${vehicleNo}`);
                 return res.status(404).json({ error: "No trip found for given vehicle and date" });
             }
-            console.log(`[DRIVER-JOIN] Found trip ${trip._id} for vehicle ${vehicleNo}`);
-            tripId = trip._id;
+            console.log(`[DRIVER-JOIN] Found trip ${trip[0]?._id} for vehicle ${vehicleNo}`);
+            tripId = trip[0]?._id;
         }
 
         // Check if driver is already assigned to prevent duplicate assignments
@@ -156,17 +155,16 @@ router.post("/leave", async (req, res) => {
 
         // Find trip for vehicle
         console.log(`[DRIVER-LEAVE] Fetching trip for vehicle ${vehicleNo} on date ${leavingDate}`);
-        const trip = await VehiclesTrip.findOne({
+        const trip = await VehiclesTrip.find({
             VehicleNo: vehicleNo,
-            StartDate: { $lte: leavingDate }
         }).sort({ StartDate: -1, rankindex: 1, _id: -1 }).session(session).lean();
 
         if (!trip) {
             console.log(`[DRIVER-LEAVE] No trip found for vehicle ${vehicleNo}`);
             // return res.status(404).json({ error: "No trip found for given vehicle and date" });
         }
-        console.log(`[DRIVER-LEAVE] Found trip ${trip?._id} for vehicle ${vehicleNo}`);
-        const tripId = trip?._id || null;
+        console.log(`[DRIVER-LEAVE] Found trip ${trip[0]?._id} for vehicle ${vehicleNo}`);
+        const tripId = trip[0]?._id || null;
 
         // Update latest driver log for this driver & vehicle
         console.log(`[DRIVER-LEAVE] Updating driver log for driver ${driverId} on vehicle ${vehicleNo}`);

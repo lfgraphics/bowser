@@ -168,10 +168,12 @@ router.get('/summary-stats/:userId', async (req, res) => {
                     underMaintenance: [
                         {
                             $match: {
-                                endToLower: { $regex: "maintenece|maintenance" },
-                                "lastStatusUpdate.status": { $in: ["Maintenance"] },
+                                $or: [
+                                    { endToLower: { $regex: "maintenece|maintenance" } },
+                                    { "lastStatusUpdate.status": { $in: ["Accident", "Breakdown"] } },
+                                ],
                                 driverStatus: { $ne: 0 }
-                            },
+                            }
                         },
                         { $count: 'count' }
                     ],
@@ -281,6 +283,8 @@ router.get('/summary-stats/:userId', async (req, res) => {
         res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 });
+
+// get no driver vehicles from driver logs
 
 /**
  * GET /bucket-data/:userId
@@ -526,7 +530,10 @@ router.get('/bucket-data/:userId', async (req, res) => {
             case 'underMaintenance_under_maintenance':
                 needsStatusFields = true;
                 bucketMatch = {
-                    endToLower: { $regex: "maintenece|maintenance" },
+                    $or: [
+                        { endToLower: { $regex: "maintenece|maintenance" } },
+                        { "lastStatusUpdate.status": { $in: ["Accident", "Breakdown"] } },
+                    ],
                     driverStatus: { $ne: 0 }
                 };
                 break;
