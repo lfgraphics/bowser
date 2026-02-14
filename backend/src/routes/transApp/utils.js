@@ -4,6 +4,9 @@ import { find as findDeactivatedVehicles } from '../../models/DeactivatedVehicle
 import { find as findVehicles } from '../../models/vehicle.js';
 import { mongoose } from 'mongoose';
 import { getLatestVehicleUpdates } from '../../utils/vehicles.js';
+import { getTransportDatabaseConnection } from '../../../config/database.js';
+import Joi from 'joi';
+import Gr from '../../models/GR.js';
 
 const division = {
     "0": "Ethanol",
@@ -342,6 +345,19 @@ async function getNewSummary(userId, isAdmin) {
             unloadedNotPlanned = []
         } = result[0] || {};
 
+        const vehiclesWithTrips = new Set();
+        [loadedOnWay, loadedReported, emptyOnWay, emptyReported, unloadedNotPlanned].forEach(list => {
+            list.forEach(t => vehiclesWithTrips.add(t.VehicleNo));
+        });
+
+        const vehiclesWithoutTrips = activeVehicleNos.filter(v => !vehiclesWithTrips.has(v));
+        const additionalVehicles = vehiclesWithoutTrips.map(v => ({ 
+            _id: new mongoose.Types.ObjectId(),
+            VehicleNo: v, 
+            LoadStatus: 0 
+        }));
+        const finalUnloadedNotPlanned = [...unloadedNotPlanned, ...additionalVehicles];
+
         // Helper to embed last status update in each trip
         function embedLastStatus(trips) {
             return trips.map(trip => {
@@ -358,7 +374,7 @@ async function getNewSummary(userId, isAdmin) {
         const loadedReportedWithStatus = embedLastStatus(loadedReported);
         const emptyOnWayWithStatus = embedLastStatus(emptyOnWay);
         const emptyReportedWithStatus = embedLastStatus(emptyReported);
-        const unloadedNotPlannedWithStatus = embedLastStatus(unloadedNotPlanned);
+        const unloadedNotPlannedWithStatus = embedLastStatus(finalUnloadedNotPlanned);
 
         if (isAdmin) {
             const allVehicleNos = [
@@ -564,22 +580,148 @@ async function updateEmptyTrip(tripId, postData) {
     return updatedTrip;
 }
 
-const createLoadedTrip = async (data) => {
-    const {
-        lastTripId,
-        VehicleNo,
-        StartDate,
-        targetTime,
-        StartFrom,
-        EndTo,
-        LoadStatus = 1,
-        LoadTripDetail,
-        TallyLoadDetail,
-        StartDriver,
-        StartDriverMobile,
-        OpretionallyModified,
-    } = data
-}
+const loadedTripSchema = Joi.object({
+    vehicleNo: Joi.string().required(),
+    StartDriver: Joi.string().required(),
+    StartDriverMobile: Joi.string().required(),
+    StartDate: Joi.date().required(),
+    targetTime: Joi.date().required(),
+    LoadStatus: Joi.number().valid(0, 1).required(),
+    StartFrom: Joi.string().required(),
+    EndTo: Joi.string().required(),
+    Route: Joi.string().required(),
+    odometer: Joi.number().required(),
+    good: Joi.string().required(),
+    qty: Joi.number().optional(),
+    consignor: Joi.string().required(),
+    consignee: Joi.string().required(),
+    proposedBy: Joi.string().required(),
+    grNo: Joi.string().optional(),
+    digitalLockNo: Joi.string().optional(),
+}).unknown(true);
+
+const createLoadedTrip = async (data, externalSession = null) => {
+    let session = externalSession;
+    const isExternalSession = !!externalSession;
+
+    try {
+        if (!isExternalSession) {
+            session = await getTransportDatabaseConnection().startSession();
+            session.startTransaction();
+        }
+
+        const { error } = loadedTripSchema.validate(data);
+        if (error) {
+            throw new Error(`Validation Error: ${error.message}`);
+        }
+        const {
+            vehicleNo,
+            StartDriver,
+            StartDriverMobile,
+            StartDate,
+            targetTime,
+            LoadStatus,
+            StartFrom,
+            EndTo,
+            Route,
+            odometer,
+            good,
+            qty,
+            consignor,
+            consignee,
+            proposedBy,
+            previousTripId,
+            grNo,
+            digitalLockNo,
+            loadingSuperVisor // Extracted from data
+        } = data;
+
+        const newGr = new Gr({
+            GRNo: grNo,
+            digitalLockNo: digitalLockNo,
+            vehicleNo: vehicleNo,
+            consignor: consignor,
+            consignee: consignee,
+            location: {
+                loading: StartFrom,
+                unloading: EndTo,
+            },
+            loading: {
+                date: StartDate,
+                qty: qty,
+                goods: good,
+                remarks: "",
+                driver: {
+                    name: StartDriver,
+                    mobile: StartDriverMobile,
+                },
+                supervisor: loadingSuperVisor,
+                odometer: odometer,
+            },
+            dispatchParticulars: {
+                totalQty: qty,
+                temperature: null,
+                indication: null,
+                strength: null,
+            },
+            taxIncoiceNo: "",
+            excisePassNoAndDate: "",
+        });
+
+        const newLoadedTrip = new TankersTrip({
+            VehicleNo: vehicleNo,
+            StartDate: StartDate,
+            targetTime: targetTime,
+            StartFrom: StartFrom,
+            EndTo: EndTo,
+            LoadStatus: LoadStatus,
+            LoadTripDetail: {
+                LoadDate: StartDate,
+                ReportDate: null,
+                UnloadDate: null,
+                StartOdometer: odometer,
+                EndOdometer: null,
+                SupplyFrom: StartFrom,
+                SupplyTo: EndTo,
+                NameOfGoods: good,
+                LoadDetail: {
+                    LoadQty: qty,
+                    UnloadQty: 0,
+                    ShortQty: 0,
+                    DeductionComment: "",
+                },
+                previousTripId
+            },
+            StartDriver: StartDriver,
+            StartDriverMobile: StartDriverMobile,
+            loadingSuperVisor,
+            ReportingDate: null,
+            EndDate: null,
+            gr: newGr._id,
+            proposedBy
+        });
+
+        await newGr.save({ session });
+        await newLoadedTrip.save({ session });
+
+        if (!isExternalSession) {
+            await session.commitTransaction();
+        }
+
+        return {
+            success: true,
+            data: newLoadedTrip,
+            message: "Trip created successfully"
+        };
+
+    } catch (error) {
+        if (!isExternalSession && session) await session.abortTransaction();
+        console.error("Error in createLoadedTrip:", error);
+        throw new Error(error.message || "Failed to create loaded trip");
+    } finally {
+        if (!isExternalSession && session) await session.endSession();
+    }
+};
 
 
 // Named exports

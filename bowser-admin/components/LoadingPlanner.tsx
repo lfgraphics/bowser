@@ -58,7 +58,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
         let user = localStorage.getItem("adminUser")
         let jsonUser: TransAppUser = JSON.parse(user!)
         setProposedBy(jsonUser.name)
-        searchDriver(data.find((trip) => trip._id === tripId)?.StartDriver!)
+        tripId && searchDriver(data.find((trip) => trip?._id === tripId)?.StartDriver!)
     }, []);
 
     useEffect(() => {
@@ -75,7 +75,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
         const odo = crTtip?.LoadTripDetail?.EndOdometer
         console.log("Current Trip Changed:", crTtip);
         setCurrentTrip(crTtip || null);
-        searchDriver(crTtip?.StartDriver!)
+        tripId || crTtip && crTtip?.StartDriver && searchDriver(crTtip?.StartDriver)
         setOdometer(odo!);
         console.log('ododmeter: ', odo);
         setDriver(crTtip?.StartDriver || "");
@@ -227,8 +227,8 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
 
     useEffect(() => {
         setDriver(data.find(trip => trip?._id === tripId)?.StartDriver || "");
-        searchDriver(data.find((trip) => trip._id === tripId)?.StartDriver!);
-        setOdometer(data.find(trip => trip?._id === tripId)?.TallyLoadDetail.EndOdometer || 0);
+        tripId && searchDriver(data.find((trip) => trip?._id === tripId)?.StartDriver!);
+        setOdometer(data.find(trip => trip?._id === tripId)?.TallyLoadDetail?.EndOdometer || 0);
         setDriverMobile(data.find(trip => trip?._id === tripId)?.StartDriverMobile || "")
     }, [data, tripId]);
 
@@ -243,7 +243,7 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
                             {(() => {
                                 const t = data.find(trip => trip?._id === tripId);
                                 return (
-                                    <div className="gap-y-2">
+                                    <div className="gap-y-2 min-w-[300px]">
                                         <strong className="text-lg">Last trip details</strong><br />
                                         <div className="hidden">
                                             <span><strong>Start Date: </strong></span>
@@ -336,9 +336,23 @@ export default function UnloadedUnplannedVehicleTracker({ tripsData, user, query
                             searchTerm={search}
                             onSearchTermChange={setSearch}
                             placeholder="Select Destination"
+                            showAddButton={true}
+                            onAddOption={(newValue) => {
+                                // Create a new option with the typed value
+                                const newOption: ComboboxOption = {
+                                    value: newValue,
+                                    label: newValue
+                                };
+                                // Add to the options list
+                                setStackHolders(prev => [...prev, newOption]);
+                                // Select the newly added option
+                                setStackHolder(newValue);
+                                // Clear the search term
+                                setSearch("");
+                            }}
                         />
                         <Label htmlFor="dateTime">Proposed Departure Time</Label>
-                        <DatePicker
+                        <DateTimePicker
                             value={proposedDate}
                             onChange={setProposedDate}
                         />

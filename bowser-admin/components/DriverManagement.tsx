@@ -96,7 +96,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
 
     const [statusRemark, setStatusRemark] = useState("");
 
-    const noDriver = vehicle?.vehicle?.tripDetails.driver === "no driver" || vehicle?.driver?.name === "no driver";
+    const noDriver = vehicle?.vehicle?.tripDetails?.driver === "no driver" || vehicle?.driver?.name === "no driver";
 
     // ---------------------------
     // API Handlers
@@ -351,6 +351,7 @@ const DriverManagementModal: React.FC<DriverModalProps> = ({ vehicle }) => {
     }
 
     return (
+        vehicle &&
         <>
             <Dialog open={open} onOpenChange={setOpen}>
                 <TooltipProvider>

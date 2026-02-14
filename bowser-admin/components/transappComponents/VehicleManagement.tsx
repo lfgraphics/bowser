@@ -249,6 +249,7 @@ const VehicleManagement = ({ user }: { user: TransAppUser | undefined }) => {
     // (virtualization removed) no need for dynamic column span now
 
     return (
+        pageVehicles && pageVehicles.length > 0 &&
         <>
             <div className="flex items-center gap-3 flex-wrap mb-2">
                 <Button className="w-max" size="sm" onClick={() => setFilterNoDriver(filterNoDriver ? false : true)} aria-pressed={filterNoDriver} variant={filterNoDriver ? "secondary" : "default"}>
