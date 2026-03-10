@@ -32,13 +32,14 @@ router.post("/join", async (req, res) => {
 
         console.log(`[DRIVER-JOIN] Processing join request for driver ${driverName} to vehicle ${vehicleNo}`);
 
-        // Find trip for vehicle
+        // Find trip for vehicle (outside transaction — read-only lookup, avoids write conflict
+        // when we later update VehiclesTrip inside the same transaction session)
         let tripId = joining?.tripId;
         if (!tripId) {
             console.log(`[DRIVER-JOIN] Fetching trip for vehicle ${vehicleNo} on date ${joiningDate}`);
             const trip = await VehiclesTrip.find({
                 VehicleNo: vehicleNo,
-            }).sort({ StartDate: -1, rankindex: 1, _id: -1 }).session(session).lean();
+            }).sort({ StartDate: -1, rankindex: 1, _id: -1 }).lean();
 
             if (!trip) {
                 console.log(`[DRIVER-JOIN] No trip found for vehicle ${vehicleNo}`);
@@ -157,7 +158,7 @@ router.post("/leave", async (req, res) => {
         console.log(`[DRIVER-LEAVE] Fetching trip for vehicle ${vehicleNo} on date ${leavingDate}`);
         const trip = await VehiclesTrip.find({
             VehicleNo: vehicleNo,
-        }).sort({ StartDate: -1, rankindex: 1, _id: -1 }).session(session).lean();
+        }).sort({ StartDate: -1, rankindex: 1, _id: -1 }).lean();
 
         if (!trip) {
             console.log(`[DRIVER-LEAVE] No trip found for vehicle ${vehicleNo}`);
