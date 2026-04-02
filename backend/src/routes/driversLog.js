@@ -10,8 +10,10 @@ import { getTransportDatabaseConnection } from "../../config/database.js";
 // Add Driver (Joining)
 // ---------------------------
 router.post("/join", async (req, res) => {
-    let session = null;
-    try {
+    const maxRetries = 3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        let session = null;
+        try {
         session = await getTransportDatabaseConnection().startSession();
         session.startTransaction();
         const { vehicleNo, driverId, joining, driverName } = req.body;
@@ -119,12 +121,21 @@ router.post("/join", async (req, res) => {
             updatedTrip
         });
 
-    } catch (error) {
-        console.error(`[DRIVER-JOIN] Failed to join driver to vehicle ${req.body.vehicleNo || 'unknown'}:`, error.message);
-        if (session) await session.abortTransaction();
-        return res.status(500).json({ error: "Failed to join driver", details: error.message });
-    } finally {
-        if (session) await session.endSession();
+        } catch (error) {
+            if (session) await session.abortTransaction();
+            
+            const isWriteConflict = error.hasErrorLabels?.('TransientTransactionError') || (error.message && error.message.includes("Write conflict"));
+            if (isWriteConflict && attempt < maxRetries) {
+                console.warn(`[DRIVER-JOIN] Write conflict occurred for vehicle ${req.body.vehicleNo || 'unknown'}. Retrying attempt ${attempt + 1} of ${maxRetries}...`);
+                await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 200)); // 200-700ms jitter
+                continue;
+            }
+
+            console.error(`[DRIVER-JOIN] Failed to join driver to vehicle ${req.body.vehicleNo || 'unknown'}:`, error.message);
+            return res.status(500).json({ error: "Failed to join driver", details: error.message });
+        } finally {
+            if (session) await session.endSession();
+        }
     }
 });
 
@@ -132,8 +143,10 @@ router.post("/join", async (req, res) => {
 // Driver Leaving
 // ---------------------------
 router.post("/leave", async (req, res) => {
-    let session = null;
-    try {
+    const maxRetries = 3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        let session = null;
+        try {
         session = await getTransportDatabaseConnection().startSession();
         session.startTransaction();
         const { vehicleNo, driverId, leaving } = req.body;
@@ -227,12 +240,21 @@ router.post("/leave", async (req, res) => {
         });
 
     } catch (error) {
-        console.error(`[DRIVER-LEAVE] Failed to process driver leave for vehicle ${req.body.vehicleNo || 'unknown'}:`, error.message);
         if (session) await session.abortTransaction();
+
+        const isWriteConflict = error.hasErrorLabels?.('TransientTransactionError') || (error.message && error.message.includes("Write conflict"));
+        if (isWriteConflict && attempt < maxRetries) {
+            console.warn(`[DRIVER-LEAVE] Write conflict occurred for vehicle ${req.body.vehicleNo || 'unknown'}. Retrying attempt ${attempt + 1} of ${maxRetries}...`);
+            await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 200)); // 200-700ms jitter
+            continue;
+        }
+
+        console.error(`[DRIVER-LEAVE] Failed to process driver leave for vehicle ${req.body.vehicleNo || 'unknown'}:`, error.message);
         return res.status(500).json({ error: "Failed to process driver leave", details: error.message });
     } finally {
         if (session) await session.endSession();
     }
+  }
 });
 
 // ---------------------------
