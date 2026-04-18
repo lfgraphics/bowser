@@ -143,7 +143,7 @@ export const updateUserRoles = async (
   phoneNumber: string,
   roles: string[]
 ): Promise<MainUser> => {
-  const response = await apiClient.put<MainUser>('/users/update/roles', {
+  const response = await apiClient.patch<MainUser>('/users/roles', {
     phoneNumber,
     roles
   }, withConcurrentPrevention())
