@@ -6,6 +6,8 @@ const router = Router();
 import { findById as findTripById, findByIdAndUpdate as updateTripById } from '../../models/VehiclesTrip.js';
 import { createEmptyTrip, createLoadedTrip, updateEmptyTrip } from './utils.js';
 import LoadingOrderNotification from '../../models/LoadingOrderNotification.js';
+import { getTransportDatabaseConnection } from '../../../config/database.js';
+import GR from '../../models/GR.js';
 
 // const { getCurrentTrip, getAllTrips } = require('./utils');
 
@@ -182,76 +184,57 @@ router.post('/destination-change', async (req, res) => {
 
 router.post('/loaded', async (req, res) => {
     const { tripId, data } = req.body;
+    let session = null;
 
-    console.log(data)
-
-    const schema = Joi.object({
-        tripId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(),
-        data: Joi.object({
-            driverName: Joi.string().min(1).required(),
-            driverMobile: Joi.string().pattern(/^\d{10}$/).required(),
-            EndDestination: Joi.string().required(),
-            EndLocation: Joi.string().required(),
-            EndDate: Joi.alternatives().try(
-                Joi.date().required(),
-                Joi.string().required()
-            ).required(),
-            GoodsLoaded: Joi.string().required(),
-            QtyLoaded: Joi.number().min(0).required(),
-            OdometerOnTrackUpdate: Joi.number().min(0).required(),
-            LocationOnTrackUpdate: Joi.string().required(),
-            TrackUpdateDate: Joi.alternatives().try(
-                Joi.date().required(),
-                Joi.string().required()
-            ).required(),
-            ManagerComment: Joi.string().required(),
-            targetTime: Joi.alternatives().try(
-                Joi.date().required(),
-                Joi.string().required()
-            ).required(),
-            orderedBy: Joi.string().required(),
-            proposedBy: Joi.string().required(),
-        }).required()
-    });
-
-    const { error } = schema.validate(req.body);
-    if (error) {
-        return res.status(400).json({ error: error.details[0].message });
-    }
     try {
+        session = await getTransportDatabaseConnection().startSession();
+        session.startTransaction();
+
         const tripToUpdate = await updateTripById(tripId,
             {
                 $set: {
-                    'EmptyTripDetail.EndDate': data.TallyLoadDetail.LoadingDate,
-                    'EmptyTripDetail.EndDestination': data.TallyLoadDetail.Consignee,
-                    'EmptyTripDetail.GoodsLoaded': data.TallyLoadDetail.Goods,
-                    'EmptyTripDetail.QtyLoaded': data.TallyLoadDetail.LoadingQty
+                    'EmptyTripDetail.EndDate': data.StartDate,
+                    'EmptyTripDetail.EndDestination': data.StartFrom,
+                    'EmptyTripDetail.GoodsLoaded': data.goods,
+                    'EmptyTripDetail.QtyLoaded': data.qty
                 },
                 $push: {
                     TravelHistory: {
-                        TrackUpdateDate: data.TrackUpdateDate,
-                        LocationOnTrackUpdate: data.LocationOnTrackUpdate,
-                        OdometerOnTrackUpdate: data.OdometerOnTrackUpdate,
-                        ManagerComment: data.ManagerComment !== undefined ? data.ManagerComment : '',
-                        Driver: data.driverName,
+                        TrackUpdateDate: new Date(),
+                        LocationOnTrackUpdate: data.StartFrom,
+                        OdometerOnTrackUpdate: data.odometer,
+                        ManagerComment: "#Loaded",
+                        Driver: data.StartDriver,
                     }
                 }
-            }, { new: true }
-        )
+            }, { new: true, session }
+        );
+
         if (!tripToUpdate) {
-            return res.status(404).json({ error: 'Trip not found' })
+            throw new Error('Trip not found');
         }
 
-        const saveTrip = await tripToUpdate.save()
-        await createLoadedTrip(data)
-        if (saveTrip) {
-            return res.status(200).json({ message: 'Trip updated successfully', saveTrip })
-        } else {
+        const saveTrip = await tripToUpdate.save({ session });
+        const newLoadedTrip = await createLoadedTrip(data, session);
+
+        if (!saveTrip) {
             throw new Error('Error updating the trip. Try again later');
         }
+
+        await session.commitTransaction();
+
+        return res.status(200).json({
+            message: 'Trip updated and loaded trip created successfully',
+            updatedTrip: saveTrip,
+            newTrip: newLoadedTrip.data || newLoadedTrip
+        });
+
     } catch (error) {
-        console.log(error)
+        if (session) await session.abortTransaction();
+        console.error('[LOADED] Error:', error);
         return res.status(500).json({ error: 'Failed to process request.', details: error.message });
+    } finally {
+        if (session) await session.endSession();
     }
 });
 
@@ -278,6 +261,24 @@ router.post('/unload', async (req, res) => {
         trip.TallyLoadDetail.UnloadingDate = data.TrackUpdateDate || new Date();
         trip.TallyLoadDetail.EndOdometer = data.OdometerOnTrackUpdate || 0;
         trip.LoadTripDetail.EndOdometer = data.OdometerOnTrackUpdate || 0;
+
+        if (trip.gr) {
+            const gr = await GR.findById(trip.gr);
+            if (gr) {
+                gr.unloading = {
+                    date: data.TrackUpdateDate || new Date(),
+                    qty: data.qty,
+                    remarks: data.ManagerComment !== "#UNLOADED " ? data.ManagerComment : "",
+                    driver: {
+                        name: data.Driver,
+                        mobile: data.driverMobile
+                    },
+                    odometer: data.OdometerOnTrackUpdate,
+                    shortage: gr.loading.qty - data.qty
+                }
+                await gr.save();
+            }
+        }
 
         await trip.save();
 

@@ -1,12 +1,15 @@
 import { findOne as findOneTransUser, find as findTransUsers } from '../../models/TransUser.js';
 import TankersTrip, { findOne as findOneTrip, find as findTrips, findById as findTripById, aggregate as aggregateTrips, findByIdAndUpdate as updateTripById } from '../../models/VehiclesTrip.js';
 import { find as findDeactivatedVehicles } from '../../models/DeactivatedVehicles.js';
-import { find as findVehicles } from '../../models/vehicle.js';
+import { find as findVehicles, findOne as findOneVehicle } from '../../models/vehicle.js';
 import { mongoose } from 'mongoose';
 import { getLatestVehicleUpdates } from '../../utils/vehicles.js';
 import { getTransportDatabaseConnection } from '../../../config/database.js';
 import Joi from 'joi';
 import Gr from '../../models/GR.js';
+import TripExpenseMaster from '../../models/TripExpenseMaster.js';
+import TripExpenses from '../../models/TripExpenses.js'
+import Driver from '../../models/driver.js';
 
 const division = {
     "0": "Ethanol",
@@ -351,10 +354,10 @@ async function getNewSummary(userId, isAdmin) {
         });
 
         const vehiclesWithoutTrips = activeVehicleNos.filter(v => !vehiclesWithTrips.has(v));
-        const additionalVehicles = vehiclesWithoutTrips.map(v => ({ 
+        const additionalVehicles = vehiclesWithoutTrips.map(v => ({
             _id: new mongoose.Types.ObjectId(),
-            VehicleNo: v, 
-            LoadStatus: 0 
+            VehicleNo: v,
+            LoadStatus: 0
         }));
         const finalUnloadedNotPlanned = [...unloadedNotPlanned, ...additionalVehicles];
 
@@ -633,10 +636,20 @@ const createLoadedTrip = async (data, externalSession = null) => {
             previousTripId,
             grNo,
             digitalLockNo,
-            loadingSuperVisor // Extracted from data
+            loadingSuperVisor
         } = data;
 
-        const newGr = new Gr({
+        let calibration = []
+
+        for (let i = 0; i < 4; i++) {
+            calibration.push({
+                chamberNo: i + 1,
+                cm: 0,
+                qty: qty / 4
+            })
+        }
+
+        let newGr = new Gr({
             GRNo: grNo,
             digitalLockNo: digitalLockNo,
             vehicleNo: vehicleNo,
@@ -650,7 +663,6 @@ const createLoadedTrip = async (data, externalSession = null) => {
                 date: StartDate,
                 qty: qty,
                 goods: good,
-                remarks: "",
                 driver: {
                     name: StartDriver,
                     mobile: StartDriverMobile,
@@ -659,19 +671,17 @@ const createLoadedTrip = async (data, externalSession = null) => {
                 odometer: odometer,
             },
             dispatchParticulars: {
+                calibration: data.calibration || calibration,
                 totalQty: qty,
                 temperature: null,
                 indication: null,
                 strength: null,
             },
-            taxIncoiceNo: "",
-            excisePassNoAndDate: "",
         });
 
         const newLoadedTrip = new TankersTrip({
             VehicleNo: vehicleNo,
             StartDate: StartDate,
-            targetTime: targetTime,
             StartFrom: StartFrom,
             EndTo: EndTo,
             LoadStatus: LoadStatus,
@@ -700,6 +710,141 @@ const createLoadedTrip = async (data, externalSession = null) => {
             gr: newGr._id,
             proposedBy
         });
+
+        newGr.trip = newLoadedTrip._id;
+
+
+        // trip expenses logic will go here
+        // first find the vehicle documet to get the wheel type
+        // then find the driver to get its ObjectId
+        // then query the trip expenses master with the from, to, wheeltype and expenses effective from should be less than or equal to today
+        // then check if the expense is applicable or not and create separate trip expense mongoose documents for each expense type with the validations (the efffectiveFrom of the expense should be less than or equal to today) and save them seaparately
+        // after creating all the mongodb objects push the _id's to the expenses array in the newLoadedTrip object
+        const vehicle = await findOneVehicle({ VehicleNo: vehicleNo });
+        const driver = await Driver.findOne({ Name: StartDriver });
+        const tripExpenseMaster = await TripExpenseMaster.findOne({
+            from: { StartFrom, $options: 'i' }, to: { EndTo, $options: 'i' }, wheelType: vehicle.wheelType,
+            'running.efffectiveFrom': { $lte: new Date() },
+            'return.efffectiveFrom': { $lte: new Date() },
+            'fooding.efffectiveFrom': { $lte: new Date() },
+            'incentive.efffectiveFrom': { $lte: new Date() },
+            'parking.efffectiveFrom': { $lte: new Date() },
+            'other.efffectiveFrom': { $lte: new Date() },
+        });
+
+        const tripExpenses = [];
+
+        if (tripExpenseMaster.running.amount > 0) {
+            tripExpenses.push({
+                trip: newLoadedTrip._id,
+                vehicleNo,
+                gr: newGr._id,
+                driver: driver._id,
+                expense: "running",
+                amount: tripExpenseMaster.running.amount * tripExpenseMaster.days,
+                balancePayment: tripExpenseMaster.running.amount * tripExpenseMaster.days,
+            });
+        } else {
+            tripExpenses.push({
+                trip: newLoadedTrip._id,
+                vehicleNo,
+                gr: newGr._id,
+                driver: driver._id,
+                expense: "running",
+                amount: 0,
+                balancePayment: 0,
+            });
+        }
+
+        if (tripExpenseMaster.return.amount > 0) {
+            tripExpenses.push({
+                trip: newLoadedTrip._id,
+                vehicleNo,
+                gr: newGr._id,
+                driver: driver._id,
+                expense: "return",
+                amount: tripExpenseMaster.return.amount,
+                balancePayment: tripExpenseMaster.return.amount,
+            });
+        } else {
+            tripExpenses.push({
+                trip: newLoadedTrip._id,
+                vehicleNo,
+                gr: newGr._id,
+                driver: driver._id,
+                expense: "return",
+                amount: 0,
+                balancePayment: 0,
+            });
+        }
+
+        if (tripExpenseMaster.fooding.amount > 0) {
+            tripExpenses.push({
+                trip: newLoadedTrip._id,
+                vehicleNo,
+                gr: newGr._id,
+                driver: driver._id,
+                expense: "fooding",
+                amount: tripExpenseMaster.fooding.amount * tripExpenseMaster.days,
+                balancePayment: tripExpenseMaster.fooding.amount * tripExpenseMaster.days,
+            });
+        } else {
+            tripExpenses.push({
+                trip: newLoadedTrip._id,
+                vehicleNo,
+                gr: newGr._id,
+                driver: driver._id,
+                expense: "fooding",
+                amount: 0,
+                balancePayment: 0,
+            });
+        }
+
+        // if (tripExpenseMaster.incentive.amount > 0) {
+        //     tripExpenses.push({
+        //         trip: newLoadedTrip._id,
+        //         gr: newGr._id,
+        //         driver: driver._id,
+        //         expense: "incentive",
+        //         amount: tripExpenseMaster.incentive.amount * tripExpenseMaster.days,
+        //         balancePayment: tripExpenseMaster.incentive.amount * tripExpenseMaster.days,
+        //     });
+        // }
+
+        // if (tripExpenseMaster.parking.amount > 0) {
+        //     tripExpenses.push({
+        //         trip: newLoadedTrip._id,
+        //         gr: newGr._id,
+        //         driver: driver._id,
+        //         expense: "parking",
+        //         amount: tripExpenseMaster.parking.amount,
+        //         balancePayment: tripExpenseMaster.parking.amount,
+        //     });
+        // }
+
+        if (tripExpenseMaster.other && tripExpenseMaster.other.length > 0) {
+            tripExpenseMaster.other.forEach((expense) => {
+                tripExpenses.push({
+                    trip: newLoadedTrip._id,
+                    vehicleNo,
+                    gr: newGr._id,
+                    driver: driver._id,
+                    expense: expense.type,
+                    expenseType: expense.expenseType,
+                    amount: expense.amount,
+                    balancePayment: expense.amount,
+                });
+            });
+        }
+
+        // add all the trip expenses to the newLoadedTrip object
+        newLoadedTrip.expenses = tripExpenses.map((expense) => expense._id);
+        let startDate = new Date(StartDate);
+        startDate.setDate(startDate.getDate() + tripExpenseMaster.days);
+        const calculatedTargetTime = startDate.getTime();
+        newLoadedTrip.targetTime = targetTime || calculatedTargetTime;
+
+        await TripExpenses.insertMany(tripExpenses, { session });
 
         await newGr.save({ session });
         await newLoadedTrip.save({ session });

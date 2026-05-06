@@ -32,6 +32,7 @@ app.use(hpp());
 
 const allowedOrigins = [
   "http://localhost:3000",
+  "http://localhost:3001",
   "http://192.168.88.165:3000",
   "https://itpl-bowser-admin.vercel.app"
 ];

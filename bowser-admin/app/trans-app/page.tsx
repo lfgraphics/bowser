@@ -26,9 +26,11 @@ import { searchItems } from '@/utils/searchUtils'
 import Loading from '../loading'
 import { TransAppContext } from "./layout";
 import SupervisorMorningUpdatesView from '@/components/transappComponents/SupervisorMorningUpdatesView'
+import ExpenseMasterDashboard from '@/components/transappComponents/ExpenseMasterDashboard'
+import Reporting from '@/components/transappComponents/Reporting'
 import { InstallPrompt } from '../page'
 
-type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary" | "Morning Updates" | "Supervisors Morning Updates";
+type Tabslist = "Vehicles" | "Inactive Vehicles" | "Summary" | "Morning Updates" | "Supervisors Morning Updates" | "Expense Rules" | "Reporting";
 
 export default function Page() {
   const { user, photo } = useContext(TransAppContext);
@@ -80,7 +82,7 @@ export default function Page() {
   // Determine allowed tabs based on user (Inactive Vehicles hidden for Admins)
   const allowedTabs = useMemo<Readonly<Tabslist[]>>(() => {
     const isAdmin = !!user?.Division?.includes('Admin')
-    return isAdmin ? ["Summary", "Vehicles", "Morning Updates"] : ["Summary", "Vehicles", "Inactive Vehicles"]
+    return isAdmin ? ["Summary", "Vehicles", "Morning Updates", "Expense Rules", "Reporting"] : ["Summary", "Vehicles", "Inactive Vehicles"]
   }, [user])
 
   // Utility to map between tabs and URL slugs
@@ -90,6 +92,8 @@ export default function Page() {
     'Inactive Vehicles': 'inactive-vehicles',
     'Morning Updates': 'morning-updates',
     'Supervisors Morning Updates': 'supervisors-morning-updates',
+    'Expense Rules': 'expense-rules',
+    Reporting: 'reporting'
   } as const), [])
 
   const parseTabFromParam = (raw: string | null, allowed: Readonly<Tabslist[]>): Tabslist | null => {
@@ -369,6 +373,12 @@ export default function Page() {
               {user?.Division?.includes('Admin') &&
                 <TabsTrigger value="Morning Updates">Morning Updates</TabsTrigger>
               }
+              {user?.Division?.includes('Admin') &&
+                <TabsTrigger value="Expense Rules">Expense Rules</TabsTrigger>
+              }
+              {user?.Division?.includes('Admin') &&
+                <TabsTrigger value="Reporting">Reporting</TabsTrigger>
+              }
               {!user?.Division?.includes('Admin') &&
                 <TabsTrigger value="Supervisors Morning Updates">Morning Updates</TabsTrigger>
               }
@@ -427,6 +437,14 @@ export default function Page() {
           {
             tab === "Morning Updates" &&
             <MorningUpdatesView />
+          }
+          {
+            tab === "Expense Rules" && user?.Division?.includes('Admin') &&
+            <ExpenseMasterDashboard />
+          }
+          {
+            tab === "Reporting" && user?.Division?.includes('Admin') &&
+            <Reporting />
           }
         </div>
       )}

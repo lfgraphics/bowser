@@ -315,7 +315,7 @@ const DestinationChange = ({ selectedTrip, user, query }: DestinationChangeProps
 
                 <div>
                     <Label htmlFor="dateTime">Proposed Departure Date</Label>
-                    <DatePicker
+                    <DateTimePicker
                         value={proposedDate}
                         onChange={setProposedDate}
                     />

@@ -63,7 +63,8 @@ const fuelingTransactionSchema = new Schema({
         name: { type: String, required: false },
         id: { type: String, required: false },
         allocationTime: { type: Date, require: false }
-    }
+    },
+    haltage: { type: Schema.Types.ObjectId, required: false }
 });
 
 fuelingTransactionSchema.post('deleteOne', async function (doc) {

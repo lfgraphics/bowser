@@ -497,7 +497,7 @@ const CustomerForm = ({
 
 
     return (
-        <Card className='w-full'>
+        <Card className='w-full bg-background'>
             <CardHeader>
                 <CardTitle className="text-2xl font-bold">
                     {title}

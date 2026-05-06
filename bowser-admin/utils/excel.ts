@@ -59,6 +59,61 @@ function setColumnWidth(sheet: ExcelJS.Worksheet, columnKeyOrIndex: string | num
 }
 
 /**
+ * Creates a simple Excel report from a flat list of trips
+ */
+export async function generateTripsSimpleReport(trips: any[], fileName: string = "Trips_Report.xlsx") {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Trips");
+
+    // Header row
+    const headerRow = sheet.addRow([
+        "Vehicle No",
+        "Start Date",
+        "Loading Date",
+        "Origin",
+        "Destination",
+        "Status",
+        "Driver",
+        "Qty"
+    ]);
+    headerRow.font = { bold: true };
+
+    // Data rows
+    trips.forEach(trip => {
+        sheet.addRow([
+            trip.VehicleNo,
+            formatDate(trip.StartDate),
+            trip.TallyLoadDetail?.LoadingDate ? formatDate(trip.TallyLoadDetail.LoadingDate) : '-',
+            trip.StartFrom,
+            trip.EndTo,
+            trip.LoadStatus === 1 ? 'Loaded' : 'Empty',
+            trip.TallyLoadDetail?.DriverName || '-',
+            trip.TallyLoadDetail?.LoadingQty || '-'
+        ]);
+    });
+
+    // Auto-width columns
+    sheet.columns.forEach(column => {
+        let maxLen = 0;
+        column.eachCell!({ includeEmpty: true }, cell => {
+            const len = cell.value ? cell.value.toString().length : 0;
+            if (len > maxLen) maxLen = len;
+        });
+        column.width = maxLen < 10 ? 10 : maxLen + 2;
+    });
+
+    // Generate and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    window.URL.revokeObjectURL(url);
+}
+
+/**
  * Creates an Excel report from trips summary and downloads it
  */
 export async function generateTripsReport({

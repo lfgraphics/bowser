@@ -30,6 +30,8 @@ export default function LoadVehicleTracker({ tripsData, query }: { tripsData: Ta
     const [data, setData] = useState<TankersTrip[]>(tripsData || [])
     const [tripId, setTripId] = useState<string>(query.tripId)
     const [Driver, setDriver] = useState<string>("")
+    const [driverMobile, setDriverMobile] = useState<string>("")
+    const [quantity, setQuantity] = useState<number | undefined>(undefined)
     const [vehicleSearch, setVehicleSearch] = useState<string>("")
     const trips: ComboboxOption[] = useMemo(() => {
         return data.map(trip => ({
@@ -54,7 +56,9 @@ export default function LoadVehicleTracker({ tripsData, query }: { tripsData: Ta
     });
 
     useEffect(() => {
-        setDriver(data.find(trip => trip?._id === tripId)?.StartDriver || "no driver");
+        const driver = data.find(trip => trip?._id === tripId)?.StartDriver
+        setDriver(driver || "no driver");
+        driver && searchDriver(driver);
         if (actionType === "report") {
             setTrackUpdateDate(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined);
             setLocationRemark(data.find(trip => trip?._id === tripId)?.EndTo.toUpperCase() || "");
@@ -171,6 +175,16 @@ export default function LoadVehicleTracker({ tripsData, query }: { tripsData: Ta
         if (driver) {
             setDriver(driver.Name);
         }
+        if (driver.MobileNo && driver.MobileNo.length > 0) {
+            const lastUsedNumber = driver.MobileNo.find(num => num.LastUsed);
+            const defaultNumber = driver.MobileNo.find(num => num.IsDefaultNumber);
+            const firstNumber = driver.MobileNo[0];
+            const mobileNumber = (lastUsedNumber || defaultNumber || firstNumber)?.MobileNo || '';
+
+            setDriverMobile(mobileNumber);
+        } else {
+            setDriverMobile('');
+        }
     }
 
     const searchDriver = async (idNumber: string) => {
@@ -269,6 +283,16 @@ export default function LoadVehicleTracker({ tripsData, query }: { tripsData: Ta
                             placeholder="Enter Odometer"
                         />
 
+                        <Label htmlFor="qty">Quantity</Label>
+                        <Input
+                            id="qty"
+                            value={quantity === undefined ? "" : quantity}
+                            onChange={(e) => setQuantity(e.target.value === "" ? undefined : Number(e.target.value))}
+                            className={`${(!quantity || quantity <= 0) ? "bg-yellow-100" : ""} text-foreground`}
+                            type="string"
+                            placeholder="Enter Quantity"
+                        />
+
                         <Label htmlFor="locationRemark">Location Remark</Label>
                         <Input id="locationRemark" value={LocationRemark} onChange={(e) => setLocationRemark(e.target.value)} className={`${!LocationRemark ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
 
@@ -300,6 +324,17 @@ export default function LoadVehicleTracker({ tripsData, query }: { tripsData: Ta
                             required
                         />
 
+                        <Label htmlFor="driver-mobile">Mobile No</Label>
+                        <Input
+                            id="driver-mobile"
+                            value={driverMobile}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setDriverMobile(value);
+                            }}
+                            required
+                            className={`${!driverMobile ? "bg-yellow-100" : ""}`}
+                        />
                         <div className="w-full flex gap-2 flex-row justify-between mt-2">
                             <Button className="flex-1" variant="secondary" type="reset" onClick={() => resetForm()}>Reset</Button>
                             <Button className="flex-1" type="button" onClick={() => submit()}>Submit</Button>

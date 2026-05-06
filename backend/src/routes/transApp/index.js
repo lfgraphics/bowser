@@ -10,6 +10,9 @@ import loadingNotificationRoutes from './loading-notification.js';
 import loadedTripsRoutes from './loaded-trips.js';
 import customersRoutes from './customers.js';
 import customerGroupsRoutes from './customer-groups.js';
+import routeRoutes from './routes.js';
+import grRoutes from './gr.js';
+import reportsRoutes from './reports.js';
 
 const router = Router();
 
@@ -24,5 +27,8 @@ router.use('/loading-notification', loadingNotificationRoutes);
 router.use('/loaded-trips', loadedTripsRoutes)
 router.use('/customers', customersRoutes)
 router.use('/customer-groups', customerGroupsRoutes)
+router.use('/routes', routeRoutes)
+router.use('/gr', grRoutes)
+router.use('/reports', reportsRoutes)
 
 export default router;

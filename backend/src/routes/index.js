@@ -36,6 +36,8 @@ import bowserRoutes from './bowsers.js';
 import vehicleRoutes from './vehicle.js';
 import vehicleDriverAuth from './vehicleDriversAuth.js';
 import campRouts from './camp/index.js';
+import accountAuthRoutes from './accountAuth.js';
+import accountsRoutes from './accounts/index.js';
 
 router.get('/', (req, res) => {
     res.send('landing page');
@@ -84,6 +86,7 @@ router.use('/petrol-pump', petrolPump);
 router.use('/request-transfer', requestTransfer);
 router.use('/roles', roleRoutes);
 router.use('/trans-app', transAppRoutes);
+router.use('/account-auth', accountAuthRoutes);
 router.use('/reports', reportRoutes);
 router.use('/salery-calc', saleryCalc);
 router.use('/searchBowserDetails', searchBowserRoutes);
@@ -97,5 +100,6 @@ router.use('/updates', updateRoutes);
 router.use('/vehicle', vehicleRoutes);
 router.use('/auth/driver', vehicleDriverAuth);
 router.use('/camp', campRouts);
+router.use('/accounts/api/', accountsRoutes);
 
 export default router;

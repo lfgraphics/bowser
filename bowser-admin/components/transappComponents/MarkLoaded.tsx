@@ -21,6 +21,67 @@ interface MarkLoadedProps {
     selectedTrip: TankersTrip
 }
 
+export interface LoadingData {
+    TallyLoadDetail: {
+        BillingPartyName: string
+        BillingRoute: string
+        BooksOf?: string
+        Consignee: string
+        Consignor: string
+        DieselRoute?: string
+        DriverLicenseNo?: string
+        DriverLicenseValidityDate?: string
+        DriverName: string
+        EndOdometer?: number
+        FinancialyClose: 0 | 1
+        FinancialyCloseDat: string
+        Goods: string
+        GRNo: string
+        GUID?: string
+        KMbyDieseRoute?: number
+        KMbyRout?: number
+        LoadingDate?: Date
+        LoadingQty?: number
+        MasterId?: number
+        OperationalyClose: 0 | 1
+        PartyLedger?: string
+        PersistedView?: string
+        ReportedDate?: Date
+        ShortageQty?: number
+        StartOdometer?: number
+        SyncDateTime?: number
+        TripId?: string
+        UnloadingDate?: Date
+        UnloadingQty?: number
+        UnloadingTime?: Date
+        VehicleMode?: string
+        VehicleNo?: string
+        VoucherDate?: Date
+        VoucherKey?: number
+        VoucherNo?: string
+        VoucherType?: string
+    }
+    EndTo: string
+    LoadStatus: 0 | 1
+    StartDate: Date | string
+    targetTime: Date | string
+    StartDriver: string
+    StartDriverMobile: string
+    StartFrom: string
+    LoadTripDetail: {
+        LoadDate: Date | string
+        SupplyFrom: string
+        ShipTo: string
+        NameOfGoods: string
+        LoadDetail: {
+            LoadQty: number
+            UnloadQty: number
+            ShortQty: number
+        }
+    }
+    VehicleNo: string
+}
+
 const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
     const [loading, setLoading] = useState(false);
     const [driverMobile, setDriverMobile] = useState("")
@@ -44,7 +105,7 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
     const [fullStackHolders, setFullStackHolders] = useState<CustomerFormData[]>([])
     const [stackHolder, setStackHolder] = useState<string>("")
     const [Driver, setDriver] = useState<string>("");
-    const [targetTime, setTargetTime] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
+    const [targetTime, setTargetTime] = useState<Date | undefined>(undefined)
     const [loadDate, setLoadDate] = useState<Date | undefined>(getLocalDateTimeString() ? new Date(getLocalDateTimeString()) : undefined)
     const [odometer, setOdometer] = useState<number | undefined>(undefined)
     const [qty, setQty] = useState<number | undefined>(undefined)
@@ -59,6 +120,8 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
     const [good, setGood] = useState<string>("")
     const [availableRoutes, setAvailableRoutes] = useState<CustomerFormData[]>([])
     const [selectedRoute, setSelectedRoute] = useState<string>("")
+    const [grNo, setGrNo] = useState<string>("")
+    const [digitalLockNo, setDigitalLockNo] = useState<string>("")
 
     useEffect(() => {
         let user = localStorage.getItem("adminUser")
@@ -119,10 +182,6 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
         }
     }, [selectedTrip])
 
-    // useEffect(() => {
-    //     setSearch(selectedRoute.split('To ')[1])
-    // }, [selectedRoute])
-
     const fetchStackHolders = async () => {
         try {
             const response = await fetch(`${BASE_URL}/trans-app/customers?search=${search}`);
@@ -163,7 +222,6 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
     useEffect(() => {
         fetchGoods();
     }, [goodsSearch]);
-
 
     const resetForm = () => {
         setDriver('')
@@ -217,18 +275,33 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
     }
 
     const submit = async () => {
+        // if (!validateInputs()) return;
         try {
             setLoading(true);
             const data = {
-                driverName: Driver,
-                driverMobile,
-                TrackUpdateDate: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-                ManagerComment,
-                targetTime,
-                orderedBy,
-                proposedBy,
+                vehicleNo: selectedTrip.VehicleNo,
+                StartDriver: Driver,
+                StartDriverMobile: driverMobile,
+                StartDate: loadDate!,
+                targetTime: targetTime || undefined,
+                LoadStatus: 1,
+                StartFrom: selectedRoute.split(' To')[0],
+                EndTo: selectedRoute.split(' To')[1],
                 Route: selectedRoute,
+                odometer,
+                good: fullGoods.find((g) => g._id === good)?.GoodsName,
+                qty,
+                consignor: selectedTrip.EndTo.split(':')[0] || selectedTrip.EndTo,
+                consignee: stackHolder,
+                grNo,
+                digitalLockNo,
+                proposedBy,
+                previousTripId: selectedTrip._id,
+                loadingSuperVisor: selectedTrip.loadingSuperVisor || "",
+                orderedBy
             }
+
+            console.log(data)
             const url = `${BASE_URL}/trans-app/trip-update/loaded`;
             const tripId = selectedTrip._id;
 
@@ -291,18 +364,30 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
                 items: routes,
                 onSelect: (route: any) => {
                     setSelectedRoute(route.Route);
-                    setSearch(route.Route.split('To ')[1])
+
+                    const routeString = route.Route || "";
+                    const toRegex = /\s+to\s+/i;
+                    const parts = routeString.split(toRegex);
+                    const destination = parts.length > 1 ? parts[1].trim() : "";
+
+                    if (destination) {
+                        setSearch(destination);
+                        setTimeout(() => {
+                            document.getElementById('consignor')?.click();
+                        }, 100);
+                    }
+
                     setSearchModalConfig((prev) => ({ ...prev, isOpen: false }));
                 },
                 renderItem: (route) => (
-                    <div className="flex flex-col text-left w-full h-[80px]">
+                    <div className={`flex flex-col text-left w-full ${route.Detention ? "h-[90px]" : "h-[35px]"}`}>
                         <span className="font-bold">{route.Route}</span>
                         <span className="text-xs text-muted-foreground">{route.customerName}</span>
                         {route.Detention && route.Detention.length > 0 && (
                             <div className="mt-1 text-xs border-t pt-1">
                                 {route.Detention.map((det: any, idx: number) => (
                                     <div key={idx}>
-                                        {det.Product}: ₹{det.Charges} <br /> {det.DetMethod}, {det.DetDays} days
+                                        {det.Product}: ₹{det.Charges} <br /> {det.DetMethod} <br /> {det.DetDays} days
                                     </div>
                                 ))}
                             </div>
@@ -360,8 +445,9 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
                 </div>
 
                 <div>
-                    <Label htmlFor="location">Consignor</Label>
+                    <Label htmlFor="Consignee">Consignee</Label>
                     <Combobox
+                        id='Consignee'
                         className={`${!stackHolder ? "bg-yellow-100" : ""} w-full`}
                         options={stackHolders}
                         value={stackHolder}
@@ -374,7 +460,7 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
 
                 <div>
                     <Label htmlFor='location'>Location</Label>
-                    <Input type='string' id='location' readOnly onChange={(e) => setLocation(e.target.value)} value={location} className={`${!location ? "bg-yellow-100" : ""}`} />
+                    <Input type='string' id='location' readOnly onChange={(e) => setLocation(e.target.value)} value={location || ""} className={`${!location ? "bg-yellow-100" : ""}`} />
                 </div>
 
                 <div>
@@ -394,7 +480,7 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
                         className={`${!selectedRoute ? "bg-yellow-100" : ""}`}
                     />
                 </div>
-                
+
                 <div>
                     <Label htmlFor="dateTime">Load Date Time</Label>
                     <Input
@@ -459,26 +545,7 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
                     />
                 </div>
 
-                <div>
-                    <Label htmlFor="comment">Comment</Label>
-                    <Input id="comment" value={ManagerComment} onChange={(e) => setManagerComment(e.target.value)} className={`${!ManagerComment ? "bg-yellow-100" : ""}`} type="string" placeholder="" />
-                </div>
-
-                <div>
-                    <Label>Ordered By</Label>
-                    <Input
-                        id="ordered-by"
-                        type="text"
-                        value={orderedBy}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            setOrderedBy(value);
-                        }}
-                        className={`${!orderedBy ? "bg-yellow-100" : ""}`}
-                    />
-                </div>
-
-                <div>
+                <div className='hidden'>
                     <Label id="proposed-by">Proposed By</Label>
                     <Input
                         id="proposed-by"
@@ -489,6 +556,34 @@ const MarkLoaded = ({ selectedTrip }: MarkLoadedProps) => {
                             setProposedBy(value);
                         }}
                         className={`${!proposedBy ? "bg-yellow-100" : ""}`}
+                    />
+                </div>
+
+                <div>
+                    <Label id="gr-no">GR No</Label>
+                    <Input
+                        id="gr-no"
+                        type="text"
+                        value={grNo}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setGrNo(value);
+                        }}
+                        className={`${!grNo ? "bg-yellow-100" : ""}`}
+                    />
+                </div>
+
+                <div>
+                    <Label id="digitalLockNo">Digital Lock No</Label>
+                    <Input
+                        id="digitalLockNo"
+                        type="text"
+                        value={digitalLockNo}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setDigitalLockNo(value);
+                        }}
+                        className={`${!digitalLockNo ? "bg-yellow-100" : ""}`}
                     />
                 </div>
 

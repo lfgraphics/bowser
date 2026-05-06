@@ -195,7 +195,7 @@ export function formatRemark(remark: string): string {
             result += part;
         } else {
             // It's a sentence - format it
-            const formatted = part.toLowerCase();
+            const formatted = part?.toLowerCase();
             const capitalized = formatted.charAt(0).toUpperCase() + formatted.slice(1);
 
             // Add space before sentence if not the first one

@@ -2,6 +2,7 @@ import { Schema } from 'mongoose';
 import { getTransportDatabaseConnection } from '../../config/database.js';
 
 const grSchema = new Schema({
+    trip: { type: Schema.Types.ObjectId, ref: 'TankersTrip' },
     GRNo: { type: String },
     digitalLockNo: { type: String },
     vehicleNo: { type: String, required: true },
@@ -39,8 +40,9 @@ const grSchema = new Schema({
         indication: { type: Number, required: false },
         strength: { type: Number, required: false },
     },
-    taxIncoiceNo: { type: String, required: false },
-    excisePassNoAndDate: { type: String, required: false },
+    taxInvoiceNo: { type: String, required: false },
+    excisePassNo: { type: String, required: false },
+    excisePassDate: { type: Date, required: false },
     unloading: {
         vM: {
             date: { type: Date, required: true },
@@ -54,18 +56,18 @@ const grSchema = new Schema({
             shortage: { type: Number, required: false },
         },
         gM: {
-            date: { type: Date, required: true },
-            qty: { type: Date, required: true },
+            qty: { type: Number, required: true },
             image: { type: String, required: true },
-            company: { type: String, required: true },
+            company: { type: String, enum: ["ITA", "INFRA", "EXPO", "ITPL"], required: true },
             shortage: { type: Number, required: false },
         },
         aM: {
-            date: { type: Date, required: true },
-            qty: { type: Date, required: true },
+            qty: { type: Number, required: true },
             shortage: { type: Number, required: false },
         }
     },
+    billed: { type: Boolean, default: false },
+    billingParty: { type: String, required: false },
 });
 
 

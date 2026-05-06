@@ -44,7 +44,7 @@ const Combobox = ({
     const [open, setOpen] = React.useState(false);
 
     const filteredOptions = React.useMemo(() => {
-        const search = searchTerm.toLowerCase().trim();
+        const search = (searchTerm || "").toLowerCase().trim();
         return options.filter((item) =>
             item?.label?.toLowerCase().includes(search)
         );

@@ -213,7 +213,8 @@ const tankerTripSchema = new Schema({
             UnloadQty: { type: Number },
             ShortQty: { type: Number },
             DeductionComment: { type: String },
-        }
+        },
+        previousTripId: { type: Types.ObjectId, ref: 'TankersTrip' },
     },
     EmptyTripDetail: {
         VehicleNo: { type: String },
@@ -304,7 +305,12 @@ const tankerTripSchema = new Schema({
             by: String,
             date: Date
         }, default: null
-    }
+    },
+    haltage: { type: Schema.Types.ObjectId, ref: 'Haltage', required: false },
+    gr: { type: Schema.Types.ObjectId, ref: 'GR', required: false },
+    expenses: [{ type: Schema.Types.ObjectId, ref: 'TripExpenses' }],
+    paymentOrder: [{ type: Schema.Types.ObjectId, ref: 'TripPaymentOrder' }],
+    proposedBy: { type: String, required: false },
 }, {
     versionKey: false,
     toJSON: { virtuals: true },
